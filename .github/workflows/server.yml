@@ -7,30 +7,36 @@ on:
       - develop
       - staging
       - main
-
+      
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
+  rabble-backend:
+     runs-on: ubuntu-latest
+     strategy:
       matrix:
-        node-version: [12.x]
-    
-    steps:
-      
-      - name: Copy repository
-        uses: actions/checkout@v2
-      
+       node-version: [12.x]  
+       
+     steps:
+      - name: Checkout Source 📄
+        uses: actions/checkout@v3     
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install npm dependencies
+      - name: Install dependencies 📦️
         run: npm ci
-      
-      - name: Lint code
+
+      - name: Lint 🧐
         run: npm run lint
-      
-      - name: Run tests
-        run: npm run test
-    
+
+      - name: Build 🏗️
+        run: npm run build
+
+      - name: Run tests (unit) 🧪
+        run: npm test
+
+      # - name: Run tests (e2e) ⚙️
+      #   run: npm run test:integration
+
+
