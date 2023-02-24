@@ -1,7 +1,12 @@
-name: push
-on: 
-  push:
-    branches: [develop]
+name: Server workflow
+run-name: ${{ github.actor }} has made a pull request 🚀
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
 
 jobs:
   test:
