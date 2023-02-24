@@ -1,0 +1,45 @@
+name: Server workflow
+run-name: ${{ github.actor }} has made a pull request 🚀
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+
+defaults:
+  run:
+    working-directory: server
+
+env:
+  JWT_SECRET: mysecret
+ 
+jobs:
+  rabble-backend:
+    runs-on: ubuntu-latest   
+    steps:
+      - name: Checkout Source 📄
+        uses: actions/checkout@v3     
+
+      - name: Setup Node Js 🚧
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies 📦️
+        run: npm install
+
+      - name: Lint 🧐
+        run: npm run lint
+
+      - name: Build 🏗️
+        run: npm run build
+
+      - name: Run tests (unit) 🧪
+        run: npm test
+
+      # - name: Run tests (e2e) ⚙️
+      #   run: npm run test:integration
