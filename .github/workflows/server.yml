@@ -1,0 +1,42 @@
+name: Server workflow
+run-name: ${{ github.actor }} has made a pull request 🚀
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+      
+jobs:
+  rabble-backend:
+     runs-on: ubuntu-latest
+     strategy:
+      matrix:
+       node-version: [16.x]  
+       
+     steps:
+      - name: Checkout Source 📄
+        uses: actions/checkout@v3     
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies 📦️
+        run: npm ci
+
+      - name: Lint 🧐
+        run: npm run lint
+
+      - name: Build 🏗️
+        run: npm run build
+
+      - name: Run tests (unit) 🧪
+        run: npm test
+
+      # - name: Run tests (e2e) ⚙️
+      #   run: npm run test:integration
+
+
