@@ -8,10 +8,6 @@ on:
       - staging
       - main
 
-defaults:
-  run:
-    working-directory: server
-
 env:
   JWT_SECRET: mysecret
  
