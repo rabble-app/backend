@@ -11,17 +11,305 @@ datasource db {
 }
 
 model User {
-  id    Int     @default(autoincrement()) @id
-  email String  @unique
-  name  String?
-  posts Post[]
+  id    String     @default(uuid()) @id
+  phone String  @unique
+  email String?  @unique
+  firstName String?  @map("first_name")
+  lastName String?   @map("last_name")
+  postalCode String? @map("postal_code")  
+  imageUrl String? @map("image_url")  
+  role Role    @default(USER) 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  hosts BuyingTeam[]
+  reviews Review[]
+  teams TeamMember[] 
+  requests TeamRequest[] 
+  myFollowers Follower[] @relation("myFollowers")
+  followings  Follower[] @relation("followings")
+  likes Like[]
+  payments Payment[]
+  notifications Notification[]
+  recentlyViewed RecentlyViewed[]
+  shipping Shipping?
+  producer Producer?
+
+  @@map("users")
 }
 
-model Post {
-  id        Int      @default(autoincrement()) @id
-  title     String
-  content   String?
-  published Boolean? @default(false)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
+model Producer {
+  id  String     @default(uuid()) @id
+  userId String @unique
+  imageUrl String? @map("image_url") 
+  businessName String @map("business_name")
+  businessAddress String @map("business_address")
+  website String?
+  description String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user     User       @relation(fields: [userId], references: [id])  
+  products Product[]
+  buyingteams BuyingTeam[]
+  reviews Review[]
+  likes Like[]
+  recentlyViewed RecentlyViewed[]
+
+  @@map("producers")
+}
+
+model Shipping {
+  id  String    @default(uuid()) @id
+  userId String @unique
+  postalCode String @map("postal_code") 
+  buildingNo String? @map("building_no") 
+  address String
+  city  String? 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user     User       @relation(fields: [userId], references: [id])  
+
+  @@map("shippings")
+}
+
+model Product {
+  id  String     @default(uuid()) @id  
+  name String
+  imageUrl String? @map("image_url") 
+  description String?
+  producerId String @map("producer_id")
+  price String
+  status ProductStatus   @default(IN_STOCK)   
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer  Producer       @relation(fields: [producerId], references: [id])  
+  reviews  Review[]
+  likes Like[]
+  basket Basket[]
+  recentlyViewed RecentlyViewed[]
+
+  @@map("products")
+}
+
+model BuyingTeam {
+  id  String     @default(uuid()) @id 
+  name String 
+  postalCode String @map("postal_code")
+  producerId String @map("producer_id")
+  hostId String    @map("host_id")
+  frequency String 
+  description String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer  Producer  @relation(fields: [producerId], references: [id]) 
+  host User  @relation(fields: [hostId], references: [id])
+  members TeamMember[]
+  requests TeamRequest[]
+  likes Like[]
+  invites Invite[]
+  orders Order[]
+  notifications Notification[]
+  recentlyViewed RecentlyViewed[]
+
+  @@map("buying_teams")
+}
+
+model Review {
+  id  String     @default(uuid()) @id 
+  text String
+  reviewerId String  @map("reviewer_id")
+  producerId String?  @map("producer_id")
+  productId String?  @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  reviewer User  @relation(fields: [reviewerId], references: [id])
+  producer  Producer?  @relation(fields: [producerId], references: [id]) 
+  product Product?  @relation(fields: [productId], references: [id])  
+
+  @@map("reviews")
+}
+
+model TeamMember {
+  id  String     @default(uuid()) @id 
+  teamId String  @map("team_id")
+  userId String  @map("user_id")
+  status TeamStatus 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  user User  @relation(fields: [userId], references: [id]) 
+
+  @@map("team_members")
+}
+
+model TeamRequest {
+  id  String     @default(uuid()) @id 
+  teamId String  @map("team_id")
+  userId String  @map("user_id")
+  status TeamStatus 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  user User  @relation(fields: [userId], references: [id]) 
+
+  @@map("team_requests")
+}
+
+model Follower {
+  id  String     @default(uuid()) @id 
+  userId String  @map("user_id")
+  followerId String  @map("follower_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation("myFollowers", fields: [userId], references: [id]) 
+  follower User  @relation("followings", fields: [followerId], references: [id])
+
+  @@map("followers")
+}
+
+model Like {
+  id  String    @default(uuid()) @id 
+  userId String  @map("user_id")   
+  productId String?  @map("product_id")   
+  producerId String?  @map("producer_id")   
+  teamId String?  @map("team_id")   
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation(fields: [userId], references: [id]) 
+  product Product?  @relation(fields: [productId], references: [id])
+  producer Producer?  @relation(fields: [producerId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+
+  @@map("likes")
+}
+
+model Invite {
+  id  String    @default(uuid()) @id 
+  teamId String  @map("team_id")
+  status TeamStatus @default(PENDING) 
+  phone String  
+  userId String  @map("user_id")
+  token String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  
+  @@map("invites")
+}
+
+model Order {
+  id  String  @default(uuid()) @id 
+  teamId String  @map("team_id")
+  status OrderStatus @default(PENDING) 
+  minimumTreshold String @map("minimum_treshold")
+  deadline DateTime 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  basket Basket[]
+  payments Payment[]
+  notifications Notification[]
+  
+  @@map("orders")
+}
+
+model Basket {
+  id  String  @default(uuid()) @id 
+  orderId String @map("order_id")
+  productId String @map("product_id")
+  quantity Int
+  price String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  order Order  @relation(fields: [orderId], references: [id])
+  product Product  @relation(fields: [productId], references: [id])
+  
+  @@map("basket")
+}
+
+model Payment {
+  id  String  @default(uuid()) @id 
+  orderId String @map("order_id")  
+  userId String @map("user_id") 
+  amount String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  order Order  @relation(fields: [orderId], references: [id])
+  user User  @relation(fields: [userId], references: [id])
+  
+  @@map("payments")
+}
+
+model Notification {
+  id  String  @default(uuid()) @id 
+  orderId String? @map("order_id")  
+  userId String? @map("user_id") 
+  teamId String? @map("team_id") 
+  producerId  String? @map("producer_id") 
+  title String?
+  text String
+  isRead Boolean @default(false) @map("is_read") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  order Order?  @relation(fields: [orderId], references: [id])
+  user User?  @relation(fields: [userId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+
+  @@map("notifications")
+}
+
+model RecentlyViewed {
+  id  String  @default(uuid()) @id  
+  userId String @map("user_id") 
+  teamId String? @map("team_id") 
+  producerId  String? @map("producer_id") 
+  productId String? @map("product_id")  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+ 
+  user User  @relation(fields: [userId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  producer Producer?  @relation(fields: [producerId], references: [id])
+  product Product?  @relation(fields: [productId], references: [id])
+
+  @@map("recently_viewed")
+}
+
+enum OrderStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED  
+}
+
+enum Role {
+  USER
+  PRODUCER
+  ADMIN
+}
+
+enum ProductStatus {
+  OUT_OF_STOCK
+  IN_STOCK
+  RUNNING_LOW
+}
+
+enum TeamStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REMOVED
 }
