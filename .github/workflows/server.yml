@@ -7,6 +7,13 @@ on:
       - develop
       - staging
       - main
+env:
+  DATABASE_URL=postgresql://rabble:CLmvJ_n2kTtnAinLtpKM_A@forked-bear-4276.6zw.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
+  PORT=3000
+  TWILO_SID=AC1a9ec537ffce149471c5fd999b7ba779
+  TWILO_AUTH_TOKEN=4a306534475082f57ce51b01032b2f32
+  TWILO_PHONE=+14406933330
+  JWT_SECRET=rab4a306534475082f57ce51b01032b2f32ble
       
 jobs:
   rabble-backend:
