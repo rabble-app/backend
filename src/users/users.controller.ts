@@ -3,15 +3,18 @@ import { UsersService } from './users.service';
 
 import {
   ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { Body, Patch, Res } from '@nestjs/common/decorators';
+import { Body, Get, Param, Patch, Post, Res } from '@nestjs/common/decorators';
 import { Response } from 'express';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateProducerDto } from './dto/create-producer.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -37,6 +40,63 @@ export class UsersController {
       where: { phone: updateUserDto.phone },
       data: updateUserDto,
     });
+    return formatResponse(result, res, HttpStatus.OK);
+  }
+
+  /**
+   * create new producer.
+   * @param {Body} CreateProducerDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('create-producer')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Producer created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async createProducer(
+    @Body() createProducerDto: CreateProducerDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.createProducer(createProducerDto);
+    return formatResponse(result, res, HttpStatus.CREATED);
+  }
+
+  /**
+   * return producers.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('producers')
+  @ApiOkResponse({ description: 'Producers returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getProducers(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getProducers();
+    return formatResponse(result, res, HttpStatus.OK);
+  }
+
+  /**
+   * return single producer.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('producer/:id')
+  @ApiOkResponse({ description: 'Producer returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the producer',
+  })
+  async getProducer(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.findProducer({ id });
     return formatResponse(result, res, HttpStatus.OK);
   }
 }
