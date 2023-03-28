@@ -9,11 +9,11 @@ on:
       - staging
       - main
 env:
-  DATABASE_URL=${{secrets.DATABASE_URL}}
-  TWILO_SID=${{secrets.TWILO_SID}}
-  TWILO_AUTH_TOKEN=${{secrets.TWILO_AUTH_TOKEN}}
-  TWILO_PHONE=${{secrets.TWILO_PHONE}}
-  JWT_SECRET=${{secrets.JWT_SECRET}}
+  DATABASE_URL: ${{secrets.DATABASE_URL}}
+  TWILO_SID: ${{secrets.TWILO_SID}}
+  TWILO_AUTH_TOKEN: ${{secrets.TWILO_AUTH_TOKEN}}
+  TWILO_PHONE: ${{secrets.TWILO_PHONE}}
+  JWT_SECRET: ${{secrets.JWT_SECRET}}
       
 jobs:
   rabble-backend:
