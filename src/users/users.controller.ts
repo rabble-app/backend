@@ -9,7 +9,15 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { Body, Get, Param, Patch, Post, Res } from '@nestjs/common/decorators';
+import {
+  Body,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common/decorators';
 import { Response } from 'express';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
@@ -40,7 +48,13 @@ export class UsersController {
       where: { phone: updateUserDto.phone },
       data: updateUserDto,
     });
-    return formatResponse(result, res, HttpStatus.OK);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User record updated successfully',
+    );
   }
 
   /**
@@ -59,7 +73,13 @@ export class UsersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.usersService.createProducer(createProducerDto);
-    return formatResponse(result, res, HttpStatus.CREATED);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Producer created successfully',
+    );
   }
 
   /**
@@ -72,10 +92,19 @@ export class UsersController {
   @ApiOkResponse({ description: 'Producers returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async getProducers(
+    @Query('offset') offset: number,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.usersService.getProducers();
-    return formatResponse(result, res, HttpStatus.OK);
+    const result = await this.usersService.getProducers(
+      offset ? +offset : undefined,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Producers returned successfully',
+    );
   }
 
   /**
@@ -97,6 +126,12 @@ export class UsersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.usersService.findProducer({ id });
-    return formatResponse(result, res, HttpStatus.OK);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Producer returned successfully',
+    );
   }
 }

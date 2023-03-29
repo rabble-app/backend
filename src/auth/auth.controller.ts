@@ -35,9 +35,11 @@ export class AuthController {
   ): Promise<IAPIResponse> {
     const sid = await this.authService.sendOTP(sendOTPDto);
     return formatResponse(
-      { message: 'OTP sent successfully', sid },
+      { sid },
       res,
       HttpStatus.OK,
+      false,
+      'OTP sent successfully',
     );
   }
 
@@ -60,12 +62,19 @@ export class AuthController {
     const isVerified = await this.authService.verifyOTP(verifyOTPDto);
     if (!isVerified) {
       return formatResponse(
-        { message: 'Code is invalid' },
+        'Code is invalid',
         res,
         HttpStatus.BAD_REQUEST,
         true,
+        'Invalid code supplied',
       );
     }
-    return formatResponse(isVerified, res, HttpStatus.OK);
+    return formatResponse(
+      isVerified,
+      res,
+      HttpStatus.OK,
+      false,
+      'OTP verified successfully',
+    );
   }
 }

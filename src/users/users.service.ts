@@ -40,8 +40,11 @@ export class UsersService {
     });
   }
 
-  async getProducers(): Promise<Producer[] | null> {
-    return await this.prisma.producer.findMany();
+  async getProducers(offset = 0): Promise<Producer[] | null> {
+    return await this.prisma.producer.findMany({
+      skip: offset,
+      take: 10,
+    });
   }
 
   async findProducer(

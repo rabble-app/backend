@@ -60,7 +60,7 @@ describe('AppController (e2e)', () => {
         .send({ phone, code: '22334', sid: 'rtreyt' })
         .expect(400);
       expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('object');
+      expect(typeof response.body.error).toBe('string');
     });
   });
 });
