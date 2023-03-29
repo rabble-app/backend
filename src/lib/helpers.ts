@@ -5,9 +5,12 @@ export const formatResponse = (
   res: Response,
   statusCode: number,
   isError?: boolean,
+  message?: string,
 ) => {
   res.status(statusCode);
   return {
+    statusCode,
+    message,
     data: !isError ? data : undefined,
     error: isError ? data : undefined,
   };
