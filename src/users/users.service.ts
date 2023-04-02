@@ -44,6 +44,7 @@ export class UsersService {
     return await this.prisma.producer.findMany({
       skip: offset,
       take: 10,
+      include: { user: true },
     });
   }
 
