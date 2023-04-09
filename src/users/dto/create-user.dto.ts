@@ -19,4 +19,31 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   postalCode: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users first name',
+    required: false,
+  })
+  @IsNotEmpty()
+  @IsString()
+  firstName: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users last name',
+    required: false,
+  })
+  @IsNotEmpty()
+  @IsString()
+  lastName: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users email',
+    required: false,
+  })
+  @IsNotEmpty()
+  @IsString()
+  email: string;
 }

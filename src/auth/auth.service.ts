@@ -20,7 +20,7 @@ export class AuthService {
       );
       // create a verification service
       const result = await client.verify.v2.services.create({
-        friendlyName: 'Rabble App',
+        friendlyName: 'Rabble',
       });
       // send a verification token
       await client.verify.v2
