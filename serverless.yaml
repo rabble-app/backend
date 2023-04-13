@@ -1,0 +1,37 @@
+service: nestjs-serverless-pg
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  architecture: arm64
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-2'}
+  memorySize: 512
+  logRetentionInDays: 1
+  timeout: 30 
+
+functions:
+  api:
+    handler: src/lambda.handler
+    events:
+      - httpApi:
+          method: any
+          path: /{proxy+}
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+  - serverless-webpack
+  # - serverless-webpack-prisma
+
+custom:
+  webpack:
+    webpackConfig: 'webpack.config.js'
+    includeModules: true # This is required
+    packager: 'npm'
+    packagerOptions:
+      scripts: # this is the magic
+        - npx prisma generate 
+
