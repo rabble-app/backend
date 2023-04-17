@@ -4,8 +4,15 @@ import { AppModule } from './app.module';
 
 let cachedServer;
 
-export const handler = async (event, context) => {
+// eslint-disable-next-line prettier/prettier
+export const handler = async (event:any, context) => {
   if (!cachedServer) {
+    if (event.path === '/api') {
+      event.path = '/api/';
+    }
+    event.path = event?.path?.includes('swagger-ui')
+      ? `/api${event.path}`
+      : event.path;
     const nestApp = await NestFactory.create(AppModule);
     await nestApp.init();
     cachedServer = serverlessExpress({
