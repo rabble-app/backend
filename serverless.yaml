@@ -8,9 +8,9 @@ provider:
   architecture: arm64
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-2'}
-  memorySize: 512
+  memorySize: 128
   logRetentionInDays: 1
-  timeout: 30 
+  timeout: 30
 
 functions:
   api:
@@ -33,5 +33,7 @@ custom:
     packager: 'npm'
     packagerOptions:
       scripts: # this is the magic
-        - npx prisma generate 
+        - npx prisma generate
 
+  optimize:
+    external: ['swagger-ui-dist']
