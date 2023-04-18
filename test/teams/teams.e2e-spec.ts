@@ -16,6 +16,7 @@ describe('TeamsController (e2e)', () => {
   let producer: Producer;
   let producerId: string;
   let buyingTeamId: string;
+  let teamRequestId: string;
   const buyingTeam: CreateTeamDto = {
     name: 'Team 003',
     postalCode: '234-54',
@@ -23,6 +24,11 @@ describe('TeamsController (e2e)', () => {
     frequency: 'weekly',
     description: 'Dummy description',
     producerId: '3425',
+  };
+
+  const teamRequest = {
+    userId: '',
+    teamId: '',
   };
 
   beforeAll(async () => {
@@ -43,6 +49,7 @@ describe('TeamsController (e2e)', () => {
       },
     });
     buyingTeam.hostId = user.id;
+    teamRequest.userId = user.id;
 
     // create dummy producer for test
     producer = await prisma.producer.create({
@@ -122,14 +129,100 @@ describe('TeamsController (e2e)', () => {
       expect(typeof response.body.data).toBe('object');
     });
 
-    // delete buying team's record
-    it('/teams/:id(DELETE) should delete buying team', async () => {
+    // send request to join buying team
+    it('/teams/join(POST) should create request to join buying team', async () => {
       const response = await request(app.getHttpServer())
-        .delete(`/teams/${buyingTeamId}`)
+        .post('/teams/join')
+        .send({ ...teamRequest, teamId: buyingTeamId })
+        .expect(201);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+      teamRequestId = response.body.data.id;
+    });
+
+    it('/teams/join(POST) should not send request to join buying team if the data is not complete', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/teams/join')
+        .send(teamRequest)
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    it('/teams/join(POST) should not send request to join buying team if request has been sent before', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/teams/join')
+        .send({ ...teamRequest, teamId: buyingTeamId })
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    // approve or reject users request to join team
+    it('/teams/request/update(PATCH) should not approve/reject users request if the appropriate data is not sent', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/teams/request/update')
+        .send({ id: teamRequestId })
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    it('/teams/request/update(PATCH) should approve/reject users request if the appropriate data is not sent', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/teams/request/update')
+        .send({ id: teamRequestId, status: 'APPROVED' })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
+    });
+
+    // return members of a buying team
+    it('/teams/members/:id(GET) should return members of the buying team', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/teams/members/${buyingTeamId}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // return buying team of a user
+    it('/teams/user/:id(GET) should return the buying teams of a user', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/teams/user/${user.id}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    describe('Delete Team (e2e)', () => {
+      beforeEach(async () => {
+        await prisma.teamRequest.deleteMany({
+          where: {
+            teamId: buyingTeamId,
+          },
+        });
+
+        await prisma.teamMember.deleteMany({
+          where: {
+            teamId: buyingTeamId,
+          },
+        });
+      });
+
+      // delete buying team's record
+      it('/teams/:id(DELETE) should delete buying team', async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/teams/${buyingTeamId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      });
     });
   });
 });
