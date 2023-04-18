@@ -24,6 +24,8 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { UpdateTeamDto } from './dto/update-team.dto';
+import { JoinTeamDto } from './dto/join-team.dto';
+import { UpdateRequestDto } from './dto/update-request.dto';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -32,7 +34,7 @@ export class TeamsController {
 
   /**
    * create new team.
-   * @param {Body} CreateTeamDto - Request body object.
+   * @param {Body} createTeamDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
@@ -199,6 +201,123 @@ export class TeamsController {
       HttpStatus.OK,
       false,
       'Team record deleted successfully',
+    );
+  }
+
+  /**
+   * create request to join team.
+   * @param {Body} joinTeamDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('join')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Request sent successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async joinTeam(
+    @Body() joinTeamDto: JoinTeamDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.sendJoinRequest(joinTeamDto);
+    if (!result) {
+      return formatResponse(
+        'Request already exist',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Duplicate Request',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Request sent successfully',
+    );
+  }
+
+  /**
+   * approve/reject request to join team.
+   * @param {Body} updateRequestDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Patch('/request/update')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Request updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async requestUpdate(
+    @Body() updateRequestDto: UpdateRequestDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.updateRequest(updateRequestDto);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Request updated successfully',
+    );
+  }
+
+  /**
+   * return members of a buying team.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('/members/:id')
+  @ApiOkResponse({ description: 'Team members returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the team',
+  })
+  async getTeamMembers(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.getTeamMembers(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Team members returned successfully',
+    );
+  }
+
+  /**
+   * return buying teams of a user.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('user/:id')
+  @ApiOkResponse({
+    description: 'User buying teams returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The user id',
+  })
+  async getUserTeams(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.getUserTeams(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User buying teams returned successfully',
     );
   }
 }

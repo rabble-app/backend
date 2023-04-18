@@ -154,7 +154,7 @@ model TeamRequest {
   id  String     @default(uuid()) @id 
   teamId String  @map("team_id")
   userId String  @map("user_id")
-  status TeamStatus 
+  status TeamStatus @default(PENDING)  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
