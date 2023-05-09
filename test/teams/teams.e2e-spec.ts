@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
-import { Producer, User } from '@prisma/client';
+import { Producer, TeamMember, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { CreateTeamDto } from '../../src/teams/dto/create-team.dto';
 
@@ -12,11 +12,18 @@ describe('TeamsController (e2e)', () => {
   let prisma: PrismaService;
 
   const phone = faker.phone.number();
+  let customerId: string;
+  let paymentMethodId: string;
+
   let user: User;
   let producer: Producer;
+  let teamMember: TeamMember;
   let producerId: string;
   let buyingTeamId: string;
   let teamRequestId: string;
+  let paymentIntentId: string;
+  let teamMemberId: string;
+
   const buyingTeam: CreateTeamDto = {
     name: 'Team 003',
     postalCode: '234-54',
@@ -24,11 +31,33 @@ describe('TeamsController (e2e)', () => {
     frequency: 'weekly',
     description: 'Dummy description',
     producerId: '3425',
+    paymentIntentId: '',
+  };
+
+  const buyingTeamUpdate = {
+    name: 'Team 003',
+    postalCode: '234-54',
+    description: 'Dummy description',
   };
 
   const teamRequest = {
     userId: '',
     teamId: '',
+  };
+
+  const cardInfo = {
+    cardNumber: '4242424242424242',
+    expiringMonth: 1,
+    expiringYear: 2033,
+    cvc: '314',
+    phone,
+  };
+
+  const chargeInfo = {
+    amount: 2000,
+    currency: 'gbp',
+    customerId: '',
+    paymentMethodId: '',
   };
 
   beforeAll(async () => {
@@ -60,6 +89,10 @@ describe('TeamsController (e2e)', () => {
       },
     });
     buyingTeam.producerId = producer.id;
+
+    // get dummy team member id for test
+    teamMember = await prisma.teamMember.findFirst();
+    teamMemberId = teamMember.id;
   }, 120000);
 
   afterAll(async () => {
@@ -67,17 +100,42 @@ describe('TeamsController (e2e)', () => {
   });
 
   describe('TeamsController (e2e)', () => {
+    // add payment card to user
+    it('/payments/add-card(POST) should add card to user account', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/payments/add-card')
+        .send({ ...cardInfo })
+        .expect(201);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+      customerId = response.body.data.stripeCustomerId;
+      paymentMethodId = response.body.data.paymentMethodId;
+    }, 120000);
+
+    // charge user successfully
+    it('/payments/charge(POST) should charge a user', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/payments/charge')
+        .send({ ...chargeInfo, customerId, paymentMethodId })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+      paymentIntentId = response.body.data.paymentIntentId;
+    });
+
     // create team
     it('/teams/create(POST) should create a new buying team', async () => {
       const response = await request(app.getHttpServer())
         .post('/teams/create')
-        .send(buyingTeam)
+        .send({ ...buyingTeam, paymentIntentId })
         .expect(201);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
       buyingTeamId = response.body.data.id;
-    });
+    }, 120000);
 
     it('/teams/create(POST) should not create buying team if uncompleted data is supplied', async () => {
       const response = await request(app.getHttpServer())
@@ -122,7 +180,7 @@ describe('TeamsController (e2e)', () => {
     it('/teams/:id(PATCH) should update a buying team', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/teams/${buyingTeamId}`)
-        .send(buyingTeam)
+        .send(buyingTeamUpdate)
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
@@ -199,6 +257,16 @@ describe('TeamsController (e2e)', () => {
       expect(typeof response.body.data).toBe('object');
     });
 
+    // quit buying team
+    it('/teams/quit(DELETE)/:id should quit buying team', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/teams/quit/${teamMemberId}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
     describe('Delete Team (e2e)', () => {
       beforeEach(async () => {
         await prisma.teamRequest.deleteMany({
@@ -212,7 +280,13 @@ describe('TeamsController (e2e)', () => {
             teamId: buyingTeamId,
           },
         });
-      });
+
+        await prisma.order.deleteMany({
+          where: {
+            teamId: buyingTeamId,
+          },
+        });
+      }, 120000);
 
       // delete buying team's record
       it('/teams/:id(DELETE) should delete buying team', async () => {

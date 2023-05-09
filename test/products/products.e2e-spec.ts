@@ -15,6 +15,7 @@ describe('ProductsController (e2e)', () => {
   let producer: Producer;
   let productId: string;
   let producerId: string;
+  let userId: string;
 
   const product = {
     name: faker.internet.userName(),
@@ -41,6 +42,7 @@ describe('ProductsController (e2e)', () => {
         phone,
       },
     });
+    userId = user.id;
 
     // create dummy producer for test
     producer = await prisma.producer.create({
@@ -104,6 +106,35 @@ describe('ProductsController (e2e)', () => {
     it('/products/search/:keyword(GET) should return products', async () => {
       const response = await request(app.getHttpServer())
         .get(`/products/search/product1`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // store recently viewed products
+    it('/products/recently-viewed(POST) should store recently viewed product', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/products/recently-viewed')
+        .send({ productId, userId })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    it('/products/recently-viewed(POST) should not store recently viewed product if incomplete data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/products/recently-viewed')
+        .send({ productId })
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    it('/products/recently-viewed/:id(GET) should return recently viewed products', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/products/recently-viewed/${userId}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

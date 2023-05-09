@@ -4,14 +4,72 @@ import { PrismaService } from '../prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
+import { PaymentService } from '../payment/payment.service';
+import { UsersService } from '../users/users.service';
+import { ITeamMember, Status } from '../lib/types';
 
 @Injectable()
 export class TeamsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly paymentService: PaymentService,
+    private readonly userService: UsersService,
+  ) {}
 
-  async createTeam(createTeamDto: CreateTeamDto): Promise<BuyingTeam> {
-    return await this.prisma.buyingTeam.create({
-      data: createTeamDto,
+  async createTeam(createTeamDto: CreateTeamDto) {
+    const paymentIntentId = createTeamDto.paymentIntentId;
+    const teamData = createTeamDto;
+    delete teamData.paymentIntentId;
+
+    const result = await this.prisma.buyingTeam.create({
+      data: teamData,
+    });
+
+    // add the host as a user to the group
+    const memberData = {
+      teamId: result.id,
+      userId: createTeamDto.hostId,
+      status: Status.APPROVED,
+    };
+    await this.addTeamMember(memberData);
+
+    // get producer's minimum threshold
+    const producerInfo = await this.userService.findProducer({
+      id: createTeamDto.producerId,
+    });
+
+    const currentDate = new Date();
+    // add i weeks to the current date
+    const nextWeekDate = new Date(
+      currentDate.getTime() + 1 * 7 * 24 * 60 * 60 * 1000,
+    );
+
+    // create order
+    const orderData = {
+      teamId: result.id,
+      minimumTreshold: producerInfo.minimumTreshold,
+      deadline: nextWeekDate,
+    };
+    const orderResponse = await this.paymentService.createOrder(orderData);
+
+    // update payment record
+    const paymentData = {
+      orderId: orderResponse.id,
+      userId: createTeamDto.hostId,
+      paymentIntentId,
+    };
+
+    await this.paymentService.updatePayment({
+      where: { paymentIntentId },
+      data: { ...paymentData },
+    });
+    result['orderId'] = orderResponse.id;
+    return result;
+  }
+
+  async addTeamMember(teamData: ITeamMember): Promise<TeamMember | null> {
+    return await this.prisma.teamMember.create({
+      data: { ...teamData },
     });
   }
 
@@ -138,6 +196,14 @@ export class TeamsService {
       include: {
         team: true,
       },
+    });
+  }
+
+  async quitBuyingTeam(
+    where: Prisma.TeamMemberWhereUniqueInput,
+  ): Promise<TeamMember> {
+    return await this.prisma.teamMember.delete({
+      where,
     });
   }
 }

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { Product } from '@prisma/client';
+import { Product, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -39,6 +40,27 @@ export class ProductsService {
           contains: keyword,
           mode: 'insensitive',
         },
+      },
+    });
+  }
+
+  async recordRecentlyViewed(
+    recentlyViewedProductDto: RecentlyViewedProductDto,
+  ): Promise<RecentlyViewed> {
+    return await this.prisma.recentlyViewed.create({
+      data: recentlyViewedProductDto,
+    });
+  }
+
+  async getRecentlyViewedProducts(
+    id: string,
+  ): Promise<RecentlyViewed[] | null> {
+    return await this.prisma.recentlyViewed.findMany({
+      where: {
+        userId: id,
+      },
+      include: {
+        product: true,
       },
     });
   }

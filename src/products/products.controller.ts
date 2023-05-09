@@ -20,6 +20,7 @@ import {
 import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
+import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 
 @ApiTags('products')
 @Controller('products')
@@ -132,6 +133,65 @@ export class ProductsController {
       HttpStatus.OK,
       false,
       'Products returned successfully',
+    );
+  }
+
+  /**
+   * record recently viwed product.
+   * @param {Body} recentlyViewedProductDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('recently-viewed')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({
+    description: 'Recently viewed product recorded successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async recentlyViewed(
+    @Body() recentlyViewedProductDto: RecentlyViewedProductDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.recordRecentlyViewed(
+      recentlyViewedProductDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Recently viewed product recorded successfully',
+    );
+  }
+
+  /**
+   * return users recently viewed products.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('/recently-viewed/:id')
+  @ApiOkResponse({
+    description: 'Recently viewed products returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async getRecentlyViewedProducts(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getRecentlyViewedProducts(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Recently viewed products returned successfully',
     );
   }
 }

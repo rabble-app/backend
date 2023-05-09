@@ -18,6 +18,7 @@ model User {
   firstName String?  @map("first_name")
   lastName String?   @map("last_name")
   postalCode String? @map("postal_code")  
+  stripeCustomerId String? @map("stripe_customer_id")  
   imageUrl String? @map("image_url")  
   role Role    @default(USER) 
   createdAt DateTime @default(now()) @map("created_at")
@@ -35,6 +36,7 @@ model User {
   recentlyViewed RecentlyViewed[]
   shipping Shipping?
   producer Producer?
+  baskets Basket[] 
 
   @@map("users")
 }
@@ -45,6 +47,7 @@ model Producer {
   imageUrl String? @map("image_url") 
   businessName String @map("business_name")
   businessAddress String @map("business_address")
+  minimumTreshold Int @map("minimum_treshold") @default(5000)
   website String?
   description String?
   createdAt DateTime @default(now()) @map("created_at")
@@ -213,7 +216,7 @@ model Order {
   id  String  @default(uuid()) @id 
   teamId String  @map("team_id")
   status OrderStatus @default(PENDING) 
-  minimumTreshold String @map("minimum_treshold")
+  minimumTreshold Int @map("minimum_treshold")
   deadline DateTime 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -229,6 +232,7 @@ model Order {
 model Basket {
   id  String  @default(uuid()) @id 
   orderId String @map("order_id")
+  userId String  @map("user_id")
   productId String @map("product_id")
   quantity Int
   price String
@@ -237,20 +241,23 @@ model Basket {
 
   order Order  @relation(fields: [orderId], references: [id])
   product Product  @relation(fields: [productId], references: [id])
+  user User  @relation(fields: [userId], references: [id]) 
   
   @@map("basket")
 }
 
 model Payment {
   id  String  @default(uuid()) @id 
-  orderId String @map("order_id")  
-  userId String @map("user_id") 
-  amount String
+  orderId String? @map("order_id")  
+  userId String? @map("user_id") 
+  amount Int
+  paymentIntentId String @unique
+  status PaymentStatus @default(PENDING) 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order  @relation(fields: [orderId], references: [id])
-  user User  @relation(fields: [userId], references: [id])
+  order Order?  @relation(fields: [orderId], references: [id])
+  user User?  @relation(fields: [userId], references: [id])
   
   @@map("payments")
 }
@@ -314,4 +321,10 @@ enum TeamStatus {
   APPROVED
   REJECTED
   REMOVED
+}
+
+enum PaymentStatus {
+  PENDING  
+  INTENT_CREATED
+  CAPTURED
 }

@@ -320,4 +320,35 @@ export class TeamsController {
       'User buying teams returned successfully',
     );
   }
+
+  /**
+   * quit buying team.
+   * @param {Body} joinTeamDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Delete('quit/:id')
+  @ApiOkResponse({ description: 'User removed from team successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The team membership id',
+  })
+  async quitTeam(
+    @Param('id') teamMemberShipID: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.quitBuyingTeam({
+      id: teamMemberShipID,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User removed from team successfully',
+    );
+  }
 }

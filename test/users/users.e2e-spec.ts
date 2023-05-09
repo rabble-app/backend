@@ -66,6 +66,7 @@ describe('UserController (e2e)', () => {
           userId: user.id,
           businessName: 'Rabble21',
           businessAddress: '22 Kate Road',
+          minimumTreshold: 4,
         })
         .expect(201);
       expect(response.body).toHaveProperty('data');

@@ -55,4 +55,12 @@ export class CreateTeamDto {
   @ValidateIf((o) => o.description)
   @IsString()
   description: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The payment intent id gotten after making payment',
+    required: true,
+  })
+  @IsString()
+  paymentIntentId: string;
 }

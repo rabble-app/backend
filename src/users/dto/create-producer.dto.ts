@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateIf, IsNumber } from 'class-validator';
 
 export class CreateProducerDto {
   @ApiProperty({
@@ -44,4 +44,12 @@ export class CreateProducerDto {
   @ValidateIf((o) => o.description)
   @IsString()
   description: string;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'The minimum treshold for the producer',
+    required: true,
+  })
+  @IsNumber()
+  minimumTreshold: number;
 }

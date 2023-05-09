@@ -5,9 +5,16 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TeamsModule } from './teams/teams.module';
 import { ProductsModule } from './products/products.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, TeamsModule, ProductsModule],
+  imports: [
+    AuthModule,
+    UsersModule,
+    TeamsModule,
+    ProductsModule,
+    PaymentModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
