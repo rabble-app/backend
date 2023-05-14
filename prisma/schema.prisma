@@ -66,7 +66,6 @@ model Producer {
 model Shipping {
   id  String    @default(uuid()) @id
   userId String @unique
-  postalCode String @map("postal_code") 
   buildingNo String? @map("building_no") 
   address String
   city  String? 
@@ -106,6 +105,7 @@ model BuyingTeam {
   hostId String    @map("host_id")
   frequency String 
   description String?
+  isPublic Boolean? @default(true) @map("is_public")
   imageUrl String? @map("image_url")  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 

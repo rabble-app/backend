@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { User, Prisma, Producer } from '@prisma/client';
+import { User, Prisma, Producer, Shipping } from '@prisma/client';
 import { CreateProducerDto } from './dto/create-producer.dto';
+import { DeliveryAddressDto } from './dto/delivery-address.dto';
 
 @Injectable()
 export class UsersService {
@@ -53,6 +54,14 @@ export class UsersService {
   ): Promise<Producer | null> {
     return await this.prisma.producer.findUnique({
       where: producerWhereUniqueInput,
+    });
+  }
+
+  async createDeliveryAddress(
+    deliveryAddressDto: DeliveryAddressDto,
+  ): Promise<Shipping> {
+    return await this.prisma.shipping.create({
+      data: deliveryAddressDto,
     });
   }
 }

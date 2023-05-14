@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BuyingTeam, Prisma, TeamMember, TeamRequest } from '@prisma/client';
+import {
+  BuyingTeam,
+  Order,
+  Prisma,
+  TeamMember,
+  TeamRequest,
+} from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
@@ -204,6 +210,53 @@ export class TeamsService {
   ): Promise<TeamMember> {
     return await this.prisma.teamMember.delete({
       where,
+    });
+  }
+
+  async getTeamInfo(id: string): Promise<BuyingTeam | null> {
+    return await this.prisma.buyingTeam.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getTeamCurrentOrderStatus(teamId: string): Promise<Order | null> {
+    return await this.prisma.order.findFirst({
+      where: {
+        teamId,
+      },
+      include: {
+        basket: {
+          include: {
+            product: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        payments: true,
+      },
+      orderBy: [
+        {
+          createdAt: 'desc',
+        },
+      ],
     });
   }
 }

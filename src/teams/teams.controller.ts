@@ -351,4 +351,62 @@ export class TeamsController {
       'User removed from team successfully',
     );
   }
+
+  /**
+   * return a particular buying team information.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get(':id')
+  @ApiOkResponse({ description: 'Buying team returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the buying team',
+  })
+  async getBuyingTeam(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.getTeamInfo(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Buying team returned successfully',
+    );
+  }
+
+  /**
+   * return a particular buying team current order status.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('current-order/:id')
+  @ApiOkResponse({
+    description: 'Buying team order status returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the buying team',
+  })
+  async getBuyingTeamOrderStatus(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.getTeamCurrentOrderStatus(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Buying team order status returned successfully',
+    );
+  }
 }

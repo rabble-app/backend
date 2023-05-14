@@ -33,15 +33,8 @@ export class PaymentService {
 
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
-  ): Promise<{ stripeCustomerId: string; paymentMethodId: string } | null> {
+  ): Promise<{ paymentMethodId: string } | null> {
     try {
-      const newCustomer = await this.createCustomer(addPaymentCardDto.phone);
-
-      await this.userService.updateUser({
-        where: { phone: addPaymentCardDto.phone },
-        data: { stripeCustomerId: newCustomer.id },
-      });
-
       // create payment method
       const paymentMethod = await stripe.paymentMethods.create({
         type: 'card',
@@ -55,11 +48,10 @@ export class PaymentService {
 
       // attach payment method to user
       await stripe.paymentMethods.attach(paymentMethod.id, {
-        customer: newCustomer.id,
+        customer: addPaymentCardDto.stripeCustomerId,
       });
 
       return {
-        stripeCustomerId: newCustomer.id,
         paymentMethodId: paymentMethod.id,
       };
     } catch (error) {}
@@ -82,10 +74,14 @@ export class PaymentService {
         paymentIntentId: paymentIntent.id,
         status: PaymentStatus.INTENT_CREATED,
       };
-      await this.recordPayment(paymentData);
-      return {
-        paymentIntentId: paymentIntent.id,
-      };
+      const result = await this.recordPayment(paymentData);
+      if (result) {
+        return {
+          paymentIntentId: paymentIntent.id,
+        };
+      } else {
+        return null;
+      }
     } catch (error) {
       console.log(error);
     }
@@ -132,5 +128,17 @@ export class PaymentService {
     return await this.prisma.basket.delete({
       where,
     });
+  }
+
+  async getUserPaymentOptions(id: string): Promise<object | null> {
+    try {
+      return await stripe.customers.listPaymentMethods(id, { type: 'card' });
+    } catch (error) {}
+  }
+
+  async removePaymentOption(id: string): Promise<object | null> {
+    try {
+      return await stripe.paymentMethods.detach(id);
+    } catch (error) {}
   }
 }

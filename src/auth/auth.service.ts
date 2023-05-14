@@ -4,11 +4,13 @@ import * as twilio from 'twilio';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { PaymentService } from '../payment/payment.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
+    private readonly paymentService: PaymentService,
     private jwtService: JwtService,
   ) {}
 
@@ -53,8 +55,13 @@ export class AuthService {
           userExist['token'] = token;
           return userExist;
         } else {
+          // create stripe account for user
+          const stripeResponse = await this.paymentService.createCustomer(
+            verifyOTPDto.phone,
+          );
           const newUser = await this.userService.createUser({
             phone: verifyOTPDto.phone,
+            stripeCustomerId: stripeResponse.id,
           });
           newUser['token'] = token;
           return newUser;

@@ -16,6 +16,7 @@ describe('ProductsController (e2e)', () => {
   let productId: string;
   let producerId: string;
   let userId: string;
+  const testTime = 120000;
 
   const product = {
     name: faker.internet.userName(),
@@ -54,7 +55,7 @@ describe('ProductsController (e2e)', () => {
     });
     product.producerId = producer.id;
     producerId = producer.id;
-  }, 120000);
+  }, testTime);
 
   afterAll(async () => {
     await app.close();

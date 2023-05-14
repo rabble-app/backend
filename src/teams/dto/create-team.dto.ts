@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
 
 export class CreateTeamDto {
   @ApiProperty({
@@ -63,4 +63,13 @@ export class CreateTeamDto {
   })
   @IsString()
   paymentIntentId: string;
+
+  @ApiProperty({
+    type: 'boolean',
+    description: 'The visibility of the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.isPublic)
+  @IsBoolean()
+  isPublic: boolean;
 }

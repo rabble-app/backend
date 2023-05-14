@@ -23,6 +23,7 @@ import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
+import { DeliveryAddressDto } from './dto/delivery-address.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -31,7 +32,7 @@ export class UsersController {
 
   /**
    * update user record.
-   * @param {Body} UpdateUserDto - Request body object.
+   * @param {Body} updateUserDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
@@ -59,7 +60,7 @@ export class UsersController {
 
   /**
    * create new producer.
-   * @param {Body} CreateProducerDto - Request body object.
+   * @param {Body} createProducerDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
@@ -132,6 +133,33 @@ export class UsersController {
       HttpStatus.OK,
       false,
       'Producer returned successfully',
+    );
+  }
+
+  /**
+   * add user delivery address.
+   * @param {Body} deliveryAddressDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('delivery-address')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Delivery address created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async addDeliveryAddress(
+    @Body() deliveryAddressDto: DeliveryAddressDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.createDeliveryAddress(
+      deliveryAddressDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Delivery address created successfully',
     );
   }
 }

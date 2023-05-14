@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
-import { Producer, TeamMember, User } from '@prisma/client';
+import { BuyingTeam, Producer, TeamMember, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { CreateTeamDto } from '../../src/teams/dto/create-team.dto';
 
@@ -12,17 +12,19 @@ describe('TeamsController (e2e)', () => {
   let prisma: PrismaService;
 
   const phone = faker.phone.number();
-  let customerId: string;
+  const customerId = 'cus_NtREO3efDC5MQv';
   let paymentMethodId: string;
 
   let user: User;
   let producer: Producer;
   let teamMember: TeamMember;
+  let team: BuyingTeam;
   let producerId: string;
   let buyingTeamId: string;
   let teamRequestId: string;
   let paymentIntentId: string;
   let teamMemberId: string;
+  const testTime = 120000;
 
   const buyingTeam: CreateTeamDto = {
     name: 'Team 003',
@@ -50,13 +52,13 @@ describe('TeamsController (e2e)', () => {
     expiringMonth: 1,
     expiringYear: 2033,
     cvc: '314',
-    phone,
+    stripeCustomerId: customerId,
   };
 
   const chargeInfo = {
     amount: 2000,
     currency: 'gbp',
-    customerId: '',
+    customerId,
     paymentMethodId: '',
   };
 
@@ -90,10 +92,20 @@ describe('TeamsController (e2e)', () => {
     });
     buyingTeam.producerId = producer.id;
 
-    // get dummy team member id for test
-    teamMember = await prisma.teamMember.findFirst();
+    // get dummy team id for test
+    team = await prisma.buyingTeam.findFirst();
+
+    // create team member for test
+    teamMember = await prisma.teamMember.create({
+      data: {
+        userId: user.id,
+        teamId: team.id,
+        status: 'APPROVED',
+      },
+    });
+
     teamMemberId = teamMember.id;
-  }, 120000);
+  }, testTime);
 
   afterAll(async () => {
     await app.close();
@@ -101,23 +113,26 @@ describe('TeamsController (e2e)', () => {
 
   describe('TeamsController (e2e)', () => {
     // add payment card to user
-    it('/payments/add-card(POST) should add card to user account', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/payments/add-card')
-        .send({ ...cardInfo })
-        .expect(201);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-      customerId = response.body.data.stripeCustomerId;
-      paymentMethodId = response.body.data.paymentMethodId;
-    }, 120000);
+    it(
+      '/payments/add-card(POST) should add card to user account',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/add-card')
+          .send({ ...cardInfo })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        paymentMethodId = response.body.data.paymentMethodId;
+      },
+      testTime,
+    );
 
     // charge user successfully
     it('/payments/charge(POST) should charge a user', async () => {
       const response = await request(app.getHttpServer())
         .post('/payments/charge')
-        .send({ ...chargeInfo, customerId, paymentMethodId })
+        .send({ ...chargeInfo, paymentMethodId })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
@@ -126,16 +141,20 @@ describe('TeamsController (e2e)', () => {
     });
 
     // create team
-    it('/teams/create(POST) should create a new buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/teams/create')
-        .send({ ...buyingTeam, paymentIntentId })
-        .expect(201);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-      buyingTeamId = response.body.data.id;
-    }, 120000);
+    it(
+      '/teams/create(POST) should create a new buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/create')
+          .send({ ...buyingTeam, paymentIntentId })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        buyingTeamId = response.body.data.id;
+      },
+      testTime,
+    );
 
     it('/teams/create(POST) should not create buying team if uncompleted data is supplied', async () => {
       const response = await request(app.getHttpServer())
@@ -257,6 +276,26 @@ describe('TeamsController (e2e)', () => {
       expect(typeof response.body.data).toBe('object');
     });
 
+    // return a single buying teams
+    it('/teams/:id(GET) should return a particular buying team', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/teams/${buyingTeamId}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // return a single buying teams current order
+    it('/teams/:id(GET) should return a particular buying team', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/teams/current-order/${buyingTeamId}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
     // quit buying team
     it('/teams/quit(DELETE)/:id should quit buying team', async () => {
       const response = await request(app.getHttpServer())
@@ -286,7 +325,7 @@ describe('TeamsController (e2e)', () => {
             teamId: buyingTeamId,
           },
         });
-      }, 120000);
+      }, testTime);
 
       // delete buying team's record
       it('/teams/:id(DELETE) should delete buying team', async () => {

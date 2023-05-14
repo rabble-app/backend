@@ -2,8 +2,10 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Res,
 } from '@nestjs/common';
@@ -70,6 +72,15 @@ export class PaymentController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.paymentService.chargeUser(chargeUserDto);
+    if (!result) {
+      return formatResponse(
+        'Code is invalid',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Invalid data supplied',
+      );
+    }
     return formatResponse(
       result,
       res,
@@ -155,6 +166,66 @@ export class PaymentController {
       HttpStatus.OK,
       false,
       'Item deleted successfully',
+    );
+  }
+
+  /**
+   * return a user payment options.
+   * @param {Response} res - The payload.
+   * @memberof PaymentController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('options/:id')
+  @ApiOkResponse({
+    description: 'User payment option returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The stripe customer id',
+  })
+  async userPaymentOptions(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentService.getUserPaymentOptions(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User payment option returned successfully',
+    );
+  }
+
+  /**
+   * remove payment option from user.
+   * @param {Response} res - The payload.
+   * @memberof PaymentController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Patch('options/:id')
+  @ApiOkResponse({
+    description: 'Payment option removed successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The user payment method id',
+  })
+  async removePaymentOption(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentService.removePaymentOption(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Payment option removed successfully',
     );
   }
 }
