@@ -259,4 +259,14 @@ export class TeamsService {
       ],
     });
   }
+
+  async nudgeTeam(id: string) {
+    const teamMembers = await this.prisma.teamMember.findMany({
+      where: {
+        teamId: id,
+      },
+    });
+
+    // send sms
+  }
 }

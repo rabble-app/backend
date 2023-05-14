@@ -34,6 +34,7 @@ describe('TeamsController (e2e)', () => {
     description: 'Dummy description',
     producerId: '3425',
     paymentIntentId: '',
+    isPublic: true,
   };
 
   const buyingTeamUpdate = {
@@ -290,6 +291,16 @@ describe('TeamsController (e2e)', () => {
     it('/teams/:id(GET) should return a particular buying team', async () => {
       const response = await request(app.getHttpServer())
         .get(`/teams/current-order/${buyingTeamId}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // nudge team members to collect delivery
+    it('/teams/nudge(POST))/:id should nudge team members to collect delivery', async () => {
+      const response = await request(app.getHttpServer())
+        .post(`/teams/nudge/${buyingTeamId}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

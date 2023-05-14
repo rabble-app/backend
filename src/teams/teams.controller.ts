@@ -409,4 +409,34 @@ export class TeamsController {
       'Buying team order status returned successfully',
     );
   }
+
+  /**
+   * nudge team members to collect delivery.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('nudge/:id')
+  @ApiOkResponse({
+    description: 'Buying team nudged to collect delivery successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the buying team',
+  })
+  async nudgeBuyingTeam(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.getTeamCurrentOrderStatus(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Buying team nudged to collect delivery successfully',
+    );
+  }
 }
