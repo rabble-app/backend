@@ -26,11 +26,16 @@ import { Response } from 'express';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
+import { NudgeTeamMemberDto } from './dto/nudge-team-member.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @ApiTags('teams')
 @Controller('teams')
 export class TeamsController {
-  constructor(private readonly teamsService: TeamsService) {}
+  constructor(
+    private readonly teamsService: TeamsService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * create new team.
@@ -430,13 +435,42 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getTeamCurrentOrderStatus(id);
+    await this.teamsService.nudgeTeam(id);
     return formatResponse(
-      result,
+      'Notification sent',
       res,
       HttpStatus.OK,
       false,
       'Buying team nudged to collect delivery successfully',
+    );
+  }
+
+  /**
+   * nudge team member to update card information.
+   * @param {Body} nudgeTeamMemberDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('nudge')
+  @ApiOkResponse({
+    description: 'Team member nudged to update card info successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async nudgeTeamMember(
+    @Body() nudgeTeamMemberDto: NudgeTeamMemberDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    await this.notificationsService.sendSMS(
+      `Your payment has failed. You will need to update your card details to remain in the ${nudgeTeamMemberDto.teamName} buying Team`,
+      nudgeTeamMemberDto.memberPhone,
+    );
+    return formatResponse(
+      'Notification sent',
+      res,
+      HttpStatus.OK,
+      false,
+      'Team member nudged to update card info successfully',
     );
   }
 }

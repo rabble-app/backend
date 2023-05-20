@@ -219,7 +219,7 @@ describe('TeamsController (e2e)', () => {
       teamRequestId = response.body.data.id;
     });
 
-    it('/teams/join(POST) should not send request to join buying team if the data is not complete', async () => {
+    it('/teams/join(POST) should not send request to join buying team if the data supplied is not complete', async () => {
       const response = await request(app.getHttpServer())
         .post('/teams/join')
         .send(teamRequest)
@@ -304,8 +304,36 @@ describe('TeamsController (e2e)', () => {
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
+      expect(typeof response.body.data).toBe('string');
     });
+
+    // nudge team member to update card details
+    it(
+      '/teams/nudge(POST) should nudge team member to update card details',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/nudge`)
+          .send({ teamName: buyingTeam.name, memberPhone: phone })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('string');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/nudge(POST) should not nudge team member to update card details if the data supplied is not complete',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/nudge')
+          .send({ teamName: buyingTeam.name })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // quit buying team
     it('/teams/quit(DELETE)/:id should quit buying team', async () => {

@@ -13,6 +13,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
 import { ITeamMember, Status } from '../lib/types';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TeamsService {
@@ -20,6 +21,7 @@ export class TeamsService {
     private prisma: PrismaService,
     private readonly paymentService: PaymentService,
     private readonly userService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
@@ -260,13 +262,29 @@ export class TeamsService {
     });
   }
 
-  async nudgeTeam(id: string) {
+  async nudgeTeam(id: string): Promise<boolean> {
     const teamMembers = await this.prisma.teamMember.findMany({
       where: {
         teamId: id,
+        status: 'APPROVED',
+      },
+      include: {
+        user: {
+          select: {
+            phone: true,
+          },
+        },
       },
     });
-
-    // send sms
+    if (teamMembers.length > 0) {
+      teamMembers.forEach(async (member) => {
+        // send sms
+        await this.notificationsService.sendSMS(
+          'Your host is looking after your items for you, return the favour by collecting them as promptly as possible',
+          member.user.phone,
+        );
+      });
+    }
+    return true;
   }
 }
