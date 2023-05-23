@@ -130,16 +130,20 @@ describe('TeamsController (e2e)', () => {
     );
 
     // charge user successfully
-    it('/payments/charge(POST) should charge a user', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/payments/charge')
-        .send({ ...chargeInfo, paymentMethodId })
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-      paymentIntentId = response.body.data.paymentIntentId;
-    });
+    it(
+      '/payments/charge(POST) should charge a user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/charge')
+          .send({ ...chargeInfo, paymentMethodId })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        paymentIntentId = response.body.data.paymentIntentId;
+      },
+      testTime,
+    );
 
     // create team
     it(
@@ -157,155 +161,215 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
-    it('/teams/create(POST) should not create buying team if uncompleted data is supplied', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/teams/create')
-        .send({ hostId: buyingTeam.hostId })
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
+    it(
+      '/teams/create(POST) should not create buying team if uncompleted data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/create')
+          .send({ hostId: buyingTeam.hostId })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // return all buying team
-    it('/teams(GET) should return all buying teams', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/teams')
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams(GET) should return all buying teams',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/teams')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // return buying teams for a producer
-    it('/teams/producer/:id(GET) should return buying team for a producer', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/teams/producer/${producerId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/producer/:id(GET) should return buying team for a producer',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/producer/${producerId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // return buying teams for a particular postal code
-    it('/teams/postalcode/:id(GET) should return buying team for a postal code', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/teams/postalcode/${producerId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/postalcode/:id(GET) should return buying team for a postal code',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/postalcode/${producerId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // update buying team's record
-    it('/teams/:id(PATCH) should update a buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/teams/${buyingTeamId}`)
-        .send(buyingTeamUpdate)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/:id(PATCH) should update a buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/teams/${buyingTeamId}`)
+          .send(buyingTeamUpdate)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // send request to join buying team
-    it('/teams/join(POST) should create request to join buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/teams/join')
-        .send({ ...teamRequest, teamId: buyingTeamId })
-        .expect(201);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-      teamRequestId = response.body.data.id;
-    });
+    it(
+      '/teams/join(POST) should create request to join buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/join')
+          .send({ ...teamRequest, teamId: buyingTeamId })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        teamRequestId = response.body.data.id;
+      },
+      testTime,
+    );
 
-    it('/teams/join(POST) should not send request to join buying team if the data supplied is not complete', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/teams/join')
-        .send(teamRequest)
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
+    it(
+      '/teams/join(POST) should not send request to join buying team if the data supplied is not complete',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/join')
+          .send(teamRequest)
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
-    it('/teams/join(POST) should not send request to join buying team if request has been sent before', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/teams/join')
-        .send({ ...teamRequest, teamId: buyingTeamId })
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
+    it(
+      '/teams/join(POST) should not send request to join buying team if request has been sent before',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/join')
+          .send({ ...teamRequest, teamId: buyingTeamId })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // approve or reject users request to join team
-    it('/teams/request/update(PATCH) should not approve/reject users request if the appropriate data is not sent', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/teams/request/update')
-        .send({ id: teamRequestId })
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
+    it(
+      '/teams/request/update(PATCH) should not approve/reject users request if the appropriate data is not sent',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/teams/request/update')
+          .send({ id: teamRequestId })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
-    it('/teams/request/update(PATCH) should approve/reject users request if the appropriate data is not sent', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/teams/request/update')
-        .send({ id: teamRequestId, status: 'APPROVED' })
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/request/update(PATCH) should approve/reject users request if the appropriate data is not sent',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/teams/request/update')
+          .send({ id: teamRequestId, status: 'APPROVED' })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // return members of a buying team
-    it('/teams/members/:id(GET) should return members of the buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/teams/members/${buyingTeamId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/members/:id(GET) should return members of the buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/members/${buyingTeamId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // return buying team of a user
-    it('/teams/user/:id(GET) should return the buying teams of a user', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/teams/user/${user.id}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/user/:id(GET) should return the buying teams of a user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/user/${user.id}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // return a single buying teams
-    it('/teams/:id(GET) should return a particular buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/teams/${buyingTeamId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/:id(GET) should return a particular buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/${buyingTeamId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // return a single buying teams current order
-    it('/teams/:id(GET) should return a particular buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/teams/current-order/${buyingTeamId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/:id(GET) should return a particular buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/current-order/${buyingTeamId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // nudge team members to collect delivery
-    it('/teams/nudge(POST))/:id should nudge team members to collect delivery', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/teams/nudge/${buyingTeamId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('string');
-    });
+    it(
+      '/teams/nudge(POST))/:id should nudge team members to collect delivery',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/nudge/${buyingTeamId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('string');
+      },
+      testTime,
+    );
 
     // nudge team member to update card details
     it(
@@ -336,14 +400,18 @@ describe('TeamsController (e2e)', () => {
     );
 
     // quit buying team
-    it('/teams/quit(DELETE)/:id should quit buying team', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/teams/quit/${teamMemberId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/teams/quit(DELETE)/:id should quit buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/teams/quit/${teamMemberId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     describe('Delete Team (e2e)', () => {
       beforeEach(async () => {
@@ -367,14 +435,18 @@ describe('TeamsController (e2e)', () => {
       }, testTime);
 
       // delete buying team's record
-      it('/teams/:id(DELETE) should delete buying team', async () => {
-        const response = await request(app.getHttpServer())
-          .delete(`/teams/${buyingTeamId}`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      });
+      it(
+        '/teams/:id(DELETE) should delete buying team',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .delete(`/teams/${buyingTeamId}`)
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
     });
   });
 });

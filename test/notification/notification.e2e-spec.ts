@@ -113,13 +113,17 @@ describe('NotificationController (e2e)', () => {
     );
 
     // delete notification
-    it('/notifications/:id(DELETE) should delete notification', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/notifications/${notificationId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/notifications/:id(DELETE) should delete notification',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/notifications/${notificationId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

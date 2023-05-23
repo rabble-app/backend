@@ -162,4 +162,60 @@ export class UsersController {
       'Delivery address created successfully',
     );
   }
+
+  /**
+   * return order history
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('order-history/:id')
+  @ApiOkResponse({ description: 'Order history returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The user id',
+  })
+  async getOrderHistories(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getOrderHistories(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Order history returned successfully',
+    );
+  }
+
+  /**
+   * return subscriptions
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('subscription/:id')
+  @ApiOkResponse({ description: 'Subscriptions returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The user id',
+  })
+  async getSubscriptions(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getSubscriptions(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscriptions returned successfully',
+    );
+  }
 }

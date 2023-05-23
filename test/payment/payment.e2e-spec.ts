@@ -97,47 +97,63 @@ describe('PaymentController (e2e)', () => {
       testTime,
     );
 
-    it('/payments/charge(POST) should not charge a user if uncompleted data is supplied', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/payments/charge')
-        .send({ ...chargeInfo })
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
+    it(
+      '/payments/charge(POST) should not charge a user if uncompleted data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/charge')
+          .send({ ...chargeInfo })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
-    it('/payments/charge(POST) should not charge a user if wrong data is supplied', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/payments/charge')
-        .send({
-          ...chargeInfo,
-          customerId: 'cus_NtREO3efDC5Mv',
-          paymentMethodId,
-        })
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
+    it(
+      '/payments/charge(POST) should not charge a user if wrong data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/charge')
+          .send({
+            ...chargeInfo,
+            customerId: 'cus_NtREO3efDC5Mv',
+            paymentMethodId,
+          })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // return users payment options
-    it('/payments/options/:id(GET) should return user payment options', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/payments/options/${customerId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/payments/options/:id(GET) should return user payment options',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/payments/options/${customerId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     // remove payment option from user
-    it('/payments/options/:id(PATCH) should remove user payment options', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(`/payments/options/${paymentMethodId}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    });
+    it(
+      '/payments/options/:id(PATCH) should remove user payment options',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/payments/options/${paymentMethodId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
     describe('Basket', () => {
       // add user bulk basket successfully
@@ -166,24 +182,28 @@ describe('PaymentController (e2e)', () => {
         testTime,
       );
 
-      it('/payments/basket-bulk(POST) should not add item to basket if uncompleted data is supplied', async () => {
-        const userBasket = {
-          basket: [
-            {
-              userId: userId,
-              productId: product.id,
-              quantity: 2,
-              price: '2000',
-            },
-          ],
-        };
-        const response = await request(app.getHttpServer())
-          .post('/payments/basket-bulk')
-          .send(userBasket)
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      });
+      it(
+        '/payments/basket-bulk(POST) should not add item to basket if uncompleted data is supplied',
+        async () => {
+          const userBasket = {
+            basket: [
+              {
+                userId: userId,
+                productId: product.id,
+                quantity: 2,
+                price: '2000',
+              },
+            ],
+          };
+          const response = await request(app.getHttpServer())
+            .post('/payments/basket-bulk')
+            .send(userBasket)
+            .expect(400);
+          expect(response.body).toHaveProperty('error');
+          expect(typeof response.body.error).toBe('string');
+        },
+        testTime,
+      );
 
       // add single item to basket
       it(
@@ -218,14 +238,18 @@ describe('PaymentController (e2e)', () => {
       });
 
       // delete item from cart
-      it('/payments/basket/:id(DELETE) should delete item from cart', async () => {
-        const response = await request(app.getHttpServer())
-          .delete(`/payments/basket/${itemId}`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      });
+      it(
+        '/payments/basket/:id(DELETE) should delete item from cart',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .delete(`/payments/basket/${itemId}`)
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
     });
   });
 });

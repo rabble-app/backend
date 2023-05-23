@@ -85,6 +85,7 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       where: {
         producerId: id,
+        isPublic: true,
       },
       include: {
         members: true,
@@ -96,6 +97,7 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       where: {
         postalCode,
+        isPublic: true,
       },
       include: {
         members: true,
@@ -107,6 +109,9 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       skip: offset,
       take: 10,
+      where: {
+        isPublic: true,
+      },
       include: {
         members: true,
       },
@@ -189,6 +194,7 @@ export class TeamsService {
     return await this.prisma.teamMember.findMany({
       where: {
         teamId: id,
+        status: 'APPROVED',
       },
       include: {
         user: true,

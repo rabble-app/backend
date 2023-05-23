@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PaymentModule } from '../payment/payment.module';
+import { PrismaService } from '../prisma.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { PaymentModule } from '../payment/payment.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, PrismaService],
 })
 export class AuthModule {}

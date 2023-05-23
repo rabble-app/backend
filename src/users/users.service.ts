@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { User, Prisma, Producer, Shipping } from '@prisma/client';
+import { User, Prisma, Producer, Shipping, TeamMember } from '@prisma/client';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
 
@@ -62,6 +62,71 @@ export class UsersService {
   ): Promise<Shipping> {
     return await this.prisma.shipping.create({
       data: deliveryAddressDto,
+    });
+  }
+
+  async getOrderHistories(userId: string): Promise<TeamMember[]> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        team: {
+          include: {
+            orders: {
+              include: {
+                basket: {
+                  where: {
+                    userId,
+                  },
+                  include: {
+                    product: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getSubscriptions(userId: string): Promise<TeamMember[]> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        team: {
+          include: {
+            orders: {
+              where: {
+                deadline: {
+                  gte: new Date(),
+                },
+              },
+              include: {
+                basket: {
+                  where: {
+                    userId,
+                  },
+                  include: {
+                    product: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 }
