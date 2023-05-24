@@ -77,7 +77,7 @@ export class AuthService {
   }
 
   generateToken(data: any): string {
-    return this.jwtService.sign(data);
+    return this.jwtService.sign(data, { secret: process.env.JWT_SECRET });
   }
 
   decodeToken(token: string): string | any {

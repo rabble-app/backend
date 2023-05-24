@@ -28,6 +28,7 @@ import { JoinTeamDto } from './dto/join-team.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { NudgeTeamMemberDto } from './dto/nudge-team-member.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { BulkInviteDto } from './dto/bulk-invite.dto';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -471,6 +472,32 @@ export class TeamsController {
       HttpStatus.OK,
       false,
       'Team member nudged to update card info successfully',
+    );
+  }
+
+  /**
+   * bulk invite.
+   * @param {Body} bulkInviteDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('bulk-invite')
+  @ApiOkResponse({
+    description: 'Users invited to the team successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async bulkInvite(
+    @Body() bulkInviteDto: BulkInviteDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.bulkInvite(bulkInviteDto);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Users invited to the team successfully',
     );
   }
 }

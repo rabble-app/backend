@@ -35,5 +35,14 @@ custom:
       scripts: # this is the magic
         - npx prisma generate
 
-  optimize:
-    external: ['swagger-ui-dist']
+#   optimize:
+#     external: ['swagger-ui-dist']
+
+package:
+  # individually: true
+  patterns:
+    - '!node_modules/**'
+    - 'node_modules/.prisma/**'
+
+ 
+

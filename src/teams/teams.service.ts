@@ -14,6 +14,8 @@ import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
 import { ITeamMember, Status } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
+import { BulkInviteDto } from './dto/bulk-invite.dto';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class TeamsService {
@@ -22,6 +24,7 @@ export class TeamsService {
     private readonly paymentService: PaymentService,
     private readonly userService: UsersService,
     private readonly notificationsService: NotificationsService,
+    private readonly authService: AuthService,
   ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
@@ -289,6 +292,38 @@ export class TeamsService {
           'Your host is looking after your items for you, return the favour by collecting them as promptly as possible',
           member.user.phone,
         );
+      });
+    }
+    return true;
+  }
+
+  async bulkInvite(bulkInviteDto: BulkInviteDto): Promise<boolean | null> {
+    if (bulkInviteDto.phones.length > 0) {
+      bulkInviteDto.phones.forEach(async (phone) => {
+        // generate token with jwt
+        const token = this.authService.generateToken({
+          phone,
+          userId: bulkInviteDto.userId,
+          teamId: bulkInviteDto.teamId,
+        });
+
+        // store invite info
+        await this.prisma.invite.create({
+          data: {
+            teamId: bulkInviteDto.teamId,
+            userId: bulkInviteDto.userId,
+            phone,
+          },
+        });
+
+        // update the link to include the token
+        const url = `${bulkInviteDto.link}?token=${token}`;
+
+        // send to user
+        const message = `Hi, someone is inviting you to join a buying team at Rabble, click the link to get started: ${url}`;
+
+        // send the message to user
+        await this.notificationsService.sendSMS(message, phone);
       });
     }
     return true;

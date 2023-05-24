@@ -399,6 +399,58 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // bulk invite
+    it(
+      '/teams/bulk-invite(POST) should invite bulk member to join the team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/bulk-invite`)
+          .send({
+            userId: user.id,
+            link: 'https://www.google.com',
+            phones: ['+2347036541234'],
+            teamId: buyingTeamId,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('boolean');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/bulk-invite(POST) should not invite members to join the team if incomplete data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/bulk-invite`)
+          .send({
+            link: 'https://www.google.com',
+          })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
+
+    //  verify invite token
+    it(
+      '/teams/verify-invite(POST) should verify invite token',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .send({
+            token: 'thg',
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('string');
+      },
+      testTime,
+    );
+
     // quit buying team
     it(
       '/teams/quit(DELETE)/:id should quit buying team',
@@ -413,40 +465,18 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
-    describe('Delete Team (e2e)', () => {
-      beforeEach(async () => {
-        await prisma.teamRequest.deleteMany({
-          where: {
-            teamId: buyingTeamId,
-          },
-        });
-
-        await prisma.teamMember.deleteMany({
-          where: {
-            teamId: buyingTeamId,
-          },
-        });
-
-        await prisma.order.deleteMany({
-          where: {
-            teamId: buyingTeamId,
-          },
-        });
-      }, testTime);
-
-      // delete buying team's record
-      it(
-        '/teams/:id(DELETE) should delete buying team',
-        async () => {
-          const response = await request(app.getHttpServer())
-            .delete(`/teams/${buyingTeamId}`)
-            .expect(200);
-          expect(response.body).toHaveProperty('data');
-          expect(response.body.error).toBeUndefined();
-          expect(typeof response.body.data).toBe('object');
-        },
-        testTime,
-      );
-    });
+    // delete buying team's record
+    it(
+      '/teams/:id(DELETE) should delete buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/teams/${buyingTeamId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

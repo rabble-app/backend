@@ -148,7 +148,7 @@ model TeamMember {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
   @@map("team_members")
@@ -162,7 +162,7 @@ model TeamRequest {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
   @@map("team_requests")
@@ -193,7 +193,7 @@ model Like {
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
   product Product?  @relation(fields: [productId], references: [id])
   producer Producer?  @relation(fields: [producerId], references: [id])
-  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("likes")
 }
@@ -203,8 +203,7 @@ model Invite {
   teamId String  @map("team_id")
   status TeamStatus @default(PENDING) 
   phone String  
-  userId String  @map("user_id")
-  token String 
+  userId String  @map("user_id") 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -223,7 +222,7 @@ model Order {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   basket Basket[]
   payments Payment[]
   notifications Notification[]
@@ -278,7 +277,7 @@ model Notification {
 
   order Order?  @relation(fields: [orderId], references: [id])
   user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
@@ -293,7 +292,7 @@ model RecentlyViewed {
   updatedAt DateTime @updatedAt @map("updated_at") 
  
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   producer Producer?  @relation(fields: [producerId], references: [id])
   product Product?  @relation(fields: [productId], references: [id])
 
