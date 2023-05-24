@@ -5,6 +5,8 @@ import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { PaymentService } from '../payment/payment.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuthService } from '../auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
 
 describe('TeamsController', () => {
   let controller: TeamsController;
@@ -18,6 +20,8 @@ describe('TeamsController', () => {
         UsersService,
         PaymentService,
         NotificationsService,
+        AuthService,
+        JwtService,
       ],
     }).compile();
 

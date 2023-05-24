@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuthService } from '../auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
 
 describe('TeamsService', () => {
   let service: TeamsService;
@@ -16,6 +18,8 @@ describe('TeamsService', () => {
         PaymentService,
         UsersService,
         NotificationsService,
+        AuthService,
+        JwtService,
       ],
     }).compile();
 
