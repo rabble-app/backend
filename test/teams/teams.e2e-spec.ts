@@ -6,14 +6,17 @@ import { PrismaService } from '../../src/prisma.service';
 import { BuyingTeam, Producer, TeamMember, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { CreateTeamDto } from '../../src/teams/dto/create-team.dto';
+import { AuthService } from '../../src/auth/auth.service';
 
 describe('TeamsController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
 
   const phone = faker.phone.number();
   const customerId = 'cus_NtREO3efDC5MQv';
   let paymentMethodId: string;
+  let inviteToken: string;
 
   let user: User;
   let producer: Producer;
@@ -70,6 +73,7 @@ describe('TeamsController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -106,6 +110,26 @@ describe('TeamsController (e2e)', () => {
     });
 
     teamMemberId = teamMember.id;
+
+    // get dummy invite for test
+    await prisma.invite.create({
+      data: {
+        userId: user.id,
+        teamId: team.id,
+        phone,
+        token: authService.generateToken({
+          userId: user.id,
+          teamId: team.id,
+          phone,
+        }),
+      },
+    });
+    const result = await prisma.invite.findFirst({
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+    inviteToken = result.token;
   }, testTime);
 
   afterAll(async () => {
@@ -441,12 +465,39 @@ describe('TeamsController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post(`/teams/verify-invite`)
           .send({
-            token: 'thg',
+            token: inviteToken,
           })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('string');
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/verify-invite(POST) should not allow the request if the token is not supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .send({
+            token: 'invalid invite',
+          })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/verify-invite(POST) should not pass invalid invite',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
       },
       testTime,
     );

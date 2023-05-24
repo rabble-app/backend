@@ -29,6 +29,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { NudgeTeamMemberDto } from './dto/nudge-team-member.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
+import { VerifyInviteDto } from './dto/verify-invite.dto';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -498,6 +499,42 @@ export class TeamsController {
       HttpStatus.OK,
       false,
       'Users invited to the team successfully',
+    );
+  }
+
+  /**
+   * verify invite.
+   * @param {Body} verifyInviteDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('/verify-invite')
+  @ApiOkResponse({
+    description: 'Invite verified successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid token supplied' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async verifyInvite(
+    @Body() verifyInviteDto: VerifyInviteDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.verifyInvite(verifyInviteDto.token);
+    if (!result) {
+      return formatResponse(
+        'Token is invalid',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Invalid token supplied',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Invite verified successfully',
     );
   }
 }

@@ -202,12 +202,13 @@ model Invite {
   id  String    @default(uuid()) @id 
   teamId String  @map("team_id")
   status TeamStatus @default(PENDING) 
-  phone String  
+  phone String 
+  token String?
   userId String  @map("user_id") 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
   
   @@map("invites")

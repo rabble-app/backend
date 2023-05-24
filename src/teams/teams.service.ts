@@ -132,7 +132,9 @@ export class TeamsService {
     });
   }
 
-  async deleteTeam(where: Prisma.UserWhereUniqueInput): Promise<BuyingTeam> {
+  async deleteTeam(
+    where: Prisma.BuyingTeamWhereUniqueInput,
+  ): Promise<BuyingTeam> {
     return await this.prisma.buyingTeam.delete({
       where,
     });
@@ -313,6 +315,7 @@ export class TeamsService {
             teamId: bulkInviteDto.teamId,
             userId: bulkInviteDto.userId,
             phone,
+            token,
           },
         });
 
@@ -327,5 +330,21 @@ export class TeamsService {
       });
     }
     return true;
+  }
+
+  async verifyInvite(token: string): Promise<boolean | object> {
+    const returnValue = false;
+    const data = this.authService.decodeToken(token);
+    if (!data) return returnValue;
+    // confirm that we have that record
+    return await this.prisma.invite.findFirst({
+      where: {
+        userId: data.userId,
+        phone: data.phone,
+        teamId: data.teamId,
+      },
+    });
+
+    return returnValue;
   }
 }

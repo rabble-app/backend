@@ -82,7 +82,7 @@ export class AuthService {
 
   decodeToken(token: string): string | any {
     try {
-      return this.jwtService.verify(token);
+      return this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
     } catch (error) {
       return null;
     }
