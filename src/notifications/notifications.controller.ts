@@ -148,4 +148,12 @@ export class NotificationsController {
       'Notification returned successfully',
     );
   }
+
+  @Post('whatsapp')
+  async testWhatsapp() {
+    return await this.notificationsService.addParticipant(
+      'CH06295a17b1e44170a2cac274fbeb6c37',
+      '+2347037381011',
+    );
+  }
 }

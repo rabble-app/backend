@@ -66,6 +66,7 @@ export class PaymentService {
         payment_method: chargeUserDto.paymentMethodId,
         confirm: true,
         capture_method: 'manual',
+        setup_future_usage: 'off_session',
       });
 
       // record intent
@@ -78,6 +79,7 @@ export class PaymentService {
       if (result) {
         return {
           paymentIntentId: paymentIntent.id,
+          clientSecret: paymentIntent.client_secret,
         };
       } else {
         return null;
