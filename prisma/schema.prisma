@@ -87,7 +87,7 @@ model Product {
   imageKey String? @map("image_key")  
   description String?
   producerId String @map("producer_id")
-  price String
+  price Int @default(0)
   status ProductStatus   @default(IN_STOCK)   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -223,6 +223,7 @@ model Order {
   teamId String  @map("team_id")
   status OrderStatus @default(PENDING) 
   minimumTreshold Int @map("minimum_treshold")
+  accumulatedAmount Int @map("accumulated_amount") @default(0)
   deadline DateTime @default(now())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -241,7 +242,7 @@ model Basket {
   userId String  @map("user_id")
   productId String @map("product_id")
   quantity Int
-  price String
+  price Int @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 

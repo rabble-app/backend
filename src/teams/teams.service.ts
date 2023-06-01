@@ -66,7 +66,6 @@ export class TeamsService {
     // update payment record
     const paymentData = {
       orderId: orderResponse.id,
-      userId: createTeamDto.hostId,
       paymentIntentId,
     };
 

@@ -59,6 +59,7 @@ export class PaymentService {
 
   async chargeUser(chargeUserDto: ChargeUserDto): Promise<object | null> {
     try {
+      let orderId: string;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: chargeUserDto.amount,
         currency: chargeUserDto.currency,
@@ -69,11 +70,26 @@ export class PaymentService {
         setup_future_usage: 'off_session',
       });
 
+      // if teamId exist, get the latest order of that team
+      if (chargeUserDto.teamId) {
+        const result = await this.prisma.order.findFirst({
+          where: {
+            teamId: chargeUserDto.teamId,
+          },
+          orderBy: {
+            updatedAt: 'desc',
+          },
+        });
+        orderId = result.id;
+      }
+
       // record intent
       const paymentData = {
+        orderId,
         amount: chargeUserDto.amount,
         paymentIntentId: paymentIntent.id,
         status: PaymentStatus.INTENT_CREATED,
+        userId: chargeUserDto.userId,
       };
       const result = await this.recordPayment(paymentData);
       if (result) {
