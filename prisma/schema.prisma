@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
+  provider = "prisma-client-js"  
 }
 
 datasource db {
@@ -87,7 +86,7 @@ model Product {
   imageKey String? @map("image_key")  
   description String?
   producerId String @map("producer_id")
-  price Int @default(0)
+  price Int
   status ProductStatus   @default(IN_STOCK)   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -242,7 +241,7 @@ model Basket {
   userId String  @map("user_id")
   productId String @map("product_id")
   quantity Int
-  price Int @default(0)
+  price Int
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
