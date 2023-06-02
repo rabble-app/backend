@@ -55,6 +55,8 @@ export class TeamsService {
       currentDate.getTime() + 1 * 7 * 24 * 60 * 60 * 1000,
     );
 
+    // get amount paid and add it to accumulator
+
     // create order
     const orderData = {
       teamId: result.id,

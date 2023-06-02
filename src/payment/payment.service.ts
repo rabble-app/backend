@@ -150,7 +150,7 @@ export class PaymentService {
 
   async getUserPaymentOptions(id: string): Promise<object | null> {
     try {
-      return await stripe.customers.listPaymentMethods(id, { type: 'card' });
+      return await stripe.customers.listPaymentMethods(id);
     } catch (error) {}
   }
 
