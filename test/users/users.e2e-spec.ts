@@ -155,6 +155,37 @@ describe('UserController (e2e)', () => {
     );
 
     it(
+      '/users/delivery-address/:userId should return user delivery address',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/delivery-address/${userId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/users/delivery-address/:userId should update user delivery address',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/users/delivery-address/${userId}`)
+          .send({
+            userId,
+            buildingNo: 'Rabble21',
+            city: 'Dummy City',
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
       '/users/order-history/:id(GET) should return user order history',
       async () => {
         const response = await request(app.getHttpServer())

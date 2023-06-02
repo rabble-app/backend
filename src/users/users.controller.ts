@@ -23,6 +23,7 @@ import { IAPIResponse } from '../lib/types';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
+import { UpdateDeliveryAddressDto } from './dto/update-delivery-address.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -215,6 +216,68 @@ export class UsersController {
       HttpStatus.OK,
       false,
       'Subscriptions returned successfully',
+    );
+  }
+
+  /**
+   * return user delivery address.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('delivery-address/:id')
+  @ApiOkResponse({ description: 'Delivery address returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async getDeliveryAddress(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getDeliveryAddress({ userId: id });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Delivery address returned successfully',
+    );
+  }
+
+  /**
+   * update user delivery address.
+   * @param {Body} updateDeliveryAddressDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Patch('delivery-address/:id')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Delivery address updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async updateDeliveryAddress(
+    @Param('id') id: string,
+    @Body() updateDeliveryAddressDto: UpdateDeliveryAddressDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.updateDeliveryAddress({
+      where: { userId: id },
+      data: updateDeliveryAddressDto,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Delivery address updated successfully',
     );
   }
 }

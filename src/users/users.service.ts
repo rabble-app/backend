@@ -129,4 +129,23 @@ export class UsersService {
       },
     });
   }
+
+  async getDeliveryAddress(
+    shippingWhereUniqueInput: Prisma.ShippingWhereUniqueInput,
+  ): Promise<Shipping | null> {
+    return await this.prisma.shipping.findUnique({
+      where: shippingWhereUniqueInput,
+    });
+  }
+
+  async updateDeliveryAddress(params: {
+    where: Prisma.ShippingWhereUniqueInput;
+    data: Prisma.ShippingUpdateInput;
+  }): Promise<Shipping> {
+    const { where, data } = params;
+    return await this.prisma.shipping.update({
+      data,
+      where,
+    });
+  }
 }
