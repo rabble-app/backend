@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, ValidateIf } from 'class-validator';
 
 export class ChargeUserDto {
   @ApiProperty({
@@ -37,4 +37,23 @@ export class ChargeUserDto {
   @IsNotEmpty()
   @IsString()
   paymentMethodId: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The team id',
+    required: false,
+  })
+  @ValidateIf((o) => o.teamId)
+  @IsNotEmpty()
+  @IsString()
+  teamId: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The user id',
+    required: false,
+  })
+  @IsNotEmpty()
+  @IsString()
+  userId: string;
 }

@@ -1,6 +1,5 @@
 import { Controller, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
-
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,

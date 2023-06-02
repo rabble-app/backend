@@ -159,7 +159,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/payments/charge')
-          .send({ ...chargeInfo, paymentMethodId })
+          .send({ ...chargeInfo, paymentMethodId, userId: user.id })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

@@ -7,6 +7,7 @@ import { TeamsModule } from './teams/teams.module';
 import { ProductsModule } from './products/products.module';
 import { PaymentModule } from './payment/payment.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ProductsModule,
     PaymentModule,
     NotificationsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

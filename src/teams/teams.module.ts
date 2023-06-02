@@ -12,5 +12,6 @@ import { JwtService } from '@nestjs/jwt';
   imports: [PaymentModule, UsersModule, NotificationsModule],
   controllers: [TeamsController],
   providers: [TeamsService, PrismaService, AuthService, JwtService],
+  exports: [TeamsService],
 })
 export class TeamsModule {}

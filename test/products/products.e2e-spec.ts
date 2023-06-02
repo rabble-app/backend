@@ -21,7 +21,7 @@ describe('ProductsController (e2e)', () => {
   const product = {
     name: faker.internet.userName(),
     description: faker.lorem.paragraph(),
-    price: '200',
+    price: 200,
     producerId: null,
   };
 

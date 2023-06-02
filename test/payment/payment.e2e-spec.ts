@@ -167,7 +167,7 @@ describe('PaymentController (e2e)', () => {
                 userId: userId,
                 productId: product.id,
                 quantity: 2,
-                price: '2000',
+                price: 2000,
               },
             ],
           };
@@ -191,7 +191,7 @@ describe('PaymentController (e2e)', () => {
                 userId: userId,
                 productId: product.id,
                 quantity: 2,
-                price: '2000',
+                price: 2000,
               },
             ],
           };
@@ -214,7 +214,7 @@ describe('PaymentController (e2e)', () => {
             userId: userId,
             productId: product.id,
             quantity: 2,
-            price: '2000',
+            price: 2000,
           };
           const response = await request(app.getHttpServer())
             .post('/payments/basket')

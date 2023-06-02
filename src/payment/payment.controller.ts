@@ -74,11 +74,11 @@ export class PaymentController {
     const result = await this.paymentService.chargeUser(chargeUserDto);
     if (!result) {
       return formatResponse(
-        'Code is invalid',
+        'Error occurred',
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Invalid data supplied',
+        'Payment not successful',
       );
     }
     return formatResponse(
