@@ -56,12 +56,21 @@ export class TeamsService {
     );
 
     // get amount paid and add it to accumulator
+    const paymentInfo = await this.prisma.payment.findFirst({
+      where: {
+        paymentIntentId,
+      },
+      select: {
+        amount: true,
+      },
+    });
 
     // create order
     const orderData = {
       teamId: result.id,
       minimumTreshold: producerInfo.minimumTreshold,
       deadline: nextWeekDate,
+      accumulatedAmount: paymentInfo.amount,
     };
     const orderResponse = await this.paymentService.createOrder(orderData);
 
@@ -241,8 +250,16 @@ export class TeamsService {
                 firstName: true,
                 lastName: true,
                 phone: true,
+                imageUrl: true,
               },
             },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+            imageUrl: true,
           },
         },
       },

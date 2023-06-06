@@ -14,6 +14,7 @@ export enum PaymentStatus {
   PENDING = 'PENDING',
   INTENT_CREATED = 'INTENT_CREATED',
   CAPTURED = 'CAPTURED',
+  FAILED = 'FAILED',
 }
 export interface IOrder {
   teamId: string;

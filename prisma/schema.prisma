@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"  
+  previewFeatures = ["fieldReference"]
 }
 
 datasource db {
@@ -18,7 +19,7 @@ model User {
   lastName String?   @map("last_name")
   postalCode String? @map("postal_code")  
   stripeCustomerId String? @map("stripe_customer_id")  
-  imageUrl String? @map("image_url") 
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/profile/img.png") @map("image_url")
   imageKey String? @map("image_key")  
   role Role    @default(USER) 
   createdAt DateTime @default(now()) @map("created_at")
@@ -45,7 +46,7 @@ model User {
 model Producer {
   id  String     @default(uuid()) @id
   userId String @unique
-  imageUrl String? @map("image_url") 
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
   imageKey String? @map("image_key")  
   businessName String @map("business_name")
   businessAddress String @map("business_address")
@@ -109,7 +110,7 @@ model BuyingTeam {
   frequency String 
   description String?
   isPublic Boolean? @default(true) @map("is_public")
-  imageUrl String? @map("image_url")  
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png")  @map("image_url")
   imageKey String? @map("image_key")  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -330,7 +331,8 @@ enum TeamStatus {
 }
 
 enum PaymentStatus {
-  PENDING  
+  PENDING
+  FAILED
   INTENT_CREATED
   CAPTURED
 }

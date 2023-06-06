@@ -81,6 +81,14 @@ export class PaymentService {
           },
         });
         orderId = result.id;
+
+        // accumulate amount paid
+        await this.prisma.order.update({
+          where: {
+            id: orderId,
+          },
+          data: { accumulatedAmount: { increment: chargeUserDto.amount } },
+        });
       }
 
       // record intent
@@ -158,5 +166,13 @@ export class PaymentService {
     try {
       return await stripe.paymentMethods.detach(id);
     } catch (error) {}
+  }
+
+  async captureFund(paymentIntentId: string): Promise<object | null> {
+    try {
+      return await stripe.paymentIntents.capture(paymentIntentId);
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
