@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsNotEmpty,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateTeamDto {
   @ApiProperty({
@@ -72,4 +78,13 @@ export class CreateTeamDto {
   @ValidateIf((o) => o.isPublic)
   @IsBoolean()
   isPublic: boolean;
+
+  @ApiProperty({
+    type: 'date',
+    description: 'The next delivery date of the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.nextDeliveryDate)
+  @IsDate()
+  nextDeliveryDate: Date;
 }

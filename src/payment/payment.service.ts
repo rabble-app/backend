@@ -51,6 +51,16 @@ export class PaymentService {
         customer: addPaymentCardDto.stripeCustomerId,
       });
 
+      // make it user default payment method
+      await this.userService.updateUser({
+        where: {
+          stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+        },
+        data: {
+          stripeDefaultPaymentMethodId: paymentMethod.id,
+        },
+      });
+
       return {
         paymentMethodId: paymentMethod.id,
       };
@@ -171,8 +181,6 @@ export class PaymentService {
   async captureFund(paymentIntentId: string): Promise<object | null> {
     try {
       return await stripe.paymentIntents.capture(paymentIntentId);
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 }

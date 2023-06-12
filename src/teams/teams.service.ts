@@ -50,9 +50,9 @@ export class TeamsService {
     });
 
     const currentDate = new Date();
-    // add i weeks to the current date
+    // add 6 days to the current date, order closes on the 7 day
     const nextWeekDate = new Date(
-      currentDate.getTime() + 1 * 7 * 24 * 60 * 60 * 1000,
+      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
     );
 
     // get amount paid and add it to accumulator
@@ -362,7 +362,16 @@ export class TeamsService {
         teamId: data.teamId,
       },
     });
+  }
 
-    return returnValue;
+  async skipDelivery(id: string): Promise<object> {
+    return await this.prisma.teamMember.update({
+      where: {
+        id,
+      },
+      data: {
+        skipNextDelivery: true,
+      },
+    });
   }
 }

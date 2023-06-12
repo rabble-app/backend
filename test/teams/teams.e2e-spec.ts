@@ -339,6 +339,20 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // skip next delivery for a particular buying team
+    it(
+      '/teams/members/skip-delivery/:id(GET) user should skip next delivery',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/members/skip-delivery/${teamMemberId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // return buying team of a user
     it(
       '/teams/user/:id(GET) should return the buying teams of a user',

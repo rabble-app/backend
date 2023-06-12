@@ -537,4 +537,34 @@ export class TeamsController {
       'Invite verified successfully',
     );
   }
+
+  /**
+   * return a particular buying team current order status.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('/members/skip-delivery/:id')
+  @ApiOkResponse({
+    description: 'Next delivery skipped successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the team membership',
+  })
+  async skipNextDelivery(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.skipDelivery(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Next delivery skipped successfully',
+    );
+  }
 }
