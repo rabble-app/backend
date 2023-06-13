@@ -58,6 +58,7 @@ export class PaymentService {
         },
         data: {
           stripeDefaultPaymentMethodId: paymentMethod.id,
+          cardLastFourDigits: addPaymentCardDto.cardNumber.slice(-4),
         },
       });
 

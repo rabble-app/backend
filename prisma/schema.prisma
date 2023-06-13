@@ -20,6 +20,7 @@ model User {
   postalCode String? @map("postal_code")  
   stripeCustomerId String? @unique @map("stripe_customer_id")  
   stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
+  cardLastFourDigits String? @map("card_last_four_digits") 
   imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/profile/img.png") @map("image_url")
   imageKey String? @map("image_key")  
   role Role    @default(USER) 
@@ -110,7 +111,7 @@ model BuyingTeam {
   hostId String    @map("host_id")
   frequency String 
   description String?
-  isPublic Boolean? @default(true) @map("is_public")
+  isPublic Boolean @default(true) @map("is_public")
   imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png")  @map("image_url")
   imageKey String? @map("image_key") 
   nextDeliveryDate DateTime? @map("next_delivery_date") 
@@ -165,6 +166,7 @@ model TeamRequest {
   id  String     @default(uuid()) @id 
   teamId String  @map("team_id")
   userId String  @map("user_id")
+  introduction String  
   status TeamStatus @default(PENDING)  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 

@@ -34,6 +34,12 @@ describe('PaymentController (e2e)', () => {
     paymentMethodId: '',
   };
 
+  const defaultCard = {
+    lastFourDigits: 2000,
+    customerId: '',
+    paymentMethodId: '',
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -78,6 +84,38 @@ describe('PaymentController (e2e)', () => {
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
         paymentMethodId = response.body.data.paymentMethodId;
+      },
+      testTime,
+    );
+
+    // add default card for payments
+    it(
+      '/payments/default-card(POST) should make card default for payment',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/default-card')
+          .send({
+            ...defaultCard,
+            stripeCustomerId: customerId,
+            paymentMethodId,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/payments/default-card(POST) should not make card default if uncompleted data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/default-card')
+          .send({ stripeCustomerId: customerId })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
       },
       testTime,
     );

@@ -24,12 +24,17 @@ import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
+import { MakeCardDefaultDto } from './dto/make-card-default.dto';
+import { UsersService } from 'src/users/users.service';
 
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentController {
   teamsService: any;
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly usersService: UsersService,
+  ) {}
 
   /**
    * Add new payment card for user.
@@ -53,6 +58,41 @@ export class PaymentController {
       HttpStatus.CREATED,
       false,
       'Card added successfully',
+    );
+  }
+
+  /**
+   * Make payment card default.
+   * @param {Body} makeCardDefaultDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('default-card')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({
+    description: 'Card made default payment option successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async makeCardDefault(
+    @Body() makeCardDefaultDto: MakeCardDefaultDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.updateUser({
+      where: {
+        stripeCustomerId: makeCardDefaultDto.stripeCustomerId,
+      },
+      data: {
+        cardLastFourDigits: makeCardDefaultDto.lastFourDigits,
+        stripeDefaultPaymentMethodId: makeCardDefaultDto.paymentMethodId,
+      },
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Card made default payment option successfully',
     );
   }
 

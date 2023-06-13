@@ -98,7 +98,7 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       where: {
         producerId: id,
-        isPublic: true,
+        isPublic:true,
       },
       include: {
         members: true,
@@ -256,10 +256,8 @@ export class TeamsService {
           },
         },
         host: {
-          select: {
-            firstName: true,
-            lastName: true,
-            imageUrl: true,
+          include:{
+            shipping:true
           },
         },
       },

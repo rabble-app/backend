@@ -209,6 +209,6 @@ describe('UserController (e2e)', () => {
         expect(typeof response.body.data).toBe('object');
       },
       testTime,
-    );
+    );  
   });
 });

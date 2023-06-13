@@ -38,6 +38,7 @@ describe('TeamsController (e2e)', () => {
     producerId: '3425',
     paymentIntentId: '',
     isPublic: true,
+    nextDeliveryDate: new Date(),
   };
 
   const buyingTeamUpdate = {
@@ -261,7 +262,11 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/join')
-          .send({ ...teamRequest, teamId: buyingTeamId })
+          .send({
+            ...teamRequest,
+            teamId: buyingTeamId,
+            introduction: 'Please allow me to join the team',
+          })
           .expect(201);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

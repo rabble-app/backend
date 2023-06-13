@@ -1,31 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class JoinTeamDto {
+export class MakeCardDefaultDto {
   @ApiProperty({
     type: 'string',
-    description: 'The user id',
+    description: 'The card last 4 digits',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  userId: string;
+  lastFourDigits: string;
 
   @ApiProperty({
-    type: 'string',
-    description: 'The buying team id',
+    type: 'number',
+    description: 'The user stripe customer id',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  teamId: string;
+  stripeCustomerId: string;
 
   @ApiProperty({
-    type: 'string',
-    description: 'The introduction',
+    type: 'number',
+    description: 'The payment method id',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  introduction: string;
+  paymentMethodId: string;
 }
