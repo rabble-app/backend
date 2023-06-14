@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { User, Prisma, Producer, Shipping, TeamMember } from '@prisma/client';
+import {
+  User,
+  Prisma,
+  Producer,
+  Shipping,
+  TeamMember,
+  BuyingTeam,
+} from '@prisma/client';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
 
@@ -146,6 +153,17 @@ export class UsersService {
     return await this.prisma.shipping.update({
       data,
       where,
+    });
+  }
+
+  async getMyTeams(userId: string): Promise<BuyingTeam[]> {
+    return await this.prisma.buyingTeam.findMany({
+      where: {
+        hostId: userId,
+      },
+      include: {
+        members: true,
+      },
     });
   }
 }

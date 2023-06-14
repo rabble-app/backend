@@ -66,7 +66,7 @@ export class ProductsService {
   }
 
   async getItemsUsersAlsoBought(id: string): Promise<object> {
-    return await this.prisma.buyingTeam.findMany({
+    const result = await this.prisma.buyingTeam.findMany({
       where: {
         producerId: id,
       },
@@ -86,5 +86,14 @@ export class ProductsService {
         },
       },
     });
+    const finalArray = [];
+
+    result.forEach((team) => {
+      team?.orders.forEach((order) => {
+        finalArray.push(...order.basket);
+      });
+    });
+
+    return finalArray;
   }
 }

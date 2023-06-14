@@ -280,4 +280,32 @@ export class UsersController {
       'Delivery address updated successfully',
     );
   }
+
+  /**
+   * return teams a user is host on.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('my-teams/:id')
+  @ApiOkResponse({ description: 'Users teams returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async myTeams(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getMyTeams(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Users teams returned successfully',
+    );
+  }
 }

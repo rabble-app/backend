@@ -209,6 +209,19 @@ describe('UserController (e2e)', () => {
         expect(typeof response.body.data).toBe('object');
       },
       testTime,
-    );  
+    );
+
+    it(
+      '/users/my-teams/:id(GET) should return teams the user is host on',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/my-teams/${userId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });
