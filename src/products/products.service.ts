@@ -64,4 +64,27 @@ export class ProductsService {
       },
     });
   }
+
+  async getItemsUsersAlsoBought(id: string): Promise<object> {
+    return await this.prisma.buyingTeam.findMany({
+      where: {
+        producerId: id,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: 3,
+      include: {
+        orders: {
+          include: {
+            basket: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }

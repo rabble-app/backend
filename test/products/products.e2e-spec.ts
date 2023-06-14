@@ -173,5 +173,19 @@ describe('ProductsController (e2e)', () => {
       },
       testTime,
     );
+
+    // users also bought
+    it(
+      '/products/also-bought/:producerId(GET) should return products users also bought',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/products/also-bought/${producerId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });
