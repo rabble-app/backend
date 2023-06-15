@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
-import { PaymentStatus } from '../lib/types';
+import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
-import { OrderStatus } from '@prisma/client';
+import { BuyingTeam, Order, OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class ScheduleService {
@@ -49,23 +49,18 @@ export class ScheduleService {
   }
 
   async createNewOrders() {
-    // for all buying teams, get their frequency
+    // for all buying teams that next shipment date is not beyound now,
+    // check their frequency
     // get their last order created date
     //  compare the infor to know whether it time to create new orders(if current timestamp - timestamp of last order is greater than the frequency)
     // if it is time, create new order for the team
     // duplicate the team members basket for the new order
-    // check skip next shipment
     // what if there is a change in price?
-    // const buyingTeams = await this.getAllBuyingTeams();
 
-    // // if we have such orders
-    // if (expiredOrders.length > 0) {
-    //   expiredOrders.forEach(async (order) => {
-    //     await this.updateOrderStatus(order.id, 'FAILED');
-    //   });
-    // }
+    const buyingTeams = await this.getTeams();
+    const intervalExpired = await this.processTeamFrequency(buyingTeams);
 
-    return true;
+    return buyingTeams;
   }
 
   async captureFunds(
@@ -106,6 +101,32 @@ export class ScheduleService {
           status: captureStatus,
         },
       });
+    });
+  }
+
+  async processTeamFrequency(teams: Array<IScheduleTeam>) {
+    const result: Array<IScheduleTeam> = [];
+
+    teams.forEach(async (team) => {
+      // get the payments authorization
+      const lastOrder = await this.prisma.order.findFirst({
+        where: {
+          teamId: team.id,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          createdAt: true,
+        },
+      });
+      if (
+        new Date().getTime() - lastOrder.createdAt.getTime() >
+        +team.frequency
+      ) {
+        console.log('here');
+      }
     });
   }
 
@@ -201,22 +222,25 @@ export class ScheduleService {
     });
   }
 
-  async getAllBuyingTeams() {
-    // return await this.prisma.buyingTeam.findMany({
-    //   where: {
-    //     status: 'PENDING',
-    //     deadline: {
-    //       lte: new Date(),
-    //     },
-    //     minimumTreshold: {
-    //       lte: this.prisma.order.fields.accumulatedAmount,
-    //     },
-    //   },
-    //   select: {
-    //     id: true,
-    //     minimumTreshold: true,
-    //   },
-    // });
+  async getTeams(): Promise<IScheduleTeam[] | null> {
+    return await this.prisma.buyingTeam.findMany({
+      where: {
+        OR: [
+          {
+            nextDeliveryDate: {
+              lte: new Date(),
+            },
+          },
+          {
+            nextDeliveryDate: null,
+          },
+        ],
+      },
+      select: {
+        id: true,
+        frequency: true,
+      },
+    });
   }
 
   async updateOrderStatus(orderId: string, status: OrderStatus) {

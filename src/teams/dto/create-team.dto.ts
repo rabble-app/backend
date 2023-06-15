@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDate,
   IsNotEmpty,
+  IsNumber,
   IsString,
   ValidateIf,
 } from 'class-validator';
@@ -50,8 +51,8 @@ export class CreateTeamDto {
     required: true,
   })
   @IsNotEmpty()
-  @IsString()
-  frequency: string;
+  @IsNumber()
+  frequency: number;
 
   @ApiProperty({
     type: 'string',

@@ -41,3 +41,7 @@ export interface IBasket {
   quantity: number;
   price: string;
 }
+export interface IScheduleTeam {
+  id: string;
+  frequency: number;
+}

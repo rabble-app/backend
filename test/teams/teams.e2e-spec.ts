@@ -33,7 +33,7 @@ describe('TeamsController (e2e)', () => {
     name: 'Team 003',
     postalCode: '234-54',
     hostId: '',
-    frequency: 'weekly',
+    frequency: 604800,
     description: 'Dummy description',
     producerId: '3425',
     paymentIntentId: '',

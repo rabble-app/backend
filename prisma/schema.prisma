@@ -147,7 +147,7 @@ model BuyingTeam {
   postalCode String @map("postal_code")
   producerId String @map("producer_id")
   hostId String    @map("host_id")
-  frequency String 
+  frequency Int @default(104500)
   description String?
   isPublic Boolean @default(true) @map("is_public")
   imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png")  @map("image_url")
