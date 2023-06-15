@@ -64,8 +64,33 @@ model Producer {
   reviews Review[]
   likes Like[]
   recentlyViewed RecentlyViewed[]
+  categories ProducerCategory[]
 
   @@map("producers")
+}
+
+model ProducerCategoryOption {
+  id  String  @default(uuid()) @id  
+  name String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  categories ProducerCategory[]
+
+  @@map("producer_categories_options")
+}
+
+model ProducerCategory {
+  id  String  @default(uuid()) @id  
+  producerId String @map("producer_id") 
+  producerCategoryOptionId String @map("producer_category_option_id") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+ 
+  producer Producer  @relation(fields: [producerId], references: [id])
+  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id])
+
+  @@map("producer_categories")
 }
 
 model Shipping {
@@ -89,18 +114,31 @@ model Product {
   imageKey String? @map("image_key")  
   description String?
   producerId String @map("producer_id")
+  categoryId String? @map("category_id")
   price Int
   status ProductStatus   @default(IN_STOCK)   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   producer  Producer       @relation(fields: [producerId], references: [id])  
+  category  ProductCategory?  @relation(fields: [categoryId], references: [id]) 
   reviews  Review[]
   likes Like[]
   basket Basket[]
   recentlyViewed RecentlyViewed[]
 
   @@map("products")
+}
+
+model ProductCategory {
+  id  String  @default(uuid()) @id  
+  name String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  products Product[]
+
+  @@map("product_category")
 }
 
 model BuyingTeam {
@@ -309,6 +347,7 @@ model RecentlyViewed {
 
   @@map("recently_viewed")
 }
+
 
 enum OrderStatus {
   PENDING

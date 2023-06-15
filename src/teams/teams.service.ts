@@ -102,6 +102,21 @@ export class TeamsService {
       },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -114,6 +129,21 @@ export class TeamsService {
       },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -127,6 +157,21 @@ export class TeamsService {
       },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -223,7 +268,26 @@ export class TeamsService {
         userId: id,
       },
       include: {
-        team: true,
+        team: {
+          include: {
+            members: true,
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -258,6 +322,21 @@ export class TeamsService {
         host: {
           include: {
             shipping: true,
+          },
+        },
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
           },
         },
       },

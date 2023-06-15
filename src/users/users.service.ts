@@ -52,7 +52,13 @@ export class UsersService {
     return await this.prisma.producer.findMany({
       skip: offset,
       take: 10,
-      include: { user: true },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
   }
 
@@ -163,6 +169,21 @@ export class UsersService {
       },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
   }
