@@ -117,6 +117,12 @@ export class TeamsService {
             },
           },
         },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
   }
@@ -142,6 +148,12 @@ export class TeamsService {
                 category: true,
               },
             },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -170,6 +182,12 @@ export class TeamsService {
                 category: true,
               },
             },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -284,6 +302,12 @@ export class TeamsService {
                     category: true,
                   },
                 },
+              },
+            },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
               },
             },
           },

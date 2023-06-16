@@ -102,6 +102,27 @@ export class UsersService {
                 },
               },
             },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -133,6 +154,27 @@ export class UsersService {
                         name: true,
                       },
                     },
+                  },
+                },
+              },
+            },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
                   },
                 },
               },
@@ -182,6 +224,12 @@ export class UsersService {
                 category: true,
               },
             },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
           },
         },
       },

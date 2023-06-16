@@ -123,7 +123,7 @@ export class ScheduleService {
       });
       if (
         new Date().getTime() - lastOrder.createdAt.getTime() >
-        +team.frequency
+        team.frequency
       ) {
         console.log('here');
       }
