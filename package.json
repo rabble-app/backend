@@ -24,7 +24,8 @@
     "deploy": "npm ci && npm run build && npm run start:prod",
     "migration:generate": "npx prisma migrate dev --name",
     "migration": "npx prisma migrate dev",
-    "schema:generate": "npx prisma generate"
+    "schema:generate": "npx prisma generate",
+    "postinstall": "npm run schema:generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.341.0",
