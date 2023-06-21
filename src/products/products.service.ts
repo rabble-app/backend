@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { Product, RecentlyViewed } from '@prisma/client';
+import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 
@@ -25,12 +25,27 @@ export class ProductsService {
     });
   }
 
-  async getProducerProducts(id: string): Promise<Product[] | null> {
-    return await this.prisma.product.findMany({
-      where: {
-        producerId: id,
+  async getProducerProducts(id: string): Promise<ProductCategory[] | null> {
+    const finalResult: ProductCategory[] = [];
+
+    const result = await this.prisma.productCategory.findMany({
+      include: {
+        products: {
+          where: {
+            producerId: id,
+          },
+        },
       },
     });
+
+    for (let index = 0; index < result.length; index++) {
+      const category = result[index];
+      if (category.products.length > 0) {
+        finalResult.push(category);
+      }
+    }
+
+    return finalResult;
   }
 
   async searchProducts(keyword: string): Promise<Product[] | null> {
