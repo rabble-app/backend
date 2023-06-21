@@ -3,7 +3,9 @@ import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
 import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
-import { BuyingTeam, Order, OrderStatus } from '@prisma/client';
+import { OrderStatus } from '@prisma/client';
+import { UsersService } from 'src/users/users.service';
+import { ProductsService } from 'src/products/products.service';
 
 @Injectable()
 export class ScheduleService {
@@ -11,6 +13,8 @@ export class ScheduleService {
     private prisma: PrismaService,
     private paymentService: PaymentService,
     private notificationsService: NotificationsService,
+    private usersService: UsersService,
+    private productsService: ProductsService,
   ) {}
 
   async chargeUsers() {
@@ -48,19 +52,18 @@ export class ScheduleService {
     return true;
   }
 
-  async createNewOrders() {
-    // for all buying teams that next shipment date is not beyound now,
-    // check their frequency
-    // get their last order created date
-    //  compare the infor to know whether it time to create new orders(if current timestamp - timestamp of last order is greater than the frequency)
-    // if it is time, create new order for the team
-    // duplicate the team members basket for the new order
-    // what if there is a change in price?
+  async authorizePayments() {
+    // get pending payment
+    // try to authorize payment
+    return '23';
+  }
 
+  async handleNewOrders() {
     const buyingTeams = await this.getTeams();
-    const intervalExpired = await this.processTeamFrequency(buyingTeams);
+    if (buyingTeams && buyingTeams.length > 0)
+      await this.processNewOrders(buyingTeams);
 
-    return buyingTeams;
+    return true;
   }
 
   async captureFunds(
@@ -104,11 +107,10 @@ export class ScheduleService {
     });
   }
 
-  async processTeamFrequency(teams: Array<IScheduleTeam>) {
-    const result: Array<IScheduleTeam> = [];
-
-    teams.forEach(async (team) => {
-      // get the payments authorization
+  async processNewOrders(teams: Array<IScheduleTeam>) {
+    // check if interval has passed
+    for (let index = 0; index < teams.length; index++) {
+      const team = teams[index];
       const lastOrder = await this.prisma.order.findFirst({
         where: {
           teamId: team.id,
@@ -118,16 +120,23 @@ export class ScheduleService {
         },
         select: {
           id: true,
+          teamId: true,
+          minimumTreshold: true,
           createdAt: true,
         },
       });
+      // if interval has passed
       if (
         new Date().getTime() - lastOrder.createdAt.getTime() >
         team.frequency
       ) {
-        console.log('here');
+        // create new order
+        const newOrder = await this.createNewOrder(team);
+
+        // create basket for users
+        await this.createUserBasket(lastOrder.id, newOrder.id);
       }
-    });
+    }
   }
 
   async processPendingOrders(pendingOrders: Array<{ id: string }>) {
@@ -173,6 +182,80 @@ export class ScheduleService {
         await this.updateOrderStatus(order.id, 'SUCCESSFUL');
       }
     });
+  }
+
+  async createNewOrder(team: IScheduleTeam) {
+    // create new order
+    const currentDate = new Date();
+    // add 6 days to the current date, order closes on the 7 day
+    const nextWeekDate = new Date(
+      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
+    );
+
+    // get producer threshold
+    const producer = await this.usersService.findProducer({
+      id: team.producerId,
+    });
+
+    const orderObject = {
+      teamId: team.id,
+      minimumTreshold: producer.minimumTreshold,
+      deadline: nextWeekDate,
+    };
+
+    return await this.prisma.order.create({
+      data: orderObject,
+    });
+  }
+
+  async createUserBasket(lastOrderId: string, newOrderId: string) {
+    const lastOrderProducts = await this.prisma.basket.findMany({
+      where: {
+        orderId: lastOrderId,
+      },
+    });
+
+    if (lastOrderProducts && lastOrderProducts.length > 0) {
+      let totalAmount = 0; // amount to be paid by the user
+
+      for (let index = 0; index < lastOrderProducts.length; index++) {
+        const oldProduct = lastOrderProducts[index];
+
+        // get the product infor to check for change in price and stock
+        const product = await this.productsService.getProduct(
+          oldProduct.productId,
+        );
+
+        if (product.status == 'OUT_OF_STOCK') {
+          continue;
+        }
+
+        const newProduct = {
+          orderId: newOrderId,
+          userId: oldProduct.userId,
+          productId: oldProduct.productId,
+          quantity: oldProduct.quantity,
+          price: product.price,
+        };
+
+        // add to basket
+        await this.prisma.basket.create({
+          data: newProduct,
+        });
+
+        // increment totalAmount
+        totalAmount += product.price;
+
+        // record the payment to be made by the user
+        await this.paymentService.recordPayment({
+          orderId: newOrderId,
+          userId: oldProduct.userId,
+          amount: totalAmount,
+          paymentIntentId: 'null',
+          status: PaymentStatus.PENDING,
+        });
+      }
+    }
   }
 
   async getFullPendingOrders() {
@@ -239,6 +322,7 @@ export class ScheduleService {
       select: {
         id: true,
         frequency: true,
+        producerId: true,
       },
     });
   }
@@ -253,4 +337,25 @@ export class ScheduleService {
       },
     });
   }
+
+  // async getPendingOrders() {
+  //   return await this.prisma.order.findMany({
+  //     where: {
+  //       status: 'PENDING',
+  //       deadline: {
+  //         gte: new Date(),
+  //       },
+  //     },
+  //     select: {
+  //       id: true,
+  //     },
+  //     include:{
+  //       payments:{
+  //         select:{
+
+  //         }
+  //       }
+  //     }
+  //   });
+  // }
 }

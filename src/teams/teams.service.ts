@@ -363,6 +363,16 @@ export class TeamsService {
             },
           },
         },
+        requests: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
     });
   }

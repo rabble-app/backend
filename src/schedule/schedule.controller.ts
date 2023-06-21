@@ -96,13 +96,36 @@ export class ScheduleController {
   async createOrders(
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.scheduleService.createNewOrders();
+    const result = await this.scheduleService.handleNewOrders();
     return formatResponse(
       result,
       res,
       HttpStatus.OK,
       false,
       'Create order function performed successfully',
+    );
+  }
+
+  /**
+   * authorize payment.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('authorize-payment')
+  @ApiOkResponse({
+    description: 'Authorize payment function performed successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async authorizePayment(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleService.authorizePayments();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Authorize payment function performed successfully',
     );
   }
 }

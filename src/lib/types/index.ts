@@ -44,4 +44,5 @@ export interface IBasket {
 export interface IScheduleTeam {
   id: string;
   frequency: number;
+  producerId: string;
 }

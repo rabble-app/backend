@@ -14,7 +14,7 @@ provider:
 
 functions:
   api:
-    handler: src/lambda.handler
+    handler: dist/lambda.handler
     events:
       - httpApi:
           method: any
@@ -24,7 +24,6 @@ plugins:
   - serverless-dotenv-plugin
   - serverless-offline
   - serverless-webpack
-  # - serverless-webpack-prisma
 
 custom:
   webpack:
@@ -35,14 +34,17 @@ custom:
       scripts: # this is the magic
         - npx prisma generate
 
-#   optimize:
-#     external: ['swagger-ui-dist']
-
-package:
-  # individually: true
-  patterns:
-    - '!node_modules/**'
-    - 'node_modules/.prisma/**'
-
+# custom:
+#   esbuild:
+#     bundle: true
+#     minify: false
+#     packager: 'npm'
+#     external: 'node_modules'
+#     # exclude: 'aws-sdk'
+#     # target: node18.16.0
+#     # define:
+#     #   'require.resolve': undefined
+#     # platform: node
+#     # concurrency: 10
  
 

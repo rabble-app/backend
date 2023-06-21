@@ -25,7 +25,7 @@ import { Response } from 'express';
 import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('payments')
 @Controller('payments')
