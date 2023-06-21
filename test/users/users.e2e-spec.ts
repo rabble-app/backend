@@ -223,5 +223,18 @@ describe('UserController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/users/requests/:id(GET) should return requests user has made',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/requests/${userId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

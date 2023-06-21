@@ -7,6 +7,7 @@ import {
   Shipping,
   TeamMember,
   BuyingTeam,
+  TeamRequest,
 } from '@prisma/client';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
@@ -230,6 +231,22 @@ export class UsersService {
           select: {
             firstName: true,
             lastName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getMyRequests(userId: string): Promise<TeamRequest[]> {
+    return await this.prisma.teamRequest.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        team: {
+          select: {
+            name: true,
+            postalCode: true,
           },
         },
       },
