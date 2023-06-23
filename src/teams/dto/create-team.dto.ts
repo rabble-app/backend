@@ -2,10 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsDate,
+  IsDateString,
+  IsISO8601,
   IsNotEmpty,
   IsNumber,
   IsString,
   ValidateIf,
+  isISO8601,
 } from 'class-validator';
 
 export class CreateTeamDto {
@@ -86,6 +89,6 @@ export class CreateTeamDto {
     required: false,
   })
   @ValidateIf((o) => o.nextDeliveryDate)
-  @IsDate()
+  @IsISO8601()
   nextDeliveryDate: Date;
 }
