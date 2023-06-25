@@ -329,6 +329,33 @@ describe('TeamsController (e2e)', () => {
       },
       testTime,
     );
+    // add a user as member of team after accepting invite
+    it(
+      '/teams/add-member(POST) should add a user as team member',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/teams/add-member')
+          .send({ userId: user.id, teamId: buyingTeamId, status: 'APPROVED' })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/add-member(POST) should not add a user as team member if incomplete infor is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/teams/add-member')
+          .send({ userId: user.id })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // return members of a buying team
     it(

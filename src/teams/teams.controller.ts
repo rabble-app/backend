@@ -30,6 +30,7 @@ import { NudgeTeamMemberDto } from './dto/nudge-team-member.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { VerifyInviteDto } from './dto/verify-invite.dto';
+import { AddMemberDto } from './dto/add-member.dto';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -565,6 +566,33 @@ export class TeamsController {
       HttpStatus.OK,
       false,
       'Next delivery skipped successfully',
+    );
+  }
+
+  /**
+   * add user to team.
+   * @param {Body} addMemberDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('/add-member')
+  @ApiOkResponse({
+    description: 'New member added successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invaid information supplied' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async addToTeam(
+    @Body() addMemberDto: AddMemberDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.addTeamMember(addMemberDto);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'New member added successfully',
     );
   }
 }

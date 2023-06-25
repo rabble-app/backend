@@ -472,6 +472,10 @@ export class TeamsService {
         phone: data.phone,
         teamId: data.teamId,
       },
+      select: {
+        phone: true,
+        teamId: true,
+      },
     });
 
     if (!record) return returnValue;
@@ -481,18 +485,6 @@ export class TeamsService {
       where: {
         id: record.teamId,
       },
-    });
-
-    // get the team latest order id
-    const orderId = await this.prisma.order.findFirst({
-      where: {
-        teamId: record.teamId,
-      },
-      orderBy: [
-        {
-          createdAt: 'desc',
-        },
-      ],
     });
 
     // get producer info
@@ -511,7 +503,6 @@ export class TeamsService {
 
     record['teamName'] = team.name;
     record['producerInfo'] = producer;
-    record['orderId'] = orderId;
     return record;
   }
 

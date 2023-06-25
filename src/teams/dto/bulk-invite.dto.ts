@@ -1,12 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  ValidateNested,
-  ArrayMinSize,
-  IsString,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsArray, ArrayMinSize, IsString, IsNotEmpty } from 'class-validator';
 
 export class BulkInviteDto {
   @ApiProperty({
