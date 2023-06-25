@@ -466,13 +466,53 @@ export class TeamsService {
     const data = this.authService.decodeToken(token);
     if (!data) return returnValue;
     // confirm that we have that record
-    return await this.prisma.invite.findFirst({
+    const record = await this.prisma.invite.findFirst({
       where: {
         userId: data.userId,
         phone: data.phone,
         teamId: data.teamId,
       },
     });
+
+    if (!record) return returnValue;
+
+    // get team info
+    const team = await this.prisma.buyingTeam.findFirst({
+      where: {
+        id: record.teamId,
+      },
+    });
+
+    // get the team latest order id
+    const orderId = await this.prisma.order.findFirst({
+      where: {
+        teamId: record.teamId,
+      },
+      orderBy: [
+        {
+          createdAt: 'desc',
+        },
+      ],
+    });
+
+    // get producer info
+    const producer = await this.prisma.producer.findFirst({
+      where: {
+        id: team.producerId,
+      },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+
+    record['teamName'] = team.name;
+    record['producerInfo'] = producer;
+    record['orderId'] = orderId;
+    return record;
   }
 
   async skipDelivery(id: string): Promise<object> {
