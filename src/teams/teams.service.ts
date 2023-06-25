@@ -394,11 +394,9 @@ export class TeamsService {
         },
         payments: true,
       },
-      orderBy: [
-        {
-          createdAt: 'desc',
-        },
-      ],
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 
@@ -500,9 +498,22 @@ export class TeamsService {
         },
       },
     });
+    // return current order id
+    const recentOrder = await this.prisma.order.findFirst({
+      where: {
+        teamId: record.teamId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+      },
+    });
 
     record['teamName'] = team.name;
     record['producerInfo'] = producer;
+    record['orderId'] = recentOrder.id;
     return record;
   }
 
