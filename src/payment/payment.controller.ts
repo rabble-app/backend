@@ -26,6 +26,7 @@ import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
+import { UpdateBasketItemDto } from './dto/update-basket-item.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -182,7 +183,7 @@ export class PaymentController {
 
   /**
    * delete item from basket.
-   * @param {id} teamId
+   * @param {id} itemId
    * @param {Response} res - The payload.
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
@@ -266,6 +267,40 @@ export class PaymentController {
       HttpStatus.OK,
       false,
       'Payment option removed successfully',
+    );
+  }
+
+  /**
+   * Update item in basket
+   * @param {Body} updateBasketItemDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Patch('basket/:itemId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Item updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'itemId',
+    required: true,
+    description: 'The id of the item you want to update',
+  })
+  async updateItemInBasket(
+    @Param('itemId') id: string,
+    @Body() updateBasketItemDto: UpdateBasketItemDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentService.updateBasketItem({
+      where: { id },
+      data: updateBasketItemDto,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Item updated successfully',
     );
   }
 }

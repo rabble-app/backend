@@ -275,6 +275,25 @@ describe('PaymentController (e2e)', () => {
         expect(typeof response.body.error).toBe('string');
       });
 
+      // update item in basket
+      it(
+        '/payments/basket/:itemId (PATCH) should update item in basket',
+        async () => {
+          const basket = {
+            quantity: 6,
+            price: 500,
+          };
+          const response = await request(app.getHttpServer())
+            .patch(`/payments/basket/${itemId}`)
+            .send(basket)
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+
       // delete item from cart
       it(
         '/payments/basket/:id(DELETE) should delete item from cart',

@@ -184,4 +184,14 @@ export class PaymentService {
       return await stripe.paymentIntents.capture(paymentIntentId);
     } catch (error) {}
   }
+  async updateBasketItem(params: {
+    where: Prisma.BasketWhereUniqueInput;
+    data: Prisma.BasketUpdateInput;
+  }): Promise<Basket> {
+    const { where, data } = params;
+    return await this.prisma.basket.update({
+      data,
+      where,
+    });
+  }
 }
