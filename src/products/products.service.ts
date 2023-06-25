@@ -111,4 +111,12 @@ export class ProductsService {
 
     return finalArray;
   }
+
+  async getProductNormal(producerId: string): Promise<Product[] | null> {
+    return await this.prisma.product.findMany({
+      where: {
+        producerId,
+      },
+    });
+  }
 }

@@ -187,5 +187,19 @@ describe('ProductsController (e2e)', () => {
       },
       testTime,
     );
+
+    // return producers product normal
+    it(
+      '/products/normal/:producerId(GET) should return products of a producer',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/products/normal/${producerId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });
