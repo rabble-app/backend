@@ -24,7 +24,6 @@ describe('PaymentController (e2e)', () => {
     expiringMonth: 1,
     expiringYear: 2033,
     cvc: '314',
-    phone,
   };
 
   const chargeInfo = {
@@ -158,6 +157,34 @@ describe('PaymentController (e2e)', () => {
             customerId: 'cus_NtREO3efDC5Mv',
             paymentMethodId,
           })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
+
+    // create payment intent
+    it(
+      '/payments/intent(POST) should create payment intent',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/intent')
+          .send({ ...chargeInfo, customerId })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/payments/charge(POST) should not create payment intent if uncompleted data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/intent')
+          .send({ ...chargeInfo })
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');

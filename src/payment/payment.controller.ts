@@ -27,6 +27,7 @@ import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
 import { UpdateBasketItemDto } from './dto/update-basket-item.dto';
+import { CreateIntentDto } from './dto/create-intent.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -301,6 +302,30 @@ export class PaymentController {
       HttpStatus.OK,
       false,
       'Item updated successfully',
+    );
+  }
+  /**
+   * Create Payment intent
+   * @param {Body} createIntentDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('intent')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Payment intent created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async createIntent(
+    @Body() createIntentDto: CreateIntentDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentService.createIntent(createIntentDto);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Payment intent created successfully',
     );
   }
 }
