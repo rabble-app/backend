@@ -82,7 +82,7 @@ export class PaymentController {
   ): Promise<IAPIResponse> {
     const result = await this.usersService.updateUser({
       where: {
-        stripeCustomerId: makeCardDefaultDto.stripeCustomerId,
+        id: makeCardDefaultDto.userId,
       },
       data: {
         cardLastFourDigits: makeCardDefaultDto.lastFourDigits,

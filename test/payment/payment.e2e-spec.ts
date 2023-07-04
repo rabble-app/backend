@@ -11,7 +11,7 @@ describe('PaymentController (e2e)', () => {
   let prisma: PrismaService;
 
   const phone = faker.phone.number();
-  const customerId = 'cus_NtREO3efDC5MQv';
+  const customerId = 'cus_O1i4o3PuiFs1Ot';
   let paymentMethodId: string;
   let userId: string;
   let product: Product;
@@ -31,12 +31,13 @@ describe('PaymentController (e2e)', () => {
     currency: 'gbp',
     customerId: '',
     paymentMethodId: '',
+    userId: '',
   };
 
   const defaultCard = {
-    lastFourDigits: 2000,
-    customerId: '',
+    lastFourDigits: '4343',
     paymentMethodId: '',
+    userId: '',
   };
 
   beforeAll(async () => {
@@ -95,7 +96,7 @@ describe('PaymentController (e2e)', () => {
           .post('/payments/default-card')
           .send({
             ...defaultCard,
-            stripeCustomerId: customerId,
+            userId,
             paymentMethodId,
           })
           .expect(200);
@@ -125,7 +126,7 @@ describe('PaymentController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/payments/charge')
-          .send({ ...chargeInfo, customerId, paymentMethodId })
+          .send({ ...chargeInfo, customerId, paymentMethodId, userId })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

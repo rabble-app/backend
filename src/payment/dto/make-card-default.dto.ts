@@ -12,16 +12,16 @@ export class MakeCardDefaultDto {
   lastFourDigits: string;
 
   @ApiProperty({
-    type: 'number',
-    description: 'The user stripe customer id',
+    type: 'string',
+    description: 'The user id',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  stripeCustomerId: string;
+  userId: string;
 
   @ApiProperty({
-    type: 'number',
+    type: 'string',
     description: 'The payment method id',
     required: true,
   })

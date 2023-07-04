@@ -14,7 +14,7 @@ describe('TeamsController (e2e)', () => {
   let authService: AuthService;
 
   const phone = faker.phone.number();
-  const customerId = 'cus_NtREO3efDC5MQv';
+  const customerId = 'cus_O1i4o3PuiFs1Ot';
   let paymentMethodId: string;
   let inviteToken: string;
 
@@ -57,14 +57,14 @@ describe('TeamsController (e2e)', () => {
     expiringMonth: 1,
     expiringYear: 2033,
     cvc: '314',
-    stripeCustomerId: customerId,
   };
 
   const chargeInfo = {
     amount: 2000,
     currency: 'gbp',
-    customerId,
+    customerId: '',
     paymentMethodId: '',
+    userId: '',
   };
 
   beforeAll(async () => {
@@ -144,7 +144,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/payments/add-card')
-          .send({ ...cardInfo })
+          .send({ ...cardInfo, stripeCustomerId: customerId })
           .expect(201);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -160,7 +160,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/payments/charge')
-          .send({ ...chargeInfo, paymentMethodId, userId: user.id })
+          .send({ ...chargeInfo, customerId, paymentMethodId, userId: user.id })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -334,7 +334,7 @@ describe('TeamsController (e2e)', () => {
       '/teams/add-member(POST) should add a user as team member',
       async () => {
         const response = await request(app.getHttpServer())
-          .patch('/teams/add-member')
+          .post('/teams/add-member')
           .send({ userId: user.id, teamId: buyingTeamId, status: 'APPROVED' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -345,10 +345,10 @@ describe('TeamsController (e2e)', () => {
     );
 
     it(
-      '/teams/add-member(POST) should not add a user as team member if incomplete infor is supplied',
+      '/teams/add-member(POST) should not add a user as team member if incomplete information is supplied',
       async () => {
         const response = await request(app.getHttpServer())
-          .patch('/teams/add-member')
+          .post('/teams/add-member')
           .send({ userId: user.id })
           .expect(400);
         expect(response.body).toHaveProperty('error');
