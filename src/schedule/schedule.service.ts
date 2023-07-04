@@ -57,7 +57,10 @@ export class ScheduleService {
       const result = await this.getPendingPayment();
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
-          if (payment.user.stripeDefaultPaymentMethodId) {
+          if (
+            payment.user.stripeDefaultPaymentMethodId &&
+            payment.user.stripeCustomerId
+          ) {
             // authorize payment for this user
             const paymentRecord =
               await this.paymentService.schedulePaymentAuthorization({
@@ -116,186 +119,197 @@ export class ScheduleService {
     pendingPayments.forEach(async (payment) => {
       let captureStatus = PaymentStatus.CAPTURED;
       // be sure that it has not been captured before
+      if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
+        const result = await this.paymentService.captureFund(
+          payment.paymentIntentId,
+        );
 
-      const result = await this.paymentService.captureFund(
-        payment.paymentIntentId,
-      );
+        // check whether capture was successful and send notification if not
+        if (result['status'] != 'succeeded') {
+          captureStatus = PaymentStatus.FAILED;
 
-      // check whether capture was successful and send notification if not
-      if (result['status'] != 'succeeded') {
-        captureStatus = PaymentStatus.FAILED;
-
-        // send notification
-        await this.notificationsService.createNotification({
-          title: 'Payment Failure',
-          text: `We were unable to charge your card for your order with id ${payment.orderId}`,
-          userId: payment.userId,
-          orderId: payment.orderId,
-          teamId: '',
-          producerId: '',
+          // send notification
+          await this.notificationsService.createNotification({
+            title: 'Payment Failure',
+            text: `We were unable to charge your card for your order with id ${payment.orderId}`,
+            userId: payment.userId,
+            orderId: payment.orderId,
+            teamId: '',
+            producerId: '',
+          });
+        }
+        // update the payment status to captured or failed, depending on the success of the capture
+        await this.prisma.payment.update({
+          where: {
+            paymentIntentId: payment.paymentIntentId,
+          },
+          data: {
+            status: captureStatus,
+          },
         });
       }
-      // update the payment status to captured or failed, depending on the success of the capture
-      await this.prisma.payment.update({
-        where: {
-          paymentIntentId: payment.paymentIntentId,
-        },
-        data: {
-          status: captureStatus,
-        },
-      });
     });
   }
 
   async processNewOrders(teams: Array<IScheduleTeam>) {
-    // check if interval has passed
-    for (let index = 0; index < teams.length; index++) {
-      const team = teams[index];
-      const lastOrder = await this.prisma.order.findFirst({
-        where: {
-          teamId: team.id,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        select: {
-          id: true,
-          teamId: true,
-          minimumTreshold: true,
-          createdAt: true,
-        },
-      });
-      // if interval has passed
-      if (
-        new Date().getTime() - lastOrder.createdAt.getTime() >
-        team.frequency
-      ) {
-        // create new order
-        const newOrder = await this.createNewOrder(team);
+    try {
+      // check if interval has passed
+      for (let index = 0; index < teams.length; index++) {
+        const team = teams[index];
+        const lastOrder = await this.prisma.order.findFirst({
+          where: {
+            teamId: team.id,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          select: {
+            id: true,
+            teamId: true,
+            minimumTreshold: true,
+            createdAt: true,
+          },
+        });
+        // if interval has passed
+        if (
+          new Date().getTime() - lastOrder.createdAt.getTime() >
+          team.frequency
+        ) {
+          // create new order
+          const newOrder = await this.createNewOrder(team);
 
-        // create basket for users
-        await this.createUserBasket(lastOrder.id, newOrder.id);
+          // create basket for users
+          await this.createUserBasket(lastOrder.id, newOrder.id);
+        }
       }
-    }
+    } catch (error) {}
   }
 
   async processPendingOrders(pendingOrders: Array<{ id: string }>) {
-    pendingOrders.forEach(async (order) => {
-      // get the payments authorization
-      const pendingPayments = await this.prisma.payment.findMany({
-        where: {
-          orderId: order.id,
-          status: {
-            not: 'CAPTURED',
+    try {
+      pendingOrders.forEach(async (order) => {
+        // get the payments authorization
+        const pendingPayments = await this.prisma.payment.findMany({
+          where: {
+            orderId: order.id,
+            status: {
+              not: 'CAPTURED',
+            },
           },
-        },
-        select: {
-          paymentIntentId: true,
-          userId: true,
-          orderId: true,
-        },
-      });
+          select: {
+            paymentIntentId: true,
+            userId: true,
+            orderId: true,
+          },
+        });
 
-      // capture the fund
-      if (pendingPayments.length > 0) {
-        await this.captureFunds(pendingPayments);
-      }
-    });
+        // capture the fund
+        if (pendingPayments.length > 0) {
+          await this.captureFunds(pendingPayments);
+        }
+      });
+    } catch (error) {}
   }
 
   async processCompleteOrders(
     pendingOrders: Array<{ id: string; minimumTreshold: number }>,
   ) {
-    pendingOrders.forEach(async (order) => {
-      // get the captured payments
-      const capturedPayments = await this.prisma.payment.aggregate({
-        where: {
-          orderId: order.id,
-          status: 'CAPTURED',
-        },
-        _sum: {
-          amount: true,
-        },
-      });
+    try {
+      pendingOrders.forEach(async (order) => {
+        // get the captured payments
+        const capturedPayments = await this.prisma.payment.aggregate({
+          where: {
+            orderId: order.id,
+            status: 'CAPTURED',
+          },
+          _sum: {
+            amount: true,
+          },
+        });
 
-      if (capturedPayments._sum.amount >= order.minimumTreshold) {
-        await this.updateOrderStatus(order.id, 'SUCCESSFUL');
-      }
-    });
+        if (capturedPayments._sum.amount >= order.minimumTreshold) {
+          await this.updateOrderStatus(order.id, 'SUCCESSFUL');
+        }
+      });
+    } catch (error) {}
   }
 
   async createNewOrder(team: IScheduleTeam) {
-    // create new order
-    const currentDate = new Date();
-    // add 6 days to the current date, order closes on the 7 day
-    const nextWeekDate = new Date(
-      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
-    );
+    try {
+      // create new order
+      const currentDate = new Date();
+      // add 6 days to the current date, order closes on the 7 day
+      const nextWeekDate = new Date(
+        currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
+      );
 
-    // get producer threshold
-    const producer = await this.usersService.findProducer({
-      id: team.producerId,
-    });
+      // get producer threshold
+      const producer = await this.usersService.findProducer({
+        id: team.producerId,
+      });
 
-    const orderObject = {
-      teamId: team.id,
-      minimumTreshold: producer.minimumTreshold,
-      deadline: nextWeekDate,
-    };
+      const orderObject = {
+        teamId: team.id,
+        minimumTreshold: producer.minimumTreshold,
+        deadline: nextWeekDate,
+      };
 
-    return await this.prisma.order.create({
-      data: orderObject,
-    });
+      return await this.prisma.order.create({
+        data: orderObject,
+      });
+    } catch (error) {}
   }
 
   async createUserBasket(lastOrderId: string, newOrderId: string) {
-    const lastOrderProducts = await this.prisma.basket.findMany({
-      where: {
-        orderId: lastOrderId,
-      },
-    });
+    try {
+      const lastOrderProducts = await this.prisma.basket.findMany({
+        where: {
+          orderId: lastOrderId,
+        },
+      });
 
-    if (lastOrderProducts && lastOrderProducts.length > 0) {
-      let totalAmount = 0; // amount to be paid by the user
+      if (lastOrderProducts && lastOrderProducts.length > 0) {
+        let totalAmount = 0; // amount to be paid by the user
 
-      for (let index = 0; index < lastOrderProducts.length; index++) {
-        const oldProduct = lastOrderProducts[index];
+        for (let index = 0; index < lastOrderProducts.length; index++) {
+          const oldProduct = lastOrderProducts[index];
 
-        // get the product infor to check for change in price and stock
-        const product = await this.productsService.getProduct(
-          oldProduct.productId,
-        );
+          // get the product infor to check for change in price and stock
+          const product = await this.productsService.getProduct(
+            oldProduct.productId,
+          );
 
-        if (product.status == 'OUT_OF_STOCK') {
-          continue;
+          if (product.status == 'OUT_OF_STOCK') {
+            continue;
+          }
+
+          const newProduct = {
+            orderId: newOrderId,
+            userId: oldProduct.userId,
+            productId: oldProduct.productId,
+            quantity: oldProduct.quantity,
+            price: product.price,
+          };
+
+          // add to basket
+          await this.prisma.basket.create({
+            data: newProduct,
+          });
+
+          // increment totalAmount
+          totalAmount += product.price;
+
+          // record the payment to be made by the user
+          await this.paymentService.recordPayment({
+            orderId: newOrderId,
+            userId: oldProduct.userId,
+            amount: totalAmount,
+            paymentIntentId: 'null',
+            status: PaymentStatus.PENDING,
+          });
         }
-
-        const newProduct = {
-          orderId: newOrderId,
-          userId: oldProduct.userId,
-          productId: oldProduct.productId,
-          quantity: oldProduct.quantity,
-          price: product.price,
-        };
-
-        // add to basket
-        await this.prisma.basket.create({
-          data: newProduct,
-        });
-
-        // increment totalAmount
-        totalAmount += product.price;
-
-        // record the payment to be made by the user
-        await this.paymentService.recordPayment({
-          orderId: newOrderId,
-          userId: oldProduct.userId,
-          amount: totalAmount,
-          paymentIntentId: 'null',
-          status: PaymentStatus.PENDING,
-        });
       }
-    }
+    } catch (error) {}
   }
 
   async getFullPendingOrders() {
