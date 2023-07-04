@@ -4,8 +4,8 @@ import { PaymentService } from '../payment/payment.service';
 import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
 import { OrderStatus } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
-import { ProductsService } from 'src/products/products.service';
+import { ProductsService } from '../products/products.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ScheduleService {

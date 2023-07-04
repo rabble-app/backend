@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { Status } from 'src/lib/types';
+import { Status } from '../../lib/types';
 
 export class AddMemberDto {
   @ApiProperty({

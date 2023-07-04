@@ -295,7 +295,7 @@ describe('PaymentController (e2e)', () => {
 
       it('/payments/basket(POST) should not add a single item to basket if uncompleted data is supplied', async () => {
         const response = await request(app.getHttpServer())
-          .post('/payments/create')
+          .post('/payments/basket')
           .send({ orderId: order.id })
           .expect(400);
         expect(response.body).toHaveProperty('error');

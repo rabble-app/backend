@@ -256,7 +256,7 @@ export class UsersController {
    */
   @Patch('delivery-address/:id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiCreatedResponse({ description: 'Delivery address updated successfully' })
+  @ApiOkResponse({ description: 'Delivery address updated successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiParam({
     name: 'id',
@@ -275,7 +275,7 @@ export class UsersController {
     return formatResponse(
       result,
       res,
-      HttpStatus.CREATED,
+      HttpStatus.OK,
       false,
       'Delivery address updated successfully',
     );
