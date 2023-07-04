@@ -46,3 +46,11 @@ export interface IScheduleTeam {
   frequency: number;
   producerId: string;
 }
+export interface IPaymentAuth {
+  stripeDefaultPaymentMethodId: string;
+  amount: number;
+  orderId: string;
+  stripeCustomerId: string;
+  teamId: string;
+  paymentId: string;
+}

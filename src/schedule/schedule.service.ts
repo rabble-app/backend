@@ -53,9 +53,49 @@ export class ScheduleService {
   }
 
   async authorizePayments() {
-    // get pending payment
-    // try to authorize payment
-    return '23';
+    try {
+      const result = await this.getPendingPayment();
+      if (result && result.length > 0) {
+        result.forEach(async (payment) => {
+          if (payment.user.stripeDefaultPaymentMethodId) {
+            // authorize payment for this user
+            const paymentRecord =
+              await this.paymentService.schedulePaymentAuthorization({
+                stripeDefaultPaymentMethodId:
+                  payment.user.stripeDefaultPaymentMethodId,
+                amount: payment.amount,
+                orderId: payment.orderId,
+                stripeCustomerId: payment.user.stripeCustomerId,
+                teamId: payment.order.team.id,
+                paymentId: payment.id,
+              });
+
+            if (!paymentRecord) {
+              // send notification that payment failed
+              await this.notificationsService.createNotification({
+                title: 'Payment Failure',
+                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team`,
+                userId: payment.userId,
+                orderId: payment.orderId,
+                teamId: '',
+                producerId: '',
+              });
+            }
+          } else {
+            //send notification that user should add default payment method
+            await this.notificationsService.createNotification({
+              title: 'Payment Failure',
+              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and  set a default payment method`,
+              userId: payment.userId,
+              orderId: payment.orderId,
+              teamId: '',
+              producerId: '',
+            });
+          }
+        });
+      }
+      return result;
+    } catch (error) {}
   }
 
   async handleNewOrders() {
@@ -338,24 +378,31 @@ export class ScheduleService {
     });
   }
 
-  // async getPendingOrders() {
-  //   return await this.prisma.order.findMany({
-  //     where: {
-  //       status: 'PENDING',
-  //       deadline: {
-  //         gte: new Date(),
-  //       },
-  //     },
-  //     select: {
-  //       id: true,
-  //     },
-  //     include:{
-  //       payments:{
-  //         select:{
-
-  //         }
-  //       }
-  //     }
-  //   });
-  // }
+  async getPendingPayment() {
+    return await this.prisma.payment.findMany({
+      where: {
+        paymentIntentId: 'null',
+        status: PaymentStatus.PENDING,
+      },
+      include: {
+        user: {
+          select: {
+            stripeDefaultPaymentMethodId: true,
+            stripeCustomerId: true,
+            phone: true,
+          },
+        },
+        order: {
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }

@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
+import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
+import { Basket, Order, Payment, Prisma } from '@prisma/client';
+import { CreateIntentDto } from './dto/create-intent.dto';
+import { Injectable } from '@nestjs/common';
+import { IOrder, IPayment, IPaymentAuth, PaymentStatus } from '../lib/types';
+import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
-import { PrismaService } from '../prisma.service';
-import { Basket, Order, Payment, Prisma } from '@prisma/client';
-import { IOrder, IPayment, PaymentStatus } from '../lib/types';
-import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
-import { CreateIntentDto } from './dto/create-intent.dto';
+import { Pay } from 'twilio/lib/twiml/VoiceResponse';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -209,6 +210,7 @@ export class PaymentService {
       return await stripe.paymentIntents.capture(paymentIntentId);
     } catch (error) {}
   }
+
   async updateBasketItem(params: {
     where: Prisma.BasketWhereUniqueInput;
     data: Prisma.BasketUpdateInput;
@@ -218,5 +220,44 @@ export class PaymentService {
       data,
       where,
     });
+  }
+
+  async schedulePaymentAuthorization(
+    iPaymentAuth: IPaymentAuth,
+  ): Promise<Payment> {
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: iPaymentAuth.amount,
+        currency: 'gbp',
+        customer: iPaymentAuth.stripeCustomerId,
+        payment_method: iPaymentAuth.stripeDefaultPaymentMethodId,
+        confirm: true,
+        capture_method: 'manual',
+        setup_future_usage: 'off_session',
+      });
+
+      // accumulate amount paid
+      await this.prisma.order.update({
+        where: {
+          id: iPaymentAuth.orderId,
+        },
+        data: { accumulatedAmount: { increment: iPaymentAuth.amount } },
+      });
+
+      // update payment record
+      const paymentData = {
+        paymentIntentId: paymentIntent.id,
+        status: PaymentStatus.INTENT_CREATED,
+      };
+
+      return await this.updatePayment({
+        where: {
+          id: iPaymentAuth.paymentId,
+        },
+        data: paymentData,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
