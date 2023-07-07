@@ -4,7 +4,13 @@ import { AddPaymentCardDto } from './dto/add-payment-card.dto';
 import { Basket, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { Injectable } from '@nestjs/common';
-import { IOrder, IPayment, IPaymentAuth, PaymentStatus } from '../lib/types';
+import {
+  ICreateIntent,
+  IOrder,
+  IPayment,
+  IPaymentAuth,
+  PaymentStatus,
+} from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
@@ -72,14 +78,11 @@ export class PaymentService {
     let paymentIntentId: string;
 
     if (!chargeUserDto.isApplePay) {
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await this.handleIntentCreation({
         amount: chargeUserDto.amount,
         currency: chargeUserDto.currency,
-        customer: chargeUserDto.customerId,
-        payment_method: chargeUserDto.paymentMethodId,
-        confirm: true,
-        capture_method: 'manual',
-        setup_future_usage: 'off_session',
+        customerId: chargeUserDto.customerId,
+        paymentMethodId: chargeUserDto.paymentMethodId,
       });
       paymentIntentId = paymentIntent.id;
     } else {
@@ -88,23 +91,11 @@ export class PaymentService {
 
     // if teamId exist, get the latest order of that team
     if (chargeUserDto.teamId) {
-      const result = await this.prisma.order.findFirst({
-        where: {
-          teamId: chargeUserDto.teamId,
-        },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-      });
+      const result = await this.getTeamLatestOrder(chargeUserDto.teamId);
       orderId = result.id;
 
       // accumulate amount paid
-      await this.prisma.order.update({
-        where: {
-          id: orderId,
-        },
-        data: { accumulatedAmount: { increment: chargeUserDto.amount } },
-      });
+      await this.accumulateAmount(orderId, chargeUserDto.amount);
     }
 
     // record intent
@@ -125,16 +116,59 @@ export class PaymentService {
     }
   }
 
+  async getTeamLatestOrder(teamId: string): Promise<Order | null> {
+    return await this.prisma.order.findFirst({
+      where: {
+        teamId: teamId,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+  }
+
+  async accumulateAmount(orderId: string, amount: number): Promise<void> {
+    await this.prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: { accumulatedAmount: { increment: amount } },
+    });
+  }
+
   async createIntent(createIntentDto: CreateIntentDto): Promise<object | null> {
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await this.handleIntentCreation({
       amount: createIntentDto.amount,
       currency: createIntentDto.currency,
-      customer: createIntentDto.customerId,
+      customerId: createIntentDto.customerId,
+    });
+    return {
+      paymentIntentId: paymentIntent.id,
+      clientSecret: paymentIntent.clientSecret,
+    };
+  }
+
+  async handleIntentCreation(
+    createIntentData: ICreateIntent,
+  ): Promise<{ id: string; clientSecret: string } | null> {
+    const parameters = {
+      amount: createIntentData.amount,
+      currency: createIntentData.currency,
+      customer: createIntentData.customerId,
+    };
+
+    if (createIntentData.paymentMethodId) {
+      parameters['payment_method'] = createIntentData.paymentMethodId;
+      parameters['confirm'] = true;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      ...parameters,
       capture_method: 'manual',
       setup_future_usage: 'off_session',
     });
     return {
-      paymentIntentId: paymentIntent.id,
+      id: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,
     };
   }

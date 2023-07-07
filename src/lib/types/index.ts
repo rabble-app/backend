@@ -54,3 +54,9 @@ export interface IPaymentAuth {
   teamId: string;
   paymentId: string;
 }
+export interface ICreateIntent {
+  amount: number;
+  currency: string;
+  customerId: string;
+  paymentMethodId?: string;
+}
