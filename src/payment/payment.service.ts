@@ -8,7 +8,6 @@ import { IOrder, IPayment, IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
-import { Pay } from 'twilio/lib/twiml/VoiceResponse';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',

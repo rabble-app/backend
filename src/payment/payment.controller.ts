@@ -2,10 +2,8 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   HttpStatus,
   Param,
-  Patch,
   Post,
   Res,
 } from '@nestjs/common';
@@ -26,8 +24,6 @@ import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
-import { UpdateBasketItemDto } from './dto/update-basket-item.dto';
-import { CreateIntentDto } from './dto/create-intent.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -208,124 +204,6 @@ export class PaymentController {
       HttpStatus.OK,
       false,
       'Item deleted successfully',
-    );
-  }
-
-  /**
-   * return a user payment options.
-   * @param {Response} res - The payload.
-   * @memberof PaymentController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Get('options/:id')
-  @ApiOkResponse({
-    description: 'User payment option returned successfully',
-  })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The stripe customer id',
-  })
-  async userPaymentOptions(
-    @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.paymentService.getUserPaymentOptions(id);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'User payment option returned successfully',
-    );
-  }
-
-  /**
-   * remove payment option from user.
-   * @param {Response} res - The payload.
-   * @memberof PaymentController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Patch('options/:id')
-  @ApiOkResponse({
-    description: 'Payment option removed successfully',
-  })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The user payment method id',
-  })
-  async removePaymentOption(
-    @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.paymentService.removePaymentOption(id);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'Payment option removed successfully',
-    );
-  }
-
-  /**
-   * Update item in basket
-   * @param {Body} updateBasketItemDto - Request body object.
-   * @param {Response} res - The payload.
-   * @memberof PaymentController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Patch('basket/:itemId')
-  @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Item updated successfully' })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'itemId',
-    required: true,
-    description: 'The id of the item you want to update',
-  })
-  async updateItemInBasket(
-    @Param('itemId') id: string,
-    @Body() updateBasketItemDto: UpdateBasketItemDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.paymentService.updateBasketItem({
-      where: { id },
-      data: updateBasketItemDto,
-    });
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'Item updated successfully',
-    );
-  }
-  /**
-   * Create Payment intent
-   * @param {Body} createIntentDto - Request body object.
-   * @param {Response} res - The payload.
-   * @memberof PaymentController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Post('intent')
-  @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Payment intent created successfully' })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async createIntent(
-    @Body() createIntentDto: CreateIntentDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntent(createIntentDto);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'Payment intent created successfully',
     );
   }
 }
