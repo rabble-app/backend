@@ -1,5 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsDateString,
+  IsISO8601,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  ValidateIf,
+  isISO8601,
+} from 'class-validator';
 
 export class CreateTeamDto {
   @ApiProperty({
@@ -44,8 +54,8 @@ export class CreateTeamDto {
     required: true,
   })
   @IsNotEmpty()
-  @IsString()
-  frequency: string;
+  @IsNumber()
+  frequency: number;
 
   @ApiProperty({
     type: 'string',
@@ -63,4 +73,22 @@ export class CreateTeamDto {
   })
   @IsString()
   paymentIntentId: string;
+
+  @ApiProperty({
+    type: 'boolean',
+    description: 'The visibility of the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.isPublic)
+  @IsBoolean()
+  isPublic: boolean;
+
+  @ApiProperty({
+    type: 'date',
+    description: 'The next delivery date of the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.nextDeliveryDate)
+  @IsISO8601()
+  nextDeliveryDate: Date;
 }

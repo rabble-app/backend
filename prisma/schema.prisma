@@ -2,8 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js"  
   binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
+  previewFeatures = ["fieldReference"]
 }
 
 datasource db {
@@ -12,14 +13,17 @@ datasource db {
 }
 
 model User {
-  id    String     @default(uuid()) @id
+  id    String  @default(uuid()) @id
   phone String  @unique
   email String?  @unique
   firstName String?  @map("first_name")
   lastName String?   @map("last_name")
   postalCode String? @map("postal_code")  
-  stripeCustomerId String? @map("stripe_customer_id")  
-  imageUrl String? @map("image_url")  
+  stripeCustomerId String? @unique @map("stripe_customer_id")  
+  stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
+  cardLastFourDigits String? @map("card_last_four_digits") 
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/profile/img.png") @map("image_url")
+  imageKey String? @map("image_key")  
   role Role    @default(USER) 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -37,6 +41,7 @@ model User {
   shipping Shipping?
   producer Producer?
   baskets Basket[] 
+  invites Invite[] 
 
   @@map("users")
 }
@@ -44,7 +49,8 @@ model User {
 model Producer {
   id  String     @default(uuid()) @id
   userId String @unique
-  imageUrl String? @map("image_url") 
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
+  imageKey String? @map("image_key")  
   businessName String @map("business_name")
   businessAddress String @map("business_address")
   minimumTreshold Int @map("minimum_treshold") @default(5000)
@@ -53,27 +59,51 @@ model Producer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  user     User       @relation(fields: [userId], references: [id])  
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)  
   products Product[]
   buyingteams BuyingTeam[]
   reviews Review[]
   likes Like[]
   recentlyViewed RecentlyViewed[]
+  categories ProducerCategory[]
 
   @@map("producers")
+}
+
+model ProducerCategoryOption {
+  id  String  @default(uuid()) @id  
+  name String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  categories ProducerCategory[]
+
+  @@map("producer_categories_options")
+}
+
+model ProducerCategory {
+  id  String  @default(uuid()) @id  
+  producerId String @map("producer_id") 
+  producerCategoryOptionId String @map("producer_category_option_id") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+ 
+  producer Producer  @relation(fields: [producerId], references: [id])
+  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id])
+
+  @@map("producer_categories")
 }
 
 model Shipping {
   id  String    @default(uuid()) @id
   userId String @unique
-  postalCode String @map("postal_code") 
   buildingNo String? @map("building_no") 
   address String
   city  String? 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  user     User       @relation(fields: [userId], references: [id])  
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)  
 
   @@map("shippings")
 }
@@ -82,14 +112,17 @@ model Product {
   id  String     @default(uuid()) @id  
   name String
   imageUrl String? @map("image_url") 
+  imageKey String? @map("image_key")  
   description String?
   producerId String @map("producer_id")
-  price String
+  categoryId String? @map("category_id")
+  price Int
   status ProductStatus   @default(IN_STOCK)   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   producer  Producer       @relation(fields: [producerId], references: [id])  
+  category  ProductCategory?  @relation(fields: [categoryId], references: [id]) 
   reviews  Review[]
   likes Like[]
   basket Basket[]
@@ -98,15 +131,29 @@ model Product {
   @@map("products")
 }
 
+model ProductCategory {
+  id  String  @default(uuid()) @id  
+  name String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  products Product[]
+
+  @@map("product_category")
+}
+
 model BuyingTeam {
   id  String     @default(uuid()) @id 
   name String 
   postalCode String @map("postal_code")
   producerId String @map("producer_id")
   hostId String    @map("host_id")
-  frequency String 
+  frequency Int @default(104500)
   description String?
-  imageUrl String? @map("image_url")  
+  isPublic Boolean @default(true) @map("is_public")
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png")  @map("image_url")
+  imageKey String? @map("image_key") 
+  nextDeliveryDate DateTime? @map("next_delivery_date") 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -144,11 +191,12 @@ model TeamMember {
   teamId String  @map("team_id")
   userId String  @map("user_id")
   status TeamStatus 
+  skipNextDelivery Boolean @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
-  user User  @relation(fields: [userId], references: [id]) 
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
   @@map("team_members")
 }
@@ -157,12 +205,13 @@ model TeamRequest {
   id  String     @default(uuid()) @id 
   teamId String  @map("team_id")
   userId String  @map("user_id")
+  introduction String  
   status TeamStatus @default(PENDING)  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
-  user User  @relation(fields: [userId], references: [id]) 
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
   @@map("team_requests")
 }
@@ -174,7 +223,7 @@ model Follower {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  user User  @relation("myFollowers", fields: [userId], references: [id]) 
+  user User  @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade) 
   follower User  @relation("followings", fields: [followerId], references: [id])
 
   @@map("followers")
@@ -189,10 +238,10 @@ model Like {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  user User  @relation(fields: [userId], references: [id]) 
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
   product Product?  @relation(fields: [productId], references: [id])
   producer Producer?  @relation(fields: [producerId], references: [id])
-  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("likes")
 }
@@ -201,13 +250,14 @@ model Invite {
   id  String    @default(uuid()) @id 
   teamId String  @map("team_id")
   status TeamStatus @default(PENDING) 
-  phone String  
-  userId String  @map("user_id")
-  token String 
+  phone String 
+  token String?
+  userId String  @map("user_id") 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
   
   @@map("invites")
 }
@@ -217,11 +267,12 @@ model Order {
   teamId String  @map("team_id")
   status OrderStatus @default(PENDING) 
   minimumTreshold Int @map("minimum_treshold")
-  deadline DateTime 
+  accumulatedAmount Int @map("accumulated_amount") @default(0)
+  deadline DateTime @default(now())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   basket Basket[]
   payments Payment[]
   notifications Notification[]
@@ -235,13 +286,13 @@ model Basket {
   userId String  @map("user_id")
   productId String @map("product_id")
   quantity Int
-  price String
+  price Int
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   order Order  @relation(fields: [orderId], references: [id])
   product Product  @relation(fields: [productId], references: [id])
-  user User  @relation(fields: [userId], references: [id]) 
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
   
   @@map("basket")
 }
@@ -257,7 +308,7 @@ model Payment {
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   order Order?  @relation(fields: [orderId], references: [id])
-  user User?  @relation(fields: [userId], references: [id])
+  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("payments")
 }
@@ -275,8 +326,8 @@ model Notification {
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   order Order?  @relation(fields: [orderId], references: [id])
-  user User?  @relation(fields: [userId], references: [id])
-  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
@@ -290,13 +341,14 @@ model RecentlyViewed {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
  
-  user User  @relation(fields: [userId], references: [id])
-  team BuyingTeam?  @relation(fields: [teamId], references: [id])
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   producer Producer?  @relation(fields: [producerId], references: [id])
   product Product?  @relation(fields: [productId], references: [id])
 
   @@map("recently_viewed")
 }
+
 
 enum OrderStatus {
   PENDING
@@ -324,7 +376,8 @@ enum TeamStatus {
 }
 
 enum PaymentStatus {
-  PENDING  
+  PENDING
+  FAILED
   INTENT_CREATED
   CAPTURED
 }

@@ -1,7 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { User, Prisma, Producer } from '@prisma/client';
+import {
+  User,
+  Prisma,
+  Producer,
+  Shipping,
+  TeamMember,
+  BuyingTeam,
+  TeamRequest,
+} from '@prisma/client';
 import { CreateProducerDto } from './dto/create-producer.dto';
+import { DeliveryAddressDto } from './dto/delivery-address.dto';
 
 @Injectable()
 export class UsersService {
@@ -44,7 +53,13 @@ export class UsersService {
     return await this.prisma.producer.findMany({
       skip: offset,
       take: 10,
-      include: { user: true },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
   }
 
@@ -53,6 +68,195 @@ export class UsersService {
   ): Promise<Producer | null> {
     return await this.prisma.producer.findUnique({
       where: producerWhereUniqueInput,
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+  }
+
+  async createDeliveryAddress(
+    deliveryAddressDto: DeliveryAddressDto,
+  ): Promise<Shipping> {
+    return await this.prisma.shipping.create({
+      data: deliveryAddressDto,
+    });
+  }
+
+  async getOrderHistories(userId: string): Promise<TeamMember[]> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        team: {
+          include: {
+            orders: {
+              include: {
+                basket: {
+                  where: {
+                    userId,
+                  },
+                  include: {
+                    product: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getSubscriptions(userId: string): Promise<TeamMember[]> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        team: {
+          include: {
+            orders: {
+              where: {
+                deadline: {
+                  gte: new Date(),
+                },
+              },
+              include: {
+                basket: {
+                  where: {
+                    userId,
+                  },
+                  include: {
+                    product: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getDeliveryAddress(
+    shippingWhereUniqueInput: Prisma.ShippingWhereUniqueInput,
+  ): Promise<Shipping | null> {
+    return await this.prisma.shipping.findUnique({
+      where: shippingWhereUniqueInput,
+    });
+  }
+
+  async updateDeliveryAddress(params: {
+    where: Prisma.ShippingWhereUniqueInput;
+    data: Prisma.ShippingUpdateInput;
+  }): Promise<Shipping> {
+    const { where, data } = params;
+    return await this.prisma.shipping.update({
+      data,
+      where,
+    });
+  }
+
+  async getMyTeams(userId: string): Promise<BuyingTeam[]> {
+    return await this.prisma.buyingTeam.findMany({
+      where: {
+        hostId: userId,
+      },
+      include: {
+        members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getMyRequests(userId: string): Promise<TeamRequest[]> {
+    return await this.prisma.teamRequest.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        team: {
+          select: {
+            name: true,
+            postalCode: true,
+          },
+        },
+      },
     });
   }
 }

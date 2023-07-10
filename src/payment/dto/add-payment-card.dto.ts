@@ -40,10 +40,10 @@ export class AddPaymentCardDto {
 
   @ApiProperty({
     type: 'string',
-    description: 'The user phone number',
+    description: 'The user stripe customer id',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  phone: string;
+  stripeCustomerId: string;
 }

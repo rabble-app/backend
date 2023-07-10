@@ -4,12 +4,16 @@ import * as twilio from 'twilio';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { PaymentService } from '../payment/payment.service';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
+    private readonly paymentService: PaymentService,
     private jwtService: JwtService,
+    private prisma: PrismaService,
   ) {}
 
   async sendOTP(sendOTPDto: SendOTPDto): Promise<string> {
@@ -53,8 +57,13 @@ export class AuthService {
           userExist['token'] = token;
           return userExist;
         } else {
+          // create stripe account for user
+          const stripeResponse = await this.paymentService.createCustomer(
+            verifyOTPDto.phone,
+          );
           const newUser = await this.userService.createUser({
             phone: verifyOTPDto.phone,
+            stripeCustomerId: stripeResponse.id,
           });
           newUser['token'] = token;
           return newUser;
@@ -68,14 +77,26 @@ export class AuthService {
   }
 
   generateToken(data: any): string {
-    return this.jwtService.sign(data);
+    return this.jwtService.sign(data, { secret: process.env.JWT_SECRET });
   }
 
   decodeToken(token: string): string | any {
     try {
-      return this.jwtService.verify(token);
+      return this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
     } catch (error) {
       return null;
+    }
+  }
+
+  async quitApp(id: string) {
+    try {
+      return await this.prisma.user.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      console.log(error);
     }
   }
 }

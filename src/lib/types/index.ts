@@ -14,6 +14,7 @@ export enum PaymentStatus {
   PENDING = 'PENDING',
   INTENT_CREATED = 'INTENT_CREATED',
   CAPTURED = 'CAPTURED',
+  FAILED = 'FAILED',
 }
 export interface IOrder {
   teamId: string;
@@ -39,4 +40,30 @@ export interface IBasket {
   productId: string;
   quantity: number;
   price: string;
+}
+export interface IScheduleTeam {
+  id: string;
+  frequency: number;
+  producerId: string;
+}
+export interface IPaymentAuth {
+  stripeDefaultPaymentMethodId: string;
+  amount: number;
+  orderId: string;
+  stripeCustomerId: string;
+  teamId: string;
+  paymentId: string;
+}
+export interface ICreateIntent {
+  amount: number;
+  currency: string;
+  customerId: string;
+  paymentMethodId?: string;
+}
+export interface ITeamWithOtherInfo {
+  orders: [
+    {
+      basket: [];
+    },
+  ];
 }

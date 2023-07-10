@@ -194,4 +194,64 @@ export class ProductsController {
       'Recently viewed products returned successfully',
     );
   }
+
+  /**
+   * return producer's products users also bought.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('also-bought/:producerId')
+  @ApiOkResponse({
+    description: 'Items other users also bought returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'producerId',
+    required: true,
+    description: 'The producer id',
+  })
+  async usersAlsoBought(
+    @Param('producerId') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getItemsUsersAlsoBought(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Items other users also bought returned successfully',
+    );
+  }
+
+  /**
+   * return producer's products normally
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('normal/:producerId')
+  @ApiOkResponse({
+    description: 'Producers products returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'producerId',
+    required: true,
+    description: 'The producer id',
+  })
+  async productNormal(
+    @Param('producerId') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getProductNormal(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Producers products returned successfully',
+    );
+  }
 }

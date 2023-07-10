@@ -19,4 +19,13 @@ export class JoinTeamDto {
   @IsNotEmpty()
   @IsString()
   teamId: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The introduction',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  introduction: string;
 }

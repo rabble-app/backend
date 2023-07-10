@@ -26,11 +26,15 @@ import { Response } from 'express';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
+import { TeamsServiceExtension } from './teams.service.extension';
 
 @ApiTags('teams')
 @Controller('teams')
 export class TeamsController {
-  constructor(private readonly teamsService: TeamsService) {}
+  constructor(
+    private readonly teamsService: TeamsService,
+    private readonly teamsServiceExtension: TeamsServiceExtension,
+  ) {}
 
   /**
    * create new team.
@@ -253,7 +257,9 @@ export class TeamsController {
     @Body() updateRequestDto: UpdateRequestDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.updateRequest(updateRequestDto);
+    const result = await this.teamsServiceExtension.updateRequest(
+      updateRequestDto,
+    );
     return formatResponse(
       result,
       res,
@@ -281,74 +287,13 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getTeamMembers(id);
+    const result = await this.teamsServiceExtension.getTeamMembers(id);
     return formatResponse(
       result,
       res,
       HttpStatus.OK,
       false,
       'Team members returned successfully',
-    );
-  }
-
-  /**
-   * return buying teams of a user.
-   * @param {Response} res - The payload.
-   * @memberof TeamsController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Get('user/:id')
-  @ApiOkResponse({
-    description: 'User buying teams returned successfully',
-  })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The user id',
-  })
-  async getUserTeams(
-    @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getUserTeams(id);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'User buying teams returned successfully',
-    );
-  }
-
-  /**
-   * quit buying team.
-   * @param {Body} joinTeamDto - Request body object.
-   * @param {Response} res - The payload.
-   * @memberof TeamsController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Delete('quit/:id')
-  @ApiOkResponse({ description: 'User removed from team successfully' })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The team membership id',
-  })
-  async quitTeam(
-    @Param('id') teamMemberShipID: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.teamsService.quitBuyingTeam({
-      id: teamMemberShipID,
-    });
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'User removed from team successfully',
     );
   }
 }

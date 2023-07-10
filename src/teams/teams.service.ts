@@ -3,7 +3,6 @@ import { BuyingTeam, Prisma, TeamMember, TeamRequest } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
-import { UpdateRequestDto } from './dto/update-request.dto';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
 import { ITeamMember, Status } from '../lib/types';
@@ -39,23 +38,33 @@ export class TeamsService {
     });
 
     const currentDate = new Date();
-    // add i weeks to the current date
+    // add 6 days to the current date, order closes on the 7 day
     const nextWeekDate = new Date(
-      currentDate.getTime() + 1 * 7 * 24 * 60 * 60 * 1000,
+      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
     );
+
+    // get amount paid and add it to accumulator
+    const paymentInfo = await this.prisma.payment.findFirst({
+      where: {
+        paymentIntentId,
+      },
+      select: {
+        amount: true,
+      },
+    });
 
     // create order
     const orderData = {
       teamId: result.id,
       minimumTreshold: producerInfo.minimumTreshold,
       deadline: nextWeekDate,
+      accumulatedAmount: paymentInfo.amount,
     };
     const orderResponse = await this.paymentService.createOrder(orderData);
 
     // update payment record
     const paymentData = {
       orderId: orderResponse.id,
-      userId: createTeamDto.hostId,
       paymentIntentId,
     };
 
@@ -77,9 +86,31 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       where: {
         producerId: id,
+        isPublic: true,
       },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
   }
@@ -88,9 +119,31 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       where: {
         postalCode,
+        isPublic: true,
       },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
   }
@@ -99,8 +152,32 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findMany({
       skip: offset,
       take: 10,
+      where: {
+        isPublic: true,
+      },
       include: {
         members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
   }
@@ -116,7 +193,9 @@ export class TeamsService {
     });
   }
 
-  async deleteTeam(where: Prisma.UserWhereUniqueInput): Promise<BuyingTeam> {
+  async deleteTeam(
+    where: Prisma.BuyingTeamWhereUniqueInput,
+  ): Promise<BuyingTeam> {
     return await this.prisma.buyingTeam.delete({
       where,
     });
@@ -150,60 +229,6 @@ export class TeamsService {
       where: {
         id,
       },
-    });
-  }
-
-  async updateRequest(
-    updateRequestDto: UpdateRequestDto,
-  ): Promise<TeamRequest> {
-    if (updateRequestDto.status == 'APPROVED') {
-      // get user data
-      const result = await this.getRequestData(updateRequestDto.id);
-      if (result) {
-        await this.prisma.teamMember.create({
-          data: {
-            userId: result.userId,
-            teamId: result.teamId,
-            status: 'APPROVED',
-          },
-        });
-      }
-    }
-    return await this.prisma.teamRequest.update({
-      where: {
-        id: updateRequestDto.id,
-      },
-      data: { status: updateRequestDto.status },
-    });
-  }
-
-  async getTeamMembers(id: string): Promise<TeamMember[] | null> {
-    return await this.prisma.teamMember.findMany({
-      where: {
-        teamId: id,
-      },
-      include: {
-        user: true,
-      },
-    });
-  }
-
-  async getUserTeams(id: string): Promise<TeamMember[] | null> {
-    return await this.prisma.teamMember.findMany({
-      where: {
-        userId: id,
-      },
-      include: {
-        team: true,
-      },
-    });
-  }
-
-  async quitBuyingTeam(
-    where: Prisma.TeamMemberWhereUniqueInput,
-  ): Promise<TeamMember> {
-    return await this.prisma.teamMember.delete({
-      where,
     });
   }
 }

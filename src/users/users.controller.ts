@@ -1,6 +1,5 @@
 import { Controller, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
-
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -23,6 +22,8 @@ import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
+import { DeliveryAddressDto } from './dto/delivery-address.dto';
+import { UpdateDeliveryAddressDto } from './dto/update-delivery-address.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -31,7 +32,7 @@ export class UsersController {
 
   /**
    * update user record.
-   * @param {Body} UpdateUserDto - Request body object.
+   * @param {Body} updateUserDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
@@ -59,7 +60,7 @@ export class UsersController {
 
   /**
    * create new producer.
-   * @param {Body} CreateProducerDto - Request body object.
+   * @param {Body} createProducerDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
@@ -132,6 +133,179 @@ export class UsersController {
       HttpStatus.OK,
       false,
       'Producer returned successfully',
+    );
+  }
+
+  /**
+   * add user delivery address.
+   * @param {Body} deliveryAddressDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('delivery-address')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Delivery address created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async addDeliveryAddress(
+    @Body() deliveryAddressDto: DeliveryAddressDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.createDeliveryAddress(
+      deliveryAddressDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Delivery address created successfully',
+    );
+  }
+
+  /**
+   * return order history
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('order-history/:id')
+  @ApiOkResponse({ description: 'Order history returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The user id',
+  })
+  async getOrderHistories(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getOrderHistories(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Order history returned successfully',
+    );
+  }
+
+  /**
+   * return subscriptions
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('subscription/:id')
+  @ApiOkResponse({ description: 'Subscriptions returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The user id',
+  })
+  async getSubscriptions(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getSubscriptions(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscriptions returned successfully',
+    );
+  }
+
+  /**
+   * return user delivery address.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('delivery-address/:id')
+  @ApiOkResponse({ description: 'Delivery address returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async getDeliveryAddress(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getDeliveryAddress({ userId: id });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Delivery address returned successfully',
+    );
+  }
+
+  /**
+   * update user delivery address.
+   * @param {Body} updateDeliveryAddressDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Patch('delivery-address/:id')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Delivery address updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async updateDeliveryAddress(
+    @Param('id') id: string,
+    @Body() updateDeliveryAddressDto: UpdateDeliveryAddressDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.updateDeliveryAddress({
+      where: { userId: id },
+      data: updateDeliveryAddressDto,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Delivery address updated successfully',
+    );
+  }
+
+  /**
+   * return teams a user is host on.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('my-teams/:id')
+  @ApiOkResponse({ description: 'Users teams returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async myTeams(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getMyTeams(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Users teams returned successfully',
     );
   }
 }

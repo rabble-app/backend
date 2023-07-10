@@ -52,8 +52,8 @@ export class AddToBasket {
     required: true,
   })
   @IsNotEmpty()
-  @IsString()
-  price: string;
+  @IsNumber()
+  price: number;
 }
 
 export class AddBulkBasketDto {

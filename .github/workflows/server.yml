@@ -14,6 +14,8 @@ env:
   TWILO_AUTH_TOKEN: ${{secrets.TWILO_AUTH_TOKEN}}
   TWILO_PHONE: ${{secrets.TWILO_PHONE}}
   JWT_SECRET: ${{secrets.JWT_SECRET}}
+  STRIPE_SECRET_KEY: ${{secrets.STRIPE_SECRET_KEY}}
+  STRIPE_PERISHABLE_KEY: ${{secrets.STRIPE_PERISHABLE_KEY}}
       
 jobs:
   rabble-backend:
