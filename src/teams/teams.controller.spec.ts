@@ -8,6 +8,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { TeamsServiceExtension } from './teams.service.extension';
+import { TeamsServiceExtension2 } from './teams.service.extension2';
 
 describe('TeamsController', () => {
   let controller: TeamsController;
@@ -24,6 +25,7 @@ describe('TeamsController', () => {
         AuthService,
         JwtService,
         TeamsServiceExtension,
+        TeamsServiceExtension2,
       ],
     }).compile();
 

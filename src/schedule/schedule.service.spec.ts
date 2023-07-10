@@ -5,6 +5,8 @@ import { NotificationsService } from '../../src/notifications/notifications.serv
 import { PaymentService } from '../../src/payment/payment.service';
 import { PrismaService } from '../../src/prisma.service';
 import { ProductsService } from '../../src/products/products.service';
+import { PaymentServiceExtension } from '../../src/payment/payment.service.extension';
+import { ScheduleServiceExtended } from './schedule.service.extended';
 
 describe('ScheduleService', () => {
   let service: ScheduleService;
@@ -18,6 +20,8 @@ describe('ScheduleService', () => {
         NotificationsService,
         PrismaService,
         ProductsService,
+        PaymentServiceExtension,
+        ScheduleServiceExtended,
       ],
     }).compile();
 

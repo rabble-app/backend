@@ -32,6 +32,7 @@ import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { VerifyInviteDto } from './dto/verify-invite.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { TeamsServiceExtension } from './teams.service.extension';
+import { TeamsServiceExtension2 } from './teams.service.extension2';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -40,6 +41,7 @@ export class TeamsController {
     private readonly teamsService: TeamsService,
     private readonly notificationsService: NotificationsService,
     private readonly teamsServiceExtension: TeamsServiceExtension,
+    private readonly teamsServiceExtension2: TeamsServiceExtension2,
   ) {}
 
   /**
@@ -526,7 +528,7 @@ export class TeamsController {
     @Body() verifyInviteDto: VerifyInviteDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension.verifyInvite(
+    const result = await this.teamsServiceExtension2.verifyInvite(
       verifyInviteDto.token,
     );
     if (!result) {
@@ -567,7 +569,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension.skipDelivery(id);
+    const result = await this.teamsServiceExtension2.skipDelivery(id);
     return formatResponse(
       result,
       res,

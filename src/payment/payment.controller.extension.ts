@@ -21,12 +21,16 @@ import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { UpdateBasketItemDto } from './dto/update-basket-item.dto';
 import { CreateIntentDto } from './dto/create-intent.dto';
+import { PaymentServiceExtension } from './payment.service.extension';
 
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentControllerExtension {
   teamsService: any;
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly paymentServiceExtension: PaymentServiceExtension,
+  ) {}
   /**
    * return a user payment options.
    * @param {Response} res - The payload.
@@ -47,7 +51,7 @@ export class PaymentControllerExtension {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.getUserPaymentOptions(id);
+    const result = await this.paymentServiceExtension.getUserPaymentOptions(id);
     return formatResponse(
       result,
       res,
@@ -77,7 +81,7 @@ export class PaymentControllerExtension {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.removePaymentOption(id);
+    const result = await this.paymentServiceExtension.removePaymentOption(id);
     return formatResponse(
       result,
       res,
@@ -108,7 +112,7 @@ export class PaymentControllerExtension {
     @Body() updateBasketItemDto: UpdateBasketItemDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.updateBasketItem({
+    const result = await this.paymentServiceExtension.updateBasketItem({
       where: { id },
       data: updateBasketItemDto,
     });

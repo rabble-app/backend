@@ -68,6 +68,13 @@ export class UsersService {
   ): Promise<Producer | null> {
     return await this.prisma.producer.findUnique({
       where: producerWhereUniqueInput,
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
   }
 

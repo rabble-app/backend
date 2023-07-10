@@ -4,13 +4,7 @@ import { AddPaymentCardDto } from './dto/add-payment-card.dto';
 import { Basket, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { Injectable } from '@nestjs/common';
-import {
-  ICreateIntent,
-  IOrder,
-  IPayment,
-  IPaymentAuth,
-  PaymentStatus,
-} from '../lib/types';
+import { ICreateIntent, IOrder, IPayment, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
@@ -237,59 +231,5 @@ export class PaymentService {
     return await this.prisma.basket.delete({
       where,
     });
-  }
-
-  async getUserPaymentOptions(id: string): Promise<object | null> {
-    return await stripe.customers.listPaymentMethods(id);
-  }
-
-  async removePaymentOption(id: string): Promise<object | null> {
-    return await stripe.paymentMethods.detach(id);
-  }
-
-  async captureFund(paymentIntentId: string): Promise<object | null> {
-    return await stripe.paymentIntents.capture(paymentIntentId);
-  }
-
-  async updateBasketItem(params: {
-    where: Prisma.BasketWhereUniqueInput;
-    data: Prisma.BasketUpdateInput;
-  }): Promise<Basket> {
-    const { where, data } = params;
-    return await this.prisma.basket.update({
-      data,
-      where,
-    });
-  }
-
-  async schedulePaymentAuthorization(
-    iPaymentAuth: IPaymentAuth,
-  ): Promise<Payment> {
-    try {
-      const paymentIntent = await this.createIntent({
-        amount: iPaymentAuth.amount,
-        currency: 'gbp',
-        customerId: iPaymentAuth.stripeCustomerId,
-        paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
-      });
-
-      // accumulate amount paid
-      await this.accumulateAmount(iPaymentAuth.orderId, iPaymentAuth.amount);
-
-      // update payment record
-      const paymentData = {
-        paymentIntentId: paymentIntent.id,
-        status: PaymentStatus.INTENT_CREATED,
-      };
-
-      return await this.updatePayment({
-        where: {
-          id: iPaymentAuth.paymentId,
-        },
-        data: paymentData,
-      });
-    } catch (error) {
-      console.log(error);
-    }
   }
 }

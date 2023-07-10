@@ -8,6 +8,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { TeamsServiceExtension } from './teams.service.extension';
+import { TeamsServiceExtension2 } from './teams.service.extension2';
 
 @Module({
   imports: [PaymentModule, UsersModule, NotificationsModule],
@@ -18,7 +19,8 @@ import { TeamsServiceExtension } from './teams.service.extension';
     AuthService,
     JwtService,
     TeamsServiceExtension,
+    TeamsServiceExtension2,
   ],
-  exports: [TeamsService, TeamsServiceExtension],
+  exports: [TeamsService],
 })
 export class TeamsModule {}

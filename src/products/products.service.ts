@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
+import {
+  BuyingTeam,
+  Order,
+  Product,
+  ProductCategory,
+  RecentlyViewed,
+} from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
+import { ITeamWithOtherInfo } from 'src/lib/types';
 
 @Injectable()
 export class ProductsService {
@@ -81,7 +88,22 @@ export class ProductsService {
   }
 
   async getItemsUsersAlsoBought(id: string): Promise<object> {
-    const result = await this.prisma.buyingTeam.findMany({
+    const result = await this.populateItemsUsersAlsoBought(id);
+    const finalArray = [];
+
+    if (result && result.length) {
+      result.forEach((team: ITeamWithOtherInfo) => {
+        team.orders.forEach((order) => {
+          finalArray.push(...order.basket);
+        });
+      });
+    }
+
+    return finalArray;
+  }
+
+  async populateItemsUsersAlsoBought(id: string): Promise<object[] | null> {
+    return await this.prisma.buyingTeam.findMany({
       where: {
         producerId: id,
       },
@@ -101,15 +123,6 @@ export class ProductsService {
         },
       },
     });
-    const finalArray = [];
-
-    result.forEach((team) => {
-      team?.orders.forEach((order) => {
-        finalArray.push(...order.basket);
-      });
-    });
-
-    return finalArray;
   }
 
   async getProductNormal(producerId: string): Promise<Product[] | null> {

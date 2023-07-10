@@ -6,6 +6,8 @@ import { PaymentService } from '../../src/payment/payment.service';
 import { NotificationsService } from '../../src/notifications/notifications.service';
 import { PrismaService } from '../../src/prisma.service';
 import { ProductsService } from '../../src/products/products.service';
+import { PaymentServiceExtension } from '../../src/payment/payment.service.extension';
+import { ScheduleServiceExtended } from './schedule.service.extended';
 
 describe('ScheduleController', () => {
   let controller: ScheduleController;
@@ -20,6 +22,8 @@ describe('ScheduleController', () => {
         NotificationsService,
         PrismaService,
         ProductsService,
+        PaymentServiceExtension,
+        ScheduleServiceExtended,
       ],
     }).compile();
 
