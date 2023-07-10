@@ -243,23 +243,15 @@ export class PaymentService {
     iPaymentAuth: IPaymentAuth,
   ): Promise<Payment> {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await this.handleIntentCreation({
         amount: iPaymentAuth.amount,
         currency: 'gbp',
-        customer: iPaymentAuth.stripeCustomerId,
-        payment_method: iPaymentAuth.stripeDefaultPaymentMethodId,
-        confirm: true,
-        capture_method: 'manual',
-        setup_future_usage: 'off_session',
+        customerId: iPaymentAuth.stripeCustomerId,
+        paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
       });
 
       // accumulate amount paid
-      await this.prisma.order.update({
-        where: {
-          id: iPaymentAuth.orderId,
-        },
-        data: { accumulatedAmount: { increment: iPaymentAuth.amount } },
-      });
+      await this.accumulateAmount(iPaymentAuth.orderId, iPaymentAuth.amount);
 
       // update payment record
       const paymentData = {
