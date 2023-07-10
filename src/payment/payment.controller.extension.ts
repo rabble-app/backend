@@ -135,7 +135,9 @@ export class PaymentControllerExtension {
     @Body() createIntentDto: CreateIntentDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntent(createIntentDto);
+    const result = await this.paymentService.createIntentForApplePay(
+      createIntentDto,
+    );
     return formatResponse(
       result,
       res,

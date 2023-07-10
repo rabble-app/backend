@@ -78,12 +78,7 @@ export class PaymentService {
     let paymentIntentId: string;
 
     if (!chargeUserDto.isApplePay) {
-      const paymentIntent = await this.handleIntentCreation({
-        amount: chargeUserDto.amount,
-        currency: chargeUserDto.currency,
-        customerId: chargeUserDto.customerId,
-        paymentMethodId: chargeUserDto.paymentMethodId,
-      });
+      const paymentIntent = await this.handleIntentCreation(chargeUserDto);
       paymentIntentId = paymentIntent.id;
     } else {
       paymentIntentId = chargeUserDto.paymentIntentId;
@@ -116,6 +111,17 @@ export class PaymentService {
     }
   }
 
+  async handleIntentCreation(
+    chargeUserDto: ChargeUserDto,
+  ): Promise<{ id: string; clientSecret: string } | null> {
+    return await this.createIntent({
+      amount: chargeUserDto.amount,
+      currency: chargeUserDto.currency,
+      customerId: chargeUserDto.customerId,
+      paymentMethodId: chargeUserDto.paymentMethodId,
+    });
+  }
+
   async getTeamLatestOrder(teamId: string): Promise<Order | null> {
     return await this.prisma.order.findFirst({
       where: {
@@ -136,8 +142,10 @@ export class PaymentService {
     });
   }
 
-  async createIntent(createIntentDto: CreateIntentDto): Promise<object | null> {
-    const paymentIntent = await this.handleIntentCreation({
+  async createIntentForApplePay(
+    createIntentDto: CreateIntentDto,
+  ): Promise<object | null> {
+    const paymentIntent = await this.createIntent({
       amount: createIntentDto.amount,
       currency: createIntentDto.currency,
       customerId: createIntentDto.customerId,
@@ -148,7 +156,7 @@ export class PaymentService {
     };
   }
 
-  async handleIntentCreation(
+  async createIntent(
     createIntentData: ICreateIntent,
   ): Promise<{ id: string; clientSecret: string } | null> {
     const parameters = {
@@ -243,7 +251,7 @@ export class PaymentService {
     iPaymentAuth: IPaymentAuth,
   ): Promise<Payment> {
     try {
-      const paymentIntent = await this.handleIntentCreation({
+      const paymentIntent = await this.createIntent({
         amount: iPaymentAuth.amount,
         currency: 'gbp',
         customerId: iPaymentAuth.stripeCustomerId,
