@@ -94,14 +94,12 @@ export class PaymentService {
     }
 
     // record intent
-    const paymentData = {
+    const result = await this.handleRecordPayment(
       orderId,
       paymentIntentId,
-      amount: chargeUserDto.amount,
-      status: PaymentStatus.INTENT_CREATED,
-      userId: chargeUserDto.userId,
-    };
-    const result = await this.recordPayment(paymentData);
+      chargeUserDto.amount,
+      chargeUserDto.userId,
+    );
     if (result) {
       return {
         paymentIntentId,
@@ -120,6 +118,23 @@ export class PaymentService {
       customerId: chargeUserDto.customerId,
       paymentMethodId: chargeUserDto.paymentMethodId,
     });
+  }
+
+  async handleRecordPayment(
+    orderId: string,
+    paymentIntentId: string,
+    amount: number,
+    userId: string,
+  ): Promise<Payment | null> {
+    // record intent
+    const paymentData = {
+      orderId,
+      paymentIntentId,
+      amount: amount,
+      status: PaymentStatus.INTENT_CREATED,
+      userId: userId,
+    };
+    return await this.recordPayment(paymentData);
   }
 
   async getTeamLatestOrder(teamId: string): Promise<Order | null> {
