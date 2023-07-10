@@ -9,10 +9,11 @@ import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { TeamsServiceExtension } from './teams.service.extension';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
+import { TeamsControllerExtension } from './teams.controller.extension';
 
 @Module({
   imports: [PaymentModule, UsersModule, NotificationsModule],
-  controllers: [TeamsController],
+  controllers: [TeamsController, TeamsControllerExtension],
   providers: [
     TeamsService,
     PrismaService,

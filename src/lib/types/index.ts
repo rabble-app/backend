@@ -60,7 +60,6 @@ export interface ICreateIntent {
   customerId: string;
   paymentMethodId?: string;
 }
-
 export interface ITeamWithOtherInfo {
   orders: [
     {
@@ -68,3 +67,10 @@ export interface ITeamWithOtherInfo {
     },
   ];
 }
+// export interface ITeamWithOtherInfo {
+//   orders: [
+//     {
+//       basket: [];
+//     },
+//   ];
+// }

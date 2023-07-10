@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PaymentServiceExtension } from '../../src/payment/payment.service.extension';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
+import { Payment } from '@prisma/client';
 
 @Injectable()
 export class ScheduleService {
@@ -64,16 +65,7 @@ export class ScheduleService {
             payment.user.stripeCustomerId
           ) {
             // authorize payment for this user
-            const paymentRecord =
-              await this.paymentServiceExtension.schedulePaymentAuthorization({
-                stripeDefaultPaymentMethodId:
-                  payment.user.stripeDefaultPaymentMethodId,
-                amount: payment.amount,
-                orderId: payment.orderId,
-                stripeCustomerId: payment.user.stripeCustomerId,
-                teamId: payment.order.team.id,
-                paymentId: payment.id,
-              });
+            const paymentRecord = await this.handleAuthorizePayments(payment);
 
             if (!paymentRecord) {
               // send notification that payment failed
@@ -101,6 +93,17 @@ export class ScheduleService {
       }
       return result;
     } catch (error) {}
+  }
+
+  async handleAuthorizePayments(payment: any) {
+    return await this.paymentServiceExtension.schedulePaymentAuthorization({
+      stripeDefaultPaymentMethodId: payment.user.stripeDefaultPaymentMethodId,
+      amount: payment.amount,
+      orderId: payment.orderId,
+      stripeCustomerId: payment.user.stripeCustomerId,
+      teamId: payment.order.team.id,
+      paymentId: payment.id,
+    });
   }
 
   async handleNewOrders() {
