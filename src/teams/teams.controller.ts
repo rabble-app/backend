@@ -31,6 +31,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { VerifyInviteDto } from './dto/verify-invite.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { TeamsServiceExtension } from './teams.service.extension';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -38,6 +39,7 @@ export class TeamsController {
   constructor(
     private readonly teamsService: TeamsService,
     private readonly notificationsService: NotificationsService,
+    private readonly teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   /**
@@ -261,7 +263,9 @@ export class TeamsController {
     @Body() updateRequestDto: UpdateRequestDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.updateRequest(updateRequestDto);
+    const result = await this.teamsServiceExtension.updateRequest(
+      updateRequestDto,
+    );
     return formatResponse(
       result,
       res,
@@ -289,7 +293,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getTeamMembers(id);
+    const result = await this.teamsServiceExtension.getTeamMembers(id);
     return formatResponse(
       result,
       res,
@@ -319,7 +323,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getUserTeams(id);
+    const result = await this.teamsServiceExtension.getUserTeams(id);
     return formatResponse(
       result,
       res,
@@ -348,7 +352,7 @@ export class TeamsController {
     @Param('id') teamMemberShipID: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.quitBuyingTeam({
+    const result = await this.teamsServiceExtension.quitBuyingTeam({
       id: teamMemberShipID,
     });
     return formatResponse(
@@ -378,7 +382,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getTeamInfo(id);
+    const result = await this.teamsServiceExtension.getTeamInfo(id);
     return formatResponse(
       result,
       res,
@@ -408,7 +412,9 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getTeamCurrentOrderStatus(id);
+    const result = await this.teamsServiceExtension.getTeamCurrentOrderStatus(
+      id,
+    );
     return formatResponse(
       result,
       res,
@@ -438,7 +444,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    await this.teamsService.nudgeTeam(id);
+    await this.teamsServiceExtension.nudgeTeam(id);
     return formatResponse(
       'Notification sent',
       res,
@@ -493,7 +499,7 @@ export class TeamsController {
     @Body() bulkInviteDto: BulkInviteDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.bulkInvite(bulkInviteDto);
+    const result = await this.teamsServiceExtension.bulkInvite(bulkInviteDto);
     return formatResponse(
       result,
       res,
@@ -520,7 +526,9 @@ export class TeamsController {
     @Body() verifyInviteDto: VerifyInviteDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.verifyInvite(verifyInviteDto.token);
+    const result = await this.teamsServiceExtension.verifyInvite(
+      verifyInviteDto.token,
+    );
     if (!result) {
       return formatResponse(
         'Token is invalid',
@@ -559,7 +567,7 @@ export class TeamsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.skipDelivery(id);
+    const result = await this.teamsServiceExtension.skipDelivery(id);
     return formatResponse(
       result,
       res,
