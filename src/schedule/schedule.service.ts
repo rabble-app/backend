@@ -4,7 +4,6 @@ import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
-import { Payment } from '@prisma/client';
 
 @Injectable()
 export class ScheduleService {
@@ -94,7 +93,7 @@ export class ScheduleService {
       return result;
     } catch (error) {}
   }
-
+  // fix: remove datatype
   async handleAuthorizePayments(payment: any) {
     return await this.paymentServiceExtension.schedulePaymentAuthorization({
       stripeDefaultPaymentMethodId: payment.user.stripeDefaultPaymentMethodId,

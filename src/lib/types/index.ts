@@ -67,10 +67,3 @@ export interface ITeamWithOtherInfo {
     },
   ];
 }
-// export interface ITeamWithOtherInfo {
-//   orders: [
-//     {
-//       basket: [];
-//     },
-//   ];
-// }
