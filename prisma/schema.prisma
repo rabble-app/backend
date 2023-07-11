@@ -16,6 +16,7 @@ model User {
   id    String  @default(uuid()) @id
   phone String  @unique
   email String?  @unique
+  password String?
   firstName String?  @map("first_name")
   lastName String?   @map("last_name")
   postalCode String? @map("postal_code")  
@@ -52,7 +53,9 @@ model Producer {
   imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
   imageKey String? @map("image_key")  
   businessName String @map("business_name")
-  businessAddress String @map("business_address")
+  businessAddress String? @map("business_address")
+  accountsEmail String? @map("acounts_email")
+  salesEmail String? @map("sales_email")
   minimumTreshold Int @map("minimum_treshold") @default(5000)
   website String?
   description String?
