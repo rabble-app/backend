@@ -12,6 +12,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class TeamsServiceExtension {
@@ -20,6 +21,7 @@ export class TeamsServiceExtension {
     private readonly teamsService: TeamsService,
     private readonly notificationsService: NotificationsService,
     private readonly authService: AuthService,
+    private readonly usersService: UsersService,
   ) {}
 
   async updateRequest(
@@ -206,9 +208,14 @@ export class TeamsServiceExtension {
     return true;
   }
 
-  async bulkInvite(bulkInviteDto: BulkInviteDto): Promise<boolean | null> {
+  async bulkInvite(bulkInviteDto: BulkInviteDto): Promise<boolean | object> {
     if (bulkInviteDto.phones.length > 0) {
-      bulkInviteDto.phones.forEach(async (phone) => {
+      const senderInfo = await this.usersService.findUser({
+        id: bulkInviteDto.userId,
+      });
+      const sender = senderInfo.firstName ? senderInfo.firstName : 'Someone';
+      for (let index = 0; index < bulkInviteDto.phones.length; index++) {
+        const phone = bulkInviteDto.phones[index];
         // generate token with jwt
         const token = this.authService.generateToken({
           phone,
@@ -230,11 +237,16 @@ export class TeamsServiceExtension {
         const url = `${bulkInviteDto.link}?token=${token}`;
 
         // send to user
-        const message = `Hi, someone is inviting you to join a buying team at Rabble, click the link to get started: ${url}`;
-
+        const message = `Guy, ${sender} is inviting you to join a buying team at Rabble, click the link to get started: ${url}`;
         // send the message to user
-        await this.notificationsService.sendSMS(message, phone);
-      });
+        const feedback = await this.notificationsService.sendSMS(
+          message,
+          phone,
+        );
+        if (!feedback) return false;
+      }
+    } else {
+      return false;
     }
     return true;
   }

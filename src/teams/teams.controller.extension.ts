@@ -234,6 +234,15 @@ export class TeamsControllerExtension {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.teamsServiceExtension.bulkInvite(bulkInviteDto);
+    if (!result) {
+      return formatResponse(
+        'Error Occured',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Invite processing failed',
+      );
+    }
     return formatResponse(
       result,
       res,

@@ -19,7 +19,9 @@ export class NotificationsService {
         from: process.env.TWILO_PHONE,
         to: receiver,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async createNotification(

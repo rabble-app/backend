@@ -13,6 +13,14 @@ describe('AppController (e2e)', () => {
 
   const phone = faker.phone.number();
 
+  const producerInfo = {
+    email: faker.internet.email(),
+    password: faker.internet.password(),
+    businessName: faker.internet.userName(),
+    businessAddress: faker.address,
+    phone: faker.phone.number(),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -102,6 +110,34 @@ describe('AppController (e2e)', () => {
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // register producer
+    it(
+      '/auth/register (POST) should register a producer',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/register')
+          .send(producerInfo)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/auth/register (POST) should not register a producer if incomplete data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/register')
+          .send({ phone })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
       },
       testTime,
     );

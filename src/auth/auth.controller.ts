@@ -21,15 +21,20 @@ import { IAPIResponse } from '../lib/types';
 import { AuthService } from './auth.service';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
+import { CreateProducerDto } from './dto/create-producer.dto';
+import { UsersService } from 'src/users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   /**
    * Send phone verification code.
-   * @param {Body} SendOTPDto - Request body object.
+   * @param {Body} sendOTPDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof AuthController
    * @returns {JSON} - A JSON success response.
@@ -54,7 +59,7 @@ export class AuthController {
 
   /**
    * verify otp verification code.
-   * @param {Body} VerifyOTPDto - Request body object.
+   * @param {Body} verifyOTPDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof AuthController
    * @returns {JSON} - A JSON success response.
@@ -113,6 +118,51 @@ export class AuthController {
       HttpStatus.OK,
       false,
       'Removed from rabble app successfully',
+    );
+  }
+
+  /**
+   * Register Producer.
+   * @param {Body} createProducerDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('register')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Producer account created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async register(
+    @Body() createProducerDto: CreateProducerDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    // check whether email or phone number already exist
+    const emailExist = await this.usersService.findUser({
+      email: createProducerDto.email,
+    });
+
+    const phoneExist = await this.usersService.findUser({
+      phone: createProducerDto.phone,
+    });
+
+    if (emailExist || phoneExist) {
+      return formatResponse(
+        'User already exist',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Email or phone number already exist',
+      );
+    }
+
+    // save data
+    const result = await this.authService.registerProducer(createProducerDto);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'OTP sent successfully',
     );
   }
 }
