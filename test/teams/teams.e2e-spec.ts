@@ -469,84 +469,84 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
-    // // bulk invite
-    // it(
-    //   '/teams/bulk-invite(POST) should invite bulk member to join the team',
-    //   async () => {
-    //     const response = await request(app.getHttpServer())
-    //       .post(`/teams/bulk-invite`)
-    //       .send({
-    //         userId: user.id,
-    //         link: 'https://www.google.com',
-    //         phones: ['+2347036541234'],
-    //         teamId: buyingTeamId,
-    //       })
-    //       .expect(200);
-    //     expect(response.body).toHaveProperty('data');
-    //     expect(response.body.error).toBeUndefined();
-    //     expect(typeof response.body.data).toBe('boolean');
-    //   },
-    //   testTime,
-    // );
+    // bulk invite
+    it(
+      '/teams/bulk-invite(POST) should invite bulk member to join the team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/bulk-invite`)
+          .send({
+            userId: user.id,
+            link: 'https://www.google.com',
+            phones: ['+2347036541234'],
+            teamId: buyingTeamId,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('boolean');
+      },
+      testTime,
+    );
 
-    // it(
-    //   '/teams/bulk-invite(POST) should not invite members to join the team if incomplete data is supplied',
-    //   async () => {
-    //     const response = await request(app.getHttpServer())
-    //       .post(`/teams/bulk-invite`)
-    //       .send({
-    //         link: 'https://www.google.com',
-    //       })
-    //       .expect(400);
-    //     expect(response.body).toHaveProperty('error');
-    //     expect(typeof response.body.error).toBe('string');
-    //   },
-    //   testTime,
-    // );
+    it(
+      '/teams/bulk-invite(POST) should not invite members to join the team if incomplete data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/bulk-invite`)
+          .send({
+            link: 'https://www.google.com',
+          })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
-    // //  verify invite token
-    // it(
-    //   '/teams/verify-invite(POST) should verify invite token',
-    //   async () => {
-    //     const response = await request(app.getHttpServer())
-    //       .post(`/teams/verify-invite`)
-    //       .send({
-    //         token: inviteToken,
-    //       })
-    //       .expect(200);
-    //     expect(response.body).toHaveProperty('data');
-    //     expect(response.body.error).toBeUndefined();
-    //     expect(typeof response.body.data).toBe('object');
-    //   },
-    //   testTime,
-    // );
+    //  verify invite token
+    it(
+      '/teams/verify-invite(POST) should verify invite token',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .send({
+            token: inviteToken,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
 
-    // it(
-    //   '/teams/verify-invite(POST) should not allow the request if the token is not supplied',
-    //   async () => {
-    //     const response = await request(app.getHttpServer())
-    //       .post(`/teams/verify-invite`)
-    //       .send({
-    //         token: 'invalid invite',
-    //       })
-    //       .expect(400);
-    //     expect(response.body).toHaveProperty('error');
-    //     expect(typeof response.body.error).toBe('string');
-    //   },
-    //   testTime,
-    // );
+    it(
+      '/teams/verify-invite(POST) should not allow the request if the token is not supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .send({
+            token: 'invalid invite',
+          })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
-    // it(
-    //   '/teams/verify-invite(POST) should not pass invalid invite',
-    //   async () => {
-    //     const response = await request(app.getHttpServer())
-    //       .post(`/teams/verify-invite`)
-    //       .expect(400);
-    //     expect(response.body).toHaveProperty('error');
-    //     expect(typeof response.body.error).toBe('string');
-    //   },
-    //   testTime,
-    // );
+    it(
+      '/teams/verify-invite(POST) should not pass invalid invite',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // quit buying team
     it(

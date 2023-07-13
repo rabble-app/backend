@@ -12,7 +12,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class TeamsServiceExtension {

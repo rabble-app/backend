@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import {
-  BuyingTeam,
-  Order,
-  Product,
-  ProductCategory,
-  RecentlyViewed,
-} from '@prisma/client';
+import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { ITeamWithOtherInfo } from 'src/lib/types';

@@ -22,7 +22,7 @@ import { AuthService } from './auth.service';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
