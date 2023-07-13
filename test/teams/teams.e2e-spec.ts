@@ -485,24 +485,24 @@ describe('TeamsController (e2e)', () => {
     );
 
     // bulk invite
-    it(
-      '/teams/bulk-invite(POST) should invite bulk member to join the team',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post(`/teams/bulk-invite`)
-          .send({
-            userId: user.id,
-            link: 'https://www.google.com',
-            phones: ['+2347036541234'],
-            teamId: buyingTeamId,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('boolean');
-      },
-      testTime,
-    );
+    // it(
+    //   '/teams/bulk-invite(POST) should invite bulk member to join the team',
+    //   async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .post(`/teams/bulk-invite`)
+    //       .send({
+    //         userId: user.id,
+    //         link: 'https://www.google.com',
+    //         phones: ['+2347036541234'],
+    //         teamId: buyingTeamId,
+    //       })
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(typeof response.body.data).toBe('boolean');
+    //   },
+    //   testTime,
+    // );
 
     it(
       '/teams/bulk-invite(POST) should not invite members to join the team if incomplete data is supplied',

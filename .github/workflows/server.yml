@@ -26,7 +26,7 @@ jobs:
      runs-on: ubuntu-latest
      strategy:
       matrix:
-       node-version: [18.16.0]  
+       node-version: [v18.16.0]  
        
      steps:
       - name: Checkout Source 📄
