@@ -262,11 +262,11 @@ export class TeamsController {
     );
     if (!result) {
       return formatResponse(
-        'Member already exist',
+        'Invalid data',
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Duplicate Request',
+        'Wrong data supplied',
       );
     }
     return formatResponse(

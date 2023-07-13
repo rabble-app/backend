@@ -11,7 +11,7 @@ describe('PaymentController (e2e)', () => {
   let prisma: PrismaService;
 
   const phone = faker.phone.number();
-  const customerId = 'cus_O1i4o3PuiFs1Ot';
+  let customerId = 'cus_OFCaSUidAGIJOA';
   let paymentMethodId: string;
   let userId: string;
   let product: Product;
@@ -65,6 +65,21 @@ describe('PaymentController (e2e)', () => {
 
     // get order for test
     order = await prisma.order.findFirst();
+
+    // stripe customer id for test
+    const result = await prisma.user.findFirst({
+      where: {
+        stripeCustomerId: {
+          not: 'NULL',
+        },
+      },
+      select: {
+        stripeCustomerId: true,
+      },
+    });
+    if (result) {
+      customerId = result.stripeCustomerId;
+    }
   }, testTime);
 
   afterAll(async () => {

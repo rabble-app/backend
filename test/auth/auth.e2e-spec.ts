@@ -14,11 +14,11 @@ describe('AppController (e2e)', () => {
   const phone = faker.phone.number();
 
   const producerInfo = {
+    phone,
     email: faker.internet.email(),
-    password: faker.internet.password(),
-    businessName: faker.internet.userName(),
-    businessAddress: faker.address,
-    phone: faker.phone.number(),
+    password: 'password',
+    businessName: 'Business name',
+    businessAddress: 'Business Address',
   };
 
   beforeAll(async () => {

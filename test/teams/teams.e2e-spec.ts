@@ -14,7 +14,7 @@ describe('TeamsController (e2e)', () => {
   let authService: AuthService;
 
   const phone = faker.phone.number();
-  const customerId = 'cus_O1i4o3PuiFs1Ot';
+  let customerId = 'cus_OFCaSUidAGIJOA';
   let paymentMethodId: string;
   let inviteToken: string;
 
@@ -131,6 +131,21 @@ describe('TeamsController (e2e)', () => {
       },
     });
     inviteToken = result.token;
+
+    // stripe customer id for test
+    const result1 = await prisma.user.findFirst({
+      where: {
+        stripeCustomerId: {
+          not: 'NULL',
+        },
+      },
+      select: {
+        stripeCustomerId: true,
+      },
+    });
+    if (result1) {
+      customerId = result1.stripeCustomerId;
+    }
   }, testTime);
 
   afterAll(async () => {

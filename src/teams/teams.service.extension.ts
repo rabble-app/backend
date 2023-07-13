@@ -27,12 +27,9 @@ export class TeamsServiceExtension {
   async updateRequest(
     updateRequestDto: UpdateRequestDto,
   ): Promise<TeamRequest | boolean> {
-    if (updateRequestDto.status == 'APPROVED') {
-      // get user data
-      const result = await this.teamsService.getRequestData(
-        updateRequestDto.id,
-      );
-
+    // get user data
+    const result = await this.teamsService.getRequestData(updateRequestDto.id);
+    if (result) {
       // check if member already exist
       const memberExist = await this.prisma.teamMember.findFirst({
         where: {
@@ -41,9 +38,13 @@ export class TeamsServiceExtension {
         },
       });
       if (memberExist) {
-        return false;
+        return await this.prisma.teamRequest.findFirst({
+          where: {
+            id: updateRequestDto.id,
+          },
+        });
       }
-      if (result) {
+      if (updateRequestDto.status == 'APPROVED') {
         await this.prisma.teamMember.create({
           data: {
             userId: result.userId,
@@ -52,13 +53,15 @@ export class TeamsServiceExtension {
           },
         });
       }
+      return await this.prisma.teamRequest.update({
+        where: {
+          id: updateRequestDto.id,
+        },
+        data: { status: updateRequestDto.status },
+      });
+    } else {
+      return false;
     }
-    return await this.prisma.teamRequest.update({
-      where: {
-        id: updateRequestDto.id,
-      },
-      data: { status: updateRequestDto.status },
-    });
   }
 
   async getTeamMembers(id: string): Promise<TeamMember[] | null> {
