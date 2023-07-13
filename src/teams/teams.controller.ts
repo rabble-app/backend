@@ -260,6 +260,15 @@ export class TeamsController {
     const result = await this.teamsServiceExtension.updateRequest(
       updateRequestDto,
     );
+    if (!result) {
+      return formatResponse(
+        'Member already exist',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Duplicate Request',
+      );
+    }
     return formatResponse(
       result,
       res,
