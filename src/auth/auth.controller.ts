@@ -23,6 +23,7 @@ import { SendOTPDto } from './dto/send-otp.dto';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { UsersService } from '../users/users.service';
+import { LoginProducerDto } from './dto/login-producer.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -162,7 +163,41 @@ export class AuthController {
       res,
       HttpStatus.OK,
       false,
-      'OTP sent successfully',
+      'User account created successfully',
+    );
+  }
+
+  /**
+   * Login Producer.
+   * @param {Body} loginProducerDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('login')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Producer login successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async login(
+    @Body() loginProducerDto: LoginProducerDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.authService.loginProducer(loginProducerDto);
+    if (!result) {
+      return formatResponse(
+        'Invalid credentials supplied',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Incorrect email/password',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Producer login successfully',
     );
   }
 }

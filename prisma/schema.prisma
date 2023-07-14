@@ -50,9 +50,10 @@ model User {
 model Producer {
   id  String     @default(uuid()) @id
   userId String @unique
+  isVerified Boolean    @default(false) @map("is_verified")
   imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
   imageKey String? @map("image_key")  
-  businessName String @map("business_name")
+  businessName String @unique @map("business_name")
   businessAddress String? @map("business_address")
   accountsEmail String? @map("acounts_email")
   salesEmail String? @map("sales_email")
@@ -75,7 +76,7 @@ model Producer {
 
 model ProducerCategoryOption {
   id  String  @default(uuid()) @id  
-  name String 
+  name String @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -94,6 +95,7 @@ model ProducerCategory {
   producer Producer  @relation(fields: [producerId], references: [id])
   category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id])
 
+  @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
   @@map("producer_categories")
 }
 
@@ -113,7 +115,7 @@ model Shipping {
 
 model Product {
   id  String     @default(uuid()) @id  
-  name String
+  name String @unique
   imageUrl String? @map("image_url") 
   imageKey String? @map("image_key")  
   description String?
@@ -136,7 +138,7 @@ model Product {
 
 model ProductCategory {
   id  String  @default(uuid()) @id  
-  name String 
+  name String @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -147,7 +149,7 @@ model ProductCategory {
 
 model BuyingTeam {
   id  String     @default(uuid()) @id 
-  name String 
+  name String @unique
   postalCode String @map("postal_code")
   producerId String @map("producer_id")
   hostId String    @map("host_id")
@@ -201,6 +203,7 @@ model TeamMember {
   team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
+  @@unique([teamId, userId], name: "team_unique_user")
   @@map("team_members")
 }
 
@@ -216,6 +219,7 @@ model TeamRequest {
   team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
+  @@unique([teamId, userId], name: "team_unique_user")
   @@map("team_requests")
 }
 
@@ -229,6 +233,7 @@ model Follower {
   user User  @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade) 
   follower User  @relation("followings", fields: [followerId], references: [id])
 
+  @@unique([userId, followerId], name: "user_unique_follower")
   @@map("followers")
 }
 
@@ -246,6 +251,9 @@ model Like {
   producer Producer?  @relation(fields: [producerId], references: [id])
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, productId], name: "user_unique_product")
+  @@unique([userId, producerId], name: "user_unique_producer")
+  @@unique([userId, teamId], name: "user_unique_team")
   @@map("likes")
 }
 
@@ -261,7 +269,8 @@ model Invite {
 
   team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  
+
+  @@unique([teamId, userId], name: "team_unique_user")
   @@map("invites")
 }
 
@@ -295,8 +304,9 @@ model Basket {
 
   order Order  @relation(fields: [orderId], references: [id])
   product Product  @relation(fields: [productId], references: [id])
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId, productId], name: "user_unique_product") 
   @@map("basket")
 }
 

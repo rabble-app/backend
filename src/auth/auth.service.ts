@@ -9,6 +9,7 @@ import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { Producer } from '@prisma/client';
+import { LoginProducerDto } from './dto/login-producer.dto';
 
 @Injectable()
 export class AuthService {
@@ -116,6 +117,7 @@ export class AuthService {
         email: createProducerDto.email,
         phone: createProducerDto.phone,
         password: hash,
+        role: 'PRODUCER',
       },
     });
 
@@ -127,6 +129,41 @@ export class AuthService {
         businessAddress: createProducerDto.businessAddress,
       },
     });
+    const token = this.generateToken({
+      userId: userRecord.id,
+      producerId: producerRecord.id,
+    });
+    producerRecord['token'] = token;
+
+    return producerRecord;
+  }
+
+  async loginProducer(
+    loginProducerDto: LoginProducerDto,
+  ): Promise<object | null> {
+    // get the user record
+    const user = await this.userService.findUser({
+      email: loginProducerDto.email,
+    });
+    if (!user) return null;
+
+    // confirm password
+    const isMatch = await bcrypt.compare(
+      loginProducerDto.password,
+      user.password,
+    );
+    if (!isMatch) return null;
+
+    // get producer record
+    const producerRecord = await this.userService.findProducer({
+      userId: user.id,
+    });
+
+    const token = this.generateToken({
+      userId: user.id,
+      producerId: producerRecord.id,
+    });
+    producerRecord['token'] = token;
     return producerRecord;
   }
 }
