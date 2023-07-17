@@ -81,13 +81,22 @@ async function main() {
     },
   });
 
-  // add producer id to the producer
-  await prisma.producerCategory.create({
-    data: {
+  // add category id to the producer
+  await prisma.producerCategory.upsert({
+    where: {
+      producer_unique_category_option: {
+        producerId: producerRecord.id,
+        producerCategoryOptionId: producerCategoryOption.id,
+      },
+    },
+    update: {},
+    create: {
       producerId: producerRecord.id,
       producerCategoryOptionId: producerCategoryOption.id,
     },
   });
+
+  // add products for the producer
 }
 main()
   .then(async () => {

@@ -1,15 +1,16 @@
-import * as twilio from 'twilio';
 import * as bcrypt from 'bcrypt';
+import * as twilio from 'twilio';
+import ChangePasswordDto from './dto/change-password.dto';
+import { CreateProducerDto } from './dto/create-producer.dto';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { LoginProducerDto } from './dto/login-producer.dto';
 import { PaymentService } from '../payment/payment.service';
 import { PrismaService } from '../prisma.service';
+import { Producer, User } from '@prisma/client';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
-import { CreateProducerDto } from './dto/create-producer.dto';
-import { Producer } from '@prisma/client';
-import { LoginProducerDto } from './dto/login-producer.dto';
 
 @Injectable()
 export class AuthService {
@@ -108,15 +109,14 @@ export class AuthService {
     createProducerDto: CreateProducerDto,
   ): Promise<Producer> {
     // encrypt password
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(createProducerDto.password, salt);
+    const password = await this.encryptPassword(createProducerDto.password);
 
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
+        password,
         email: createProducerDto.email,
         phone: createProducerDto.phone,
-        password: hash,
         role: 'PRODUCER',
       },
     });
@@ -134,6 +134,8 @@ export class AuthService {
       producerId: producerRecord.id,
     });
     producerRecord['token'] = token;
+
+    // todo: send mail
 
     return producerRecord;
   }
@@ -165,5 +167,76 @@ export class AuthService {
     });
     producerRecord['token'] = token;
     return producerRecord;
+  }
+
+  async emailVerification(token: string): Promise<Producer | null> {
+    const validToken = this.decodeToken(token);
+    if (!validToken) {
+      return null;
+    }
+
+    const userInfo = await this.userService.findProducer({
+      id: validToken.producerId,
+    });
+    if (!userInfo) {
+      return null;
+    }
+
+    userInfo.isVerified = true;
+
+    return await this.userService.updateProducer({
+      where: {
+        id: validToken.producerId,
+      },
+      data: {
+        isVerified: true,
+      },
+    });
+  }
+
+  async changePassword(
+    token: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<User | number> {
+    const validToken = this.decodeToken(token);
+    if (!validToken) {
+      return 1;
+    }
+
+    const userInfo = await this.userService.findUser({
+      id: validToken.userId,
+    });
+    if (!userInfo) {
+      return 2;
+    }
+
+    if (
+      changePasswordDto.channel !== 'passwordReset' &&
+      userInfo.password &&
+      changePasswordDto.oldPassword
+    ) {
+      // validate that the old password supplied is correct
+      const checkPassword = await bcrypt.compare(
+        changePasswordDto.oldPassword,
+        userInfo.password,
+      );
+      if (!checkPassword) return 3;
+    }
+
+    const password = await this.encryptPassword(changePasswordDto.newPassword);
+
+    return await this.userService.updateUser({
+      where: {
+        id: validToken.userId,
+      },
+      data: {
+        password,
+      },
+    });
+  }
+
+  async encryptPassword(pass: string): Promise<string> {
+    const salt = await bcrypt.genSalt();
+    return await bcrypt.hash(pass, salt);
   }
 }

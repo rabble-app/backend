@@ -92,7 +92,7 @@ export class ScheduleServiceExtended {
             userId: oldProduct.userId,
             productId: oldProduct.productId,
             quantity: oldProduct.quantity,
-            price: product.price,
+            price: +product.price,
           };
 
           // add to basket
@@ -101,7 +101,7 @@ export class ScheduleServiceExtended {
           });
 
           // increment totalAmount
-          totalAmount += product.price;
+          totalAmount += +product.price;
 
           // record the payment to be made by the user
           await this.paymentService.recordPayment({

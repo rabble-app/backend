@@ -9,6 +9,7 @@ describe('AppController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let userId: string;
+  let jwtToken: string;
   const testTime = 120000;
 
   const phone = faker.phone.number();
@@ -21,6 +22,17 @@ describe('AppController (e2e)', () => {
     password,
     businessName: faker.company.catchPhraseNoun(),
     businessAddress: 'Business Address',
+  };
+
+  const incompleteChangePasswordData = {
+    oldPassword: '123456789',
+    newPassword: 'linkdedinuser',
+  };
+
+  const changePasswordData = {
+    oldPassword: '123456789',
+    newPassword: 'linkdedinuser',
+    channel: 'settings',
   };
 
   beforeAll(async () => {
@@ -123,10 +135,11 @@ describe('AppController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/auth/register')
           .send(producerInfo)
-          .expect(200);
+          .expect(201);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
+        jwtToken = response.body.data.token;
       },
       testTime,
     );
@@ -146,7 +159,7 @@ describe('AppController (e2e)', () => {
 
     // login producer
     it(
-      '/auth/login (POST) should register a producer',
+      '/auth/login (POST) should login a producer',
       async () => {
         const response = await request(app.getHttpServer())
           .post('/auth/login')
@@ -160,7 +173,7 @@ describe('AppController (e2e)', () => {
     );
 
     it(
-      '/auth/login (POST) should not register a producer if incomplete data is supplied',
+      '/auth/login (POST) should not login a producer if incomplete data is supplied',
       async () => {
         const response = await request(app.getHttpServer())
           .post('/auth/login')
@@ -171,5 +184,139 @@ describe('AppController (e2e)', () => {
       },
       testTime,
     );
+
+    // Email Verification
+    it('/auth/email-verification (POST) should not verify email if email verification token is invalid/expired', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/email-verification')
+        .send({ token: 'invalidToken' })
+        .expect(401);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.data).toBeUndefined();
+      expect(typeof response.body.error).toBe('object');
+    });
+
+    it('/auth/email-verification (POST) should verify email if email verification token is valid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/email-verification')
+        .send({ token: jwtToken })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // Resend Email Verification
+    it('/auth/resend-email-verification (POST) should not resend email verification if user does not exist', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/resend-email-verification')
+        .send({ email: 'ok54nb32@gmail.com' })
+        .expect(404);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.data).toBeUndefined();
+      expect(typeof response.body.error).toBe('object');
+    });
+
+    it('/auth/resend-email-verification (POST) should not resend email verification if email is not supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/resend-email-verification')
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+
+      return response;
+    });
+
+    it('/auth/resend-email-verification (POST) should resend email verification if email is valid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/resend-email-verification')
+        .send({ email })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('string');
+    });
+
+    // Password Reset
+    it('/auth/send-reset-password-link (POST) should not send password reset link if user does not exist', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/send-reset-password-link')
+        .send({ email: 'ok54nb32@gmail.com' })
+        .expect(404);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.data).toBeUndefined();
+      expect(typeof response.body.error).toBe('object');
+    });
+
+    it('/auth/send-reset-password-link (POST) should not send password reset link if email is not supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/send-reset-password-link')
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    it('/auth/send-reset-password-link (POST) should send password reset link if email is valid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/send-reset-password-link')
+        .send({ email })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('string');
+    });
+
+    // verify reset password token
+    it('/auth/validate-reset-password-token (POST) should not send password reset link if email is not supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/validate-reset-password-token')
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    it('/auth/validate-reset-password-token (POST) should send password reset link if email is valid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/validate-reset-password-token')
+        .send({ token: jwtToken })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('string');
+    });
+
+    // Change Password
+    it('/auth/change-password (POST) should not change password if no token is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .send(changePasswordData)
+        .expect(401);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.data).toBeUndefined();
+      expect(typeof response.body.error).toBe('object');
+    });
+
+    it('/auth/change-password (POST) should not change password if invalid/expired token is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .set('Authorization', `Bearer ${jwtToken}invalid`)
+        .send(changePasswordData)
+        .expect(401);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.data).toBeUndefined();
+      expect(typeof response.body.error).toBe('object');
+    });
+
+    it('/auth/change-password (POST) should not change password if incomplete data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(incompleteChangePasswordData)
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+
+      return response;
+    });
   });
 });

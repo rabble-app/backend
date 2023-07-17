@@ -34,13 +34,6 @@ export interface ITeamMember {
   userId: string;
   status: Status;
 }
-export interface IBasket {
-  orderId: string;
-  userId: string;
-  productId: string;
-  quantity: number;
-  price: string;
-}
 export interface IScheduleTeam {
   id: string;
   frequency: number;

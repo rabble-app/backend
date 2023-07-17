@@ -1,3 +1,15 @@
+import EmailVerificationDto from './dto/email-verification.dto';
+import ResendEmailVerificationDto from './dto/resend-email-verification.dto';
+import ResetPasswordDto from './dto/reset-password.dto';
+import { AuthService } from './auth.service';
+import { CreateProducerDto } from './dto/create-producer.dto';
+import { formatResponse } from '../lib/helpers';
+import { IAPIResponse } from '../lib/types';
+import { LoginProducerDto } from './dto/login-producer.dto';
+import { Response } from 'express';
+import { SendOTPDto } from './dto/send-otp.dto';
+import { UsersService } from '../users/users.service';
+import { VerifyOTPDto } from './dto/verify-otp.dto';
 import {
   Controller,
   Post,
@@ -6,24 +18,19 @@ import {
   HttpStatus,
   Delete,
   Param,
+  Headers,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Response } from 'express';
-import { formatResponse } from '../lib/helpers';
-import { IAPIResponse } from '../lib/types';
-import { AuthService } from './auth.service';
-import { SendOTPDto } from './dto/send-otp.dto';
-import { VerifyOTPDto } from './dto/verify-otp.dto';
-import { CreateProducerDto } from './dto/create-producer.dto';
-import { UsersService } from '../users/users.service';
-import { LoginProducerDto } from './dto/login-producer.dto';
+import ChangePasswordDto from './dto/change-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -137,7 +144,7 @@ export class AuthController {
     @Body() createProducerDto: CreateProducerDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    // check whether email or phone number already exist
+    // check whether email, phone or business name already exist
     const emailExist = await this.usersService.findUser({
       email: createProducerDto.email,
     });
@@ -146,13 +153,17 @@ export class AuthController {
       phone: createProducerDto.phone,
     });
 
-    if (emailExist || phoneExist) {
+    const businessNameExist = await this.usersService.findProducer({
+      businessName: createProducerDto.businessName,
+    });
+
+    if (emailExist || phoneExist || businessNameExist) {
       return formatResponse(
         'User already exist',
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Email or phone number already exist',
+        'Email | phone number | business name already exist',
       );
     }
 
@@ -176,7 +187,7 @@ export class AuthController {
    */
   @Post('login')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Producer login successfully' })
+  @ApiCreatedResponse({ description: 'Producer login successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async login(
     @Body() loginProducerDto: LoginProducerDto,
@@ -195,9 +206,245 @@ export class AuthController {
     return formatResponse(
       result,
       res,
-      HttpStatus.OK,
+      HttpStatus.CREATED,
       false,
       'Producer login successfully',
+    );
+  }
+
+  /**
+   * Email verification.
+   * @param {Body} emailVerificationDto - Request body object.
+   * @param {Response} res - Response object.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('email-verification')
+  @ApiOkResponse({ description: 'Email verification successful' })
+  @ApiUnauthorizedResponse({ description: 'Invalid/expired link' })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  async emailVerification(
+    @Body() emailVerificationDto: EmailVerificationDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.authService.emailVerification(
+      emailVerificationDto.token,
+    );
+    if (!result) {
+      return formatResponse(
+        'Invalid/expired link',
+        res,
+        HttpStatus.UNAUTHORIZED,
+        true,
+        'Verification failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Email verified successfully',
+    );
+  }
+
+  /**
+   * Resend Email verification.
+   * @param {Body} resendEmailVerificationDto - Request body object.
+   * @param {Response} res - Response object.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('resend-email-verification')
+  @ApiOkResponse({ description: 'Email verification link sent successfully' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  async resendEmailVerification(
+    @Body() resendEmailVerificationDto: ResendEmailVerificationDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const user = await this.usersService.findUser({
+      email: resendEmailVerificationDto.email,
+    });
+    if (!user) {
+      return formatResponse(
+        'User not found',
+        res,
+        HttpStatus.NOT_FOUND,
+        true,
+        'User does not exist',
+      );
+    }
+    // todo:send email
+    return formatResponse(
+      user,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Email verification link sent successfully',
+    );
+  }
+
+  /**
+   * Reset password.
+   * @param {Body} resetPasswordDto - Request body object.
+   * @param {Response} res - Response object.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('send-reset-password-link')
+  @ApiOkResponse({ description: 'Reset password link sent successfully' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const user = await this.usersService.findUser({
+      email: resetPasswordDto.email,
+    });
+    if (!user) {
+      return formatResponse(
+        'User not found',
+        res,
+        HttpStatus.NOT_FOUND,
+        true,
+        'User does not exist',
+      );
+    }
+    // todo: send mail
+    // const passwordResetToken = this.authService.generateToken(user);
+    // const passwordResetLink = `${process.env.RESET_PASSWORD_REDIRECT}/${passwordResetToken}`;
+    // const message = emailDynamicTemplate3(
+    //   user.firstName ? user.firstName : 'Hello',
+    //   passwordResetLink,
+    // );
+    // const mail = {
+    //   to: user.email,
+    //   subject: 'Inbilio Password Reset',
+    //   from: process.env.COMPANY_EMAIL,
+    //   text: message,
+    //   html: `<h1>${message}</h1>`,
+    // };
+    // // email service
+    // await this.email.sendEmail(mail);
+
+    return formatResponse(
+      user,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Password reset link sent successfully',
+    );
+  }
+
+  /**
+   * Validate password token.
+   * @param validateResetToken
+   * @param {Response} res - Response object.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('validate-reset-password-token')
+  @ApiOkResponse({ description: 'Reset password token is valid' })
+  @ApiNotFoundResponse({ description: 'Invalid token' })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  async validateResetPasswordToken(
+    @Body() emailVerificationDto: EmailVerificationDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = this.authService.decodeToken(emailVerificationDto.token);
+
+    if (!result) {
+      return formatResponse(
+        'Invalid/expired link',
+        res,
+        HttpStatus.UNAUTHORIZED,
+        true,
+        'Verification failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Reset password token verified successfully',
+    );
+  }
+
+  /**
+   * Change password.
+   * @param changePasswordDto
+   * @param {Response} res - Response object.
+   * @param bearerToken
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('change-password')
+  @ApiOkResponse({ description: 'Password changed successfully' })
+  @ApiUnauthorizedResponse({
+    description: 'Not authorized, Invalid/expired token',
+  })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('authorization') bearerToken: string,
+  ): Promise<IAPIResponse> {
+    let token = null;
+    if (changePasswordDto.token) token = changePasswordDto.token;
+    if (bearerToken) token = bearerToken.slice(7);
+
+    if (!token) {
+      return formatResponse(
+        'Token is required in either the head or body of request',
+        res,
+        HttpStatus.UNAUTHORIZED,
+        true,
+        'No token found',
+      );
+    }
+
+    const user = await this.authService.changePassword(
+      token,
+      changePasswordDto,
+    );
+
+    if (user === 1) {
+      return formatResponse(
+        'Invalid/expired token',
+        res,
+        HttpStatus.UNAUTHORIZED,
+        true,
+        'Invalid token',
+      );
+    }
+    if (user === 2) {
+      return formatResponse(
+        'User record not found',
+        res,
+        HttpStatus.NOT_FOUND,
+        true,
+        'Invalid token',
+      );
+    }
+    if (user === 3) {
+      return formatResponse(
+        'Old password is not correct',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Wrong password',
+      );
+    }
+    return formatResponse(
+      user,
+      res,
+      HttpStatus.OK,
+      false,
+      'Password changed successfully',
     );
   }
 }

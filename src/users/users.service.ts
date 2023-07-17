@@ -1,3 +1,5 @@
+import { CreateProducerDto } from './dto/create-producer.dto';
+import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
@@ -9,8 +11,6 @@ import {
   BuyingTeam,
   TeamRequest,
 } from '@prisma/client';
-import { CreateProducerDto } from './dto/create-producer.dto';
-import { DeliveryAddressDto } from './dto/delivery-address.dto';
 
 @Injectable()
 export class UsersService {
@@ -257,6 +257,17 @@ export class UsersService {
           },
         },
       },
+    });
+  }
+
+  async updateProducer(params: {
+    where: Prisma.ProducerWhereUniqueInput;
+    data: Prisma.ProducerUpdateInput;
+  }): Promise<Producer> {
+    const { where, data } = params;
+    return await this.prisma.producer.update({
+      data,
+      where,
     });
   }
 }
