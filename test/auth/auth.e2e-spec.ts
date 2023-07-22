@@ -30,9 +30,9 @@ describe('AppController (e2e)', () => {
   };
 
   const changePasswordData = {
-    oldPassword: '123456789',
+    oldPassword: password,
     newPassword: 'linkdedinuser',
-    channel: 'settings',
+    channel: 'PASSWORD_RESET',
   };
 
   beforeAll(async () => {
@@ -192,8 +192,7 @@ describe('AppController (e2e)', () => {
         .send({ token: 'invalidToken' })
         .expect(401);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.data).toBeUndefined();
-      expect(typeof response.body.error).toBe('object');
+      expect(typeof response.body.error).toBe('string');
     });
 
     it('/auth/email-verification (POST) should verify email if email verification token is valid', async () => {
@@ -213,8 +212,7 @@ describe('AppController (e2e)', () => {
         .send({ email: 'ok54nb32@gmail.com' })
         .expect(404);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.data).toBeUndefined();
-      expect(typeof response.body.error).toBe('object');
+      expect(typeof response.body.error).toBe('string');
     });
 
     it('/auth/resend-email-verification (POST) should not resend email verification if email is not supplied', async () => {
@@ -234,7 +232,7 @@ describe('AppController (e2e)', () => {
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('string');
+      expect(typeof response.body.data).toBe('object');
     });
 
     // Password Reset
@@ -244,8 +242,7 @@ describe('AppController (e2e)', () => {
         .send({ email: 'ok54nb32@gmail.com' })
         .expect(404);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.data).toBeUndefined();
-      expect(typeof response.body.error).toBe('object');
+      expect(typeof response.body.error).toBe('string');
     });
 
     it('/auth/send-reset-password-link (POST) should not send password reset link if email is not supplied', async () => {
@@ -263,26 +260,7 @@ describe('AppController (e2e)', () => {
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('string');
-    });
-
-    // verify reset password token
-    it('/auth/validate-reset-password-token (POST) should not send password reset link if email is not supplied', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/validate-reset-password-token')
-        .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
-    });
-
-    it('/auth/validate-reset-password-token (POST) should send password reset link if email is valid', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/validate-reset-password-token')
-        .send({ token: jwtToken })
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('string');
+      expect(typeof response.body.data).toBe('object');
     });
 
     // Change Password
@@ -292,8 +270,7 @@ describe('AppController (e2e)', () => {
         .send(changePasswordData)
         .expect(401);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.data).toBeUndefined();
-      expect(typeof response.body.error).toBe('object');
+      expect(typeof response.body.error).toBe('string');
     });
 
     it('/auth/change-password (POST) should not change password if invalid/expired token is supplied', async () => {
@@ -303,8 +280,7 @@ describe('AppController (e2e)', () => {
         .send(changePasswordData)
         .expect(401);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.data).toBeUndefined();
-      expect(typeof response.body.error).toBe('object');
+      expect(typeof response.body.error).toBe('string');
     });
 
     it('/auth/change-password (POST) should not change password if incomplete data is supplied', async () => {

@@ -211,7 +211,7 @@ export class AuthService {
     }
 
     if (
-      changePasswordDto.channel !== 'passwordReset' &&
+      changePasswordDto.channel !== 'PASSWORD_RESET' &&
       userInfo.password &&
       changePasswordDto.oldPassword
     ) {

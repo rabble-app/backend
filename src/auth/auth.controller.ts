@@ -138,7 +138,7 @@ export class AuthController {
    */
   @Post('register')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Producer account created successfully' })
+  @ApiCreatedResponse({ description: 'Producer account created successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async register(
     @Body() createProducerDto: CreateProducerDto,
@@ -172,7 +172,7 @@ export class AuthController {
     return formatResponse(
       result,
       res,
-      HttpStatus.OK,
+      HttpStatus.CREATED,
       false,
       'User account created successfully',
     );
@@ -187,7 +187,7 @@ export class AuthController {
    */
   @Post('login')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiCreatedResponse({ description: 'Producer login successfully' })
+  @ApiOkResponse({ description: 'Producer login successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async login(
     @Body() loginProducerDto: LoginProducerDto,
@@ -206,7 +206,7 @@ export class AuthController {
     return formatResponse(
       result,
       res,
-      HttpStatus.CREATED,
+      HttpStatus.OK,
       false,
       'Producer login successfully',
     );
@@ -242,7 +242,7 @@ export class AuthController {
     return formatResponse(
       result,
       res,
-      HttpStatus.CREATED,
+      HttpStatus.OK,
       false,
       'Email verified successfully',
     );
@@ -279,7 +279,7 @@ export class AuthController {
     return formatResponse(
       user,
       res,
-      HttpStatus.CREATED,
+      HttpStatus.OK,
       false,
       'Email verification link sent successfully',
     );
@@ -313,7 +313,7 @@ export class AuthController {
       );
     }
     // todo: send mail
-    // const passwordResetToken = this.authService.generateToken(user);
+    // const passwordResetToken = this.authService.generateToken({userId: user.id});
     // const passwordResetLink = `${process.env.RESET_PASSWORD_REDIRECT}/${passwordResetToken}`;
     // const message = emailDynamicTemplate3(
     //   user.firstName ? user.firstName : 'Hello',
@@ -332,44 +332,9 @@ export class AuthController {
     return formatResponse(
       user,
       res,
-      HttpStatus.CREATED,
+      HttpStatus.OK,
       false,
       'Password reset link sent successfully',
-    );
-  }
-
-  /**
-   * Validate password token.
-   * @param validateResetToken
-   * @param {Response} res - Response object.
-   * @memberof AuthController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Post('validate-reset-password-token')
-  @ApiOkResponse({ description: 'Reset password token is valid' })
-  @ApiNotFoundResponse({ description: 'Invalid token' })
-  @ApiBadRequestResponse({ description: 'Bad request' })
-  async validateResetPasswordToken(
-    @Body() emailVerificationDto: EmailVerificationDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = this.authService.decodeToken(emailVerificationDto.token);
-
-    if (!result) {
-      return formatResponse(
-        'Invalid/expired link',
-        res,
-        HttpStatus.UNAUTHORIZED,
-        true,
-        'Verification failed',
-      );
-    }
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.CREATED,
-      false,
-      'Reset password token verified successfully',
     );
   }
 

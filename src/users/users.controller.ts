@@ -16,14 +16,16 @@ import {
   Post,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common/decorators';
 import { Response } from 'express';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateProducerDto } from './dto/create-producer.dto';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { UpdateDeliveryAddressDto } from './dto/update-delivery-address.dto';
+import { UpdateProducerDto } from './dto/update-producer.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -59,27 +61,50 @@ export class UsersController {
   }
 
   /**
-   * create new producer.
-   * @param {Body} createProducerDto - Request body object.
+   * update producer record.
+   * @param {Body} updateProducerDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
-  @Post('create-producer')
+  @UseGuards(AuthGuard)
+  @Patch('producer/:id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiCreatedResponse({ description: 'Producer created successfully' })
+  @ApiOkResponse({ description: 'User record updated successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async createProducer(
-    @Body() createProducerDto: CreateProducerDto,
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the producer',
+  })
+  async updateProducer(
+    @Param('id') id: string,
+    @Body() updateProducerDto: UpdateProducerDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.usersService.createProducer(createProducerDto);
+    const businessNameExist = await this.usersService.findProducer({
+      businessName: updateProducerDto.businessName,
+    });
+
+    if (businessNameExist) {
+      return formatResponse(
+        'Business name already exist',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Invalid Entry',
+      );
+    }
+    const result = await this.usersService.updateProducer({
+      where: { id },
+      data: updateProducerDto,
+    });
     return formatResponse(
       result,
       res,
-      HttpStatus.CREATED,
+      HttpStatus.OK,
       false,
-      'Producer created successfully',
+      'Producer record updated successfully',
     );
   }
 

@@ -1,4 +1,3 @@
-import { CreateProducerDto } from './dto/create-producer.dto';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
@@ -10,7 +9,9 @@ import {
   TeamMember,
   BuyingTeam,
   TeamRequest,
+  ProducerCategory,
 } from '@prisma/client';
+import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 
 @Injectable()
 export class UsersService {
@@ -38,14 +39,6 @@ export class UsersService {
     return await this.prisma.user.update({
       data,
       where,
-    });
-  }
-
-  async createProducer(
-    createProducerDto: CreateProducerDto,
-  ): Promise<Producer> {
-    return await this.prisma.producer.create({
-      data: createProducerDto,
     });
   }
 
@@ -267,6 +260,22 @@ export class UsersService {
     const { where, data } = params;
     return await this.prisma.producer.update({
       data,
+      where,
+    });
+  }
+
+  async addProducerCategory(
+    addProducerCategoryDto: AddProducerCategoryDto,
+  ): Promise<object> {
+    return await this.prisma.producerCategory.createMany({
+      data: addProducerCategoryDto.content,
+    });
+  }
+
+  async removeProducerCategory(
+    where: Prisma.ProducerCategoryWhereUniqueInput,
+  ): Promise<ProducerCategory> {
+    return await this.prisma.producerCategory.delete({
       where,
     });
   }

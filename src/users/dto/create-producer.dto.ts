@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, ValidateIf, IsNumber } from 'class-validator';
-
 export class CreateProducerDto {
   @ApiProperty({
     type: 'string',
@@ -52,4 +51,22 @@ export class CreateProducerDto {
   })
   @IsNumber()
   minimumTreshold: number;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The business sales email',
+    required: false,
+  })
+  @ValidateIf((o) => o.salesEmail)
+  @IsString()
+  salesEmail: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The business account email',
+    required: false,
+  })
+  @ValidateIf((o) => o.accountsEmail)
+  @IsString()
+  accountsEmail: string;
 }

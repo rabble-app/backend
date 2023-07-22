@@ -47,7 +47,7 @@ export class TeamsController {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Buying team created successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async createProducer(
+  async createBuyingTeam(
     @Body() createTeamDto: CreateTeamDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {

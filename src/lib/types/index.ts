@@ -10,6 +10,11 @@ export enum Status {
   REMOVED = 'REMOVED',
 }
 
+export enum PasswordChangeRoute {
+  PASSWORD_RESET = 'PASSWORD_RESET',
+  SETTINGS = 'SETTINGS',
+}
+
 export enum PaymentStatus {
   PENDING = 'PENDING',
   INTENT_CREATED = 'INTENT_CREATED',

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, ValidateIf } from 'class-validator';
+import { IsEnum, IsNotEmpty, ValidateIf } from 'class-validator';
+import { PasswordChangeRoute } from '../../lib/types';
 
 export default class ChangePasswordDto {
   @ApiProperty({
@@ -8,7 +9,7 @@ export default class ChangePasswordDto {
     default: '123456789',
     required: false,
   })
-  @ValidateIf((o) => o.channel !== 'passwordReset')
+  @ValidateIf((o) => o.channel !== 'PASSWORD_RESET')
   @IsNotEmpty()
   oldPassword: string;
 
@@ -35,6 +36,6 @@ export default class ChangePasswordDto {
       'The source of the current password change, it can be passwordReset or settings',
     default: 'passwordReset',
   })
-  @IsNotEmpty()
-  channel: string;
+  @IsEnum(PasswordChangeRoute)
+  channel: PasswordChangeRoute;
 }
