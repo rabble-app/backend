@@ -55,6 +55,9 @@ export class UsersService {
             category: true,
           },
         },
+        _count: {
+          select: { buyingteams: true },
+        },
       },
     });
   }
