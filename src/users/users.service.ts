@@ -73,6 +73,9 @@ export class UsersService {
             category: true,
           },
         },
+        _count: {
+          select: { buyingteams: true },
+        },
       },
     });
   }
@@ -333,6 +336,16 @@ export class UsersService {
             mode: 'insensitive',
           },
         },
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+          _count: {
+            select: { buyingteams: true },
+          },
+        },
       });
     } else if (category == 'PRODUCT') {
       result = await this.prisma.product.findMany({
@@ -349,6 +362,30 @@ export class UsersService {
           name: {
             contains: keyword,
             mode: 'insensitive',
+          },
+        },
+        include: {
+          members: true,
+          producer: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              categories: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
+          host: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
           },
         },
       });
