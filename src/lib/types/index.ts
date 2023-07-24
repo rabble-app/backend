@@ -65,3 +65,9 @@ export interface ITeamWithOtherInfo {
     },
   ];
 }
+
+export enum SearchCategory {
+  SUPPLIER = 'SUPPLIER',
+  PRODUCT = 'PRODUCT',
+  TEAM = 'TEAM',
+}

@@ -10,8 +10,11 @@ import {
   BuyingTeam,
   TeamRequest,
   ProducerCategory,
+  Search,
+  SearchCount,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
+import { SearchCategory } from 'src/lib/types';
 
 @Injectable()
 export class UsersService {
@@ -277,6 +280,99 @@ export class UsersService {
   ): Promise<ProducerCategory> {
     return await this.prisma.producerCategory.delete({
       where,
+    });
+  }
+
+  async search(
+    userId: string,
+    keyword: string,
+    category: SearchCategory,
+  ): Promise<object[] | null> {
+    let result = [];
+
+    // save the search history
+    await this.prisma.search.create({
+      data: {
+        userId,
+        keyword,
+        category,
+      },
+    });
+
+    // check whether the search has been made before if so increment the count else add the search and put count to 1
+    const searchFound = await this.prisma.searchCount.findFirst({
+      where: {
+        keyword,
+      },
+    });
+
+    if (searchFound) {
+      await this.prisma.searchCount.update({
+        where: { id: searchFound.id },
+        data: { count: { increment: 1 } },
+      });
+    } else {
+      await this.prisma.searchCount.create({
+        data: {
+          keyword,
+          category,
+          count: 1,
+        },
+      });
+    }
+
+    // do the actual search
+    if (category == 'SUPPLIER') {
+      result = await this.prisma.producer.findMany({
+        where: {
+          businessName: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+      });
+    } else if (category == 'PRODUCT') {
+      result = await this.prisma.product.findMany({
+        where: {
+          name: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+      });
+    } else {
+      result = await this.prisma.buyingTeam.findMany({
+        where: {
+          name: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+      });
+    }
+
+    return result;
+  }
+
+  async recentSearches(userId: string): Promise<Search[] | null> {
+    return await this.prisma.search.findMany({
+      where: {
+        userId,
+      },
+      distinct: ['keyword'],
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
+    });
+  }
+
+  async popularSearches(): Promise<SearchCount[] | null> {
+    return await this.prisma.searchCount.findMany({
+      orderBy: {
+        count: 'desc',
+      },
+      take: 6,
     });
   }
 }

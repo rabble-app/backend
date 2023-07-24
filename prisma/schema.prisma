@@ -4,7 +4,7 @@
 generator client {
   provider = "prisma-client-js"  
   binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
-  previewFeatures = ["fieldReference"]
+  previewFeatures = ["fieldReference", "distinct"]
 }
 
 datasource db {
@@ -42,7 +42,8 @@ model User {
   shipping Shipping?
   producer Producer?
   baskets Basket[] 
-  invites Invite[] 
+  invites Invite[]
+  searches Search[] 
 
   @@map("users")
 }
@@ -362,6 +363,30 @@ model RecentlyViewed {
   @@map("recently_viewed")
 }
 
+model Search {
+  id  String  @default(uuid()) @id 
+  keyword String
+  userId String @map("user_id") 
+  category SearchCategory
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("searches")
+}
+
+model SearchCount {
+  id  String  @default(uuid()) @id 
+  keyword String
+  category SearchCategory 
+  count Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  @@map("search_count")
+}
+
 
 enum OrderStatus {
   PENDING
@@ -393,4 +418,10 @@ enum PaymentStatus {
   FAILED
   INTENT_CREATED
   CAPTURED
+}
+
+enum SearchCategory {
+  SUPPLIER
+  PRODUCT
+  TEAM
 }

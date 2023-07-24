@@ -49,17 +49,6 @@ export class ProductsService {
     return finalResult;
   }
 
-  async searchProducts(keyword: string): Promise<Product[] | null> {
-    return await this.prisma.product.findMany({
-      where: {
-        name: {
-          contains: keyword,
-          mode: 'insensitive',
-        },
-      },
-    });
-  }
-
   async recordRecentlyViewed(
     recentlyViewedProductDto: RecentlyViewedProductDto,
   ): Promise<RecentlyViewed> {

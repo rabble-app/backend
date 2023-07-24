@@ -388,4 +388,86 @@ describe('UserController (e2e)', () => {
       testTime,
     );
   });
+
+  // search feature
+  it(
+    '/users/search/:keyword/:category(GET) should return search result',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/search/mykeyword/TEAM`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
+
+  it(
+    '/users/search/:keyword/:category(GET) should not return search result if user is not logged in',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get('/users/search/:keyword/:category')
+        .expect(401);
+      expect(response.body).toHaveProperty('message');
+      expect(typeof response.body.message).toBe('string');
+    },
+    testTime,
+  );
+
+  it(
+    '/users/search/:keyword/:category(GET) should not handle search if wrong category is supplied',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/search/mykeyword/TEAMSS`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    },
+    testTime,
+  );
+
+  it(
+    '/users/search/:keyword/:category(GET) should not handle search if keyword length is less than 3',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/search/my/TEAM`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    },
+    testTime,
+  );
+
+  // user search histories
+  it(
+    '/users/recent-searches(GET) should return user search history',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/recent-searches`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
+  // popular searches
+  it(
+    '/users/popular-searches(GET) should return popular searches',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/popular-searches`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
 });
