@@ -337,6 +337,26 @@ describe('PaymentController (e2e)', () => {
         testTime,
       );
 
+      // bulk update of basket
+      it(
+        '/payments/basket-bulk/ (PATCH) should update basket in bulk',
+        async () => {
+          const basket = [
+            {
+              basketId: itemId,
+              quantity: 6,
+              price: 500,
+            },
+          ];
+          const response = await request(app.getHttpServer())
+            .patch(`/payments/basket-bulk/`)
+            .send(basket)
+            .expect(200);
+          expect(response.body.error).toBeUndefined();
+        },
+        testTime,
+      );
+
       // delete item from cart
       it(
         '/payments/basket/:id(DELETE) should delete item from cart',

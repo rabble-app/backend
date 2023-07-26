@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
+import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -37,6 +38,26 @@ export class PaymentServiceExtension {
       data,
       where,
     });
+  }
+
+  async updateBasketBulk(
+    updateBasketBulkDto: UpdateBasketBulkDto,
+  ): Promise<void> {
+    const items = updateBasketBulkDto.basket;
+
+    for (let index = 0; index < items.length; index++) {
+      const product = items[index];
+      await this.updateBasketItem({
+        where: {
+          id: product.basketId,
+        },
+        data: {
+          quantity: product.quantity,
+          price: product.price,
+        },
+      });
+    }
+    return;
   }
 
   async schedulePaymentAuthorization(
