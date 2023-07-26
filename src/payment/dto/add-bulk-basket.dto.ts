@@ -58,7 +58,6 @@ export class AddToBasket {
 
 export class AddBulkBasketDto {
   @ApiProperty({
-    type: 'string',
     description: 'The basket content',
     required: true,
   })

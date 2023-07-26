@@ -40,7 +40,6 @@ export class UpdateBasket {
 
 export class UpdateBasketBulkDto {
   @ApiProperty({
-    type: 'string',
     description: 'The contents to be updated',
     required: true,
   })
