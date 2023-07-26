@@ -159,7 +159,7 @@ export class PaymentControllerExtension {
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
-  @Patch('basket')
+  @Patch('basket-bulk')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Items updated successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
