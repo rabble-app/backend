@@ -154,7 +154,7 @@ export class PaymentControllerExtension {
 
   /**
    * Update bulk items in basket
-   * @param {Body} updateBasketItemDto - Request body object.
+   * @param {Body} updateBasketBulkDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
