@@ -14,7 +14,7 @@ async function main() {
     'General',
     'Meat',
     'Speciality',
-    'Supplies',
+    'Eggs',
   ];
   for (let index = 0; index < producerCategories.length; index++) {
     const element = producerCategories[index];
@@ -28,7 +28,7 @@ async function main() {
   }
 
   // add product categories
-  const productCategories = ['Fresh fruits', 'Fresh meat'];
+  const productCategories = ['Fresh fruits', 'Fresh meat', 'Coffee', 'Eggs'];
   for (let index = 0; index < productCategories.length; index++) {
     const element = productCategories[index];
     await prisma.productCategory.upsert({
@@ -96,7 +96,138 @@ async function main() {
     },
   });
 
-  // add products for the producer
+  // get producer product id
+  const productCategoryA = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Coffee',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  // add product A
+  await prisma.product.upsert({
+    where: {
+      name: 'Espresso Blend 1KG Wholebean',
+    },
+    update: {},
+    create: {
+      name: 'Espresso Blend 1KG Wholebean',
+      imageUrl:
+        'https://flyinghorsecoffee.com/cdn/shop/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_680x.jpg?v=1673612876',
+      description:
+        'The flagship of Flying Horse Coffee: our seasonally changing blend provides an opportunity to taste an array of coffees from some of the finest producers globally.',
+      producerId: producerRecord.id,
+      categoryId: productCategoryA.id,
+      price: 20,
+    },
+  });
+
+  // add product B
+  await prisma.product.upsert({
+    where: {
+      name: 'Espresso Blend 1KG Ground for Filter',
+    },
+    update: {},
+    create: {
+      name: 'Espresso Blend 1KG Ground for Filter',
+      imageUrl:
+        'https://flyinghorsecoffee.com/cdn/shop/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_680x.jpg?v=1673612876',
+      description:
+        'The flagship of Flying Horse Coffee: our seasonally changing blend provides an opportunity to taste an array of coffees from some of the finest producers globally',
+      producerId: producerRecord.id,
+      categoryId: productCategoryA.id,
+      price: 20,
+    },
+  });
+
+  // producer B
+  // save user record
+  const userRecordB = await prisma.user.upsert({
+    where: { email: 'claire@cacklebean.com' },
+    update: {},
+    create: {
+      email: 'claire@cacklebean.com',
+      phone: '+234...',
+      password: 'rabble-info@claire@cacklebean.com',
+      role: 'PRODUCER',
+    },
+  });
+
+  // save producer record
+  const producerRecordB = await prisma.producer.upsert({
+    where: { userId: userRecordB.id },
+    update: {},
+    create: {
+      userId: userRecordB.id,
+      imageUrl: 'https://www.cacklebean.com/Assets/Images/nav-logo.png',
+      businessName: 'Cacklebean Eggs',
+      businessAddress:
+        'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
+      accountsEmail: 'claire@cacklebean.com',
+      salesEmail: 'orders@cacklebean.com',
+      minimumTreshold: 48,
+      website: 'https://www.cacklebean.com/',
+      description:
+        'Cackleberry Farm is nestled at the foot of a hill just outside Stow-on-the-Wold. Run by Paddy and Steph Bourns, their rare breed flocks are entirely free range and live in traditional chicken houses on 12 acres of land, with lots of perches.',
+    },
+  });
+
+  // get producer category id
+  const producerCategoryOptionB = await prisma.producerCategoryOption.findFirst(
+    {
+      where: {
+        name: 'Eggs',
+      },
+      select: {
+        id: true,
+      },
+    },
+  );
+
+  // add category id to the producer
+  await prisma.producerCategory.upsert({
+    where: {
+      producer_unique_category_option: {
+        producerId: producerRecordB.id,
+        producerCategoryOptionId: producerCategoryOptionB.id,
+      },
+    },
+    update: {},
+    create: {
+      producerId: producerRecordB.id,
+      producerCategoryOptionId: producerCategoryOptionB.id,
+    },
+  });
+
+  // get producer product id
+  const productCategoryAA = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Eggs',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  // add product A
+  await prisma.product.upsert({
+    where: {
+      name: '6 Cacklebean Eggs',
+    },
+    update: {},
+    create: {
+      name: '6 Cacklebean Eggs',
+      imageUrl:
+        'https://www.hgwalter.com/cdn/shop/products/cracklebean-free-range-eggs_600x.webp?v=1650540514',
+      description:
+        'Arlington White Cacklebean eggs from Cackleberry Farm in the Cotswolds. Deliciously creamy free range eggs. Each pack contains 6 eggs',
+      producerId: producerRecordB.id,
+      categoryId: productCategoryAA.id,
+      price: 2,
+    },
+  });
 }
 main()
   .then(async () => {
