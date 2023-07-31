@@ -57,8 +57,11 @@ export class AuthService {
         const userExist = await this.userService.findUser({
           phone: verifyOTPDto.phone,
         });
-        const token = this.generateToken(verifyOTPDto.phone);
         if (userExist) {
+          const token = this.generateToken({
+            phone: verifyOTPDto.phone,
+            userId: userExist.id,
+          });
           userExist['token'] = token;
           return userExist;
         } else {
@@ -69,6 +72,10 @@ export class AuthService {
           const newUser = await this.userService.createUser({
             phone: verifyOTPDto.phone,
             stripeCustomerId: stripeResponse.id,
+          });
+          const token = this.generateToken({
+            phone: verifyOTPDto.phone,
+            userId: newUser.id,
           });
           newUser['token'] = token;
           return newUser;
