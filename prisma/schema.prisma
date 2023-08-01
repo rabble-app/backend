@@ -116,7 +116,7 @@ model Shipping {
 
 model Product {
   id  String     @default(uuid()) @id  
-  name String @unique
+  name String 
   imageUrl String? @map("image_url") 
   imageKey String? @map("image_key")  
   description String?
@@ -134,6 +134,7 @@ model Product {
   basket Basket[]
   recentlyViewed RecentlyViewed[]
 
+  @@unique([name, producerId], name: "name_unique_producer")
   @@map("products")
 }
 

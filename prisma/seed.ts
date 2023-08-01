@@ -59,7 +59,7 @@ async function main() {
     create: {
       userId: userRecord.id,
       imageUrl:
-        'https://flyinghorsecoffee.com/cdn/shop/files/BLACK_80x@2x.png?v=1614324669',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/BLACK_80x%402x+1.png',
       businessName: 'Flying Horse Coffee',
       businessAddress: '117 Mare Street, London, E8 4RU United Kingdom',
       accountsEmail: 'info@flyinghorsecoffee.com',
@@ -109,15 +109,17 @@ async function main() {
   // add product A
   await prisma.product.upsert({
     where: {
-      name: 'Espresso Blend 1KG Wholebean',
+      name_unique_producer: {
+        name: 'Espresso Blend Whole bean',
+        producerId: producerRecord.id,
+      },
     },
     update: {},
     create: {
-      name: 'Espresso Blend 1KG Wholebean',
+      name: 'Espresso Blend Whole bean',
       imageUrl:
-        'https://flyinghorsecoffee.com/cdn/shop/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_680x.jpg?v=1673612876',
-      description:
-        'The flagship of Flying Horse Coffee: our seasonally changing blend provides an opportunity to taste an array of coffees from some of the finest producers globally.',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+1.png',
+      description: '1KG Whole bean',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
@@ -127,15 +129,17 @@ async function main() {
   // add product B
   await prisma.product.upsert({
     where: {
-      name: 'Espresso Blend 1KG Ground for Filter',
+      name_unique_producer: {
+        name: 'Espresso Blend Ground',
+        producerId: producerRecord.id,
+      },
     },
     update: {},
     create: {
-      name: 'Espresso Blend 1KG Ground for Filter',
+      name: 'Espresso Blend Ground',
       imageUrl:
-        'https://flyinghorsecoffee.com/cdn/shop/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_680x.jpg?v=1673612876',
-      description:
-        'The flagship of Flying Horse Coffee: our seasonally changing blend provides an opportunity to taste an array of coffees from some of the finest producers globally',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+1.png',
+      description: '1KG Ground for Filter',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
@@ -161,7 +165,8 @@ async function main() {
     update: {},
     create: {
       userId: userRecordB.id,
-      imageUrl: 'https://www.cacklebean.com/Assets/Images/nav-logo.png',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/image+9.png',
       businessName: 'Cacklebean Eggs',
       businessAddress:
         'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
@@ -214,13 +219,16 @@ async function main() {
   // add product A
   await prisma.product.upsert({
     where: {
-      name: '6 Cacklebean Eggs',
+      name_unique_producer: {
+        name: '6 Cacklebean Eggs',
+        producerId: producerRecord.id,
+      },
     },
     update: {},
     create: {
       name: '6 Cacklebean Eggs',
       imageUrl:
-        'https://www.hgwalter.com/cdn/shop/products/cracklebean-free-range-eggs_600x.webp?v=1650540514',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/cracklebean-free-range-eggs_600x.webp',
       description:
         'Arlington White Cacklebean eggs from Cackleberry Farm in the Cotswolds. Deliciously creamy free range eggs. Each pack contains 6 eggs',
       producerId: producerRecordB.id,
