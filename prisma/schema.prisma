@@ -71,6 +71,7 @@ model Producer {
   likes Like[]
   recentlyViewed RecentlyViewed[]
   categories ProducerCategory[]
+  deliveryAddresses DeliveryAddress[]
 
   @@map("producers")
 }
@@ -388,11 +389,44 @@ model SearchCount {
   @@map("search_count")
 }
 
+model DeliveryAddress {
+  id  String  @default(uuid()) @id 
+  location String
+  type DeliveryType @default(WEEKLY)
+  cutOffTime String?  @map("cut_off_time")
+  producerId String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer Producer  @relation(fields: [producerId], references: [id])
+  customAddresses CustomDeliveryAddress[]
+
+  @@map("delivery_addresses")
+}
+
+model CustomDeliveryAddress {
+  id  String  @default(uuid()) @id 
+  deliveryAddressId String
+  day DayOptions
+  cutOffTime String  @map("cut_off_time")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id])
+
+  @@map("custom_delivery_address")
+}
+
 
 enum OrderStatus {
   PENDING
   SUCCESSFUL
   FAILED  
+}
+
+enum DeliveryType {
+  CUSTOM
+  WEEKLY  
 }
 
 enum Role {
@@ -425,4 +459,14 @@ enum SearchCategory {
   SUPPLIER
   PRODUCT
   TEAM
+}
+
+enum DayOptions {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }

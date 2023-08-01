@@ -82,19 +82,22 @@ export class UsersController {
     @Body() updateProducerDto: UpdateProducerDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const businessNameExist = await this.usersService.findProducer({
-      businessName: updateProducerDto.businessName,
-    });
+    if (updateProducerDto.businessName) {
+      const businessNameExist = await this.usersService.findProducer({
+        businessName: updateProducerDto.businessName,
+      });
 
-    if (businessNameExist) {
-      return formatResponse(
-        'Business name already exist',
-        res,
-        HttpStatus.BAD_REQUEST,
-        true,
-        'Invalid Entry',
-      );
+      if (businessNameExist) {
+        return formatResponse(
+          'Business name already exist',
+          res,
+          HttpStatus.BAD_REQUEST,
+          true,
+          'Invalid Entry',
+        );
+      }
     }
+
     const result = await this.usersService.updateProducer({
       where: { id },
       data: updateProducerDto,

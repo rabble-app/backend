@@ -295,16 +295,6 @@ export class UsersService {
     category: SearchCategory,
   ): Promise<object[] | null> {
     let result = [];
-
-    // save the search history
-    await this.prisma.search.create({
-      data: {
-        userId,
-        keyword,
-        category,
-      },
-    });
-
     // check whether the search has been made before if so increment the count else add the search and put count to 1
     const searchFound = await this.prisma.searchCount.findFirst({
       where: {

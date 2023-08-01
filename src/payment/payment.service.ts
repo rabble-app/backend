@@ -84,14 +84,14 @@ export class PaymentService {
       orderId = result.id;
 
       // accumulate amount paid
-      await this.accumulateAmount(orderId, chargeUserDto.amount);
+      await this.accumulateAmount(orderId, chargeUserDto.amount / 100);
     }
 
     // record intent
     const result = await this.handleRecordPayment(
       orderId,
       paymentIntentId,
-      chargeUserDto.amount,
+      chargeUserDto.amount / 100,
       chargeUserDto.userId,
     );
     if (result) {

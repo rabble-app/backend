@@ -14,7 +14,7 @@ async function main() {
     'General',
     'Meat',
     'Speciality',
-    'Eggs',
+    'Farm and Diary',
   ];
   for (let index = 0; index < producerCategories.length; index++) {
     const element = producerCategories[index];
@@ -59,7 +59,7 @@ async function main() {
     create: {
       userId: userRecord.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/BLACK_80x%402x+1.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/horse.png',
       businessName: 'Flying Horse Coffee',
       businessAddress: '117 Mare Street, London, E8 4RU United Kingdom',
       accountsEmail: 'info@flyinghorsecoffee.com',
@@ -118,7 +118,7 @@ async function main() {
     create: {
       name: 'Espresso Blend Whole bean',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+1.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+4.png',
       description: '1KG Whole bean',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
@@ -138,7 +138,7 @@ async function main() {
     create: {
       name: 'Espresso Blend Ground',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+1.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+4.png',
       description: '1KG Ground for Filter',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
@@ -166,8 +166,8 @@ async function main() {
     create: {
       userId: userRecordB.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/image+9.png',
-      businessName: 'Cacklebean Eggs',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/egg.png',
+      businessName: 'Cacklebean Farms',
       businessAddress:
         'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
       accountsEmail: 'claire@cacklebean.com',
@@ -183,7 +183,7 @@ async function main() {
   const producerCategoryOptionB = await prisma.producerCategoryOption.findFirst(
     {
       where: {
-        name: 'Eggs',
+        name: 'Farm and Diary',
       },
       select: {
         id: true,
@@ -228,7 +228,7 @@ async function main() {
     create: {
       name: '6 Cacklebean Eggs',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/cracklebean-free-range-eggs_600x.webp',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Rectangle+4149.png',
       description:
         'Arlington White Cacklebean eggs from Cackleberry Farm in the Cotswolds. Deliciously creamy free range eggs. Each pack contains 6 eggs',
       producerId: producerRecordB.id,

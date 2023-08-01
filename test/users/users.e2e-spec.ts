@@ -442,20 +442,6 @@ describe('UserController (e2e)', () => {
     testTime,
   );
 
-  // user search histories
-  it(
-    '/users/recent-searches(GET) should return user search history',
-    async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/recent-searches`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    },
-    testTime,
-  );
   // popular searches
   it(
     '/users/popular-searches(GET) should return popular searches',

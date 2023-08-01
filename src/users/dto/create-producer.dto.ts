@@ -69,4 +69,13 @@ export class CreateProducerDto {
   @ValidateIf((o) => o.accountsEmail)
   @IsString()
   accountsEmail: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The business image url',
+    required: false,
+  })
+  @ValidateIf((o) => o.imageUrl)
+  @IsString()
+  imageUrl: string;
 }
