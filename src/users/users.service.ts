@@ -12,9 +12,11 @@ import {
   ProducerCategory,
   Search,
   SearchCount,
+  DeliveryAddress,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import { SearchCategory } from 'src/lib/types';
+import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 
 @Injectable()
 export class UsersService {
@@ -403,6 +405,25 @@ export class UsersService {
         count: 'desc',
       },
       take: 6,
+    });
+  }
+
+  async addDeliveryArea(
+    producerId: string,
+    createDeliveryAreaDto: CreateDeliveryAreaDto,
+  ): Promise<DeliveryAddress> {
+    return await this.prisma.deliveryAddress.create({
+      data: {
+        producerId,
+        location: createDeliveryAreaDto.location,
+        type: createDeliveryAreaDto.type,
+        cutOffTime: createDeliveryAreaDto.cutOffTime,
+        customAddresses: {
+          createMany: {
+            data: createDeliveryAreaDto.customAreas,
+          },
+        },
+      },
     });
   }
 }

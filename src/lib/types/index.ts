@@ -71,3 +71,18 @@ export enum SearchCategory {
   PRODUCT = 'PRODUCT',
   TEAM = 'TEAM',
 }
+
+export enum DayOptions {
+  SUNDAY = 'SUNDAY',
+  MONDAY = 'MONDAY',
+  TUESDAY = 'TUESDAY',
+  WEDNESDAY = 'WEDNESDAY',
+  THURSDAY = 'THURSDAY',
+  FRIDAY = 'FRIDAY',
+  SATURDAY = 'SATURDAY',
+}
+
+export enum DeliveryType {
+  WEEKLY = 'WEEKLY',
+  CUSTOM = 'CUSTOM',
+}

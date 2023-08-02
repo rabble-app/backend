@@ -22,6 +22,7 @@ describe('UserController (e2e)', () => {
   let jwtToken: string;
   let producerCategoryOptionId: string;
   let producerCategoryId: string;
+  let deliveryAreaId: string;
 
   const producerData = {
     businessName,
@@ -39,6 +40,18 @@ describe('UserController (e2e)', () => {
     password,
     businessName: faker.company.catchPhraseNoun(),
     businessAddress: 'Business Address',
+  };
+
+  const deliveryAddressInfo = {
+    location: faker.company.catchPhraseNoun(),
+    cutOffTime: '09:00',
+    producerId: '',
+    customAreas: [
+      {
+        day: 'SUNDAY',
+        cutOffTime: '09:00',
+      },
+    ],
   };
 
   const testTime = 120000;
@@ -278,7 +291,6 @@ describe('UserController (e2e)', () => {
       },
       testTime,
     );
-
     // add category to producer
     it(
       '/users/producer/category/add(PATCH) should not add producer category if uncompleted data is supplied',
@@ -453,6 +465,26 @@ describe('UserController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
+
+  // delivery area
+  it(
+    '/users/producer/delivery-area(POST) should add delivery area',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/producer/delivery-area')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({
+          ...deliveryAddressInfo,
+          producerId,
+        })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+      deliveryAreaId = typeof response.body.data.id;
     },
     testTime,
   );

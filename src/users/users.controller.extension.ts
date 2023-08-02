@@ -23,6 +23,7 @@ import { IAPIResponse, SearchCategory } from '../lib/types';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RemoveProducerCategoryDto } from './dto/remove-producer-category.dto';
+import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -212,6 +213,35 @@ export class UsersControllerExtension {
       HttpStatus.OK,
       false,
       'Popular searches returned successfully',
+    );
+  }
+
+  /**
+   * add producer delivery area.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/users/producer/delivery-area')
+  @ApiOkResponse({ description: 'Delivery area added successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async deliveryAddress(
+    @Request() req,
+    @Body() createDeliveryAreaDto: CreateDeliveryAreaDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const producerId = req.user.producerId;
+    const result = await this.usersService.addDeliveryArea(
+      producerId,
+      createDeliveryAreaDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Delivery address added successfully',
     );
   }
 }

@@ -84,14 +84,14 @@ export class PaymentService {
       orderId = result.id;
 
       // accumulate amount paid
-      await this.accumulateAmount(orderId, chargeUserDto.amount / 100);
+      await this.accumulateAmount(orderId, chargeUserDto.amount);
     }
 
     // record intent
     const result = await this.handleRecordPayment(
       orderId,
       paymentIntentId,
-      chargeUserDto.amount / 100,
+      chargeUserDto.amount,
       chargeUserDto.userId,
     );
     if (result) {
@@ -169,7 +169,7 @@ export class PaymentService {
     createIntentData: ICreateIntent,
   ): Promise<{ id: string; clientSecret: string } | null> {
     const parameters = {
-      amount: createIntentData.amount,
+      amount: createIntentData.amount * 100,
       currency: createIntentData.currency,
       customer: createIntentData.customerId,
     };
