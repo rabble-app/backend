@@ -13,6 +13,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Request,
   Res,
   UseGuards,
@@ -223,7 +224,7 @@ export class UsersControllerExtension {
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
-  @Get('/users/producer/delivery-area')
+  @Post('/producer/delivery-area')
   @ApiOkResponse({ description: 'Delivery area added successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async deliveryAddress(
@@ -242,6 +243,31 @@ export class UsersControllerExtension {
       HttpStatus.OK,
       false,
       'Delivery address added successfully',
+    );
+  }
+
+  /**
+   * return users basket.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('basket')
+  @ApiOkResponse({ description: 'User basket returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async myBasket(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const userId = req.user.userId;
+    const result = await this.usersService.getBasket(userId);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User basket returned successfully',
     );
   }
 }

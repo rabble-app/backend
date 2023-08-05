@@ -172,6 +172,9 @@ export class TeamsServiceExtension {
             },
           },
         },
+        _count: {
+          select: { orders: true },
+        },
       },
     });
   }
@@ -230,7 +233,9 @@ export class TeamsServiceExtension {
       const senderInfo = await this.usersService.findUser({
         id: bulkInviteDto.userId,
       });
-      const sender = senderInfo.firstName ? senderInfo.firstName : 'Someone';
+      const sender = senderInfo.firstName
+        ? `${senderInfo.firstName} ${senderInfo.lastName}`
+        : 'Someone';
       for (let index = 0; index < bulkInviteDto.phones.length; index++) {
         const phone = bulkInviteDto.phones[index];
         // generate token with jwt
@@ -254,7 +259,7 @@ export class TeamsServiceExtension {
         const url = `${bulkInviteDto.link}?token=${token}`;
 
         // send to user
-        const message = `Guy, ${sender} is inviting you to join a buying team at Rabble, click the link to get started: ${url}`;
+        const message = `${sender} is inviting you to join his buying team on Rabble, click the link to get started: ${url}`;
         // send the message to user
         const feedback = await this.notificationsService.sendSMS(
           message,

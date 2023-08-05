@@ -45,7 +45,6 @@ describe('UserController (e2e)', () => {
   const deliveryAddressInfo = {
     location: faker.company.catchPhraseNoun(),
     cutOffTime: '09:00',
-    producerId: '',
     customAreas: [
       {
         day: 'SUNDAY',
@@ -478,13 +477,27 @@ describe('UserController (e2e)', () => {
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           ...deliveryAddressInfo,
-          producerId,
         })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
       deliveryAreaId = typeof response.body.data.id;
+    },
+    testTime,
+  );
+
+  // return users basket
+  it(
+    '/users/basket/(GET) should return users basket',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/basket/`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
     },
     testTime,
   );

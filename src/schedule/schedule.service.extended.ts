@@ -64,11 +64,11 @@ export class ScheduleServiceExtended {
     } catch (error) {}
   }
 
-  async createUserBasket(lastOrderId: string, newOrderId: string) {
+  async createUserBasket(teamId: string, newOrderId: string) {
     try {
-      const lastOrderProducts = await this.prisma.basket.findMany({
+      const lastOrderProducts = await this.prisma.basketCopy.findMany({
         where: {
-          orderId: lastOrderId,
+          teamId,
         },
       });
 

@@ -59,7 +59,7 @@ async function main() {
     create: {
       userId: userRecord.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/horse.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Rectangle+4141+(1).png',
       businessName: 'Flying Horse Coffee',
       businessAddress: '117 Mare Street, London, E8 4RU United Kingdom',
       accountsEmail: 'info@flyinghorsecoffee.com',
@@ -166,7 +166,7 @@ async function main() {
     create: {
       userId: userRecordB.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/egg.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Rectangle+4141.png',
       businessName: 'Cacklebean Farms',
       businessAddress:
         'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
@@ -229,8 +229,7 @@ async function main() {
       name: '6 Cacklebean Eggs',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Rectangle+4149.png',
-      description:
-        'Arlington White Cacklebean eggs from Cackleberry Farm in the Cotswolds. Deliciously creamy free range eggs. Each pack contains 6 eggs',
+      description: '6 Cacklebean Farm fresh eggs',
       producerId: producerRecordB.id,
       categoryId: productCategoryAA.id,
       price: 2,

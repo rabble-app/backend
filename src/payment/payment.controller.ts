@@ -24,6 +24,7 @@ import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
+import { AddSingleBasketDto } from './dto/add-single-basket.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -155,7 +156,7 @@ export class PaymentController {
 
   /**
    * Add single item to basket
-   * @param {Body} addToBasket - Request body object.
+   * @param {Body} addSingleBasketDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
@@ -165,10 +166,10 @@ export class PaymentController {
   @ApiCreatedResponse({ description: 'Item added to basket successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async addToBasket(
-    @Body() addToBasket: AddToBasket,
+    @Body() addSingleBasketDto: AddSingleBasketDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.addToBasket(addToBasket);
+    const result = await this.paymentService.addToBasket(addSingleBasketDto);
     return formatResponse(
       result,
       res,

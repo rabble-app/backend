@@ -1,23 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import {
-  IsArray,
-  ValidateNested,
-  ArrayMinSize,
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
-export class AddToBasket {
+export class AddSingleBasketDto {
   @ApiProperty({
     type: 'string',
-    description: 'The order id',
+    description: 'The team id',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  orderId: string;
+  teamId: string;
 
   @ApiProperty({
     type: 'string',
@@ -54,25 +46,4 @@ export class AddToBasket {
   @IsNotEmpty()
   @IsNumber()
   price: number;
-}
-
-export class AddBulkBasketDto {
-  @ApiProperty({
-    description: 'The basket content',
-    required: true,
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AddToBasket)
-  @ArrayMinSize(1)
-  basket: AddToBasket[];
-
-  @ApiProperty({
-    type: 'string',
-    description: 'The buying team id',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsString()
-  teamId: string;
 }

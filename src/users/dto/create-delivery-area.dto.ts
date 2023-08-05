@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, ValidateIf, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  ValidateIf,
+  IsEnum,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { DayOptions, DeliveryType } from '../../lib/types';
+import { Type } from 'class-transformer';
 
 export class DeliveryAreas {
   @ApiProperty({
@@ -45,26 +54,20 @@ export class CreateDeliveryAreaDto {
     description: 'The delivery cut off time',
     required: false,
   })
-  @ValidateIf((o) => o.cutOffTime)
+  @ValidateIf((o) => o.type == DeliveryType.WEEKLY)
   @IsNotEmpty()
   @IsString()
   cutOffTime: string;
 
   @ApiProperty({
     type: 'string',
-    description: 'The id of the producer',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsString()
-  producerId: string;
-
-  @ApiProperty({
-    type: 'string',
-    description: 'The custom delivery areas',
+    description: 'List of custom delivery areas',
     required: false,
   })
-  @ValidateIf((o) => o.customAreas)
-  @IsEnum(DeliveryAreas)
-  customAreas: DeliveryAreas;
+  @ValidateIf((o) => o.type == DeliveryType.CUSTOM)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DeliveryAreas)
+  @ArrayMinSize(1)
+  customAreas: DeliveryAreas[];
 }

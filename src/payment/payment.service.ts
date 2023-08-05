@@ -1,13 +1,14 @@
 import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
-import { Basket, Order, Payment, Prisma } from '@prisma/client';
+import { BasketCopy, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { Injectable } from '@nestjs/common';
 import { ICreateIntent, IOrder, IPayment, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
+import { AddSingleBasketDto } from './dto/add-single-basket.dto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -214,21 +215,36 @@ export class PaymentService {
   }
 
   async saveBulkBasket(addBulkBasketDto: AddBulkBasketDto) {
+    const basketRecord = addBulkBasketDto.basket.map((item: AddToBasket) => {
+      return {
+        teamId: addBulkBasketDto.teamId,
+        userId: item.userId,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+      };
+    });
+    await this.prisma.basketCopy.createMany({
+      data: basketRecord,
+    });
+
     return await this.prisma.basket.createMany({
       data: addBulkBasketDto.basket,
     });
   }
 
-  async addToBasket(addToBasket: AddToBasket) {
-    return await this.prisma.basket.create({
-      data: addToBasket,
+  async addToBasket(
+    addSingleBasketDto: AddSingleBasketDto,
+  ): Promise<BasketCopy> {
+    return await this.prisma.basketCopy.create({
+      data: addSingleBasketDto,
     });
   }
 
   async deleteFromBasket(
-    where: Prisma.BasketWhereUniqueInput,
-  ): Promise<Basket> {
-    return await this.prisma.basket.delete({
+    where: Prisma.BasketCopyWhereUniqueInput,
+  ): Promise<BasketCopy> {
+    return await this.prisma.basketCopy.delete({
       where,
     });
   }

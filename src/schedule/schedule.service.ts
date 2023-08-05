@@ -186,7 +186,7 @@ export class ScheduleService {
 
           // create basket for users
           await this.scheduleServiceExtended.createUserBasket(
-            lastOrder.id,
+            team.id,
             newOrder.id,
           );
         }

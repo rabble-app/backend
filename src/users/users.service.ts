@@ -13,6 +13,7 @@ import {
   Search,
   SearchCount,
   DeliveryAddress,
+  BasketCopy,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import { SearchCategory } from 'src/lib/types';
@@ -347,6 +348,23 @@ export class UsersService {
             mode: 'insensitive',
           },
         },
+        include: {
+          producer: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              categories: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
+        },
       });
     } else {
       result = await this.prisma.buyingTeam.findMany({
@@ -418,9 +436,30 @@ export class UsersService {
         location: createDeliveryAreaDto.location,
         type: createDeliveryAreaDto.type,
         cutOffTime: createDeliveryAreaDto.cutOffTime,
-        customAddresses: {
-          createMany: {
-            data: createDeliveryAreaDto.customAreas,
+        customAddresses:
+          createDeliveryAreaDto.type != 'WEEKLY'
+            ? {
+                createMany: {
+                  data: createDeliveryAreaDto.customAreas,
+                },
+              }
+            : undefined,
+      },
+    });
+  }
+
+  async getBasket(userId: string): Promise<BasketCopy[] | null> {
+    return await this.prisma.basketCopy.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      where: {
+        userId,
+      },
+      include: {
+        product: {
+          select: {
+            name: true,
           },
         },
       },
