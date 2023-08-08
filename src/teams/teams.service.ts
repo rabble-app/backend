@@ -178,6 +178,7 @@ export class TeamsService {
             lastName: true,
           },
         },
+        requests: true,
       },
     });
   }
