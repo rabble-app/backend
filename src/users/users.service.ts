@@ -341,7 +341,7 @@ export class UsersService {
         },
       });
     } else if (category == 'PRODUCT') {
-      result = await this.prisma.product.findMany({
+      const res = await this.prisma.productCategory.findFirst({
         where: {
           name: {
             contains: keyword,
@@ -349,23 +349,56 @@ export class UsersService {
           },
         },
         include: {
-          producer: {
+          products: {
             include: {
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-              categories: {
+              producer: {
                 include: {
-                  category: true,
+                  user: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                    },
+                  },
+                  categories: {
+                    include: {
+                      category: true,
+                    },
+                  },
                 },
               },
             },
           },
         },
       });
+      if (res && res.products.length > 0) {
+        result = res.products;
+      } else {
+        result = await this.prisma.product.findMany({
+          where: {
+            name: {
+              contains: keyword,
+              mode: 'insensitive',
+            },
+          },
+          include: {
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
     } else {
       result = await this.prisma.buyingTeam.findMany({
         where: {
