@@ -249,20 +249,6 @@ CREATE TABLE "basket" (
 );
 
 -- CreateTable
-CREATE TABLE "basket_copy" (
-    "id" STRING NOT NULL,
-    "order_id" STRING NOT NULL,
-    "user_id" STRING NOT NULL,
-    "product_id" STRING NOT NULL,
-    "quantity" INT4 NOT NULL,
-    "price" INT4 NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "basket_copy_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "payments" (
     "id" STRING NOT NULL,
     "order_id" STRING,
@@ -354,6 +340,20 @@ CREATE TABLE "custom_delivery_address" (
     CONSTRAINT "custom_delivery_address_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "basket_c" (
+    "id" STRING NOT NULL,
+    "team_id" STRING NOT NULL,
+    "user_id" STRING NOT NULL,
+    "product_id" STRING NOT NULL,
+    "quantity" INT4 NOT NULL,
+    "price" INT4 NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "basket_c_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
 
@@ -412,10 +412,10 @@ CREATE UNIQUE INDEX "invites_team_id_user_id_key" ON "invites"("team_id", "user_
 CREATE UNIQUE INDEX "basket_order_id_user_id_product_id_key" ON "basket"("order_id", "user_id", "product_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "basket_copy_order_id_user_id_product_id_key" ON "basket_copy"("order_id", "user_id", "product_id");
+CREATE UNIQUE INDEX "payments_paymentIntentId_key" ON "payments"("paymentIntentId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "payments_paymentIntentId_key" ON "payments"("paymentIntentId");
+CREATE UNIQUE INDEX "basket_c_team_id_user_id_product_id_key" ON "basket_c"("team_id", "user_id", "product_id");
 
 -- AddForeignKey
 ALTER TABLE "producers" ADD CONSTRAINT "producers_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -499,15 +499,6 @@ ALTER TABLE "basket" ADD CONSTRAINT "basket_product_id_fkey" FOREIGN KEY ("produ
 ALTER TABLE "basket" ADD CONSTRAINT "basket_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "basket_copy" ADD CONSTRAINT "basket_copy_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "buying_teams"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "basket_copy" ADD CONSTRAINT "basket_copy_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "basket_copy" ADD CONSTRAINT "basket_copy_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -542,3 +533,12 @@ ALTER TABLE "delivery_addresses" ADD CONSTRAINT "delivery_addresses_producerId_f
 
 -- AddForeignKey
 ALTER TABLE "custom_delivery_address" ADD CONSTRAINT "custom_delivery_address_deliveryAddressId_fkey" FOREIGN KEY ("deliveryAddressId") REFERENCES "delivery_addresses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "basket_c" ADD CONSTRAINT "basket_c_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "buying_teams"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "basket_c" ADD CONSTRAINT "basket_c_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "basket_c" ADD CONSTRAINT "basket_c_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { BasketCopy, Payment, Prisma } from '@prisma/client';
+import { BasketC, Payment, Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
@@ -30,11 +30,11 @@ export class PaymentServiceExtension {
   }
 
   async updateBasketItem(params: {
-    where: Prisma.BasketCopyWhereUniqueInput;
-    data: Prisma.BasketCopyUpdateInput;
-  }): Promise<BasketCopy> {
+    where: Prisma.BasketCWhereUniqueInput;
+    data: Prisma.BasketCUpdateInput;
+  }): Promise<BasketC> {
     const { where, data } = params;
-    return await this.prisma.basketCopy.update({
+    return await this.prisma.BasketC.update({
       data,
       where,
     });

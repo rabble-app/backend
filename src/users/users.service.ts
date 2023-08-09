@@ -13,7 +13,7 @@ import {
   Search,
   SearchCount,
   DeliveryAddress,
-  BasketCopy,
+  BasketC,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import { SearchCategory } from 'src/lib/types';
@@ -481,8 +481,8 @@ export class UsersService {
     });
   }
 
-  async getBasket(userId: string): Promise<BasketCopy[] | null> {
-    return await this.prisma.basketCopy.findMany({
+  async getBasket(userId: string): Promise<BasketC[] | null> {
+    return await this.prisma.BasketC.findMany({
       orderBy: {
         createdAt: 'desc',
       },

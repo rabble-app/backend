@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
-import { BasketCopy, Order, Payment, Prisma } from '@prisma/client';
+import { BasketC, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { Injectable } from '@nestjs/common';
 import { ICreateIntent, IOrder, IPayment, PaymentStatus } from '../lib/types';
@@ -224,7 +224,7 @@ export class PaymentService {
         price: item.price,
       };
     });
-    await this.prisma.basketCopy.createMany({
+    await this.prisma.BasketC.createMany({
       data: basketRecord,
     });
 
@@ -237,8 +237,8 @@ export class PaymentService {
     productId: string,
     teamId: string,
     userId: string,
-  ): Promise<BasketCopy | null> {
-    return await this.prisma.basketCopy.findFirst({
+  ): Promise<BasketC | null> {
+    return await this.prisma.BasketC.findFirst({
       where: {
         productId,
         teamId,
@@ -249,16 +249,16 @@ export class PaymentService {
 
   async addToBasket(
     addSingleBasketDto: AddSingleBasketDto,
-  ): Promise<BasketCopy> {
-    return await this.prisma.basketCopy.create({
+  ): Promise<BasketC> {
+    return await this.prisma.BasketC.create({
       data: addSingleBasketDto,
     });
   }
 
   async deleteFromBasket(
-    where: Prisma.BasketCopyWhereUniqueInput,
-  ): Promise<BasketCopy> {
-    return await this.prisma.basketCopy.delete({
+    where: Prisma.BasketCWhereUniqueInput,
+  ): Promise<BasketC> {
+    return await this.prisma.BasketC.delete({
       where,
     });
   }

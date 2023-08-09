@@ -42,7 +42,7 @@ model User {
   shipping Shipping?
   producer Producer?
   baskets Basket[] 
-  basketCopy BasketCopy[]
+  BasketC BasketC[]
   invites Invite[]
   searches Search[] 
 
@@ -134,7 +134,7 @@ model Product {
   reviews  Review[]
   likes Like[]
   basket Basket[]
-  basketCopy BasketCopy[]
+  BasketC BasketC[]
   recentlyViewed RecentlyViewed[]
 
   @@unique([name, producerId], name: "name_unique_producer")
@@ -176,7 +176,7 @@ model BuyingTeam {
   orders Order[]
   notifications Notification[]
   recentlyViewed RecentlyViewed[]
-  basketCopy BasketCopy[]
+  BasketC BasketC[]
 
   @@map("buying_teams")
 }
@@ -316,24 +316,6 @@ model Basket {
   @@map("basket")
 }
 
-model BasketCopy {
-  id  String  @default(uuid()) @id 
-  teamId String @map("order_id")
-  userId String  @map("user_id")
-  productId String @map("product_id")
-  quantity Int
-  price Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
-  product Product  @relation(fields: [productId], references: [id])
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, userId, productId], name: "user_unique_product") 
-  @@map("basket_copy")
-}
-
 model Payment {
   id  String  @default(uuid()) @id 
   orderId String? @map("order_id")  
@@ -436,6 +418,24 @@ model CustomDeliveryAddress {
   deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id])
 
   @@map("custom_delivery_address")
+}
+
+model BasketC {
+  id  String  @default(uuid()) @id 
+  teamId String @map("order_id")
+  userId String  @map("user_id")
+  productId String @map("product_id")
+  quantity Int
+  price Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  product Product  @relation(fields: [productId], references: [id])
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId, productId], name: "team_unique_product") 
+  @@map("basket_c")
 }
 
 
