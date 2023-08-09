@@ -21,7 +21,7 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { ChargeUserDto } from './dto/charge-user.dto ';
-import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
+import { AddBulkBasketDto } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
 import { AddSingleBasketDto } from './dto/add-single-basket.dto';
@@ -169,6 +169,21 @@ export class PaymentController {
     @Body() addSingleBasketDto: AddSingleBasketDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const isExisting = await this.paymentService.findProductInCopyBasket(
+      addSingleBasketDto.productId,
+      addSingleBasketDto.teamId,
+      addSingleBasketDto.userId,
+    );
+
+    if (isExisting) {
+      return formatResponse(
+        'Duplicate product',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'Product already exist',
+      );
+    }
     const result = await this.paymentService.addToBasket(addSingleBasketDto);
     return formatResponse(
       result,

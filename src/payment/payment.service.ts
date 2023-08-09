@@ -233,6 +233,20 @@ export class PaymentService {
     });
   }
 
+  async findProductInCopyBasket(
+    productId: string,
+    teamId: string,
+    userId: string,
+  ): Promise<BasketCopy | null> {
+    return await this.prisma.basketCopy.findFirst({
+      where: {
+        productId,
+        teamId,
+        userId,
+      },
+    });
+  }
+
   async addToBasket(
     addSingleBasketDto: AddSingleBasketDto,
   ): Promise<BasketCopy> {

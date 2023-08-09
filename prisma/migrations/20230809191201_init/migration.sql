@@ -2,6 +2,9 @@
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'SUCCESSFUL', 'FAILED');
 
 -- CreateEnum
+CREATE TYPE "DeliveryType" AS ENUM ('CUSTOM', 'WEEKLY');
+
+-- CreateEnum
 CREATE TYPE "Role" AS ENUM ('USER', 'PRODUCER', 'ADMIN');
 
 -- CreateEnum
@@ -12,6 +15,12 @@ CREATE TYPE "TeamStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'REMOVED');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'FAILED', 'INTENT_CREATED', 'CAPTURED');
+
+-- CreateEnum
+CREATE TYPE "SearchCategory" AS ENUM ('SUPPLIER', 'PRODUCT', 'TEAM');
+
+-- CreateEnum
+CREATE TYPE "DayOptions" AS ENUM ('SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -38,6 +47,7 @@ CREATE TABLE "users" (
 CREATE TABLE "producers" (
     "id" STRING NOT NULL,
     "userId" STRING NOT NULL,
+    "is_verified" BOOL NOT NULL DEFAULT false,
     "image_url" STRING DEFAULT 'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png',
     "image_key" STRING,
     "business_name" STRING NOT NULL,
@@ -239,6 +249,20 @@ CREATE TABLE "basket" (
 );
 
 -- CreateTable
+CREATE TABLE "basket_copy" (
+    "id" STRING NOT NULL,
+    "order_id" STRING NOT NULL,
+    "user_id" STRING NOT NULL,
+    "product_id" STRING NOT NULL,
+    "quantity" INT4 NOT NULL,
+    "price" INT4 NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "basket_copy_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "payments" (
     "id" STRING NOT NULL,
     "order_id" STRING,
@@ -281,6 +305,55 @@ CREATE TABLE "recently_viewed" (
     CONSTRAINT "recently_viewed_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "searches" (
+    "id" STRING NOT NULL,
+    "keyword" STRING NOT NULL,
+    "user_id" STRING NOT NULL,
+    "category" "SearchCategory" NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "searches_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "search_count" (
+    "id" STRING NOT NULL,
+    "keyword" STRING NOT NULL,
+    "category" "SearchCategory" NOT NULL,
+    "count" INT4 NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "search_count_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "delivery_addresses" (
+    "id" STRING NOT NULL,
+    "location" STRING NOT NULL,
+    "type" "DeliveryType" NOT NULL DEFAULT 'WEEKLY',
+    "cut_off_time" STRING,
+    "producerId" STRING NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "delivery_addresses_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "custom_delivery_address" (
+    "id" STRING NOT NULL,
+    "deliveryAddressId" STRING NOT NULL,
+    "day" "DayOptions" NOT NULL,
+    "cut_off_time" STRING NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "custom_delivery_address_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
 
@@ -294,7 +367,52 @@ CREATE UNIQUE INDEX "users_stripe_customer_id_key" ON "users"("stripe_customer_i
 CREATE UNIQUE INDEX "producers_userId_key" ON "producers"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "producers_business_name_key" ON "producers"("business_name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "producer_categories_options_name_key" ON "producer_categories_options"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "producer_categories_producer_id_producer_category_option_id_key" ON "producer_categories"("producer_id", "producer_category_option_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "shippings_userId_key" ON "shippings"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "products_name_producer_id_key" ON "products"("name", "producer_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "product_category_name_key" ON "product_category"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "buying_teams_name_key" ON "buying_teams"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "team_members_team_id_user_id_key" ON "team_members"("team_id", "user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "team_requests_team_id_user_id_key" ON "team_requests"("team_id", "user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "followers_user_id_follower_id_key" ON "followers"("user_id", "follower_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "likes_user_id_product_id_key" ON "likes"("user_id", "product_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "likes_user_id_producer_id_key" ON "likes"("user_id", "producer_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "likes_user_id_team_id_key" ON "likes"("user_id", "team_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "invites_team_id_user_id_key" ON "invites"("team_id", "user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "basket_order_id_user_id_product_id_key" ON "basket"("order_id", "user_id", "product_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "basket_copy_order_id_user_id_product_id_key" ON "basket_copy"("order_id", "user_id", "product_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "payments_paymentIntentId_key" ON "payments"("paymentIntentId");
@@ -381,6 +499,15 @@ ALTER TABLE "basket" ADD CONSTRAINT "basket_product_id_fkey" FOREIGN KEY ("produ
 ALTER TABLE "basket" ADD CONSTRAINT "basket_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "basket_copy" ADD CONSTRAINT "basket_copy_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "buying_teams"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "basket_copy" ADD CONSTRAINT "basket_copy_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "basket_copy" ADD CONSTRAINT "basket_copy_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -406,3 +533,12 @@ ALTER TABLE "recently_viewed" ADD CONSTRAINT "recently_viewed_producer_id_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "recently_viewed" ADD CONSTRAINT "recently_viewed_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "searches" ADD CONSTRAINT "searches_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "delivery_addresses" ADD CONSTRAINT "delivery_addresses_producerId_fkey" FOREIGN KEY ("producerId") REFERENCES "producers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "custom_delivery_address" ADD CONSTRAINT "custom_delivery_address_deliveryAddressId_fkey" FOREIGN KEY ("deliveryAddressId") REFERENCES "delivery_addresses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
