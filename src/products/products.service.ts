@@ -77,12 +77,14 @@ export class ProductsService {
     if (result && result.length) {
       result.forEach((team: ITeamWithOtherInfo) => {
         team.orders.forEach((order) => {
-          finalArray.push(...order.basket);
+          order.basket.forEach((item: { product: { id: string } }) => {
+            finalArray.push(item.product);
+          });
         });
       });
     }
-
-    return finalArray;
+    const unique = [...new Map(finalArray.map((m) => [m.id, m])).values()];
+    return unique;
   }
 
   async populateItemsUsersAlsoBought(id: string): Promise<object[] | null> {

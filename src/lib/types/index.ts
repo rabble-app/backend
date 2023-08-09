@@ -65,6 +65,9 @@ export interface ITeamWithOtherInfo {
     },
   ];
 }
+export interface IUserAlsoBoughtBasket {
+  product: { id: string };
+}
 
 export enum SearchCategory {
   SUPPLIER = 'SUPPLIER',
