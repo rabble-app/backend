@@ -422,7 +422,7 @@ model CustomDeliveryAddress {
 
 model BasketC {
   id  String  @default(uuid()) @id 
-  teamId String @map("order_id")
+  teamId String @map("team_id")
   userId String  @map("user_id")
   productId String @map("product_id")
   quantity Int
