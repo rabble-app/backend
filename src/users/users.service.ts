@@ -482,7 +482,7 @@ export class UsersService {
   }
 
   async getBasket(userId: string): Promise<BasketC[] | null> {
-    return await this.prisma.BasketC.findMany({
+    return await this.prisma.basketC.findMany({
       orderBy: {
         createdAt: 'desc',
       },

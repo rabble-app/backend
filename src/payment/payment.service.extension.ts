@@ -34,7 +34,7 @@ export class PaymentServiceExtension {
     data: Prisma.BasketCUpdateInput;
   }): Promise<BasketC> {
     const { where, data } = params;
-    return await this.prisma.BasketC.update({
+    return await this.prisma.basketC.update({
       data,
       where,
     });

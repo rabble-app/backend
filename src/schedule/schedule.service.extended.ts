@@ -66,7 +66,7 @@ export class ScheduleServiceExtended {
 
   async createUserBasket(teamId: string, newOrderId: string) {
     try {
-      const lastOrderProducts = await this.prisma.BasketC.findMany({
+      const lastOrderProducts = await this.prisma.basketC.findMany({
         where: {
           teamId,
         },

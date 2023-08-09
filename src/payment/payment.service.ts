@@ -224,7 +224,7 @@ export class PaymentService {
         price: item.price,
       };
     });
-    await this.prisma.BasketC.createMany({
+    await this.prisma.basketC.createMany({
       data: basketRecord,
     });
 
@@ -238,7 +238,7 @@ export class PaymentService {
     teamId: string,
     userId: string,
   ): Promise<BasketC | null> {
-    return await this.prisma.BasketC.findFirst({
+    return await this.prisma.basketC.findFirst({
       where: {
         productId,
         teamId,
@@ -247,10 +247,8 @@ export class PaymentService {
     });
   }
 
-  async addToBasket(
-    addSingleBasketDto: AddSingleBasketDto,
-  ): Promise<BasketC> {
-    return await this.prisma.BasketC.create({
+  async addToBasket(addSingleBasketDto: AddSingleBasketDto): Promise<BasketC> {
+    return await this.prisma.basketC.create({
       data: addSingleBasketDto,
     });
   }
@@ -258,7 +256,7 @@ export class PaymentService {
   async deleteFromBasket(
     where: Prisma.BasketCWhereUniqueInput,
   ): Promise<BasketC> {
-    return await this.prisma.BasketC.delete({
+    return await this.prisma.basketC.delete({
       where,
     });
   }
