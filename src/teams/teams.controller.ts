@@ -51,6 +51,19 @@ export class TeamsController {
     @Body() createTeamDto: CreateTeamDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const isExisting = await this.teamsService.findBuyingTeam({
+      name: createTeamDto.name,
+    });
+
+    if (isExisting) {
+      return formatResponse(
+        'Duplicate name',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'Buying team name already exist',
+      );
+    }
     const result = await this.teamsService.createTeam(createTeamDto);
     return formatResponse(
       result,

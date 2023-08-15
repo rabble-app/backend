@@ -287,6 +287,7 @@ model Order {
   minimumTreshold Int @map("minimum_treshold")
   accumulatedAmount Int @map("accumulated_amount") @default(0)
   deadline DateTime @default(now())
+  lastNudge DateTime? @map("last_nudge")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 

@@ -27,6 +27,7 @@ describe('TeamsController (e2e)', () => {
   let teamRequestId: string;
   let paymentIntentId: string;
   let teamMemberId: string;
+  let orderId: string;
   const testTime = 120000;
 
   const buyingTeam: CreateTeamDto = {
@@ -197,6 +198,7 @@ describe('TeamsController (e2e)', () => {
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
         buyingTeamId = response.body.data.id;
+        orderId = response.body.data.orderId;
       },
       testTime,
     );
@@ -444,10 +446,10 @@ describe('TeamsController (e2e)', () => {
 
     // nudge team members to collect delivery
     it(
-      '/teams/nudge(POST))/:id should nudge team members to collect delivery',
+      '/teams/nudge(POST))/:buyingTeamId/:orderId should nudge team members to collect delivery',
       async () => {
         const response = await request(app.getHttpServer())
-          .post(`/teams/nudge/${buyingTeamId}`)
+          .post(`/teams/nudge/${orderId}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

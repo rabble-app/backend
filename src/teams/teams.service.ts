@@ -6,6 +6,7 @@ import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
 import { ITeamMember, Status } from '../lib/types';
+import { teamImages } from 'src/utils';
 
 @Injectable()
 export class TeamsService {
@@ -19,29 +20,43 @@ export class TeamsService {
     const paymentIntentId = createTeamDto.paymentIntentId;
     const teamData = createTeamDto;
     delete teamData.paymentIntentId;
-
-    const result = await this.prisma.buyingTeam.create({
-      data: teamData,
-    });
-
-    // add the host as a user to the group
-    const memberData = {
-      teamId: result.id,
-      userId: createTeamDto.hostId,
-      status: Status.APPROVED,
-    };
-    await this.addTeamMember(memberData);
+    let imageUrl = '';
 
     // get producer's minimum threshold
     const producerInfo = await this.userService.findProducer({
       id: createTeamDto.producerId,
     });
 
-    const currentDate = new Date();
-    // add 6 days to the current date, order closes on the 7 day
-    const nextWeekDate = new Date(
-      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
-    );
+    // assign the buying team an image based on producer category
+    if (producerInfo.categories && producerInfo.categories.length > 0) {
+      const category = producerInfo.categories[0].category.name;
+      if (teamImages.hasOwnProperty(category)) {
+        if (typeof teamImages[category] == 'function') {
+          imageUrl =
+            teamImages[category]()[
+              Math.floor(Math.random() * teamImages[category]().length)
+            ];
+        } else {
+          imageUrl =
+            teamImages[category][
+              Math.floor(Math.random() * teamImages[category].length)
+            ];
+        }
+      }
+    }
+    if (!imageUrl) {
+      imageUrl =
+        teamImages.General[
+          Math.floor(Math.random() * teamImages.General.length)
+        ];
+    }
+
+    const result = await this.prisma.buyingTeam.create({
+      data: {
+        imageUrl,
+        ...teamData,
+      },
+    });
 
     // get amount paid and add it to accumulator
     const paymentInfo = await this.prisma.payment.findFirst({
@@ -52,6 +67,20 @@ export class TeamsService {
         amount: true,
       },
     });
+
+    // add the host as a user to the group
+    const memberData = {
+      teamId: result.id,
+      userId: createTeamDto.hostId,
+      status: Status.APPROVED,
+    };
+    await this.addTeamMember(memberData);
+
+    const currentDate = new Date();
+    // add 6 days to the current date, order closes on the 7 day
+    const nextWeekDate = new Date(
+      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
+    );
 
     // create order
     const orderData = {
@@ -230,6 +259,14 @@ export class TeamsService {
       where: {
         id,
       },
+    });
+  }
+
+  async findBuyingTeam(
+    buyingTeamWhereUniqueInput: Prisma.BuyingTeamWhereUniqueInput,
+  ): Promise<BuyingTeam | null> {
+    return await this.prisma.buyingTeam.findUnique({
+      where: buyingTeamWhereUniqueInput,
     });
   }
 }

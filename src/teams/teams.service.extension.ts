@@ -203,29 +203,53 @@ export class TeamsServiceExtension {
   }
 
   async nudgeTeam(id: string): Promise<boolean> {
-    const teamMembers = await this.prisma.teamMember.findMany({
+    const order = await this.prisma.order.findFirst({
       where: {
-        teamId: id,
-        status: 'APPROVED',
-      },
-      include: {
-        user: {
-          select: {
-            phone: true,
-          },
-        },
+        id,
       },
     });
-    if (teamMembers.length > 0) {
-      teamMembers.forEach(async (member) => {
-        // send sms
-        await this.notificationsService.sendSMS(
-          'Your host is looking after your items for you, return the favour by collecting them as promptly as possible',
-          member.user.phone,
-        );
+    // check whether 24 hours has passed after last nudge
+    if (
+      order &&
+      order.lastNudge != null &&
+      +Date.now() <
+        +new Date(new Date(order.lastNudge).getTime() + 60 * 60 * 24 * 1000)
+    ) {
+      return false;
+    } else {
+      const teamMembers = await this.prisma.teamMember.findMany({
+        where: {
+          teamId: order.teamId,
+          status: 'APPROVED',
+        },
+        include: {
+          user: {
+            select: {
+              phone: true,
+            },
+          },
+        },
       });
+      if (teamMembers.length > 0) {
+        teamMembers.forEach(async (member) => {
+          // send sms
+          await this.notificationsService.sendSMS(
+            'Your host is looking after your items for you, return the favour by collecting them as promptly as possible',
+            member.user.phone,
+          );
+        });
+      }
+      // update date for the lastnudge
+      await this.prisma.order.update({
+        where: {
+          id: order.id,
+        },
+        data: {
+          lastNudge: new Date(),
+        },
+      });
+      return true;
     }
-    return true;
   }
 
   async bulkInvite(bulkInviteDto: BulkInviteDto): Promise<boolean | object> {

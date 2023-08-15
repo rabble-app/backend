@@ -7,7 +7,6 @@ async function main() {
     'Alcohol',
     'Bakery',
     'Coffee and Tea',
-    'Dairy',
     'Drinks',
     'Fish and Seafood',
     'Fruits and Vegetables',
@@ -167,7 +166,7 @@ async function main() {
       userId: userRecordB.id,
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Rectangle+4141.png',
-      businessName: 'Cacklebean Farms',
+      businessName: 'Cacklebean Farm',
       businessAddress:
         'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
       accountsEmail: 'claire@cacklebean.com',

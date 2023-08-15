@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 export interface IAPIResponse {
   data?: object | string;
   error?: object | string;
@@ -89,3 +91,13 @@ export enum DeliveryType {
   WEEKLY = 'WEEKLY',
   CUSTOM = 'CUSTOM',
 }
+
+export type ProducerWithCategories = Prisma.ProducerGetPayload<{
+  include: {
+    categories: {
+      include: {
+        category: true;
+      };
+    };
+  };
+}>;

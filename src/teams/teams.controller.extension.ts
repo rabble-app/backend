@@ -164,7 +164,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
-  @Post('nudge/:id')
+  @Post('nudge/:orderId')
   @ApiOkResponse({
     description: 'Buying team nudged to collect delivery successfully',
   })
@@ -172,13 +172,22 @@ export class TeamsControllerExtension {
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'The id of the buying team',
+    description: 'The id of the buying team order',
   })
   async nudgeBuyingTeam(
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    await this.teamsServiceExtension.nudgeTeam(id);
+    const result = await this.teamsServiceExtension.nudgeTeam(id);
+    if (!result) {
+      return formatResponse(
+        'Feature locked',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'You are allowed to nudge the team once in 24 hours',
+      );
+    }
     return formatResponse(
       'Notification sent',
       res,
