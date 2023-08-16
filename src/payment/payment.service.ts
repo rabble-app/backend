@@ -248,8 +248,34 @@ export class PaymentService {
   }
 
   async addToBasket(addSingleBasketDto: AddSingleBasketDto): Promise<BasketC> {
+    const {
+      teamId,
+      userId,
+      productId,
+      orderId,
+      price,
+      quantity,
+      deadlineReached,
+    } = addSingleBasketDto;
+    if (!deadlineReached) {
+      await this.prisma.basket.create({
+        data: {
+          orderId,
+          userId,
+          productId,
+          price,
+          quantity,
+        },
+      });
+    }
     return await this.prisma.basketC.create({
-      data: addSingleBasketDto,
+      data: {
+        teamId,
+        userId,
+        productId,
+        price,
+        quantity,
+      },
     });
   }
 

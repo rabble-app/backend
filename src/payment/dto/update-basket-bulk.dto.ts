@@ -8,6 +8,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsBoolean,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateBasket {
@@ -55,6 +56,7 @@ export class UpdateBasketBulkDto {
     description: 'The order id',
     required: true,
   })
+  @ValidateIf((o) => o.deadlineReached != true)
   @IsNotEmpty()
   @IsString()
   orderId: string;

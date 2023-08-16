@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsBoolean,
+  ValidateIf,
+} from 'class-validator';
 
 export class AddSingleBasketDto {
   @ApiProperty({
@@ -46,4 +52,23 @@ export class AddSingleBasketDto {
   @IsNotEmpty()
   @IsNumber()
   price: number;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The order id',
+    required: true,
+  })
+  @ValidateIf((o) => o.deadlineReached != true)
+  @IsNotEmpty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty({
+    type: 'boolean',
+    description: 'indicates whether order deadline has been reached',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsBoolean()
+  deadlineReached: boolean;
 }
