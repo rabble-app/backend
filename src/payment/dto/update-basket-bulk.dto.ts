@@ -7,6 +7,7 @@ import {
   IsString,
   IsNotEmpty,
   IsNumber,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateBasket {
@@ -48,4 +49,22 @@ export class UpdateBasketBulkDto {
   @Type(() => UpdateBasket)
   @ArrayMinSize(1)
   basket: UpdateBasket[];
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The order id',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty({
+    type: 'boolean',
+    description: 'indicates whether order deadline has been reached',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsBoolean()
+  deadlineReached: boolean;
 }

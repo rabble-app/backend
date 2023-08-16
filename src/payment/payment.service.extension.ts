@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { BasketC, Payment, Prisma } from '@prisma/client';
+import { Basket, BasketC, Payment, Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
@@ -40,6 +40,17 @@ export class PaymentServiceExtension {
     });
   }
 
+  async updateCurrentBasketItem(params: {
+    where: Prisma.BasketWhereUniqueInput;
+    data: Prisma.BasketUpdateInput;
+  }): Promise<Basket> {
+    const { where, data } = params;
+    return await this.prisma.basket.update({
+      data,
+      where,
+    });
+  }
+
   async updateBasketBulk(
     updateBasketBulkDto: UpdateBasketBulkDto,
   ): Promise<void> {
@@ -47,7 +58,7 @@ export class PaymentServiceExtension {
 
     for (let index = 0; index < items.length; index++) {
       const product = items[index];
-      await this.updateBasketItem({
+      const result = await this.updateBasketItem({
         where: {
           id: product.basketId,
         },
@@ -56,6 +67,22 @@ export class PaymentServiceExtension {
           price: product.price,
         },
       });
+      if (!updateBasketBulkDto.deadlineReached) {
+        // update major basket
+        await this.updateCurrentBasketItem({
+          where: {
+            user_unique_product: {
+              userId: result.userId,
+              orderId: updateBasketBulkDto.orderId,
+              productId: result.productId,
+            },
+          },
+          data: {
+            quantity: product.quantity,
+            price: product.price,
+          },
+        });
+      }
     }
     return;
   }
