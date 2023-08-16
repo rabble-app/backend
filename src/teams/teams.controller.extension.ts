@@ -355,4 +355,36 @@ export class TeamsControllerExtension {
       'New member added successfully',
     );
   }
+
+  /**
+   * check if buying team name already exist
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('check-name/:keyword')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Buying team created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'keyword',
+    required: true,
+    description: 'The name you want to check',
+  })
+  async createBuyingTeam(
+    @Param('keyword') name: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const isExisting = await this.teamsService.findBuyingTeam({
+      name,
+    });
+
+    return formatResponse(
+      isExisting ? true : false,
+      res,
+      HttpStatus.OK,
+      false,
+      `Buying team name is ${isExisting ? 'taken' : 'still available'}`,
+    );
+  }
 }

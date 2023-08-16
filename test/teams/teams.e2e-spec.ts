@@ -203,6 +203,20 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // check if name exist
+    it(
+      '/teams/check-name/:keyword(POST) should check if buying team name already exist',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/check-team_name/dummy`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     it(
       '/teams/create(POST) should not create buying team if uncompleted data is supplied',
       async () => {
