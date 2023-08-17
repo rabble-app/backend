@@ -481,13 +481,14 @@ export class UsersService {
     });
   }
 
-  async getBasket(userId: string): Promise<BasketC[] | null> {
+  async getBasket(userId: string, teamId: string): Promise<BasketC[] | null> {
     return await this.prisma.basketC.findMany({
       orderBy: {
         createdAt: 'desc',
       },
       where: {
         userId,
+        teamId,
       },
       include: {
         product: {

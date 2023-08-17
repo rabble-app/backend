@@ -6,7 +6,7 @@ import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
 import { ITeamMember, Status } from '../lib/types';
-import { teamImages } from 'src/utils';
+import { teamImages } from '../../src/utils';
 
 @Injectable()
 export class TeamsService {

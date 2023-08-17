@@ -25,6 +25,7 @@ import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RemoveProducerCategoryDto } from './dto/remove-producer-category.dto';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
+import { UserBasketDto } from './dto/user-basket.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -248,6 +249,7 @@ export class UsersControllerExtension {
 
   /**
    * return users basket.
+   * @param {Body} userBasketDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof UsersControllerExtension
    * @returns {JSON} - A JSON success response.
@@ -258,10 +260,14 @@ export class UsersControllerExtension {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async myBasket(
     @Request() req,
+    @Body() userBasketDto: UserBasketDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const userId = req.user.userId;
-    const result = await this.usersService.getBasket(userId);
+    const result = await this.usersService.getBasket(
+      userId,
+      userBasketDto.teamId,
+    );
     return formatResponse(
       result,
       res,

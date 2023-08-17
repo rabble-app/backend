@@ -67,6 +67,7 @@ export class PaymentServiceExtension {
           price: product.price,
         },
       });
+
       if (!updateBasketBulkDto.deadlineReached) {
         // update major basket
         await this.updateCurrentBasketItem({
