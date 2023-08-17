@@ -255,7 +255,7 @@ export class UsersControllerExtension {
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
-  @Get('basket')
+  @Post('basket')
   @ApiOkResponse({ description: 'User basket returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async myBasket(
