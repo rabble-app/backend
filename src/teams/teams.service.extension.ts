@@ -81,6 +81,7 @@ export class TeamsServiceExtension {
     return await this.prisma.teamMember.findMany({
       where: {
         userId: id,
+        role: 'MEMBER',
       },
       include: {
         team: {

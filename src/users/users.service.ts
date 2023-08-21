@@ -239,6 +239,7 @@ export class UsersService {
             },
           },
         },
+        host: true,
       },
     });
   }
