@@ -239,12 +239,6 @@ export class UsersService {
             },
           },
         },
-        host: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
       },
     });
   }
@@ -483,9 +477,6 @@ export class UsersService {
 
   async getBasket(userId: string, teamId: string): Promise<BasketC[] | null> {
     return await this.prisma.basketC.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
       where: {
         userId,
         teamId,

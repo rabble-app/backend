@@ -107,7 +107,7 @@ export class TeamsService {
 
   async addTeamMember(teamData: ITeamMember): Promise<TeamMember | null> {
     return await this.prisma.teamMember.create({
-      data: { ...teamData },
+      data: { ...teamData, role: 'MEMBER' },
     });
   }
 

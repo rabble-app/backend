@@ -58,7 +58,7 @@ async function main() {
     create: {
       userId: userRecord.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Rectangle+4141+(1).png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/flying-horse-coffee-espresso-blend-02+2+(1).jpg',
       businessName: 'Flying Horse Coffee',
       businessAddress: '117 Mare Street, London, E8 4RU United Kingdom',
       accountsEmail: 'info@flyinghorsecoffee.com',
@@ -165,7 +165,7 @@ async function main() {
     create: {
       userId: userRecordB.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Rectangle+4141.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/138218168_184886313383283_3442809325911798953_n+2+(1).jpg',
       businessName: 'Cacklebean Farm',
       businessAddress:
         'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
