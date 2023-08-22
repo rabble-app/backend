@@ -11,6 +11,8 @@ import { Producer, User } from '@prisma/client';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
+import { SendMailOptions } from 'nodemailer';
+import mailTransport from 'src/utils/mail';
 
 @Injectable()
 export class AuthService {
@@ -144,7 +146,22 @@ export class AuthService {
     });
     producerRecord['token'] = token;
 
-    // todo: send mail
+    // send mail
+    const messageSubject = `Rabble account confirmation`;
+    const messageBody = `Click the link to verify your account<br/><br/> <a href="${`${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`}" alt="confirm account">Click here </a> `;
+    const mailOptions: SendMailOptions = {
+      from: process.env.NEXT_PUBLIC_MAIL_USERNAME,
+      to: userRecord.email,
+      subject: messageSubject,
+      text: messageBody,
+      html: messageBody,
+    };
+    mailTransport.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log(error);
+      }
+      console.log(`Message sent: to', ${info.messageId}`);
+    });
 
     return producerRecord;
   }

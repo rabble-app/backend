@@ -16,7 +16,11 @@ import {
   BasketC,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
-import { SearchCategory, ProducerWithCategories } from 'src/lib/types';
+import {
+  SearchCategory,
+  ProducerWithCategories,
+  UserWithProducerInfo,
+} from '../../src/lib/types';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 
 @Injectable()
@@ -25,9 +29,16 @@ export class UsersService {
 
   async findUser(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
-  ): Promise<User | null> {
+  ): Promise<UserWithProducerInfo | null> {
     return await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
+      include: {
+        producer: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
   }
 

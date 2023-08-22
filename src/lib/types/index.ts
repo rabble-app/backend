@@ -101,3 +101,13 @@ export type ProducerWithCategories = Prisma.ProducerGetPayload<{
     };
   };
 }>;
+
+export type UserWithProducerInfo = Prisma.UserGetPayload<{
+  include: {
+    producer: {
+      select: {
+        id: true;
+      };
+    };
+  };
+}>;

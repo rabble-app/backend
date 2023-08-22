@@ -16,6 +16,12 @@ RUN npm run schema:generate
 CMD ["dist/lambda.handler"]
 
 
+
+
+
+
+
+
 # FROM node:16 As builder 
 # # Create app directory 
 # WORKDIR /app 
@@ -30,12 +36,3 @@ CMD ["dist/lambda.handler"]
 
 # EXPOSE 3000 
 # CMD [ "npm", "run", "start:prod" ]
-
-
-# FROM public.ecr.aws/lambda/nodejs:14
-
-# COPY . .
-
-# RUN npm run build
-
-# CMD ["dist/lambda.handler"]

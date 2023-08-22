@@ -31,6 +31,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import ChangePasswordDto from './dto/change-password.dto';
+import { SendMailOptions } from 'nodemailer';
+import mailTransport from 'src/utils/mail';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -275,7 +277,28 @@ export class AuthController {
         'User does not exist',
       );
     }
-    // todo:send email
+
+    const token = this.authService.generateToken({
+      userId: user.id,
+      producerId: user.producer.id,
+    });
+
+    // send mail
+    const messageSubject = `Rabble account confirmation`;
+    const messageBody = `Click the link to verify your account<br/><br/> <a href="${`${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`}" alt="confirm account">Click here </a> `;
+    const mailOptions: SendMailOptions = {
+      from: process.env.NEXT_PUBLIC_MAIL_USERNAME,
+      to: user.email,
+      subject: messageSubject,
+      text: messageBody,
+      html: messageBody,
+    };
+    mailTransport.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log(error);
+      }
+      console.log(`Message sent: to', ${info.messageId}`);
+    });
     return formatResponse(
       user,
       res,
@@ -312,22 +335,27 @@ export class AuthController {
         'User does not exist',
       );
     }
-    // todo: send mail
-    // const passwordResetToken = this.authService.generateToken({userId: user.id});
-    // const passwordResetLink = `${process.env.RESET_PASSWORD_REDIRECT}/${passwordResetToken}`;
-    // const message = emailDynamicTemplate3(
-    //   user.firstName ? user.firstName : 'Hello',
-    //   passwordResetLink,
-    // );
-    // const mail = {
-    //   to: user.email,
-    //   subject: 'Inbilio Password Reset',
-    //   from: process.env.COMPANY_EMAIL,
-    //   text: message,
-    //   html: `<h1>${message}</h1>`,
-    // };
-    // // email service
-    // await this.email.sendEmail(mail);
+
+    const token = this.authService.generateToken({
+      userId: user.id,
+      producerId: user.producer.id,
+    });
+    // send mail
+    const messageSubject = `Password reset`;
+    const messageBody = `Click the link to reset your password<br/><br/> <a href="${`${process.env.RESET_PASSWORD_URL}?token=${token}`}" alt="Reset password">Click here </a> `;
+    const mailOptions: SendMailOptions = {
+      from: process.env.NEXT_PUBLIC_MAIL_USERNAME,
+      to: user.email,
+      subject: messageSubject,
+      text: messageBody,
+      html: messageBody,
+    };
+    mailTransport.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log(error);
+      }
+      console.log(`Message sent: to', ${info.messageId}`);
+    });
 
     return formatResponse(
       user,

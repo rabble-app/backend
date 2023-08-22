@@ -56,6 +56,7 @@ async function main() {
     where: { userId: userRecord.id },
     update: {},
     create: {
+      isVerified: true,
       userId: userRecord.id,
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/flying-horse-coffee-espresso-blend-02+2+(1).jpg',
@@ -163,6 +164,7 @@ async function main() {
     where: { userId: userRecordB.id },
     update: {},
     create: {
+      isVerified: true,
       userId: userRecordB.id,
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/138218168_184886313383283_3442809325911798953_n+2+(1).jpg',

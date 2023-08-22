@@ -23,7 +23,7 @@ model User {
   stripeCustomerId String? @unique @map("stripe_customer_id")  
   stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
   cardLastFourDigits String? @map("card_last_four_digits") 
-  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/profile/img.png") @map("image_url")
+  imageUrl String?  @map("image_url")
   imageKey String? @map("image_key")  
   role Role    @default(USER) 
   createdAt DateTime @default(now()) @map("created_at")
