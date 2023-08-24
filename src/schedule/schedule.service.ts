@@ -17,11 +17,12 @@ export class ScheduleService {
   async chargeUsers() {
     // check if status is pending and threshold has been reached
     const pendingOrders =
-      await this.scheduleServiceExtended.getFullPendingOrders();
+      await this.scheduleServiceExtended.getExhaustedOrders();
+    console.log(pendingOrders);
     // if we have such orders
-    if (pendingOrders.length > 0) {
-      await this.processPendingOrders(pendingOrders);
-    }
+    // if (pendingOrders.length > 0) {
+    //   await this.processPendingOrders(pendingOrders);
+    // }
 
     return true;
   }
@@ -134,7 +135,7 @@ export class ScheduleService {
 
           // send notification
           await this.notificationsService.createNotification({
-            title: 'Payment Failure',
+            title: 'Rabble Payment Failure',
             text: `We were unable to charge your card for your order with id ${payment.orderId}`,
             userId: payment.userId,
             orderId: payment.orderId,

@@ -224,6 +224,7 @@ export class PaymentService {
         price: item.price,
       };
     });
+
     await this.prisma.basketC.createMany({
       data: basketRecord,
     });

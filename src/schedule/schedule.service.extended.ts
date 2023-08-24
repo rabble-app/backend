@@ -148,7 +148,7 @@ export class ScheduleServiceExtended {
   async getExhaustedOrders() {
     return await this.prisma.order.findMany({
       where: {
-        status: 'PENDING',
+        status: OrderStatus.PENDING,
         deadline: {
           lte: new Date(),
         },
