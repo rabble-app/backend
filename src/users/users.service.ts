@@ -248,12 +248,14 @@ export class UsersService {
     return await this.prisma.teamRequest.findMany({
       where: {
         userId,
+        status: 'PENDING',
       },
       include: {
         team: {
           select: {
             name: true,
             postalCode: true,
+            imageUrl: true,
           },
         },
       },
