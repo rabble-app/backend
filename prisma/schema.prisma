@@ -289,6 +289,7 @@ model Order {
   accumulatedAmount Int @map("accumulated_amount") @default(0)
   deadline DateTime @default(now())
   lastNudge DateTime? @map("last_nudge")
+  deliveryDate DateTime? @map("delivery_date")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 

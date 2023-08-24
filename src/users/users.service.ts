@@ -14,6 +14,7 @@ import {
   SearchCount,
   DeliveryAddress,
   BasketC,
+  Payment,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import {
@@ -102,48 +103,36 @@ export class UsersService {
     });
   }
 
-  async getOrderHistories(userId: string): Promise<TeamMember[]> {
-    return await this.prisma.teamMember.findMany({
+  async getOrderHistories(userId: string): Promise<Payment[]> {
+    return await this.prisma.payment.findMany({
       where: {
         userId,
       },
       include: {
-        team: {
+        order: {
           include: {
-            orders: {
-              include: {
-                basket: {
-                  where: {
-                    userId,
-                  },
-                  include: {
-                    product: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
+            basket: {
+              where: {
+                userId,
               },
-            },
-            host: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-            producer: {
               include: {
-                user: {
+                product: {
                   select: {
-                    firstName: true,
-                    lastName: true,
+                    name: true,
                   },
                 },
-                categories: {
-                  include: {
-                    category: true,
+              },
+            },
+            team: {
+              include: {
+                producer: {
+                  select: {
+                    businessName: true,
+                    businessAddress: true,
                   },
+                },
+                _count: {
+                  select: { members: true },
                 },
               },
             },
