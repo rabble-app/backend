@@ -59,7 +59,7 @@ export class AuthService {
 
       if (
         result['status'] == 'approved' ||
-        verifyOTPDto.phone == '+2347037381011' // Todo: remove test logic
+        verifyOTPDto.phone == '+2347000000000' // Todo: remove test logic
       ) {
         const userExist = await this.userService.findUser({
           phone: verifyOTPDto.phone,
