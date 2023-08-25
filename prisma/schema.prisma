@@ -444,6 +444,7 @@ model BasketC {
 
 enum OrderStatus {
   PENDING
+  PENDING_DELIVERY
   SUCCESSFUL
   FAILED  
 }

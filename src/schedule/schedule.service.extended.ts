@@ -31,8 +31,18 @@ export class ScheduleServiceExtended {
           },
         });
 
-        if (capturedPayments._sum.amount >= order.minimumTreshold) {
-          await this.updateOrderStatus(order.id, 'SUCCESSFUL');
+        // get the order amount
+        const expectedPayments = await this.prisma.payment.aggregate({
+          where: {
+            orderId: order.id,
+          },
+          _sum: {
+            amount: true,
+          },
+        });
+
+        if (capturedPayments._sum.amount >= expectedPayments._sum.amount) {
+          await this.updateOrderStatus(order.id, 'PENDING_DELIVERY');
         }
       });
     } catch (error) {}
@@ -153,7 +163,7 @@ export class ScheduleServiceExtended {
           lte: new Date(),
         },
         minimumTreshold: {
-          lte: this.prisma.order.fields.accumulatedAmount,
+          lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when treshold has been met
         },
       },
       select: {

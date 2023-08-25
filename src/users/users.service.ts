@@ -244,8 +244,44 @@ export class UsersService {
     });
   }
 
-  async getMyRequests(userId: string): Promise<TeamRequest[]> {
-    return await this.prisma.teamRequest.findMany({
+  async getMyRequests(userId: string): Promise<Array<object>> {
+    const finalArray = [];
+    const myTeams = await this.prisma.buyingTeam.findMany({
+      where: {
+        hostId: userId,
+      },
+      include: {
+        requests: {
+          where: {
+            status: 'PENDING',
+          },
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                imageUrl: true,
+              },
+            },
+            team: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (myTeams.length > 0) {
+      myTeams.forEach((team) => {
+        if (team.requests.length > 0) {
+          finalArray.push(...team.requests);
+        }
+      });
+    }
+
+    const myRequests = await this.prisma.teamRequest.findMany({
       where: {
         userId,
         status: 'PENDING',
@@ -260,6 +296,10 @@ export class UsersService {
         },
       },
     });
+
+    finalArray.push(...myRequests);
+
+    return finalArray;
   }
 
   async updateProducer(params: {

@@ -18,11 +18,11 @@ export class ScheduleService {
     // check if status is pending and threshold has been reached
     const pendingOrders =
       await this.scheduleServiceExtended.getExhaustedOrders();
-    console.log(pendingOrders);
+
     // if we have such orders
-    // if (pendingOrders.length > 0) {
-    //   await this.processPendingOrders(pendingOrders);
-    // }
+    if (pendingOrders.length > 0) {
+      await this.processPendingOrders(pendingOrders);
+    }
 
     return true;
   }
