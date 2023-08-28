@@ -76,6 +76,7 @@ export class PaymentService {
       const paymentIntent = await this.handleIntentCreation(chargeUserDto);
       paymentIntentId = paymentIntent.id;
     } else {
+      // Todo: we need to collect and save the paymentMethodID
       paymentIntentId = chargeUserDto.paymentIntentId;
     }
 

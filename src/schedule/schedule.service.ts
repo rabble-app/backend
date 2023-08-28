@@ -180,21 +180,15 @@ export class ScheduleService {
           new Date().getTime() - lastOrder.createdAt.getTime() >
           team.frequency * 1000
         ) {
-          console.log(lastOrder.createdAt.getTime());
-          console.log(new Date().getTime());
-          console.log(team.frequency);
-          console.log('over');
-          console.log(team);
-          // // create new order
-          // const newOrder = await this.scheduleServiceExtended.createNewOrder(
-          //   team,
-          // );
-
-          // // create basket for users
-          // await this.scheduleServiceExtended.createUserBasket(
-          //   team.id,
-          //   newOrder.id,
-          // );
+          // create new order
+          const newOrder = await this.scheduleServiceExtended.createNewOrder(
+            team,
+          );
+          // create basket for users
+          await this.scheduleServiceExtended.createUserBasket(
+            team.id,
+            newOrder.id,
+          );
         }
       }
     } catch (error) {}

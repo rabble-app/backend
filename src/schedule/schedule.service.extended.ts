@@ -75,6 +75,8 @@ export class ScheduleServiceExtended {
   }
 
   async createUserBasket(teamId: string, newOrderId: string) {
+    // Todo: get all users of that team
+    // create their basket for them
     try {
       const lastOrderProducts = await this.prisma.basketC.findMany({
         where: {
