@@ -76,7 +76,15 @@ export class PaymentService {
       const paymentIntent = await this.handleIntentCreation(chargeUserDto);
       paymentIntentId = paymentIntent.id;
     } else {
-      // Todo: we need to collect and save the paymentMethodID
+      // make it user default payment method
+      await this.userService.updateUser({
+        where: {
+          id: chargeUserDto.userId,
+        },
+        data: {
+          stripeDefaultPaymentMethodId: chargeUserDto.paymentMethodId,
+        },
+      });
       paymentIntentId = chargeUserDto.paymentIntentId;
     }
 
