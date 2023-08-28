@@ -5,7 +5,7 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../users/users.service';
-import { ITeamMember, Status } from '../lib/types';
+import { ITeamMember, Status, TeamMemberShip } from '../lib/types';
 import { teamImages } from '../../src/utils';
 
 @Injectable()
@@ -73,6 +73,7 @@ export class TeamsService {
       teamId: result.id,
       userId: createTeamDto.hostId,
       status: Status.APPROVED,
+      role: TeamMemberShip.ADMIN,
     };
     await this.addTeamMember(memberData);
 
@@ -106,8 +107,15 @@ export class TeamsService {
   }
 
   async addTeamMember(teamData: ITeamMember): Promise<TeamMember | null> {
-    return await this.prisma.teamMember.create({
-      data: { ...teamData, role: 'ADMIN' },
+    return await this.prisma.teamMember.upsert({
+      where: {
+        team_unique_user: {
+          teamId: teamData.teamId,
+          userId: teamData.userId,
+        },
+      },
+      update: {},
+      create: { ...teamData },
     });
   }
 

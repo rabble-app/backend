@@ -36,10 +36,16 @@ export interface IPayment {
   status: PaymentStatus;
 }
 
+export enum TeamMemberShip {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+}
+
 export interface ITeamMember {
   teamId: string;
   userId: string;
   status: Status;
+  role?: TeamMemberShip;
 }
 export interface IScheduleTeam {
   id: string;

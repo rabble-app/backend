@@ -202,7 +202,7 @@ model TeamMember {
   teamId String  @map("team_id")
   userId String  @map("user_id")
   status TeamStatus 
-  role MembershipStatus @default(ADMIN)
+  role MembershipStatus @default(MEMBER)
   skipNextDelivery Boolean @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
