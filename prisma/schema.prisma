@@ -176,7 +176,7 @@ model BuyingTeam {
   orders Order[]
   notifications Notification[]
   recentlyViewed RecentlyViewed[]
-  BasketC BasketC[]
+  basket BasketC[]
 
   @@map("buying_teams")
 }

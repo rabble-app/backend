@@ -108,6 +108,11 @@ export class TeamsServiceExtension {
                 lastName: true,
               },
             },
+            basket: {
+              where: {
+                userId: id,
+              },
+            },
           },
         },
       },
