@@ -107,6 +107,7 @@ export class PaymentService {
     if (result) {
       return {
         paymentIntentId,
+        orderId,
       };
     } else {
       return null;
