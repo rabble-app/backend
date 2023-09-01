@@ -42,7 +42,7 @@ model User {
   shipping Shipping?
   producer Producer?
   baskets Basket[] 
-  BasketC BasketC[]
+  basketsC BasketC[]
   invites Invite[]
   searches Search[] 
 
@@ -95,8 +95,8 @@ model ProducerCategory {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
  
-  producer Producer  @relation(fields: [producerId], references: [id])
-  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id])
+  producer Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id], onDelete: Cascade)
 
   @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
   @@map("producer_categories")
@@ -129,8 +129,8 @@ model Product {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  producer  Producer       @relation(fields: [producerId], references: [id])  
-  category  ProductCategory?  @relation(fields: [categoryId], references: [id]) 
+  producer  Producer       @relation(fields: [producerId], references: [id], onDelete: Cascade)  
+  category  ProductCategory?  @relation(fields: [categoryId], references: [id], onDelete: Cascade) 
   reviews  Review[]
   likes Like[]
   basket Basket[]
@@ -167,8 +167,8 @@ model BuyingTeam {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  producer  Producer  @relation(fields: [producerId], references: [id]) 
-  host User  @relation(fields: [hostId], references: [id])
+  producer  Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade) 
+  host User  @relation(fields: [hostId], references: [id], onDelete: Cascade)
   members TeamMember[]
   requests TeamRequest[]
   likes Like[]
@@ -190,9 +190,9 @@ model Review {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  reviewer User  @relation(fields: [reviewerId], references: [id])
-  producer  Producer?  @relation(fields: [producerId], references: [id]) 
-  product Product?  @relation(fields: [productId], references: [id])  
+  reviewer User  @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  producer  Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade) 
+  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)  
 
   @@map("reviews")
 }
@@ -238,7 +238,7 @@ model Follower {
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   user User  @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade) 
-  follower User  @relation("followings", fields: [followerId], references: [id])
+  follower User  @relation("followings", fields: [followerId], references: [id], onDelete: Cascade)
 
   @@unique([userId, followerId], name: "user_unique_follower")
   @@map("followers")
@@ -254,8 +254,8 @@ model Like {
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  product Product?  @relation(fields: [productId], references: [id])
-  producer Producer?  @relation(fields: [producerId], references: [id])
+  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId], name: "user_unique_product")
@@ -310,12 +310,12 @@ model Basket {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order  @relation(fields: [orderId], references: [id])
-  product Product  @relation(fields: [productId], references: [id])
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([orderId, userId, productId], name: "user_unique_product") 
-  @@map("basket")
+  @@map("baskets")
 }
 
 model Payment {
@@ -323,12 +323,12 @@ model Payment {
   orderId String? @map("order_id")  
   userId String? @map("user_id") 
   amount Int
-  paymentIntentId String @unique
+  paymentIntentId String? @unique
   status PaymentStatus @default(PENDING) 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order?  @relation(fields: [orderId], references: [id])
+  order Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("payments")
@@ -346,7 +346,7 @@ model Notification {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order?  @relation(fields: [orderId], references: [id])
+  order Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
@@ -364,8 +364,8 @@ model RecentlyViewed {
  
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  producer Producer?  @relation(fields: [producerId], references: [id])
-  product Product?  @relation(fields: [productId], references: [id])
+  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("recently_viewed")
 }
@@ -403,7 +403,7 @@ model DeliveryAddress {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  producer Producer  @relation(fields: [producerId], references: [id])
+  producer Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade)
   customAddresses CustomDeliveryAddress[]
 
   @@map("delivery_addresses")
@@ -417,7 +417,7 @@ model CustomDeliveryAddress {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id])
+  deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
 
   @@map("custom_delivery_address")
 }
@@ -432,8 +432,8 @@ model BasketC {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id])
-  product Product  @relation(fields: [productId], references: [id])
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId, productId], name: "team_unique_product") 

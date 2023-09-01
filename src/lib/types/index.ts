@@ -32,7 +32,7 @@ export interface IPayment {
   orderId?: string;
   userId?: string;
   amount: number;
-  paymentIntentId: string;
+  paymentIntentId?: string;
   status: PaymentStatus;
 }
 

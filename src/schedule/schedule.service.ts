@@ -91,7 +91,7 @@ export class ScheduleService {
           }
         });
       }
-      return result;
+      return true;
     } catch (error) {}
   }
   // fix: remove datatype

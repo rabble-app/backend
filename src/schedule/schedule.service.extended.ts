@@ -75,55 +75,65 @@ export class ScheduleServiceExtended {
   }
 
   async createUserBasket(teamId: string, newOrderId: string) {
-    // Todo: get all users of that team
-    // create their basket for them
     try {
-      const lastOrderProducts = await this.prisma.basketC.findMany({
+      // Todo: get all users of that team
+      const teamMembers = await this.prisma.teamMember.findMany({
         where: {
           teamId,
+          status: 'APPROVED',
         },
       });
+      if (teamMembers.length > 0) {
+        teamMembers.forEach(async (member) => {
+          // create their basket for them
+          const lastOrderProducts = await this.prisma.basketC.findMany({
+            where: {
+              teamId,
+              userId: member.userId,
+            },
+          });
 
-      if (lastOrderProducts && lastOrderProducts.length > 0) {
-        let totalAmount = 0; // amount to be paid by the user
+          if (lastOrderProducts && lastOrderProducts.length > 0) {
+            let totalAmount = 0; // amount to be paid by the user
 
-        for (let index = 0; index < lastOrderProducts.length; index++) {
-          const oldProduct = lastOrderProducts[index];
+            for (let index = 0; index < lastOrderProducts.length; index++) {
+              const oldProduct = lastOrderProducts[index];
 
-          // get the product infor to check for change in price and stock
-          const product = await this.productsService.getProduct(
-            oldProduct.productId,
-          );
+              // get the product infor to check for change in price and stock
+              const product = await this.productsService.getProduct(
+                oldProduct.productId,
+              );
 
-          if (product.status == 'OUT_OF_STOCK') {
-            continue;
+              if (product.status == 'OUT_OF_STOCK') {
+                continue;
+              }
+
+              const newProduct = {
+                orderId: newOrderId,
+                userId: oldProduct.userId,
+                productId: oldProduct.productId,
+                quantity: oldProduct.quantity,
+                price: +product.price * oldProduct.quantity,
+              };
+
+              // add to basket
+              await this.prisma.basket.create({
+                data: newProduct,
+              });
+
+              // increment totalAmount
+              totalAmount += +product.price;
+
+              // record the payment to be made by the user
+              await this.paymentService.recordPayment({
+                orderId: newOrderId,
+                userId: oldProduct.userId,
+                amount: totalAmount,
+                status: PaymentStatus.PENDING,
+              });
+            }
           }
-
-          const newProduct = {
-            orderId: newOrderId,
-            userId: oldProduct.userId,
-            productId: oldProduct.productId,
-            quantity: oldProduct.quantity,
-            price: +product.price,
-          };
-
-          // add to basket
-          await this.prisma.basket.create({
-            data: newProduct,
-          });
-
-          // increment totalAmount
-          totalAmount += +product.price;
-
-          // record the payment to be made by the user
-          await this.paymentService.recordPayment({
-            orderId: newOrderId,
-            userId: oldProduct.userId,
-            amount: totalAmount,
-            paymentIntentId: 'null',
-            status: PaymentStatus.PENDING,
-          });
-        }
+        });
       }
     } catch (error) {}
   }
@@ -211,7 +221,6 @@ export class ScheduleServiceExtended {
   async getPendingPayment() {
     return await this.prisma.payment.findMany({
       where: {
-        paymentIntentId: 'null',
         status: PaymentStatus.PENDING,
       },
       include: {
