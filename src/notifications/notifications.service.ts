@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as twilio from 'twilio';
-import { CreateNotificationDto } from './dto/create-notification.dto';
 import { PrismaService } from '../prisma.service';
 import { Notification, Prisma } from '@prisma/client';
+import { ICreateNotification } from '../../src/lib/types';
 @Injectable()
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
@@ -25,7 +25,7 @@ export class NotificationsService {
   }
 
   async createNotification(
-    createNotificationDto: CreateNotificationDto,
+    createNotificationDto: ICreateNotification,
   ): Promise<Notification> {
     return await this.prisma.notification.create({
       data: createNotificationDto,

@@ -117,3 +117,12 @@ export type UserWithProducerInfo = Prisma.UserGetPayload<{
     };
   };
 }>;
+
+export interface ICreateNotification {
+  userId: string;
+  teamId?: string;
+  orderId: string;
+  producerId?: string;
+  title: string;
+  text: string;
+}

@@ -74,25 +74,23 @@ export class ScheduleService {
                 text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team`,
                 userId: payment.userId,
                 orderId: payment.orderId,
-                teamId: '',
-                producerId: '',
               });
             }
           } else {
-            //send notification that user should add default payment method
+            // send notification that user should add default payment method
             await this.notificationsService.createNotification({
               title: 'Payment Failure',
               text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and  set a default payment method`,
               userId: payment.userId,
               orderId: payment.orderId,
-              teamId: '',
-              producerId: '',
             });
           }
         });
       }
       return true;
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   }
   // fix: remove datatype
   async handleAuthorizePayments(payment: any) {
@@ -139,8 +137,6 @@ export class ScheduleService {
             text: `We were unable to charge your card for your order with id ${payment.orderId}`,
             userId: payment.userId,
             orderId: payment.orderId,
-            teamId: '',
-            producerId: '',
           });
         }
         // update the payment status to captured or failed, depending on the success of the capture
