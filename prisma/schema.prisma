@@ -20,6 +20,7 @@ model User {
   firstName String?  @map("first_name")
   lastName String?   @map("last_name")
   postalCode String? @map("postal_code")  
+  notificationToken String? @map("notification_token") 
   stripeCustomerId String? @unique @map("stripe_customer_id")  
   stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
   cardLastFourDigits String? @map("card_last_four_digits") 

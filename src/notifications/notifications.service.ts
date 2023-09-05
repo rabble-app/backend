@@ -55,6 +55,7 @@ export class NotificationsService {
     return await this.prisma.notification.findMany({
       where: {
         userId,
+        isRead: false,
       },
     });
   }
