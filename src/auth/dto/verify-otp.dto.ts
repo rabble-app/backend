@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateIf } from 'class-validator';
 
 export class VerifyOTPDto {
   @ApiProperty({
@@ -28,4 +28,14 @@ export class VerifyOTPDto {
   @IsNotEmpty()
   @IsString()
   sid: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users firebase notification token',
+    required: false,
+  })
+  @ValidateIf((o) => o.notificationToken)
+  @IsNotEmpty()
+  @IsString()
+  notificationToken: string;
 }

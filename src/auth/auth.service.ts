@@ -13,6 +13,7 @@ import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { SendMailOptions } from 'nodemailer';
 import mailTransport from 'src/utils/mail';
+import { UserWithProducerInfo } from 'src/lib/types';
 
 @Injectable()
 export class AuthService {
@@ -61,32 +62,43 @@ export class AuthService {
         result['status'] == 'approved' ||
         verifyOTPDto.phone == '+2347000000000' // Todo: remove test logic
       ) {
-        const userExist = await this.userService.findUser({
-          phone: verifyOTPDto.phone,
-        });
+        let userExist: UserWithProducerInfo | User =
+          await this.userService.findUser({
+            phone: verifyOTPDto.phone,
+          });
         if (userExist) {
           const token = this.generateToken({
             phone: verifyOTPDto.phone,
             userId: userExist.id,
           });
           userExist['token'] = token;
-          return userExist;
         } else {
           // create stripe account for user
           const stripeResponse = await this.paymentService.createCustomer(
             verifyOTPDto.phone,
           );
-          const newUser = await this.userService.createUser({
+          userExist = await this.userService.createUser({
             phone: verifyOTPDto.phone,
             stripeCustomerId: stripeResponse.id,
           });
           const token = this.generateToken({
             phone: verifyOTPDto.phone,
-            userId: newUser.id,
+            userId: userExist.id,
           });
-          newUser['token'] = token;
-          return newUser;
+          userExist['token'] = token;
         }
+        // add firebase push notification token
+        if (verifyOTPDto.notificationToken) {
+          await this.userService.updateUser({
+            where: {
+              id: userExist.id,
+            },
+            data: {
+              notificationToken: verifyOTPDto.notificationToken,
+            },
+          });
+        }
+        return userExist;
       } else {
         return false;
       }
