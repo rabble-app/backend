@@ -18,9 +18,9 @@ const firebaseParams = {
   clientC509CertUrl: process.env.client_x509_cert_url,
 };
 
-firebase.initializeApp({
-  credential: firebase.credential.cert(firebaseParams),
-});
+// firebase.initializeApp({
+//   credential: firebase.credential.cert(firebaseParams),
+// });
 @Injectable()
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
@@ -53,21 +53,21 @@ export class NotificationsService {
       data: createNotificationDto,
     });
     // send push notification
-    if (notificationToken) {
-      await firebase
-        .messaging()
-        .send({
-          notification: {
-            title: createNotificationDto.title,
-            body: createNotificationDto.text,
-          },
-          token: notificationToken,
-          android: { priority: 'high' },
-        })
-        .catch((error: any) => {
-          console.error(error);
-        });
-    }
+    // if (notificationToken) {
+    //   await firebase
+    //     .messaging()
+    //     .send({
+    //       notification: {
+    //         title: createNotificationDto.title,
+    //         body: createNotificationDto.text,
+    //       },
+    //       token: notificationToken,
+    //       android: { priority: 'high' },
+    //     })
+    //     .catch((error: any) => {
+    //       console.error(error);
+    //     });
+    // }
 
     return result;
   }
