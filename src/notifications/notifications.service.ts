@@ -91,6 +91,17 @@ export class NotificationsService {
     });
   }
 
+  async clearNotification(userId: string): Promise<object> {
+    return await this.prisma.notification.updateMany({
+      where: {
+        userId,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+  }
+
   async returnNotifications(userId: string): Promise<Notification[]> {
     return await this.prisma.notification.findMany({
       where: {

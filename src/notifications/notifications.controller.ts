@@ -63,36 +63,28 @@ export class NotificationsController {
    * @memberof NotificationsController
    * @returns {JSON} - A JSON success response.
    */
-  @Patch(':id')
+  @Patch('')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Notification updated successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The notification id',
-  })
   async updateNotification(
-    @Param('id') id: string,
     @Body() updateNotificationDto: UpdateNotificationDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.notificationsService.updateNotification({
-      where: { id },
-      data: updateNotificationDto,
-    });
+    const result = await this.notificationsService.clearNotification(
+      updateNotificationDto.userId,
+    );
     return formatResponse(
       result,
       res,
       HttpStatus.OK,
       false,
-      'Notification updated successfully',
+      'Notification cleared successfully',
     );
   }
 
   /**
    * delete notification.
-   * @param {Body} updateNotificationDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof NotificationsController
    * @returns {JSON} - A JSON success response.

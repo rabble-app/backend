@@ -1,14 +1,12 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateNotificationDto } from './create-notification.dto';
-import { IsBoolean, IsNotEmpty, ValidateIf } from 'class-validator';
-export class UpdateNotificationDto extends PartialType(CreateNotificationDto) {
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
+export class UpdateNotificationDto {
   @ApiProperty({
     type: 'string',
-    description: 'The notification read status',
+    description: 'The notification user id',
     required: false,
   })
-  @ValidateIf((o) => o.isRead)
   @IsNotEmpty()
-  @IsBoolean()
-  isRead: boolean;
+  @IsString()
+  userId: string;
 }

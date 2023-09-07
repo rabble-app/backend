@@ -300,7 +300,6 @@ export class TeamsService {
 
     // get team admins
     const teamAdmins = await this.getTeamAdmins(joinTeamDto.teamId);
-
     // send notification
     if (teamAdmins.length > 0) {
       teamAdmins.forEach(async (admin) => {
