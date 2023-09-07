@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { IScheduleTeam, PaymentStatus } from '../lib/types';
+import {
+  IScheduleTeam,
+  PaymentStatus,
+  PaymentWithUserInfo,
+} from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
@@ -60,6 +64,11 @@ export class ScheduleService {
       const result = await this.scheduleServiceExtended.getPendingPayment();
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
+          const otherNotificationConditions = {
+            userId: payment.userId,
+            orderId: payment.orderId,
+            notficationToken: payment.user.notificationToken,
+          };
           if (
             payment.user.stripeDefaultPaymentMethodId &&
             payment.user.stripeCustomerId
@@ -72,8 +81,7 @@ export class ScheduleService {
               await this.notificationsService.createNotification({
                 title: 'Payment Failure',
                 text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team`,
-                userId: payment.userId,
-                orderId: payment.orderId,
+                ...otherNotificationConditions,
               });
             }
           } else {
@@ -81,8 +89,7 @@ export class ScheduleService {
             await this.notificationsService.createNotification({
               title: 'Payment Failure',
               text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and  set a default payment method`,
-              userId: payment.userId,
-              orderId: payment.orderId,
+              ...otherNotificationConditions,
             });
           }
         });
@@ -112,13 +119,7 @@ export class ScheduleService {
     return true;
   }
 
-  async captureFunds(
-    pendingPayments: Array<{
-      paymentIntentId: string;
-      userId: string;
-      orderId: string;
-    }>,
-  ) {
+  async captureFunds(pendingPayments: Array<PaymentWithUserInfo>) {
     pendingPayments.forEach(async (payment) => {
       let captureStatus = PaymentStatus.CAPTURED;
       // be sure that it has not been captured before
@@ -137,6 +138,7 @@ export class ScheduleService {
             text: `We were unable to charge your card for your order with id ${payment.orderId}`,
             userId: payment.userId,
             orderId: payment.orderId,
+            notficationToken: payment.user.notificationToken,
           });
         }
         // update the payment status to captured or failed, depending on the success of the capture
@@ -201,10 +203,12 @@ export class ScheduleService {
               not: 'CAPTURED',
             },
           },
-          select: {
-            paymentIntentId: true,
-            userId: true,
-            orderId: true,
+          include: {
+            user: {
+              select: {
+                notificationToken: true,
+              },
+            },
           },
         });
 

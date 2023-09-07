@@ -1,12 +1,19 @@
-import { Injectable } from '@nestjs/common';
 import { BuyingTeam, Prisma, TeamMember, TeamRequest } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { Injectable } from '@nestjs/common';
+import {
+  ITeamMember,
+  Status,
+  TeamMemberShip,
+  TeamMemberWithUserInfo,
+  TeamRequestWithOtherInfo,
+} from '../lib/types';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
-import { UsersService } from '../users/users.service';
-import { ITeamMember, Status, TeamMemberShip } from '../lib/types';
+import { PrismaService } from '../prisma.service';
 import { teamImages } from '../../src/utils';
+import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../../src/notifications/notifications.service';
 
 @Injectable()
 export class TeamsService {
@@ -14,6 +21,7 @@ export class TeamsService {
     private prisma: PrismaService,
     private readonly paymentService: PaymentService,
     private readonly userService: UsersService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
@@ -107,7 +115,7 @@ export class TeamsService {
   }
 
   async addTeamMember(teamData: ITeamMember): Promise<TeamMember | null> {
-    return await this.prisma.teamMember.upsert({
+    const result = await this.prisma.teamMember.upsert({
       where: {
         team_unique_user: {
           teamId: teamData.teamId,
@@ -117,6 +125,33 @@ export class TeamsService {
       update: {},
       create: { ...teamData },
     });
+
+    // get the sender info
+    const sender = await this.userService.findUser({ id: teamData.userId });
+
+    // get the team info
+    const team = await this.findBuyingTeam({ id: teamData.teamId });
+
+    // get team admins
+    const teamAdmins = await this.getTeamAdmins(teamData.teamId);
+
+    if (teamAdmins.length > 0) {
+      teamAdmins.forEach(async (admin) => {
+        // don't send notification to your self
+        if (teamData.userId != admin.userId) {
+          // send notification
+          await this.notificationsService.createNotification({
+            title: 'New Team Member',
+            text: `${sender.lastName} ${sender.firstName} joined your ${team.name} team`,
+            userId: admin.userId,
+            teamId: admin.teamId,
+            notficationToken: admin.user.notificationToken,
+          });
+        }
+      });
+    }
+
+    return result;
   }
 
   async getProducerTeams(id: string): Promise<BuyingTeam[] | null> {
@@ -257,15 +292,49 @@ export class TeamsService {
       joinTeamDto.teamId,
     );
     if (requestExist) return null;
+    // get the sender info
+    const sender = await this.userService.findUser({ id: joinTeamDto.userId });
+
+    // get the team info
+    const team = await this.findBuyingTeam({ id: joinTeamDto.teamId });
+
+    // get team admins
+    const teamAdmins = await this.getTeamAdmins(joinTeamDto.teamId);
+
+    // send notification
+    if (teamAdmins.length > 0) {
+      teamAdmins.forEach(async (admin) => {
+        // send notification
+        await this.notificationsService.createNotification({
+          title: 'Join Request',
+          text: `${sender.lastName} ${sender.firstName} sent a request to join ${team.name} `,
+          userId: admin.userId,
+          teamId: admin.teamId,
+          notficationToken: admin.user.notificationToken,
+        });
+      });
+    }
     return await this.prisma.teamRequest.create({
       data: joinTeamDto,
     });
   }
 
-  async getRequestData(id: string): Promise<TeamRequest | null> {
+  async getRequestData(id: string): Promise<TeamRequestWithOtherInfo | null> {
     return await this.prisma.teamRequest.findFirst({
       where: {
         id,
+      },
+      include: {
+        team: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            notificationToken: true,
+          },
+        },
       },
     });
   }
@@ -275,6 +344,25 @@ export class TeamsService {
   ): Promise<BuyingTeam | null> {
     return await this.prisma.buyingTeam.findUnique({
       where: buyingTeamWhereUniqueInput,
+    });
+  }
+
+  async getTeamAdmins(
+    teamId: string,
+  ): Promise<TeamMemberWithUserInfo[] | null> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        teamId,
+        role: 'ADMIN',
+        status: 'APPROVED',
+      },
+      include: {
+        user: {
+          select: {
+            notificationToken: true,
+          },
+        },
+      },
     });
   }
 }

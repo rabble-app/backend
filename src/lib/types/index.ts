@@ -118,11 +118,47 @@ export type UserWithProducerInfo = Prisma.UserGetPayload<{
   };
 }>;
 
+export type PaymentWithUserInfo = Prisma.PaymentGetPayload<{
+  include: {
+    user: {
+      select: {
+        notificationToken: true;
+      };
+    };
+  };
+}>;
+
+export type TeamMemberWithUserInfo = Prisma.TeamMemberGetPayload<{
+  include: {
+    user: {
+      select: {
+        notificationToken: true;
+      };
+    };
+  };
+}>;
+
 export interface ICreateNotification {
   userId: string;
   teamId?: string;
-  orderId: string;
+  orderId?: string;
   producerId?: string;
   title: string;
   text: string;
+  notficationToken?: string;
 }
+
+export type TeamRequestWithOtherInfo = Prisma.TeamRequestGetPayload<{
+  include: {
+    team: {
+      select: {
+        name: true;
+      };
+    };
+    user: {
+      select: {
+        notificationToken: true;
+      };
+    };
+  };
+}>;

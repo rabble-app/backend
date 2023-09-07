@@ -13,6 +13,7 @@ import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
 import { UsersService } from '../users/users.service';
+import { Status, TeamMemberShip } from 'src/lib/types';
 
 @Injectable()
 export class TeamsServiceExtension {
@@ -45,12 +46,19 @@ export class TeamsServiceExtension {
         });
       }
       if (updateRequestDto.status == 'APPROVED') {
-        await this.prisma.teamMember.create({
-          data: {
-            userId: result.userId,
-            teamId: result.teamId,
-            status: 'APPROVED',
-          },
+        await this.teamsService.addTeamMember({
+          userId: result.userId,
+          teamId: result.teamId,
+          status: Status.APPROVED,
+          role: TeamMemberShip.MEMBER,
+        });
+
+        // send notification
+        await this.notificationsService.createNotification({
+          title: 'Team Request Accepted',
+          text: `Your request to join ${result.team.name} team has been approved`,
+          userId: result.userId,
+          notficationToken: result.user.notificationToken,
         });
       }
       return await this.prisma.teamRequest.update({

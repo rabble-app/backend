@@ -175,7 +175,7 @@ export class ScheduleServiceExtended {
           lte: new Date(),
         },
         minimumTreshold: {
-          lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when treshold has been met
+          lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when threshold has been met
         },
       },
       select: {
@@ -229,6 +229,7 @@ export class ScheduleServiceExtended {
             stripeDefaultPaymentMethodId: true,
             stripeCustomerId: true,
             phone: true,
+            notificationToken: true,
           },
         },
         order: {

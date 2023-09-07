@@ -3,6 +3,24 @@ import * as twilio from 'twilio';
 import { PrismaService } from '../prisma.service';
 import { Notification, Prisma } from '@prisma/client';
 import { ICreateNotification } from '../../src/lib/types';
+import * as firebase from 'firebase-admin';
+
+const firebaseParams = {
+  type: process.env.type,
+  projectId: process.env.project_id,
+  privateKeyId: process.env.private_key_id,
+  privateKey: process.env.private_key,
+  clientEmail: process.env.client_email,
+  clientId: process.env.client_id,
+  authUri: process.env.auth_uri,
+  tokenUri: process.env.token_uri,
+  authProviderX509CertUrl: process.env.auth_provider_x509_cert_url,
+  clientC509CertUrl: process.env.client_x509_cert_url,
+};
+
+firebase.initializeApp({
+  credential: firebase.credential.cert(firebaseParams),
+});
 @Injectable()
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
@@ -27,9 +45,31 @@ export class NotificationsService {
   async createNotification(
     createNotificationDto: ICreateNotification,
   ): Promise<Notification> {
-    return await this.prisma.notification.create({
+    const notificationToken = createNotificationDto.notficationToken
+      ? createNotificationDto.notficationToken
+      : '';
+    delete createNotificationDto.notficationToken;
+    const result = await this.prisma.notification.create({
       data: createNotificationDto,
     });
+    // send push notification
+    if (notificationToken) {
+      await firebase
+        .messaging()
+        .send({
+          notification: {
+            title: createNotificationDto.title,
+            body: createNotificationDto.text,
+          },
+          token: notificationToken,
+          android: { priority: 'high' },
+        })
+        .catch((error: any) => {
+          console.error(error);
+        });
+    }
+
+    return result;
   }
 
   async updateNotification(params: {
