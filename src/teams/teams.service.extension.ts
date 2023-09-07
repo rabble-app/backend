@@ -130,9 +130,26 @@ export class TeamsServiceExtension {
   async quitBuyingTeam(
     where: Prisma.TeamMemberWhereUniqueInput,
   ): Promise<TeamMember> {
-    return await this.prisma.teamMember.delete({
+    const record = await this.prisma.teamMember.findFirst({
+      where: {
+        id: where.id,
+      },
+      include: {
+        team: {
+          select: {
+            hostId: true,
+          },
+        },
+      },
+    });
+    const result = await this.prisma.teamMember.delete({
       where,
     });
+    if (record.team.hostId == record.userId) {
+      // delete the buying team
+      await this.teamsService.deleteTeam({ id: record.teamId });
+    }
+    return result;
   }
 
   async getTeamInfo(id: string): Promise<BuyingTeam | null> {
