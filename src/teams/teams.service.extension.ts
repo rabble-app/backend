@@ -258,17 +258,25 @@ export class TeamsServiceExtension {
           user: {
             select: {
               phone: true,
+              notificationToken: true,
             },
           },
         },
       });
       if (teamMembers.length > 0) {
+        const message =
+          'Your host is looking after your items for you, return the favour by collecting them as promptly as possible';
         teamMembers.forEach(async (member) => {
           // send sms
-          await this.notificationsService.sendSMS(
-            'Your host is looking after your items for you, return the favour by collecting them as promptly as possible',
-            member.user.phone,
-          );
+          await this.notificationsService.sendSMS(message, member.user.phone);
+
+          // send  push notification
+          await this.notificationsService.createNotification({
+            title: 'Collect your items',
+            text: message,
+            userId: member.userId,
+            notficationToken: member.user.notificationToken,
+          });
         });
       }
       // update date for the lastnudge
