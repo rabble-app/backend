@@ -160,8 +160,20 @@ export class PaymentService {
       },
       data: { accumulatedAmount: { increment: amount } },
     });
-    if (result.accumulatedAmount >= result.minimumTreshold) {
-      console.log('yes ooo');
+    if (
+      result.accumulatedAmount >= result.minimumTreshold &&
+      result.deadline.getTime() - new Date().getTime() > 86400 * 1000
+    ) {
+      const newDeadline = new Date().getTime() + 86400 * 1000;
+      // update order to end in the next 24 hours
+      await this.updateOrder({
+        where: {
+          id: result.id,
+        },
+        data: {
+          deadline: new Date(newDeadline),
+        },
+      });
     }
   }
 
@@ -222,6 +234,17 @@ export class PaymentService {
   }): Promise<Payment> {
     const { where, data } = params;
     return await this.prisma.payment.update({
+      data,
+      where,
+    });
+  }
+
+  async updateOrder(params: {
+    where: Prisma.OrderWhereUniqueInput;
+    data: Prisma.OrderUpdateInput;
+  }): Promise<Order> {
+    const { where, data } = params;
+    return await this.prisma.order.update({
       data,
       where,
     });
