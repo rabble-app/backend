@@ -36,3 +36,4 @@ lerna-debug.log*
 
 .env
 .serverless/
+firebase-adminsdk.json

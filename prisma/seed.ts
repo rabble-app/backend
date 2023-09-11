@@ -118,7 +118,7 @@ async function main() {
     create: {
       name: 'Espresso Blend Whole bean',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+4.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+28.png',
       description: '1KG Whole bean',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
@@ -138,7 +138,7 @@ async function main() {
     create: {
       name: 'Espresso Blend Ground',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/DSC06555-2_a96cd17c-4636-42bd-9d68-11d459c1a911_1005x+4.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+28.png',
       description: '1KG Ground for Filter',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
@@ -229,7 +229,7 @@ async function main() {
     create: {
       name: '6 Cacklebean Eggs',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Rectangle+4149.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+29.png',
       description: '6 Cacklebean Farm fresh eggs',
       producerId: producerRecordB.id,
       categoryId: productCategoryAA.id,

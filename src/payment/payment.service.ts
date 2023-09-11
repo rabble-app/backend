@@ -154,12 +154,15 @@ export class PaymentService {
   }
 
   async accumulateAmount(orderId: string, amount: number): Promise<void> {
-    await this.prisma.order.update({
+    const result = await this.prisma.order.update({
       where: {
         id: orderId,
       },
       data: { accumulatedAmount: { increment: amount } },
     });
+    if (result.accumulatedAmount >= result.minimumTreshold) {
+      console.log('yes ooo');
+    }
   }
 
   async createIntentForApplePay(
