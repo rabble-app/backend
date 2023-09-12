@@ -219,4 +219,16 @@ export class ScheduleService {
       });
     } catch (error) {}
   }
+
+  async handleSetDelivery() {
+    const fullOrders = await this.scheduleServiceExtended.getCapturedOrders();
+    if (fullOrders && fullOrders.length > 0) {
+      // for each order
+      // get the team info eg postal code, producer id
+      // get the producer delivery info for the user's postal code
+      // update order with the delivery date
+    }
+
+    return true;
+  }
 }

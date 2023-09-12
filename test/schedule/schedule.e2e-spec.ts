@@ -73,5 +73,15 @@ describe('ScheduleController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/schedule/set-delivery(GET) should set date for delivery',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/set-delivery')
+          .expect(200);
+      },
+      testTime,
+    );
   });
 });

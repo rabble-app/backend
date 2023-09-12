@@ -128,4 +128,27 @@ export class ScheduleController {
       'Authorize payment function performed successfully',
     );
   }
+
+  /**
+   * set delivery date.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('set-delivery')
+  @ApiOkResponse({
+    description: 'Set delivery function performed successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async setDelivery(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleService.handleSetDelivery();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Set delivery function performed successfully',
+    );
+  }
 }

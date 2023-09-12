@@ -206,7 +206,7 @@ export class ScheduleServiceExtended {
       },
     });
   }
-
+  // Todo: use update order function in payment module
   async updateOrderStatus(orderId: string, status: OrderStatus) {
     await this.prisma.order.update({
       where: {
@@ -242,6 +242,15 @@ export class ScheduleServiceExtended {
             },
           },
         },
+      },
+    });
+  }
+
+  async getCapturedOrders() {
+    return await this.prisma.order.findMany({
+      where: {
+        status: 'PENDING_DELIVERY',
+        deliveryDate: null,
       },
     });
   }
