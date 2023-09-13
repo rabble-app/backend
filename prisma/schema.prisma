@@ -227,7 +227,7 @@ model TeamRequest {
   team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
-  @@unique([teamId, userId], name: "team_unique_user")
+  @@unique([teamId, userId, status], name: "team_unique_user")
   @@map("team_requests")
 }
 

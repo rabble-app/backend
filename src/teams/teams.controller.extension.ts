@@ -283,11 +283,11 @@ export class TeamsControllerExtension {
     );
     if (!result) {
       return formatResponse(
-        'Token is invalid',
+        'Token is invalid/expired',
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Invalid token supplied',
+        'Invalid/expired token supplied',
       );
     }
     return formatResponse(

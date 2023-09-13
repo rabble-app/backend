@@ -142,7 +142,7 @@ export class TeamsService {
           // send notification
           await this.notificationsService.createNotification({
             title: 'New Team Member',
-            text: `${sender.lastName} ${sender.firstName} joined your ${team.name} team`,
+            text: `${sender.firstName} ${sender.lastName} joined your ${team.name} team`,
             userId: admin.userId,
             teamId: admin.teamId,
             notficationToken: admin.user.notificationToken,
@@ -283,6 +283,7 @@ export class TeamsService {
       where: {
         userId,
         teamId,
+        status: 'PENDING',
       },
     });
   }
@@ -307,7 +308,7 @@ export class TeamsService {
         // send notification
         await this.notificationsService.createNotification({
           title: 'Join Request',
-          text: `${sender.lastName} ${sender.firstName} sent a request to join ${team.name} `,
+          text: `${sender.firstName} ${sender.lastName} sent a request to join ${team.name} `,
           userId: admin.userId,
           teamId: admin.teamId,
           notficationToken: admin.user.notificationToken,
