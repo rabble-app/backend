@@ -58,6 +58,7 @@ export class TeamsServiceExtension {
           title: 'Team Request Accepted',
           text: `Your request to join ${result.team.name} team has been approved`,
           userId: result.userId,
+          teamId: result.teamId,
           notficationToken: result.user.notificationToken,
         });
       }
