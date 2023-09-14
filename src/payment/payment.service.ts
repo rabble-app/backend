@@ -162,9 +162,9 @@ export class PaymentService {
     });
     if (
       result.accumulatedAmount >= result.minimumTreshold &&
-      result.deadline.getTime() - new Date().getTime() > 86400 * 1000
+      result.deadline.getTime() - new Date().getTime() > 86400000
     ) {
-      const newDeadline = new Date().getTime() + 86400 * 1000;
+      const newDeadline = new Date().getTime() + 86400000;
       // update order to end in the next 24 hours
       await this.updateOrder({
         where: {

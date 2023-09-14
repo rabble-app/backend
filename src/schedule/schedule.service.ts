@@ -8,6 +8,7 @@ import {
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
+import { PaymentService } from '../payment/payment.service';
 
 @Injectable()
 export class ScheduleService {
@@ -16,6 +17,7 @@ export class ScheduleService {
     private notificationsService: NotificationsService,
     private paymentServiceExtension: PaymentServiceExtension,
     private scheduleServiceExtended: ScheduleServiceExtended,
+    private paymentService: PaymentService,
   ) {}
 
   async chargeUsers() {
@@ -37,10 +39,14 @@ export class ScheduleService {
     // if we have such orders
     if (expiredOrders.length > 0) {
       expiredOrders.forEach(async (order) => {
-        await this.scheduleServiceExtended.updateOrderStatus(
-          order.id,
-          'FAILED',
-        );
+        await this.paymentService.updateOrder({
+          where: {
+            id: order.id,
+          },
+          data: {
+            status: 'FAILED',
+          },
+        });
       });
     }
 
@@ -223,10 +229,27 @@ export class ScheduleService {
   async handleSetDelivery() {
     const fullOrders = await this.scheduleServiceExtended.getCapturedOrders();
     if (fullOrders && fullOrders.length > 0) {
-      // for each order
-      // get the team info eg postal code, producer id
-      // get the producer delivery info for the user's postal code
-      // update order with the delivery date
+      fullOrders.forEach(async (order) => {
+        let multipler = 2;
+        const currentDate = new Date();
+        const currentDay = currentDate.getDay();
+
+        // check for friday, saturday and sunday
+        if (currentDay == 0) {
+          multipler = 1;
+        } else if (currentDay == 5) {
+          multipler = 3;
+        }
+        const deliveryDate = new Date().getTime() + multipler * 86400000;
+        await this.paymentService.updateOrder({
+          where: {
+            id: order.id,
+          },
+          data: {
+            deliveryDate: new Date(deliveryDate),
+          },
+        });
+      });
     }
 
     return true;

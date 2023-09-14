@@ -42,7 +42,14 @@ export class ScheduleServiceExtended {
         });
 
         if (capturedPayments._sum.amount >= expectedPayments._sum.amount) {
-          await this.updateOrderStatus(order.id, 'PENDING_DELIVERY');
+          await this.paymentService.updateOrder({
+            where: {
+              id: order.id,
+            },
+            data: {
+              status: 'PENDING_DELIVERY',
+            },
+          });
         }
       });
     } catch (error) {}
@@ -203,17 +210,6 @@ export class ScheduleServiceExtended {
         id: true,
         frequency: true,
         producerId: true,
-      },
-    });
-  }
-  // Todo: use update order function in payment module
-  async updateOrderStatus(orderId: string, status: OrderStatus) {
-    await this.prisma.order.update({
-      where: {
-        id: orderId,
-      },
-      data: {
-        status,
       },
     });
   }
