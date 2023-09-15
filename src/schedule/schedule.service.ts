@@ -9,6 +9,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
 import { PaymentService } from '../payment/payment.service';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ScheduleService {
@@ -18,6 +19,7 @@ export class ScheduleService {
     private paymentServiceExtension: PaymentServiceExtension,
     private scheduleServiceExtended: ScheduleServiceExtended,
     private paymentService: PaymentService,
+    private usersService: UsersService,
   ) {}
 
   async chargeUsers() {
@@ -249,6 +251,32 @@ export class ScheduleService {
             deliveryDate: new Date(deliveryDate),
           },
         });
+      });
+    }
+
+    return true;
+  }
+
+  async handleGetPaymentMethod() {
+    const users =
+      await this.scheduleServiceExtended.getUsersWithNoPaymentMethod();
+    if (users && users.length > 0) {
+      users.forEach(async (user) => {
+        // get the users payment methods in stripe and update the default in db
+        const result: any =
+          await this.paymentServiceExtension.getUserPaymentOptions(
+            user.stripeCustomerId,
+          );
+        if (result && result.data.length > 0) {
+          await this.usersService.updateUser({
+            where: {
+              id: user.id,
+            },
+            data: {
+              stripeDefaultPaymentMethodId: result.data[0].id,
+            },
+          });
+        }
       });
     }
 

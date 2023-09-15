@@ -250,4 +250,18 @@ export class ScheduleServiceExtended {
       },
     });
   }
+  async getUsersWithNoPaymentMethod() {
+    return await this.prisma.user.findMany({
+      where: {
+        stripeDefaultPaymentMethodId: {
+          contains: 'tok_',
+        },
+      },
+      select: {
+        id: true,
+        stripeCustomerId: true,
+        stripeDefaultPaymentMethodId: true,
+      },
+    });
+  }
 }

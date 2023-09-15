@@ -151,4 +151,27 @@ export class ScheduleController {
       'Set delivery function performed successfully',
     );
   }
+
+  /**
+   * Get stripe payment method id for users with apple pay token .
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('change-stripe-token')
+  @ApiOkResponse({
+    description: 'Get payment method id function performed successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getPaymentMethod(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleService.handleGetPaymentMethod();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Get payment method id function performed successfully',
+    );
+  }
 }

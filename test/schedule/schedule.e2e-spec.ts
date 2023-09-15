@@ -83,5 +83,15 @@ describe('ScheduleController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/schedule/change-stripe-token(GET) should get payment method id from user with stripe apple token',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/change-stripe-token')
+          .expect(200);
+      },
+      testTime,
+    );
   });
 });
