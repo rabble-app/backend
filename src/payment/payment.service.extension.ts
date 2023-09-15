@@ -18,7 +18,11 @@ export class PaymentServiceExtension {
   ) {}
 
   async getUserPaymentOptions(id: string): Promise<object | null> {
-    return await stripe.customers.listPaymentMethods(id);
+    const result = await stripe.customers.listPaymentMethods(id);
+    const unique = [
+      ...new Map(result.data.map((m) => [m.card.last4, m])).values(),
+    ];
+    return unique;
   }
 
   async removePaymentOption(id: string): Promise<object | null> {
