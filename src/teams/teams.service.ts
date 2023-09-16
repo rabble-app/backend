@@ -1,6 +1,6 @@
 import { BuyingTeam, Prisma, TeamMember, TeamRequest } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   ITeamMember,
   Status,
@@ -19,6 +19,7 @@ import { NotificationsService } from '../../src/notifications/notifications.serv
 export class TeamsService {
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => PaymentService))
     private readonly paymentService: PaymentService,
     private readonly userService: UsersService,
     private notificationsService: NotificationsService,
@@ -308,7 +309,7 @@ export class TeamsService {
         // send notification
         await this.notificationsService.createNotification({
           title: 'Join Request',
-          text: `${sender.firstName} ${sender.lastName} sent a request to join ${team.name} `,
+          text: `${sender.firstName} ${sender.lastName} sent a request to join ${team.name}`,
           userId: admin.userId,
           teamId: admin.teamId,
           notficationToken: admin.user.notificationToken,

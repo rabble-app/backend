@@ -107,6 +107,7 @@ export class PaymentServiceExtension {
       await this.paymentService.accumulateAmount(
         iPaymentAuth.orderId,
         iPaymentAuth.amount,
+        iPaymentAuth.teamId,
       );
 
       // update payment record

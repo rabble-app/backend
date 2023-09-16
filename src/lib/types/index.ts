@@ -125,6 +125,16 @@ export type PaymentWithUserInfo = Prisma.PaymentGetPayload<{
         notificationToken: true;
       };
     };
+    order: {
+      include: {
+        team: {
+          select: {
+            name: true;
+            id: true;
+          };
+        };
+      };
+    };
   };
 }>;
 
@@ -158,6 +168,22 @@ export type TeamRequestWithOtherInfo = Prisma.TeamRequestGetPayload<{
     user: {
       select: {
         notificationToken: true;
+      };
+    };
+  };
+}>;
+
+export type TeamMemberWithUserAndTeamInfo = Prisma.TeamMemberGetPayload<{
+  include: {
+    user: {
+      select: {
+        notificationToken: true;
+        id: true;
+      };
+    };
+    team: {
+      select: {
+        name: true;
       };
     };
   };

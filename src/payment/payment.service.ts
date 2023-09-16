@@ -3,12 +3,14 @@ import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
 import { BasketC, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ICreateIntent, IOrder, IPayment, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddSingleBasketDto } from './dto/add-single-basket.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -19,6 +21,9 @@ export class PaymentService {
   constructor(
     private readonly userService: UsersService,
     private prisma: PrismaService,
+    private readonly notificationService: NotificationsService,
+    @Inject(forwardRef(() => TeamsServiceExtension))
+    private readonly teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async createCustomer(phone: string): Promise<{ id: string } | null> {
@@ -94,7 +99,11 @@ export class PaymentService {
       orderId = result.id;
 
       // accumulate amount paid
-      await this.accumulateAmount(orderId, chargeUserDto.amount);
+      await this.accumulateAmount(
+        orderId,
+        chargeUserDto.amount,
+        chargeUserDto.teamId,
+      );
     }
 
     // record intent
@@ -153,27 +162,46 @@ export class PaymentService {
     });
   }
 
-  async accumulateAmount(orderId: string, amount: number): Promise<void> {
+  async accumulateAmount(
+    orderId: string,
+    amount: number,
+    teamId: string,
+  ): Promise<void> {
     const result = await this.prisma.order.update({
       where: {
         id: orderId,
       },
       data: { accumulatedAmount: { increment: amount } },
     });
-    if (
-      result.accumulatedAmount >= result.minimumTreshold &&
-      result.deadline.getTime() - new Date().getTime() > 86400000
-    ) {
-      const newDeadline = new Date().getTime() + 86400000;
-      // update order to end in the next 24 hours
-      await this.updateOrder({
-        where: {
-          id: result.id,
-        },
-        data: {
-          deadline: new Date(newDeadline),
-        },
-      });
+    if (result.accumulatedAmount >= result.minimumTreshold) {
+      // send notification if threshold is reached
+      const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+        teamId,
+      );
+      if (teamMembers.length > 0) {
+        teamMembers.forEach(async (member) => {
+          // send notification
+          await this.notificationService.createNotification({
+            title: 'Threshold Reached',
+            text: `Congrats! Your team ${member.team.name} has reached the threshold for the current order`,
+            userId: member.userId,
+            teamId: member.teamId,
+            notficationToken: member.user.notificationToken,
+          });
+        });
+      }
+      if (result.deadline.getTime() - new Date().getTime() > 86400000) {
+        const newDeadline = new Date().getTime() + 86400000;
+        // update order to end in the next 24 hours
+        await this.updateOrder({
+          where: {
+            id: result.id,
+          },
+          data: {
+            deadline: new Date(newDeadline),
+          },
+        });
+      }
     }
   }
 

@@ -5,6 +5,8 @@ import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { OrderStatus } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -13,6 +15,8 @@ export class ScheduleServiceExtended {
     private paymentService: PaymentService,
     private usersService: UsersService,
     private productsService: ProductsService,
+    private notificationsService: NotificationsService,
+    private teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async processCompleteOrders(
@@ -83,13 +87,10 @@ export class ScheduleServiceExtended {
 
   async createUserBasket(teamId: string, newOrderId: string) {
     try {
-      // Todo: get all users of that team
-      const teamMembers = await this.prisma.teamMember.findMany({
-        where: {
-          teamId,
-          status: 'APPROVED',
-        },
-      });
+      // Todo: there is a function that does this in team service
+      const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+        teamId,
+      );
       if (teamMembers.length > 0) {
         teamMembers.forEach(async (member) => {
           // create their basket for them
@@ -140,6 +141,14 @@ export class ScheduleServiceExtended {
               });
             }
           }
+          // send notification
+          await this.notificationsService.createNotification({
+            teamId,
+            title: 'New Order',
+            text: `A new order has started for your ${member.team.name} team`,
+            userId: member.userId,
+            notficationToken: member.user.notificationToken,
+          });
         });
       }
     } catch (error) {}
@@ -170,6 +179,7 @@ export class ScheduleServiceExtended {
       },
       select: {
         id: true,
+        teamId: true,
       },
     });
   }

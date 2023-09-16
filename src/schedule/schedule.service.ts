@@ -10,6 +10,8 @@ import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
 import { PaymentService } from '../payment/payment.service';
 import { UsersService } from 'src/users/users.service';
+import { TeamsService } from 'src/teams/teams.service';
+import { TeamsServiceExtension } from 'src/teams/teams.service.extension';
 
 @Injectable()
 export class ScheduleService {
@@ -20,6 +22,8 @@ export class ScheduleService {
     private scheduleServiceExtended: ScheduleServiceExtended,
     private paymentService: PaymentService,
     private usersService: UsersService,
+    private teamsService: TeamsService,
+    private teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async chargeUsers() {
@@ -49,6 +53,22 @@ export class ScheduleService {
             status: 'FAILED',
           },
         });
+        // send notification to team members if threshold was not reached
+        const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+          order.teamId,
+        );
+        if (teamMembers.length > 0) {
+          teamMembers.forEach(async (member) => {
+            // send notification
+            await this.notificationsService.createNotification({
+              title: 'Order Failed',
+              text: `Your current order with ${member.team.name} team failed because the supplier's threshold was not met`,
+              userId: member.userId,
+              teamId: member.teamId,
+              notficationToken: member.user.notificationToken,
+            });
+          });
+        }
       });
     }
 
@@ -75,6 +95,7 @@ export class ScheduleService {
           const otherNotificationConditions = {
             userId: payment.userId,
             orderId: payment.orderId,
+            teamId: payment.order.teamId,
             notficationToken: payment.user.notificationToken,
           };
           if (
@@ -88,7 +109,7 @@ export class ScheduleService {
               // send notification that payment failed
               await this.notificationsService.createNotification({
                 title: 'Payment Failure',
-                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team`,
+                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
                 ...otherNotificationConditions,
               });
             }
@@ -96,7 +117,7 @@ export class ScheduleService {
             // send notification that user should add default payment method
             await this.notificationsService.createNotification({
               title: 'Payment Failure',
-              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and  set a default payment method`,
+              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and set a default payment method`,
               ...otherNotificationConditions,
             });
           }
@@ -104,7 +125,7 @@ export class ScheduleService {
       }
       return true;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   }
   // fix: remove datatype
@@ -143,9 +164,10 @@ export class ScheduleService {
           // send notification
           await this.notificationsService.createNotification({
             title: 'Rabble Payment Failure',
-            text: `We were unable to charge your card for your order with id ${payment.orderId}`,
+            text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
             userId: payment.userId,
             orderId: payment.orderId,
+            teamId: payment.order.team.id,
             notficationToken: payment.user.notificationToken,
           });
         }
@@ -186,6 +208,15 @@ export class ScheduleService {
           new Date().getTime() - lastOrder.createdAt.getTime() >
           team.frequency * 1000
         ) {
+          // update the team next delivery Date to null to clean out the last delivery date that was set
+          await this.teamsService.updateTeam({
+            where: {
+              id: team.id,
+            },
+            data: {
+              nextDeliveryDate: null,
+            },
+          });
           // create new order
           const newOrder = await this.scheduleServiceExtended.createNewOrder(
             team,
@@ -217,6 +248,16 @@ export class ScheduleService {
                 notificationToken: true,
               },
             },
+            order: {
+              include: {
+                team: {
+                  select: {
+                    name: true,
+                    id: true,
+                  },
+                },
+              },
+            },
           },
         });
 
@@ -243,6 +284,7 @@ export class ScheduleService {
           multipler = 3;
         }
         const deliveryDate = new Date().getTime() + multipler * 86400000;
+        // update order
         await this.paymentService.updateOrder({
           where: {
             id: order.id,
@@ -251,6 +293,30 @@ export class ScheduleService {
             deliveryDate: new Date(deliveryDate),
           },
         });
+        // update team
+        await this.teamsService.updateTeam({
+          where: {
+            id: order.teamId,
+          },
+          data: {
+            nextDeliveryDate: new Date(deliveryDate),
+          },
+        });
+        //send notification to team members if threshold was not reached
+        const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+          order.teamId,
+        );
+        if (teamMembers.length > 0) {
+          teamMembers.forEach(async (member) => {
+            await this.notificationsService.createNotification({
+              title: 'Order delivery date',
+              text: `Delivery date has been set for your order with ${member.team.name} team`,
+              userId: member.userId,
+              teamId: member.teamId,
+              notficationToken: member.user.notificationToken,
+            });
+          });
+        }
       });
     }
 

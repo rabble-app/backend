@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   BuyingTeam,
   Order,
@@ -13,7 +13,11 @@ import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
 import { UsersService } from '../users/users.service';
-import { Status, TeamMemberShip } from 'src/lib/types';
+import {
+  Status,
+  TeamMemberShip,
+  TeamMemberWithUserAndTeamInfo,
+} from '../lib/types';
 
 @Injectable()
 export class TeamsServiceExtension {
@@ -21,6 +25,7 @@ export class TeamsServiceExtension {
     private prisma: PrismaService,
     private readonly teamsService: TeamsService,
     private readonly notificationsService: NotificationsService,
+    @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
   ) {}
@@ -336,5 +341,29 @@ export class TeamsServiceExtension {
       return false;
     }
     return true;
+  }
+
+  async getAllTeamUsers(
+    teamId: string,
+  ): Promise<TeamMemberWithUserAndTeamInfo[] | null> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        teamId,
+        status: 'APPROVED',
+      },
+      include: {
+        user: {
+          select: {
+            notificationToken: true,
+            id: true,
+          },
+        },
+        team: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
   }
 }
