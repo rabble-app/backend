@@ -173,6 +173,7 @@ export class TeamsServiceExtension {
                 lastName: true,
                 phone: true,
                 imageUrl: true,
+                cardLastFourDigits: true,
               },
             },
           },

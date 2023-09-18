@@ -199,8 +199,8 @@ export class PaymentService {
       teamMembers.forEach(async (member) => {
         // send notification
         await this.notificationService.createNotification({
-          title: 'Threshold Reached',
-          text: `Congrats! Your team ${member.team.name} has reached the threshold for the current order, you have around 24 hours to add to this order or invite others to join your team`,
+          title: 'Threshold Reached 👏',
+          text: `Congratulations! Your buying team ${member.team.name} have collectively reached the suppliers’s minimum threshold for a new shipment. You have 24 hours to add to it or invite others to join the team before the order is shipped`,
           userId: member.userId,
           teamId: member.teamId,
           notficationToken: member.user.notificationToken,
