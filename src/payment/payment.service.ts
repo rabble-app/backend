@@ -167,41 +167,57 @@ export class PaymentService {
     amount: number,
     teamId: string,
   ): Promise<void> {
+    // get previous accumalated value so that we will not keep sending notification that threshold has been met
+    const orderRecord = await this.prisma.order.findFirst({
+      where: { id: orderId },
+    });
+    const lastAccumulatedValue = orderRecord.accumulatedAmount;
+
     const result = await this.prisma.order.update({
       where: {
         id: orderId,
       },
       data: { accumulatedAmount: { increment: amount } },
     });
-    if (result.accumulatedAmount >= result.minimumTreshold) {
-      // send notification if threshold is reached
-      const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
-        teamId,
-      );
-      if (teamMembers.length > 0) {
-        teamMembers.forEach(async (member) => {
-          // send notification
-          await this.notificationService.createNotification({
-            title: 'Threshold Reached',
-            text: `Congrats! Your team ${member.team.name} has reached the threshold for the current order`,
-            userId: member.userId,
-            teamId: member.teamId,
-            notficationToken: member.user.notificationToken,
-          });
+    if (
+      result.accumulatedAmount >= result.minimumTreshold &&
+      lastAccumulatedValue < result.minimumTreshold
+    ) {
+      await this.sendNotificationForThreshold(teamId, orderId, result.deadline);
+    }
+  }
+
+  async sendNotificationForThreshold(
+    teamId: string,
+    orderId: string,
+    orderDeadline: Date,
+  ): Promise<void> {
+    const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+      teamId,
+    );
+    if (teamMembers.length > 0) {
+      teamMembers.forEach(async (member) => {
+        // send notification
+        await this.notificationService.createNotification({
+          title: 'Threshold Reached',
+          text: `Congrats! Your team ${member.team.name} has reached the threshold for the current order, you have around 24 hours to add to this order or invite others to join your team`,
+          userId: member.userId,
+          teamId: member.teamId,
+          notficationToken: member.user.notificationToken,
         });
-      }
-      if (result.deadline.getTime() - new Date().getTime() > 86400000) {
-        const newDeadline = new Date().getTime() + 86400000;
-        // update order to end in the next 24 hours
-        await this.updateOrder({
-          where: {
-            id: result.id,
-          },
-          data: {
-            deadline: new Date(newDeadline),
-          },
-        });
-      }
+      });
+    }
+    if (orderDeadline.getTime() - new Date().getTime() > 86400000) {
+      const newDeadline = new Date().getTime() + 86400000;
+      // update order to end in the next 24 hours
+      await this.updateOrder({
+        where: {
+          id: orderId,
+        },
+        data: {
+          deadline: new Date(newDeadline),
+        },
+      });
     }
   }
 

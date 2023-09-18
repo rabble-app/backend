@@ -112,6 +112,15 @@ export class TeamsService {
       data: { ...paymentData },
     });
     result['orderId'] = orderResponse.id;
+
+    // send notification
+    if (paymentInfo.amount >= producerInfo.minimumTreshold) {
+      await this.paymentService.sendNotificationForThreshold(
+        result.id,
+        orderResponse.id,
+        nextWeekDate,
+      );
+    }
     return result;
   }
 
