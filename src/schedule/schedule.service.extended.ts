@@ -5,6 +5,8 @@ import { IScheduleTeam, PaymentStatus } from '../lib/types';
 import { OrderStatus } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -13,6 +15,8 @@ export class ScheduleServiceExtended {
     private paymentService: PaymentService,
     private usersService: UsersService,
     private productsService: ProductsService,
+    private notificationsService: NotificationsService,
+    private teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async processCompleteOrders(
@@ -31,8 +35,25 @@ export class ScheduleServiceExtended {
           },
         });
 
-        if (capturedPayments._sum.amount >= order.minimumTreshold) {
-          await this.updateOrderStatus(order.id, 'SUCCESSFUL');
+        // get the order amount
+        const expectedPayments = await this.prisma.payment.aggregate({
+          where: {
+            orderId: order.id,
+          },
+          _sum: {
+            amount: true,
+          },
+        });
+
+        if (capturedPayments._sum.amount >= expectedPayments._sum.amount) {
+          await this.paymentService.updateOrder({
+            where: {
+              id: order.id,
+            },
+            data: {
+              status: 'PENDING_DELIVERY',
+            },
+          });
         }
       });
     } catch (error) {}
@@ -64,54 +85,71 @@ export class ScheduleServiceExtended {
     } catch (error) {}
   }
 
-  async createUserBasket(lastOrderId: string, newOrderId: string) {
+  async createUserBasket(teamId: string, newOrderId: string) {
     try {
-      const lastOrderProducts = await this.prisma.basket.findMany({
-        where: {
-          orderId: lastOrderId,
-        },
-      });
+      // Todo: there is a function that does this in team service
+      const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+        teamId,
+      );
+      if (teamMembers.length > 0) {
+        teamMembers.forEach(async (member) => {
+          // create their basket for them
+          const lastOrderProducts = await this.prisma.basketC.findMany({
+            where: {
+              teamId,
+              userId: member.userId,
+            },
+          });
 
-      if (lastOrderProducts && lastOrderProducts.length > 0) {
-        let totalAmount = 0; // amount to be paid by the user
+          if (lastOrderProducts && lastOrderProducts.length > 0) {
+            let totalAmount = 0; // amount to be paid by the user
 
-        for (let index = 0; index < lastOrderProducts.length; index++) {
-          const oldProduct = lastOrderProducts[index];
+            for (let index = 0; index < lastOrderProducts.length; index++) {
+              const oldProduct = lastOrderProducts[index];
 
-          // get the product infor to check for change in price and stock
-          const product = await this.productsService.getProduct(
-            oldProduct.productId,
-          );
+              // get the product infor to check for change in price and stock
+              const product = await this.productsService.getProduct(
+                oldProduct.productId,
+              );
 
-          if (product.status == 'OUT_OF_STOCK') {
-            continue;
+              if (product.status == 'OUT_OF_STOCK') {
+                continue;
+              }
+
+              const newProduct = {
+                orderId: newOrderId,
+                userId: oldProduct.userId,
+                productId: oldProduct.productId,
+                quantity: oldProduct.quantity,
+                price: +product.price * oldProduct.quantity,
+              };
+
+              // add to basket
+              await this.prisma.basket.create({
+                data: newProduct,
+              });
+
+              // increment totalAmount
+              totalAmount += +product.price;
+
+              // record the payment to be made by the user
+              await this.paymentService.recordPayment({
+                orderId: newOrderId,
+                userId: oldProduct.userId,
+                amount: totalAmount,
+                status: PaymentStatus.PENDING,
+              });
+            }
           }
-
-          const newProduct = {
-            orderId: newOrderId,
-            userId: oldProduct.userId,
-            productId: oldProduct.productId,
-            quantity: oldProduct.quantity,
-            price: product.price,
-          };
-
-          // add to basket
-          await this.prisma.basket.create({
-            data: newProduct,
+          // send notification
+          await this.notificationsService.createNotification({
+            teamId,
+            title: 'New Order',
+            text: `A new order has started for your ${member.team.name} team`,
+            userId: member.userId,
+            notficationToken: member.user.notificationToken,
           });
-
-          // increment totalAmount
-          totalAmount += product.price;
-
-          // record the payment to be made by the user
-          await this.paymentService.recordPayment({
-            orderId: newOrderId,
-            userId: oldProduct.userId,
-            amount: totalAmount,
-            paymentIntentId: 'null',
-            status: PaymentStatus.PENDING,
-          });
-        }
+        });
       }
     } catch (error) {}
   }
@@ -141,6 +179,7 @@ export class ScheduleServiceExtended {
       },
       select: {
         id: true,
+        teamId: true,
       },
     });
   }
@@ -148,12 +187,12 @@ export class ScheduleServiceExtended {
   async getExhaustedOrders() {
     return await this.prisma.order.findMany({
       where: {
-        status: 'PENDING',
+        status: OrderStatus.PENDING,
         deadline: {
           lte: new Date(),
         },
         minimumTreshold: {
-          lte: this.prisma.order.fields.accumulatedAmount,
+          lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when threshold has been met
         },
       },
       select: {
@@ -185,21 +224,9 @@ export class ScheduleServiceExtended {
     });
   }
 
-  async updateOrderStatus(orderId: string, status: OrderStatus) {
-    await this.prisma.order.update({
-      where: {
-        id: orderId,
-      },
-      data: {
-        status,
-      },
-    });
-  }
-
   async getPendingPayment() {
     return await this.prisma.payment.findMany({
       where: {
-        paymentIntentId: 'null',
         status: PaymentStatus.PENDING,
       },
       include: {
@@ -208,6 +235,7 @@ export class ScheduleServiceExtended {
             stripeDefaultPaymentMethodId: true,
             stripeCustomerId: true,
             phone: true,
+            notificationToken: true,
           },
         },
         order: {
@@ -220,6 +248,29 @@ export class ScheduleServiceExtended {
             },
           },
         },
+      },
+    });
+  }
+
+  async getCapturedOrders() {
+    return await this.prisma.order.findMany({
+      where: {
+        status: 'PENDING_DELIVERY',
+        deliveryDate: null,
+      },
+    });
+  }
+  async getUsersWithNoPaymentMethod() {
+    return await this.prisma.user.findMany({
+      where: {
+        stripeDefaultPaymentMethodId: {
+          contains: 'tok_',
+        },
+      },
+      select: {
+        id: true,
+        stripeCustomerId: true,
+        stripeDefaultPaymentMethodId: true,
       },
     });
   }

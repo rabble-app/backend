@@ -41,7 +41,7 @@ export class ChargeUserDto {
     description: 'The user stripe payment method id',
     required: false,
   })
-  @ValidateIf((o) => !o.isApplePay)
+  @ValidateIf((o) => o.isApplePay)
   @IsNotEmpty()
   @IsString()
   paymentMethodId: string;

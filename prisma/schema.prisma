@@ -4,7 +4,7 @@
 generator client {
   provider = "prisma-client-js"  
   binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
-  previewFeatures = ["fieldReference"]
+  previewFeatures = ["fieldReference", "distinct"]
 }
 
 datasource db {
@@ -16,13 +16,15 @@ model User {
   id    String  @default(uuid()) @id
   phone String  @unique
   email String?  @unique
+  password String?
   firstName String?  @map("first_name")
   lastName String?   @map("last_name")
   postalCode String? @map("postal_code")  
+  notificationToken String? @map("notification_token") 
   stripeCustomerId String? @unique @map("stripe_customer_id")  
   stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
   cardLastFourDigits String? @map("card_last_four_digits") 
-  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/profile/img.png") @map("image_url")
+  imageUrl String?  @map("image_url")
   imageKey String? @map("image_key")  
   role Role    @default(USER) 
   createdAt DateTime @default(now()) @map("created_at")
@@ -41,7 +43,9 @@ model User {
   shipping Shipping?
   producer Producer?
   baskets Basket[] 
-  invites Invite[] 
+  basketsC BasketC[]
+  invites Invite[]
+  searches Search[] 
 
   @@map("users")
 }
@@ -49,10 +53,13 @@ model User {
 model Producer {
   id  String     @default(uuid()) @id
   userId String @unique
+  isVerified Boolean    @default(false) @map("is_verified")
   imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
   imageKey String? @map("image_key")  
-  businessName String @map("business_name")
-  businessAddress String @map("business_address")
+  businessName String @unique @map("business_name")
+  businessAddress String? @map("business_address")
+  accountsEmail String? @map("acounts_email")
+  salesEmail String? @map("sales_email")
   minimumTreshold Int @map("minimum_treshold") @default(5000)
   website String?
   description String?
@@ -66,13 +73,14 @@ model Producer {
   likes Like[]
   recentlyViewed RecentlyViewed[]
   categories ProducerCategory[]
+  deliveryAddresses DeliveryAddress[]
 
   @@map("producers")
 }
 
 model ProducerCategoryOption {
   id  String  @default(uuid()) @id  
-  name String 
+  name String @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -88,9 +96,10 @@ model ProducerCategory {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
  
-  producer Producer  @relation(fields: [producerId], references: [id])
-  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id])
+  producer Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id], onDelete: Cascade)
 
+  @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
   @@map("producer_categories")
 }
 
@@ -110,7 +119,7 @@ model Shipping {
 
 model Product {
   id  String     @default(uuid()) @id  
-  name String
+  name String 
   imageUrl String? @map("image_url") 
   imageKey String? @map("image_key")  
   description String?
@@ -121,19 +130,21 @@ model Product {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  producer  Producer       @relation(fields: [producerId], references: [id])  
-  category  ProductCategory?  @relation(fields: [categoryId], references: [id]) 
+  producer  Producer       @relation(fields: [producerId], references: [id], onDelete: Cascade)  
+  category  ProductCategory?  @relation(fields: [categoryId], references: [id], onDelete: Cascade) 
   reviews  Review[]
   likes Like[]
   basket Basket[]
+  BasketC BasketC[]
   recentlyViewed RecentlyViewed[]
 
+  @@unique([name, producerId], name: "name_unique_producer")
   @@map("products")
 }
 
 model ProductCategory {
   id  String  @default(uuid()) @id  
-  name String 
+  name String @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -144,7 +155,7 @@ model ProductCategory {
 
 model BuyingTeam {
   id  String     @default(uuid()) @id 
-  name String 
+  name String @unique
   postalCode String @map("postal_code")
   producerId String @map("producer_id")
   hostId String    @map("host_id")
@@ -157,8 +168,8 @@ model BuyingTeam {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  producer  Producer  @relation(fields: [producerId], references: [id]) 
-  host User  @relation(fields: [hostId], references: [id])
+  producer  Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade) 
+  host User  @relation(fields: [hostId], references: [id], onDelete: Cascade)
   members TeamMember[]
   requests TeamRequest[]
   likes Like[]
@@ -166,6 +177,7 @@ model BuyingTeam {
   orders Order[]
   notifications Notification[]
   recentlyViewed RecentlyViewed[]
+  basket BasketC[]
 
   @@map("buying_teams")
 }
@@ -179,9 +191,9 @@ model Review {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  reviewer User  @relation(fields: [reviewerId], references: [id])
-  producer  Producer?  @relation(fields: [producerId], references: [id]) 
-  product Product?  @relation(fields: [productId], references: [id])  
+  reviewer User  @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  producer  Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade) 
+  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)  
 
   @@map("reviews")
 }
@@ -191,6 +203,7 @@ model TeamMember {
   teamId String  @map("team_id")
   userId String  @map("user_id")
   status TeamStatus 
+  role MembershipStatus @default(MEMBER)
   skipNextDelivery Boolean @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
@@ -198,6 +211,7 @@ model TeamMember {
   team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
 
+  @@unique([teamId, userId], name: "team_unique_user")
   @@map("team_members")
 }
 
@@ -224,8 +238,9 @@ model Follower {
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   user User  @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade) 
-  follower User  @relation("followings", fields: [followerId], references: [id])
+  follower User  @relation("followings", fields: [followerId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, followerId], name: "user_unique_follower")
   @@map("followers")
 }
 
@@ -239,10 +254,13 @@ model Like {
   updatedAt DateTime @updatedAt @map("updated_at") 
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  product Product?  @relation(fields: [productId], references: [id])
-  producer Producer?  @relation(fields: [producerId], references: [id])
+  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, productId], name: "user_unique_product")
+  @@unique([userId, producerId], name: "user_unique_producer")
+  @@unique([userId, teamId], name: "user_unique_team")
   @@map("likes")
 }
 
@@ -258,7 +276,7 @@ model Invite {
 
   team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  
+
   @@map("invites")
 }
 
@@ -269,6 +287,8 @@ model Order {
   minimumTreshold Int @map("minimum_treshold")
   accumulatedAmount Int @map("accumulated_amount") @default(0)
   deadline DateTime @default(now())
+  lastNudge DateTime? @map("last_nudge")
+  deliveryDate DateTime? @map("delivery_date")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
@@ -290,11 +310,12 @@ model Basket {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order  @relation(fields: [orderId], references: [id])
-  product Product  @relation(fields: [productId], references: [id])
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  
-  @@map("basket")
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId, productId], name: "user_unique_product") 
+  @@map("baskets")
 }
 
 model Payment {
@@ -302,12 +323,12 @@ model Payment {
   orderId String? @map("order_id")  
   userId String? @map("user_id") 
   amount Int
-  paymentIntentId String @unique
+  paymentIntentId String? @unique
   status PaymentStatus @default(PENDING) 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order?  @relation(fields: [orderId], references: [id])
+  order Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("payments")
@@ -325,7 +346,7 @@ model Notification {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") 
 
-  order Order?  @relation(fields: [orderId], references: [id])
+  order Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
@@ -343,17 +364,93 @@ model RecentlyViewed {
  
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  producer Producer?  @relation(fields: [producerId], references: [id])
-  product Product?  @relation(fields: [productId], references: [id])
+  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("recently_viewed")
+}
+
+model Search {
+  id  String  @default(uuid()) @id 
+  keyword String
+  userId String @map("user_id") 
+  category SearchCategory
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("searches")
+}
+
+model SearchCount {
+  id  String  @default(uuid()) @id 
+  keyword String
+  category SearchCategory 
+  count Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  @@map("search_count")
+}
+
+model DeliveryAddress {
+  id  String  @default(uuid()) @id 
+  location String
+  type DeliveryType @default(WEEKLY)
+  cutOffTime String?  @map("cut_off_time")
+  producerId String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  customAddresses CustomDeliveryAddress[]
+
+  @@map("delivery_addresses")
+}
+
+model CustomDeliveryAddress {
+  id  String  @default(uuid()) @id 
+  deliveryAddressId String
+  day DayOptions
+  cutOffTime String  @map("cut_off_time")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
+
+  @@map("custom_delivery_address")
+}
+
+model BasketC {
+  id  String  @default(uuid()) @id 
+  teamId String @map("team_id")
+  userId String  @map("user_id")
+  productId String @map("product_id")
+  quantity Int
+  price Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId, productId], name: "team_unique_product") 
+  @@map("basket_c")
 }
 
 
 enum OrderStatus {
   PENDING
+  PENDING_DELIVERY
   SUCCESSFUL
   FAILED  
+}
+
+enum DeliveryType {
+  CUSTOM
+  WEEKLY  
 }
 
 enum Role {
@@ -380,4 +477,25 @@ enum PaymentStatus {
   FAILED
   INTENT_CREATED
   CAPTURED
+}
+
+enum SearchCategory {
+  SUPPLIER
+  PRODUCT
+  TEAM
+}
+
+enum DayOptions {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum MembershipStatus {
+  ADMIN
+  MEMBER
 }

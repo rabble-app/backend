@@ -1,50 +1,46 @@
-service: nestjs-serverless-pg
+service: nest-lambda-docker
 
 frameworkVersion: '3'
 
+plugins:
+  - serverless-jetpack
+  # - serverless-plugin-typescript
+  - serverless-offline
+
 provider:
   name: aws
-  runtime: nodejs16.x
-  architecture: arm64
-  stage: ${opt:stage, 'dev'}
-  region: ${opt:region, 'us-east-2'}
-  memorySize: 128
-  logRetentionInDays: 1
-  timeout: 30
+  runtime: nodejs14.x
+  region: us-east-2
+  stage: dev
+  profile: lambda-docker
+  ecr:
+    images:
+      appimage:
+        path: ./
+
+  iam:
+    role:
+      statements:
+        # Allow functions to list all buckets
+        - Effect: Allow
+          Action: 's3:ListBucket'
+          Resource: '*'
+        # Allow functions to read/write objects in a bucket
+        - Effect: Allow
+          Action: ["s3:*"]
+          Resource:
+            - "arn:aws:s3:::bucket/*"
 
 functions:
-  api:
-    handler: dist/lambda.handler
+  main:
+    image:
+      name: appimage
+      command:
+        - dist/lambda.handler
+      entryPoint:
+        - '/lambda-entrypoint.sh'
+    # handler: src/lambda.handler
     events:
-      - httpApi:
+      - http:
           method: any
-          path: /{proxy+}
-
-plugins:
-  - serverless-dotenv-plugin
-  - serverless-offline
-  - serverless-webpack
-
-custom:
-  webpack:
-    webpackConfig: 'webpack.config.js'
-    includeModules: true # This is required
-    packager: 'npm'
-    packagerOptions:
-      scripts: # this is the magic
-        - npx prisma generate
-
-# custom:
-#   esbuild:
-#     bundle: true
-#     minify: false
-#     packager: 'npm'
-#     external: 'node_modules'
-#     # exclude: 'aws-sdk'
-#     # target: node18.16.0
-#     # define:
-#     #   'require.resolve': undefined
-#     # platform: node
-#     # concurrency: 10
- 
-
+          path: /{any+}

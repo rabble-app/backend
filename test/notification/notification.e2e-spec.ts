@@ -73,11 +73,11 @@ describe('NotificationController (e2e)', () => {
     );
 
     it(
-      '/notifications/:id(PATCH) should update notification',
+      '/notifications/(PATCH) should update notification',
       async () => {
         const response = await request(app.getHttpServer())
-          .patch(`/notifications/${notificationId}`)
-          .send({ ...notificationData, userId })
+          .patch(`/notifications`)
+          .send({ userId })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -87,10 +87,10 @@ describe('NotificationController (e2e)', () => {
     );
 
     it(
-      '/notifications/:id(PATCH) should not update notification if uncompleted data is supplied',
+      '/notifications should not update notification if uncompleted data is supplied',
       async () => {
         const response = await request(app.getHttpServer())
-          .patch(`/notifications/${notificationId}`)
+          .patch(`/notifications`)
           .send({ ...notificationData })
           .expect(400);
         expect(response.body).toHaveProperty('error');

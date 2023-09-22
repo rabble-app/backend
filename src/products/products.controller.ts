@@ -109,34 +109,6 @@ export class ProductsController {
   }
 
   /**
-   * search for products.
-   * @param {Response} res - The payload.
-   * @memberof ProductsController
-   * @returns {JSON} - A JSON success response.
-   */
-  @Get('/search/:keyword')
-  @ApiOkResponse({ description: 'Products returned successfully' })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'keyword',
-    required: true,
-    description: 'The keyword of the product',
-  })
-  async searchProducts(
-    @Param('keyword') keyword: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.productsService.searchProducts(keyword);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'Products returned successfully',
-    );
-  }
-
-  /**
    * record recently viwed product.
    * @param {Body} recentlyViewedProductDto - Request body object.
    * @param {Response} res - The payload.

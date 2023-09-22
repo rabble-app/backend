@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty } from 'class-validator';
-
 export class CreateUserDto {
   @ApiProperty({
     type: 'string',
@@ -46,4 +45,13 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   email: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users firebase notification token',
+    required: false,
+  })
+  @IsNotEmpty()
+  @IsString()
+  notificationToken: string;
 }

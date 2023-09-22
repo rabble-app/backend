@@ -22,6 +22,7 @@ import { Response } from 'express';
 import { UpdateBasketItemDto } from './dto/update-basket-item.dto';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
+import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -34,7 +35,7 @@ export class PaymentControllerExtension {
   /**
    * return a user payment options.
    * @param {Response} res - The payload.
-   * @memberof PaymentController
+   * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
   @Get('options/:id')
@@ -64,7 +65,7 @@ export class PaymentControllerExtension {
   /**
    * remove payment option from user.
    * @param {Response} res - The payload.
-   * @memberof PaymentController
+   * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
   @Patch('options/:id')
@@ -95,7 +96,7 @@ export class PaymentControllerExtension {
    * Update item in basket
    * @param {Body} updateBasketItemDto - Request body object.
    * @param {Response} res - The payload.
-   * @memberof PaymentController
+   * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
   @Patch('basket/:itemId')
@@ -128,7 +129,7 @@ export class PaymentControllerExtension {
    * Create Payment intent
    * @param {Body} createIntentDto - Request body object.
    * @param {Response} res - The payload.
-   * @memberof PaymentController
+   * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
   @Post('intent')
@@ -148,6 +149,33 @@ export class PaymentControllerExtension {
       HttpStatus.OK,
       false,
       'Payment intent created successfully',
+    );
+  }
+
+  /**
+   * Update bulk items in basket
+   * @param {Body} updateBasketBulkDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @Patch('basket-bulk')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Items updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async updateBasketBulk(
+    @Body() updateBasketBulkDto: UpdateBasketBulkDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.updateBasketBulk(
+      updateBasketBulkDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Items updated successfully',
     );
   }
 }

@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import {
-  BuyingTeam,
-  Order,
-  Product,
-  ProductCategory,
-  RecentlyViewed,
-} from '@prisma/client';
+import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { ITeamWithOtherInfo } from 'src/lib/types';
@@ -55,17 +49,6 @@ export class ProductsService {
     return finalResult;
   }
 
-  async searchProducts(keyword: string): Promise<Product[] | null> {
-    return await this.prisma.product.findMany({
-      where: {
-        name: {
-          contains: keyword,
-          mode: 'insensitive',
-        },
-      },
-    });
-  }
-
   async recordRecentlyViewed(
     recentlyViewedProductDto: RecentlyViewedProductDto,
   ): Promise<RecentlyViewed> {
@@ -94,12 +77,14 @@ export class ProductsService {
     if (result && result.length) {
       result.forEach((team: ITeamWithOtherInfo) => {
         team.orders.forEach((order) => {
-          finalArray.push(...order.basket);
+          order.basket.forEach((item: { product: { id: string } }) => {
+            finalArray.push(item.product);
+          });
         });
       });
     }
-
-    return finalArray;
+    const unique = [...new Map(finalArray.map((m) => [m.id, m])).values()];
+    return unique;
   }
 
   async populateItemsUsersAlsoBought(id: string): Promise<object[] | null> {

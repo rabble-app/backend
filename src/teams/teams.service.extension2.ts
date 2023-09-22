@@ -20,6 +20,16 @@ export class TeamsServiceExtension2 {
     const record = await this.checkIfInviteExist(data);
     if (!record) return returnValue;
 
+    // mark invite link as used
+    await this.prisma.invite.update({
+      where: {
+        id: record.id,
+      },
+      data: {
+        status: 'APPROVED',
+      },
+    });
+
     // get team info
     const team = await this.prisma.buyingTeam.findFirst({
       where: {
@@ -45,14 +55,16 @@ export class TeamsServiceExtension2 {
     userId: string;
     phone: string;
     teamId: string;
-  }): Promise<{ phone: string; teamId: string }> {
+  }): Promise<{ phone: string; teamId: string; id: string }> {
     return await this.prisma.invite.findFirst({
       where: {
         userId: data.userId,
         phone: data.phone,
         teamId: data.teamId,
+        status: 'PENDING',
       },
       select: {
+        id: true,
         phone: true,
         teamId: true,
       },

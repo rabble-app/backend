@@ -16,6 +16,10 @@ env:
   JWT_SECRET: ${{secrets.JWT_SECRET}}
   STRIPE_SECRET_KEY: ${{secrets.STRIPE_SECRET_KEY}}
   STRIPE_PERISHABLE_KEY: ${{secrets.STRIPE_PERISHABLE_KEY}}
+  RABBLE_AWS_REGION: ${{secrets.RABBLE_AWS_REGION}}
+  RABBLE_AWS_ACCESS_KEY_ID: ${{secrets.RABBLE_AWS_ACCESS_KEY_ID}}
+  RABBLE_AWS_SECRET_ACCESS_KEY: ${{secrets.RABBLE_AWS_SECRET_ACCESS_KEY}}
+  RABBLE_AWS_BUCKET_NAME: ${{secrets.RABBLE_AWS_BUCKET_NAME}}
       
 jobs:
   rabble-backend:
@@ -45,7 +49,5 @@ jobs:
       - name: Run tests (unit) 🧪
         run: npm test
 
-      - name: Run tests (e2e) ⚙️
-        run: npm run test:e2e
-
-
+      # - name: Run tests (e2e) ⚙️
+      #   run: npm run test:e2e

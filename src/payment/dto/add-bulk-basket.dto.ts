@@ -58,7 +58,6 @@ export class AddToBasket {
 
 export class AddBulkBasketDto {
   @ApiProperty({
-    type: 'string',
     description: 'The basket content',
     required: true,
   })
@@ -67,4 +66,13 @@ export class AddBulkBasketDto {
   @Type(() => AddToBasket)
   @ArrayMinSize(1)
   basket: AddToBasket[];
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The buying team id',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  teamId: string;
 }

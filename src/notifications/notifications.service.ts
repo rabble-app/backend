@@ -1,8 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import * as twilio from 'twilio';
-import { CreateNotificationDto } from './dto/create-notification.dto';
 import { PrismaService } from '../prisma.service';
 import { Notification, Prisma } from '@prisma/client';
+import { ICreateNotification } from '../../src/lib/types';
+import * as firebase from 'firebase-admin';
+
+firebase.initializeApp({
+  credential: firebase.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  }),
+});
+
 @Injectable()
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
@@ -19,15 +29,43 @@ export class NotificationsService {
         from: process.env.TWILO_PHONE,
         to: receiver,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async createNotification(
-    createNotificationDto: CreateNotificationDto,
+    createNotificationDto: ICreateNotification,
   ): Promise<Notification> {
-    return await this.prisma.notification.create({
+    const notificationToken = createNotificationDto.notficationToken
+      ? createNotificationDto.notficationToken
+      : '';
+    delete createNotificationDto.notficationToken;
+    const result = await this.prisma.notification.create({
       data: createNotificationDto,
     });
+    // send push notification
+    if (notificationToken) {
+      await firebase
+        .messaging()
+        .send({
+          notification: {
+            title: createNotificationDto.title,
+            body: createNotificationDto.text,
+          },
+          data: {
+            title: createNotificationDto.title,
+            body: createNotificationDto.text,
+          },
+          token: notificationToken,
+          android: { priority: 'high' },
+        })
+        .catch((error: any) => {
+          console.error(error);
+        });
+    }
+
+    return result;
   }
 
   async updateNotification(params: {
@@ -49,10 +87,22 @@ export class NotificationsService {
     });
   }
 
+  async clearNotification(userId: string): Promise<object> {
+    return await this.prisma.notification.updateMany({
+      where: {
+        userId,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+  }
+
   async returnNotifications(userId: string): Promise<Notification[]> {
     return await this.prisma.notification.findMany({
       where: {
         userId,
+        isRead: false,
       },
     });
   }

@@ -1,9 +1,10 @@
 import Stripe from 'stripe';
-import { Basket, Payment, Prisma } from '@prisma/client';
+import { Basket, BasketC, Payment, Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
+import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -17,7 +18,11 @@ export class PaymentServiceExtension {
   ) {}
 
   async getUserPaymentOptions(id: string): Promise<object | null> {
-    return await stripe.customers.listPaymentMethods(id);
+    const result = await stripe.customers.listPaymentMethods(id);
+    const unique = [
+      ...new Map(result.data.map((m) => [m.card.last4, m])).values(),
+    ];
+    return unique;
   }
 
   async removePaymentOption(id: string): Promise<object | null> {
@@ -29,6 +34,17 @@ export class PaymentServiceExtension {
   }
 
   async updateBasketItem(params: {
+    where: Prisma.BasketCWhereUniqueInput;
+    data: Prisma.BasketCUpdateInput;
+  }): Promise<BasketC> {
+    const { where, data } = params;
+    return await this.prisma.basketC.update({
+      data,
+      where,
+    });
+  }
+
+  async updateCurrentBasketItem(params: {
     where: Prisma.BasketWhereUniqueInput;
     data: Prisma.BasketUpdateInput;
   }): Promise<Basket> {
@@ -37,6 +53,43 @@ export class PaymentServiceExtension {
       data,
       where,
     });
+  }
+
+  async updateBasketBulk(
+    updateBasketBulkDto: UpdateBasketBulkDto,
+  ): Promise<void> {
+    const items = updateBasketBulkDto.basket;
+
+    for (let index = 0; index < items.length; index++) {
+      const product = items[index];
+      const result = await this.updateBasketItem({
+        where: {
+          id: product.basketId,
+        },
+        data: {
+          quantity: product.quantity,
+          price: product.price,
+        },
+      });
+
+      if (!updateBasketBulkDto.deadlineReached) {
+        // update major basket
+        await this.updateCurrentBasketItem({
+          where: {
+            user_unique_product: {
+              userId: result.userId,
+              orderId: updateBasketBulkDto.orderId,
+              productId: result.productId,
+            },
+          },
+          data: {
+            quantity: product.quantity,
+            price: product.price,
+          },
+        });
+      }
+    }
+    return;
   }
 
   async schedulePaymentAuthorization(
@@ -54,6 +107,7 @@ export class PaymentServiceExtension {
       await this.paymentService.accumulateAmount(
         iPaymentAuth.orderId,
         iPaymentAuth.amount,
+        iPaymentAuth.teamId,
       );
 
       // update payment record

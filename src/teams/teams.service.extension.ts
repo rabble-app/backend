@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   BuyingTeam,
   Order,
@@ -12,6 +12,12 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
+import { UsersService } from '../users/users.service';
+import {
+  Status,
+  TeamMemberShip,
+  TeamMemberWithUserAndTeamInfo,
+} from '../lib/types';
 
 @Injectable()
 export class TeamsServiceExtension {
@@ -19,33 +25,57 @@ export class TeamsServiceExtension {
     private prisma: PrismaService,
     private readonly teamsService: TeamsService,
     private readonly notificationsService: NotificationsService,
+    @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
+    private readonly usersService: UsersService,
   ) {}
 
   async updateRequest(
     updateRequestDto: UpdateRequestDto,
-  ): Promise<TeamRequest> {
-    if (updateRequestDto.status == 'APPROVED') {
-      // get user data
-      const result = await this.teamsService.getRequestData(
-        updateRequestDto.id,
-      );
-      if (result) {
-        await this.prisma.teamMember.create({
-          data: {
-            userId: result.userId,
-            teamId: result.teamId,
-            status: 'APPROVED',
+  ): Promise<TeamRequest | boolean> {
+    // get user data
+    const result = await this.teamsService.getRequestData(updateRequestDto.id);
+    if (result) {
+      // check if member already exist
+      const memberExist = await this.prisma.teamMember.findFirst({
+        where: {
+          userId: result.userId,
+          teamId: result.teamId,
+        },
+      });
+      if (memberExist) {
+        return await this.prisma.teamRequest.findFirst({
+          where: {
+            id: updateRequestDto.id,
           },
         });
       }
+      if (updateRequestDto.status == 'APPROVED') {
+        await this.teamsService.addTeamMember({
+          userId: result.userId,
+          teamId: result.teamId,
+          status: Status.APPROVED,
+          role: TeamMemberShip.MEMBER,
+        });
+
+        // send notification
+        await this.notificationsService.createNotification({
+          title: 'Team Request Accepted',
+          text: `Your request to join ${result.team.name} team has been approved`,
+          userId: result.userId,
+          teamId: result.teamId,
+          notficationToken: result.user.notificationToken,
+        });
+      }
+      return await this.prisma.teamRequest.update({
+        where: {
+          id: updateRequestDto.id,
+        },
+        data: { status: updateRequestDto.status },
+      });
+    } else {
+      return false;
     }
-    return await this.prisma.teamRequest.update({
-      where: {
-        id: updateRequestDto.id,
-      },
-      data: { status: updateRequestDto.status },
-    });
   }
 
   async getTeamMembers(id: string): Promise<TeamMember[] | null> {
@@ -53,6 +83,7 @@ export class TeamsServiceExtension {
       where: {
         teamId: id,
         status: 'APPROVED',
+        role: 'MEMBER',
       },
       include: {
         user: true,
@@ -64,6 +95,7 @@ export class TeamsServiceExtension {
     return await this.prisma.teamMember.findMany({
       where: {
         userId: id,
+        role: 'MEMBER',
       },
       include: {
         team: {
@@ -90,6 +122,11 @@ export class TeamsServiceExtension {
                 lastName: true,
               },
             },
+            basket: {
+              where: {
+                userId: id,
+              },
+            },
           },
         },
       },
@@ -99,9 +136,26 @@ export class TeamsServiceExtension {
   async quitBuyingTeam(
     where: Prisma.TeamMemberWhereUniqueInput,
   ): Promise<TeamMember> {
-    return await this.prisma.teamMember.delete({
+    const record = await this.prisma.teamMember.findFirst({
+      where: {
+        id: where.id,
+      },
+      include: {
+        team: {
+          select: {
+            hostId: true,
+          },
+        },
+      },
+    });
+    const result = await this.prisma.teamMember.delete({
       where,
     });
+    if (record.team.hostId == record.userId) {
+      // delete the buying team
+      await this.teamsService.deleteTeam({ id: record.teamId });
+    }
+    return result;
   }
 
   async getTeamInfo(id: string): Promise<BuyingTeam | null> {
@@ -119,6 +173,7 @@ export class TeamsServiceExtension {
                 lastName: true,
                 phone: true,
                 imageUrl: true,
+                cardLastFourDigits: true,
               },
             },
           },
@@ -144,6 +199,9 @@ export class TeamsServiceExtension {
           },
         },
         requests: {
+          where: {
+            status: 'PENDING',
+          },
           include: {
             user: {
               select: {
@@ -152,6 +210,9 @@ export class TeamsServiceExtension {
               },
             },
           },
+        },
+        _count: {
+          select: { orders: true },
         },
       },
     });
@@ -181,34 +242,73 @@ export class TeamsServiceExtension {
   }
 
   async nudgeTeam(id: string): Promise<boolean> {
-    const teamMembers = await this.prisma.teamMember.findMany({
+    const order = await this.prisma.order.findFirst({
       where: {
-        teamId: id,
-        status: 'APPROVED',
-      },
-      include: {
-        user: {
-          select: {
-            phone: true,
-          },
-        },
+        id,
       },
     });
-    if (teamMembers.length > 0) {
-      teamMembers.forEach(async (member) => {
-        // send sms
-        await this.notificationsService.sendSMS(
-          'Your host is looking after your items for you, return the favour by collecting them as promptly as possible',
-          member.user.phone,
-        );
+    // check whether 24 hours has passed after last nudge
+    if (
+      order &&
+      order.lastNudge != null &&
+      +Date.now() <
+        +new Date(new Date(order.lastNudge).getTime() + 60 * 60 * 24 * 1000)
+    ) {
+      return false;
+    } else {
+      const teamMembers = await this.prisma.teamMember.findMany({
+        where: {
+          teamId: order.teamId,
+          status: 'APPROVED',
+        },
+        include: {
+          user: {
+            select: {
+              phone: true,
+              notificationToken: true,
+            },
+          },
+        },
       });
+      if (teamMembers.length > 0) {
+        const message =
+          'Your host is looking after your items for you, return the favour by collecting them as promptly as possible';
+        teamMembers.forEach(async (member) => {
+          // send sms
+          await this.notificationsService.sendSMS(message, member.user.phone);
+
+          // send  push notification
+          await this.notificationsService.createNotification({
+            title: 'Collect your items',
+            text: message,
+            userId: member.userId,
+            notficationToken: member.user.notificationToken,
+          });
+        });
+      }
+      // update date for the lastnudge
+      await this.prisma.order.update({
+        where: {
+          id: order.id,
+        },
+        data: {
+          lastNudge: new Date(),
+        },
+      });
+      return true;
     }
-    return true;
   }
 
-  async bulkInvite(bulkInviteDto: BulkInviteDto): Promise<boolean | null> {
+  async bulkInvite(bulkInviteDto: BulkInviteDto): Promise<boolean | object> {
     if (bulkInviteDto.phones.length > 0) {
-      bulkInviteDto.phones.forEach(async (phone) => {
+      const senderInfo = await this.usersService.findUser({
+        id: bulkInviteDto.userId,
+      });
+      const sender = senderInfo.firstName
+        ? `${senderInfo.firstName} ${senderInfo.lastName}`
+        : 'Someone';
+      for (let index = 0; index < bulkInviteDto.phones.length; index++) {
+        const phone = bulkInviteDto.phones[index];
         // generate token with jwt
         const token = this.authService.generateToken({
           phone,
@@ -230,12 +330,41 @@ export class TeamsServiceExtension {
         const url = `${bulkInviteDto.link}?token=${token}`;
 
         // send to user
-        const message = `Hi, someone is inviting you to join a buying team at Rabble, click the link to get started: ${url}`;
-
+        const message = `${sender} is inviting you to join his buying team on Rabble, click the link to get started: ${url}`;
         // send the message to user
-        await this.notificationsService.sendSMS(message, phone);
-      });
+        const feedback = await this.notificationsService.sendSMS(
+          message,
+          phone,
+        );
+        if (!feedback) return false;
+      }
+    } else {
+      return false;
     }
     return true;
+  }
+
+  async getAllTeamUsers(
+    teamId: string,
+  ): Promise<TeamMemberWithUserAndTeamInfo[] | null> {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        teamId,
+        status: 'APPROVED',
+      },
+      include: {
+        user: {
+          select: {
+            notificationToken: true,
+            id: true,
+          },
+        },
+        team: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
   }
 }

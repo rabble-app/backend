@@ -1,13 +1,16 @@
 import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
-import { Basket, Order, Payment, Prisma } from '@prisma/client';
+import { BasketC, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ICreateIntent, IOrder, IPayment, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
+import { AddSingleBasketDto } from './dto/add-single-basket.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -18,6 +21,9 @@ export class PaymentService {
   constructor(
     private readonly userService: UsersService,
     private prisma: PrismaService,
+    private readonly notificationService: NotificationsService,
+    @Inject(forwardRef(() => TeamsServiceExtension))
+    private readonly teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async createCustomer(phone: string): Promise<{ id: string } | null> {
@@ -75,6 +81,15 @@ export class PaymentService {
       const paymentIntent = await this.handleIntentCreation(chargeUserDto);
       paymentIntentId = paymentIntent.id;
     } else {
+      // make it user default payment method
+      await this.userService.updateUser({
+        where: {
+          id: chargeUserDto.userId,
+        },
+        data: {
+          stripeDefaultPaymentMethodId: chargeUserDto.paymentMethodId,
+        },
+      });
       paymentIntentId = chargeUserDto.paymentIntentId;
     }
 
@@ -84,7 +99,11 @@ export class PaymentService {
       orderId = result.id;
 
       // accumulate amount paid
-      await this.accumulateAmount(orderId, chargeUserDto.amount);
+      await this.accumulateAmount(
+        orderId,
+        chargeUserDto.amount,
+        chargeUserDto.teamId,
+      );
     }
 
     // record intent
@@ -97,6 +116,7 @@ export class PaymentService {
     if (result) {
       return {
         paymentIntentId,
+        orderId,
       };
     } else {
       return null;
@@ -142,13 +162,63 @@ export class PaymentService {
     });
   }
 
-  async accumulateAmount(orderId: string, amount: number): Promise<void> {
-    await this.prisma.order.update({
+  async accumulateAmount(
+    orderId: string,
+    amount: number,
+    teamId: string,
+  ): Promise<void> {
+    // get previous accumalated value so that we will not keep sending notification that threshold has been met
+    const orderRecord = await this.prisma.order.findFirst({
+      where: { id: orderId },
+    });
+    const lastAccumulatedValue = orderRecord.accumulatedAmount;
+
+    const result = await this.prisma.order.update({
       where: {
         id: orderId,
       },
       data: { accumulatedAmount: { increment: amount } },
     });
+    if (
+      result.accumulatedAmount >= result.minimumTreshold &&
+      lastAccumulatedValue < result.minimumTreshold
+    ) {
+      await this.sendNotificationForThreshold(teamId, orderId, result.deadline);
+    }
+  }
+
+  async sendNotificationForThreshold(
+    teamId: string,
+    orderId: string,
+    orderDeadline: Date,
+  ): Promise<void> {
+    const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+      teamId,
+    );
+    if (teamMembers.length > 0) {
+      teamMembers.forEach(async (member) => {
+        // send notification
+        await this.notificationService.createNotification({
+          title: 'Threshold Reached 👏',
+          text: `Congratulations! Your buying team ${member.team.name} have collectively reached the suppliers’s minimum threshold for a new shipment. You have 24 hours to add to it or invite others to join the team before the order is shipped`,
+          userId: member.userId,
+          teamId: member.teamId,
+          notficationToken: member.user.notificationToken,
+        });
+      });
+    }
+    if (orderDeadline.getTime() - new Date().getTime() > 86400000) {
+      const newDeadline = new Date().getTime() + 86400000;
+      // update order to end in the next 24 hours
+      await this.updateOrder({
+        where: {
+          id: orderId,
+        },
+        data: {
+          deadline: new Date(newDeadline),
+        },
+      });
+    }
   }
 
   async createIntentForApplePay(
@@ -169,7 +239,7 @@ export class PaymentService {
     createIntentData: ICreateIntent,
   ): Promise<{ id: string; clientSecret: string } | null> {
     const parameters = {
-      amount: createIntentData.amount,
+      amount: createIntentData.amount * 100,
       currency: createIntentData.currency,
       customer: createIntentData.customerId,
     };
@@ -213,22 +283,87 @@ export class PaymentService {
     });
   }
 
+  async updateOrder(params: {
+    where: Prisma.OrderWhereUniqueInput;
+    data: Prisma.OrderUpdateInput;
+  }): Promise<Order> {
+    const { where, data } = params;
+    return await this.prisma.order.update({
+      data,
+      where,
+    });
+  }
+
   async saveBulkBasket(addBulkBasketDto: AddBulkBasketDto) {
+    const basketRecord = addBulkBasketDto.basket.map((item: AddToBasket) => {
+      return {
+        teamId: addBulkBasketDto.teamId,
+        userId: item.userId,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+      };
+    });
+
+    await this.prisma.basketC.createMany({
+      data: basketRecord,
+    });
+
     return await this.prisma.basket.createMany({
       data: addBulkBasketDto.basket,
     });
   }
 
-  async addToBasket(addToBasket: AddToBasket) {
-    return await this.prisma.basket.create({
-      data: addToBasket,
+  async findProductInCopyBasket(
+    productId: string,
+    teamId: string,
+    userId: string,
+  ): Promise<BasketC | null> {
+    return await this.prisma.basketC.findFirst({
+      where: {
+        productId,
+        teamId,
+        userId,
+      },
+    });
+  }
+
+  async addToBasket(addSingleBasketDto: AddSingleBasketDto): Promise<BasketC> {
+    const {
+      teamId,
+      userId,
+      productId,
+      orderId,
+      price,
+      quantity,
+      deadlineReached,
+    } = addSingleBasketDto;
+    if (!deadlineReached) {
+      await this.prisma.basket.create({
+        data: {
+          orderId,
+          userId,
+          productId,
+          price,
+          quantity,
+        },
+      });
+    }
+    return await this.prisma.basketC.create({
+      data: {
+        teamId,
+        userId,
+        productId,
+        price,
+        quantity,
+      },
     });
   }
 
   async deleteFromBasket(
-    where: Prisma.BasketWhereUniqueInput,
-  ): Promise<Basket> {
-    return await this.prisma.basket.delete({
+    where: Prisma.BasketCWhereUniqueInput,
+  ): Promise<BasketC> {
+    return await this.prisma.basketC.delete({
       where,
     });
   }

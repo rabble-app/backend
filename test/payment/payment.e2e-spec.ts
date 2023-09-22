@@ -11,7 +11,7 @@ describe('PaymentController (e2e)', () => {
   let prisma: PrismaService;
 
   const phone = faker.phone.number();
-  const customerId = 'cus_O1i4o3PuiFs1Ot';
+  let customerId = 'cus_OFCaSUidAGIJOA';
   let paymentMethodId: string;
   let userId: string;
   let product: Product;
@@ -65,6 +65,21 @@ describe('PaymentController (e2e)', () => {
 
     // get order for test
     order = await prisma.order.findFirst();
+
+    // stripe customer id for test
+    const result = await prisma.user.findFirst({
+      where: {
+        stripeCustomerId: {
+          not: 'NULL',
+        },
+      },
+      select: {
+        stripeCustomerId: true,
+      },
+    });
+    if (result) {
+      customerId = result.stripeCustomerId;
+    }
   }, testTime);
 
   afterAll(async () => {
@@ -318,6 +333,26 @@ describe('PaymentController (e2e)', () => {
           expect(response.body).toHaveProperty('data');
           expect(response.body.error).toBeUndefined();
           expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+
+      // bulk update of basket
+      it(
+        '/payments/basket-bulk/ (PATCH) should update basket in bulk',
+        async () => {
+          const basket = [
+            {
+              basketId: itemId,
+              quantity: 6,
+              price: 500,
+            },
+          ];
+          const response = await request(app.getHttpServer())
+            .patch(`/payments/basket-bulk/`)
+            .send(basket)
+            .expect(200);
+          expect(response.body.error).toBeUndefined();
         },
         testTime,
       );

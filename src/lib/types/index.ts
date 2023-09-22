@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 export interface IAPIResponse {
   data?: object | string;
   error?: object | string;
@@ -8,6 +10,11 @@ export enum Status {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   REMOVED = 'REMOVED',
+}
+
+export enum PasswordChangeRoute {
+  PASSWORD_RESET = 'PASSWORD_RESET',
+  SETTINGS = 'SETTINGS',
 }
 
 export enum PaymentStatus {
@@ -25,21 +32,20 @@ export interface IPayment {
   orderId?: string;
   userId?: string;
   amount: number;
-  paymentIntentId: string;
+  paymentIntentId?: string;
   status: PaymentStatus;
+}
+
+export enum TeamMemberShip {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
 }
 
 export interface ITeamMember {
   teamId: string;
   userId: string;
   status: Status;
-}
-export interface IBasket {
-  orderId: string;
-  userId: string;
-  productId: string;
-  quantity: number;
-  price: string;
+  role?: TeamMemberShip;
 }
 export interface IScheduleTeam {
   id: string;
@@ -67,3 +73,118 @@ export interface ITeamWithOtherInfo {
     },
   ];
 }
+export interface IUserAlsoBoughtBasket {
+  product: { id: string };
+}
+
+export enum SearchCategory {
+  SUPPLIER = 'SUPPLIER',
+  PRODUCT = 'PRODUCT',
+  TEAM = 'TEAM',
+}
+
+export enum DayOptions {
+  SUNDAY = 'SUNDAY',
+  MONDAY = 'MONDAY',
+  TUESDAY = 'TUESDAY',
+  WEDNESDAY = 'WEDNESDAY',
+  THURSDAY = 'THURSDAY',
+  FRIDAY = 'FRIDAY',
+  SATURDAY = 'SATURDAY',
+}
+
+export enum DeliveryType {
+  WEEKLY = 'WEEKLY',
+  CUSTOM = 'CUSTOM',
+}
+
+export type ProducerWithCategories = Prisma.ProducerGetPayload<{
+  include: {
+    categories: {
+      include: {
+        category: true;
+      };
+    };
+  };
+}>;
+
+export type UserWithProducerInfo = Prisma.UserGetPayload<{
+  include: {
+    producer: {
+      select: {
+        id: true;
+      };
+    };
+  };
+}>;
+
+export type PaymentWithUserInfo = Prisma.PaymentGetPayload<{
+  include: {
+    user: {
+      select: {
+        notificationToken: true;
+      };
+    };
+    order: {
+      include: {
+        team: {
+          select: {
+            name: true;
+            id: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type TeamMemberWithUserInfo = Prisma.TeamMemberGetPayload<{
+  include: {
+    user: {
+      select: {
+        notificationToken: true;
+      };
+    };
+  };
+}>;
+
+export interface ICreateNotification {
+  userId: string;
+  teamId?: string;
+  orderId?: string;
+  producerId?: string;
+  title: string;
+  text: string;
+  notficationToken?: string;
+}
+
+export type TeamRequestWithOtherInfo = Prisma.TeamRequestGetPayload<{
+  include: {
+    team: {
+      select: {
+        name: true;
+      };
+    };
+    user: {
+      select: {
+        notificationToken: true;
+      };
+    };
+  };
+}>;
+
+export type TeamMemberWithUserAndTeamInfo = Prisma.TeamMemberGetPayload<{
+  include: {
+    user: {
+      select: {
+        notificationToken: true;
+        id: true;
+      };
+    };
+    team: {
+      select: {
+        name: true;
+      };
+    };
+  };
+}>;

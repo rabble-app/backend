@@ -164,7 +164,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
-  @Post('nudge/:id')
+  @Post('nudge/:orderId')
   @ApiOkResponse({
     description: 'Buying team nudged to collect delivery successfully',
   })
@@ -172,13 +172,22 @@ export class TeamsControllerExtension {
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'The id of the buying team',
+    description: 'The id of the buying team order',
   })
   async nudgeBuyingTeam(
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    await this.teamsServiceExtension.nudgeTeam(id);
+    const result = await this.teamsServiceExtension.nudgeTeam(id);
+    if (!result) {
+      return formatResponse(
+        'Feature locked',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'You are allowed to nudge the team once in 24 hours',
+      );
+    }
     return formatResponse(
       'Notification sent',
       res,
@@ -234,6 +243,15 @@ export class TeamsControllerExtension {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.teamsServiceExtension.bulkInvite(bulkInviteDto);
+    if (!result) {
+      return formatResponse(
+        'Error Occured',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Invite processing failed',
+      );
+    }
     return formatResponse(
       result,
       res,
@@ -265,11 +283,11 @@ export class TeamsControllerExtension {
     );
     if (!result) {
       return formatResponse(
-        'Token is invalid',
+        'Token is invalid/expired',
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Invalid token supplied',
+        'Invalid/expired token supplied',
       );
     }
     return formatResponse(
@@ -335,6 +353,38 @@ export class TeamsControllerExtension {
       HttpStatus.OK,
       false,
       'New member added successfully',
+    );
+  }
+
+  /**
+   * check if buying team name already exist
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Post('check-name/:keyword')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Buying team created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'keyword',
+    required: true,
+    description: 'The name you want to check',
+  })
+  async createBuyingTeam(
+    @Param('keyword') name: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const isExisting = await this.teamsService.findBuyingTeam({
+      name,
+    });
+
+    return formatResponse(
+      isExisting ? true : false,
+      res,
+      HttpStatus.OK,
+      false,
+      `Buying team name is ${isExisting ? 'taken' : 'still available'}`,
     );
   }
 }

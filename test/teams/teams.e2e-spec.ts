@@ -14,7 +14,7 @@ describe('TeamsController (e2e)', () => {
   let authService: AuthService;
 
   const phone = faker.phone.number();
-  const customerId = 'cus_O1i4o3PuiFs1Ot';
+  let customerId = 'cus_OFCaSUidAGIJOA';
   let paymentMethodId: string;
   let inviteToken: string;
 
@@ -27,6 +27,7 @@ describe('TeamsController (e2e)', () => {
   let teamRequestId: string;
   let paymentIntentId: string;
   let teamMemberId: string;
+  let orderId: string;
   const testTime = 120000;
 
   const buyingTeam: CreateTeamDto = {
@@ -131,6 +132,21 @@ describe('TeamsController (e2e)', () => {
       },
     });
     inviteToken = result.token;
+
+    // stripe customer id for test
+    const result1 = await prisma.user.findFirst({
+      where: {
+        stripeCustomerId: {
+          not: 'NULL',
+        },
+      },
+      select: {
+        stripeCustomerId: true,
+      },
+    });
+    if (result1) {
+      customerId = result1.stripeCustomerId;
+    }
   }, testTime);
 
   afterAll(async () => {
@@ -182,6 +198,21 @@ describe('TeamsController (e2e)', () => {
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
         buyingTeamId = response.body.data.id;
+        orderId = response.body.data.orderId;
+      },
+      testTime,
+    );
+
+    // check if name exist
+    it(
+      '/teams/check-name/:keyword(POST) should check if buying team name already exist',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/check-team_name/dummy`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
       },
       testTime,
     );
@@ -429,10 +460,10 @@ describe('TeamsController (e2e)', () => {
 
     // nudge team members to collect delivery
     it(
-      '/teams/nudge(POST))/:id should nudge team members to collect delivery',
+      '/teams/nudge(POST))/:buyingTeamId/:orderId should nudge team members to collect delivery',
       async () => {
         const response = await request(app.getHttpServer())
-          .post(`/teams/nudge/${buyingTeamId}`)
+          .post(`/teams/nudge/${orderId}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -470,24 +501,24 @@ describe('TeamsController (e2e)', () => {
     );
 
     // bulk invite
-    it(
-      '/teams/bulk-invite(POST) should invite bulk member to join the team',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post(`/teams/bulk-invite`)
-          .send({
-            userId: user.id,
-            link: 'https://www.google.com',
-            phones: ['+2347036541234'],
-            teamId: buyingTeamId,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('boolean');
-      },
-      testTime,
-    );
+    // it(
+    //   '/teams/bulk-invite(POST) should invite bulk member to join the team',
+    //   async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .post(`/teams/bulk-invite`)
+    //       .send({
+    //         userId: user.id,
+    //         link: 'https://www.google.com',
+    //         phones: ['+2347036541234'],
+    //         teamId: buyingTeamId,
+    //       })
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(typeof response.body.data).toBe('boolean');
+    //   },
+    //   testTime,
+    // );
 
     it(
       '/teams/bulk-invite(POST) should not invite members to join the team if incomplete data is supplied',

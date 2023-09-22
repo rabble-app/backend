@@ -1,14 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
-  IsDate,
-  IsDateString,
   IsISO8601,
   IsNotEmpty,
   IsNumber,
   IsString,
   ValidateIf,
-  isISO8601,
 } from 'class-validator';
 
 export class CreateTeamDto {

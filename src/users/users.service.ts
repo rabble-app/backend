@@ -1,3 +1,4 @@
+import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
@@ -8,9 +9,20 @@ import {
   TeamMember,
   BuyingTeam,
   TeamRequest,
+  ProducerCategory,
+  Search,
+  SearchCount,
+  DeliveryAddress,
+  BasketC,
+  Payment,
 } from '@prisma/client';
-import { CreateProducerDto } from './dto/create-producer.dto';
-import { DeliveryAddressDto } from './dto/delivery-address.dto';
+import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
+import {
+  SearchCategory,
+  ProducerWithCategories,
+  UserWithProducerInfo,
+} from '../../src/lib/types';
+import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 
 @Injectable()
 export class UsersService {
@@ -18,9 +30,16 @@ export class UsersService {
 
   async findUser(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
-  ): Promise<User | null> {
+  ): Promise<UserWithProducerInfo | null> {
     return await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
+      include: {
+        producer: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
   }
 
@@ -41,14 +60,6 @@ export class UsersService {
     });
   }
 
-  async createProducer(
-    createProducerDto: CreateProducerDto,
-  ): Promise<Producer> {
-    return await this.prisma.producer.create({
-      data: createProducerDto,
-    });
-  }
-
   async getProducers(offset = 0): Promise<Producer[] | null> {
     return await this.prisma.producer.findMany({
       skip: offset,
@@ -59,13 +70,16 @@ export class UsersService {
             category: true,
           },
         },
+        _count: {
+          select: { buyingteams: true },
+        },
       },
     });
   }
 
   async findProducer(
     producerWhereUniqueInput: Prisma.ProducerWhereUniqueInput,
-  ): Promise<Producer | null> {
+  ): Promise<ProducerWithCategories | null> {
     return await this.prisma.producer.findUnique({
       where: producerWhereUniqueInput,
       include: {
@@ -73,6 +87,9 @@ export class UsersService {
           include: {
             category: true,
           },
+        },
+        _count: {
+          select: { buyingteams: true },
         },
       },
     });
@@ -86,48 +103,36 @@ export class UsersService {
     });
   }
 
-  async getOrderHistories(userId: string): Promise<TeamMember[]> {
-    return await this.prisma.teamMember.findMany({
+  async getOrderHistories(userId: string): Promise<Payment[]> {
+    return await this.prisma.payment.findMany({
       where: {
         userId,
       },
       include: {
-        team: {
+        order: {
           include: {
-            orders: {
-              include: {
-                basket: {
-                  where: {
-                    userId,
-                  },
-                  include: {
-                    product: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
+            basket: {
+              where: {
+                userId,
               },
-            },
-            host: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-            producer: {
               include: {
-                user: {
+                product: {
                   select: {
-                    firstName: true,
-                    lastName: true,
+                    name: true,
                   },
                 },
-                categories: {
-                  include: {
-                    category: true,
+              },
+            },
+            team: {
+              include: {
+                producer: {
+                  select: {
+                    businessName: true,
+                    businessAddress: true,
                   },
+                },
+                _count: {
+                  select: { members: true },
                 },
               },
             },
@@ -234,26 +239,295 @@ export class UsersService {
             },
           },
         },
-        host: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
+        host: true,
       },
     });
   }
 
-  async getMyRequests(userId: string): Promise<TeamRequest[]> {
-    return await this.prisma.teamRequest.findMany({
+  async getMyRequests(userId: string): Promise<Array<object>> {
+    const finalArray = [];
+    const myTeams = await this.prisma.buyingTeam.findMany({
+      where: {
+        hostId: userId,
+      },
+      include: {
+        requests: {
+          where: {
+            status: 'PENDING',
+          },
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                imageUrl: true,
+              },
+            },
+            team: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (myTeams.length > 0) {
+      myTeams.forEach((team) => {
+        if (team.requests.length > 0) {
+          finalArray.push(...team.requests);
+        }
+      });
+    }
+
+    const myRequests = await this.prisma.teamRequest.findMany({
       where: {
         userId,
+        status: 'PENDING',
       },
       include: {
         team: {
           select: {
             name: true,
             postalCode: true,
+            imageUrl: true,
+          },
+        },
+      },
+    });
+
+    finalArray.push(...myRequests);
+
+    return finalArray;
+  }
+
+  async updateProducer(params: {
+    where: Prisma.ProducerWhereUniqueInput;
+    data: Prisma.ProducerUpdateInput;
+  }): Promise<Producer> {
+    const { where, data } = params;
+    return await this.prisma.producer.update({
+      data,
+      where,
+    });
+  }
+
+  async addProducerCategory(
+    addProducerCategoryDto: AddProducerCategoryDto,
+  ): Promise<object> {
+    return await this.prisma.producerCategory.createMany({
+      data: addProducerCategoryDto.content,
+    });
+  }
+
+  async removeProducerCategory(
+    where: Prisma.ProducerCategoryWhereUniqueInput,
+  ): Promise<ProducerCategory> {
+    return await this.prisma.producerCategory.delete({
+      where,
+    });
+  }
+
+  async search(
+    userId: string,
+    keyword: string,
+    category: SearchCategory,
+  ): Promise<object[] | null> {
+    let result = [];
+    // check whether the search has been made before if so increment the count else add the search and put count to 1
+    const searchFound = await this.prisma.searchCount.findFirst({
+      where: {
+        keyword,
+      },
+    });
+
+    if (searchFound) {
+      await this.prisma.searchCount.update({
+        where: { id: searchFound.id },
+        data: { count: { increment: 1 } },
+      });
+    } else {
+      await this.prisma.searchCount.create({
+        data: {
+          keyword,
+          category,
+          count: 1,
+        },
+      });
+    }
+
+    // do the actual search
+    if (category == 'SUPPLIER') {
+      result = await this.prisma.producer.findMany({
+        where: {
+          businessName: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+          _count: {
+            select: { buyingteams: true },
+          },
+        },
+      });
+    } else if (category == 'PRODUCT') {
+      const res = await this.prisma.productCategory.findFirst({
+        where: {
+          name: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+        include: {
+          products: {
+            include: {
+              producer: {
+                include: {
+                  user: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                    },
+                  },
+                  categories: {
+                    include: {
+                      category: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (res && res.products.length > 0) {
+        result = res.products;
+      } else {
+        result = await this.prisma.product.findMany({
+          where: {
+            name: {
+              contains: keyword,
+              mode: 'insensitive',
+            },
+          },
+          include: {
+            producer: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+    } else {
+      result = await this.prisma.buyingTeam.findMany({
+        where: {
+          name: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+        include: {
+          members: true,
+          producer: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              categories: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
+          host: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+    }
+
+    return result;
+  }
+
+  async recentSearches(userId: string): Promise<Search[] | null> {
+    return await this.prisma.search.findMany({
+      where: {
+        userId,
+      },
+      distinct: ['keyword'],
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
+    });
+  }
+
+  async popularSearches(): Promise<SearchCount[] | null> {
+    return await this.prisma.searchCount.findMany({
+      orderBy: {
+        count: 'desc',
+      },
+      take: 6,
+    });
+  }
+
+  async addDeliveryArea(
+    producerId: string,
+    createDeliveryAreaDto: CreateDeliveryAreaDto,
+  ): Promise<DeliveryAddress> {
+    return await this.prisma.deliveryAddress.create({
+      data: {
+        producerId,
+        location: createDeliveryAreaDto.location,
+        type: createDeliveryAreaDto.type,
+        cutOffTime: createDeliveryAreaDto.cutOffTime,
+        customAddresses:
+          createDeliveryAreaDto.type != 'WEEKLY'
+            ? {
+                createMany: {
+                  data: createDeliveryAreaDto.customAreas,
+                },
+              }
+            : undefined,
+      },
+    });
+  }
+
+  async getBasket(userId: string, teamId: string): Promise<BasketC[] | null> {
+    return await this.prisma.basketC.findMany({
+      where: {
+        userId,
+        teamId,
+      },
+      include: {
+        product: {
+          select: {
+            name: true,
           },
         },
       },

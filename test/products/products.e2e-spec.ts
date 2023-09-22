@@ -119,20 +119,6 @@ describe('ProductsController (e2e)', () => {
       testTime,
     );
 
-    // search products
-    it(
-      '/products/search/:keyword(GET) should return products',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .get(`/products/search/product1`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
     // store recently viewed products
     it(
       '/products/recently-viewed(POST) should store recently viewed product',

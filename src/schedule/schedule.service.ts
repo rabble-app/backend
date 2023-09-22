@@ -1,9 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { IScheduleTeam, PaymentStatus } from '../lib/types';
+import {
+  IScheduleTeam,
+  PaymentStatus,
+  PaymentWithUserInfo,
+} from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
+import { PaymentService } from '../payment/payment.service';
+import { UsersService } from 'src/users/users.service';
+import { TeamsService } from 'src/teams/teams.service';
+import { TeamsServiceExtension } from 'src/teams/teams.service.extension';
 
 @Injectable()
 export class ScheduleService {
@@ -12,12 +20,17 @@ export class ScheduleService {
     private notificationsService: NotificationsService,
     private paymentServiceExtension: PaymentServiceExtension,
     private scheduleServiceExtended: ScheduleServiceExtended,
+    private paymentService: PaymentService,
+    private usersService: UsersService,
+    private teamsService: TeamsService,
+    private teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async chargeUsers() {
     // check if status is pending and threshold has been reached
     const pendingOrders =
-      await this.scheduleServiceExtended.getFullPendingOrders();
+      await this.scheduleServiceExtended.getExhaustedOrders();
+
     // if we have such orders
     if (pendingOrders.length > 0) {
       await this.processPendingOrders(pendingOrders);
@@ -32,10 +45,30 @@ export class ScheduleService {
     // if we have such orders
     if (expiredOrders.length > 0) {
       expiredOrders.forEach(async (order) => {
-        await this.scheduleServiceExtended.updateOrderStatus(
-          order.id,
-          'FAILED',
+        await this.paymentService.updateOrder({
+          where: {
+            id: order.id,
+          },
+          data: {
+            status: 'FAILED',
+          },
+        });
+        // send notification to team members if threshold was not reached
+        const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+          order.teamId,
         );
+        if (teamMembers.length > 0) {
+          teamMembers.forEach(async (member) => {
+            // send notification
+            await this.notificationsService.createNotification({
+              title: 'Order Failed',
+              text: `Your current order with ${member.team.name} team failed because the supplier's threshold was not met`,
+              userId: member.userId,
+              teamId: member.teamId,
+              notficationToken: member.user.notificationToken,
+            });
+          });
+        }
       });
     }
 
@@ -59,6 +92,12 @@ export class ScheduleService {
       const result = await this.scheduleServiceExtended.getPendingPayment();
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
+          const otherNotificationConditions = {
+            userId: payment.userId,
+            orderId: payment.orderId,
+            teamId: payment.order.teamId,
+            notficationToken: payment.user.notificationToken,
+          };
           if (
             payment.user.stripeDefaultPaymentMethodId &&
             payment.user.stripeCustomerId
@@ -70,28 +109,24 @@ export class ScheduleService {
               // send notification that payment failed
               await this.notificationsService.createNotification({
                 title: 'Payment Failure',
-                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team`,
-                userId: payment.userId,
-                orderId: payment.orderId,
-                teamId: '',
-                producerId: '',
+                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
+                ...otherNotificationConditions,
               });
             }
           } else {
-            //send notification that user should add default payment method
+            // send notification that user should add default payment method
             await this.notificationsService.createNotification({
               title: 'Payment Failure',
-              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and  set a default payment method`,
-              userId: payment.userId,
-              orderId: payment.orderId,
-              teamId: '',
-              producerId: '',
+              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and set a default payment method`,
+              ...otherNotificationConditions,
             });
           }
         });
       }
-      return result;
-    } catch (error) {}
+      return true;
+    } catch (error) {
+      // console.log(error);
+    }
   }
   // fix: remove datatype
   async handleAuthorizePayments(payment: any) {
@@ -113,13 +148,7 @@ export class ScheduleService {
     return true;
   }
 
-  async captureFunds(
-    pendingPayments: Array<{
-      paymentIntentId: string;
-      userId: string;
-      orderId: string;
-    }>,
-  ) {
+  async captureFunds(pendingPayments: Array<PaymentWithUserInfo>) {
     pendingPayments.forEach(async (payment) => {
       let captureStatus = PaymentStatus.CAPTURED;
       // be sure that it has not been captured before
@@ -134,12 +163,12 @@ export class ScheduleService {
 
           // send notification
           await this.notificationsService.createNotification({
-            title: 'Payment Failure',
-            text: `We were unable to charge your card for your order with id ${payment.orderId}`,
+            title: 'Rabble Payment Failure',
+            text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
             userId: payment.userId,
             orderId: payment.orderId,
-            teamId: '',
-            producerId: '',
+            teamId: payment.order.team.id,
+            notficationToken: payment.user.notificationToken,
           });
         }
         // update the payment status to captured or failed, depending on the success of the capture
@@ -177,16 +206,24 @@ export class ScheduleService {
         // if interval has passed
         if (
           new Date().getTime() - lastOrder.createdAt.getTime() >
-          team.frequency
+          team.frequency * 1000
         ) {
+          // update the team next delivery Date to null to clean out the last delivery date that was set
+          await this.teamsService.updateTeam({
+            where: {
+              id: team.id,
+            },
+            data: {
+              nextDeliveryDate: null,
+            },
+          });
           // create new order
           const newOrder = await this.scheduleServiceExtended.createNewOrder(
             team,
           );
-
           // create basket for users
           await this.scheduleServiceExtended.createUserBasket(
-            lastOrder.id,
+            team.id,
             newOrder.id,
           );
         }
@@ -205,10 +242,22 @@ export class ScheduleService {
               not: 'CAPTURED',
             },
           },
-          select: {
-            paymentIntentId: true,
-            userId: true,
-            orderId: true,
+          include: {
+            user: {
+              select: {
+                notificationToken: true,
+              },
+            },
+            order: {
+              include: {
+                team: {
+                  select: {
+                    name: true,
+                    id: true,
+                  },
+                },
+              },
+            },
           },
         });
 
@@ -218,5 +267,86 @@ export class ScheduleService {
         }
       });
     } catch (error) {}
+  }
+
+  async handleSetDelivery() {
+    const fullOrders = await this.scheduleServiceExtended.getCapturedOrders();
+    if (fullOrders && fullOrders.length > 0) {
+      fullOrders.forEach(async (order) => {
+        let multipler = 2;
+        const currentDate = new Date();
+        const currentDay = currentDate.getDay();
+
+        // check for friday, saturday and sunday
+        if (currentDay == 0) {
+          multipler = 1;
+        } else if (currentDay == 5) {
+          multipler = 3;
+        }
+        const deliveryDate = new Date().getTime() + multipler * 86400000;
+        // update order
+        await this.paymentService.updateOrder({
+          where: {
+            id: order.id,
+          },
+          data: {
+            deliveryDate: new Date(deliveryDate),
+          },
+        });
+        // update team
+        await this.teamsService.updateTeam({
+          where: {
+            id: order.teamId,
+          },
+          data: {
+            nextDeliveryDate: new Date(deliveryDate),
+          },
+        });
+        //send notification to team members if threshold was not reached
+        const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+          order.teamId,
+        );
+        if (teamMembers.length > 0) {
+          teamMembers.forEach(async (member) => {
+            await this.notificationsService.createNotification({
+              title: 'Order delivery date',
+              text: `Delivery date has been set for your order with ${member.team.name} team`,
+              userId: member.userId,
+              teamId: member.teamId,
+              notficationToken: member.user.notificationToken,
+            });
+          });
+        }
+      });
+    }
+
+    return true;
+  }
+
+  async handleGetPaymentMethod() {
+    const users =
+      await this.scheduleServiceExtended.getUsersWithNoPaymentMethod();
+    if (users && users.length > 0) {
+      users.forEach(async (user) => {
+        // get the users payment methods in stripe and update the default in db
+        const result: any =
+          await this.paymentServiceExtension.getUserPaymentOptions(
+            user.stripeCustomerId,
+          );
+        if (result && result.data.length > 0) {
+          await this.usersService.updateUser({
+            where: {
+              id: user.id,
+            },
+            data: {
+              stripeDefaultPaymentMethodId: result.data[0].id,
+              cardLastFourDigits: result.data[0].cardLastFourDigits,
+            },
+          });
+        }
+      });
+    }
+
+    return true;
   }
 }
