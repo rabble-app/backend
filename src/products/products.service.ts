@@ -1,13 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
-import { ITeamWithOtherInfo } from 'src/lib/types';
+import { ITeamWithOtherInfo } from '../../src/lib/types';
+import { PaymentService } from '../../src/payment/payment.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => PaymentService))
+    private paymentService: PaymentService,
+  ) {}
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     return await this.prisma.product.create({
@@ -26,14 +31,38 @@ export class ProductsService {
     });
   }
 
-  async getProducerProducts(id: string): Promise<ProductCategory[] | null> {
+  async getProducerProducts(
+    id: string,
+    teamId: string,
+  ): Promise<ProductCategory[] | null> {
     const finalResult: ProductCategory[] = [];
-
+    let orderId = '';
+    // get team latest order id
+    if (teamId) {
+      const result = await this.paymentService.getTeamLatestOrder(teamId);
+      orderId = result.id;
+    }
     const result = await this.prisma.productCategory.findMany({
       include: {
         products: {
           where: {
             producerId: id,
+          },
+          include: {
+            partionedProducts: {
+              select: {
+                threshold: true,
+                accumulator: true,
+              },
+              where: {
+                teamId,
+                orderId,
+              },
+              take: 1,
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
           },
         },
       },
