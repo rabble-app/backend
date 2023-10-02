@@ -68,10 +68,11 @@ export class ProductsController {
     description: 'The id of the product',
   })
   async getProduct(
+    @Query('teamId') teamId: string,
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.productsService.getProduct(id);
+    const result = await this.productsService.getProduct(id, teamId);
     return formatResponse(
       result,
       res,
@@ -111,7 +112,7 @@ export class ProductsController {
   }
 
   /**
-   * record recently viwed product.
+   * record recently viewed product.
    * @param {Body} recentlyViewedProductDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof ProductsController
