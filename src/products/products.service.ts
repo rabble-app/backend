@@ -20,13 +20,33 @@ export class ProductsService {
     });
   }
 
-  async getProduct(id: string): Promise<Product | null> {
+  async getProduct(id: string, teamId = ''): Promise<Product | null> {
+    let orderId = '';
+    // get team latest order id
+    if (teamId) {
+      const result = await this.paymentService.getTeamLatestOrder(teamId);
+      orderId = result.id;
+    }
     return await this.prisma.product.findFirst({
       where: {
         id,
       },
       include: {
         producer: true,
+        partionedProducts: {
+          select: {
+            threshold: true,
+            accumulator: true,
+          },
+          where: {
+            teamId,
+            orderId,
+          },
+          take: 1,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
     });
   }
