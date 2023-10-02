@@ -1,10 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"  
-  binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
-  previewFeatures = ["fieldReference", "distinct"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["distinct", "fieldReference"]
+  binaryTargets   = ["native", "linux-arm64-openssl-1.0.x"]
 }
 
 datasource db {
@@ -13,250 +10,272 @@ datasource db {
 }
 
 model User {
-  id    String  @default(uuid()) @id
-  phone String  @unique
-  email String?  @unique
-  password String?
-  firstName String?  @map("first_name")
-  lastName String?   @map("last_name")
-  postalCode String? @map("postal_code")  
-  notificationToken String? @map("notification_token") 
-  stripeCustomerId String? @unique @map("stripe_customer_id")  
-  stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
-  cardLastFourDigits String? @map("card_last_four_digits") 
-  imageUrl String?  @map("image_url")
-  imageKey String? @map("image_key")  
-  role Role    @default(USER) 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  hosts BuyingTeam[]
-  reviews Review[]
-  teams TeamMember[] 
-  requests TeamRequest[] 
-  myFollowers Follower[] @relation("myFollowers")
-  followings  Follower[] @relation("followings")
-  likes Like[]
-  payments Payment[]
-  notifications Notification[]
-  recentlyViewed RecentlyViewed[]
-  shipping Shipping?
-  producer Producer?
-  baskets Basket[] 
-  basketsC BasketC[]
-  invites Invite[]
-  searches Search[] 
+  id                            String                          @id @default(uuid())
+  phone                         String                          @unique
+  email                         String?                         @unique
+  password                      String?
+  firstName                     String?                         @map("first_name")
+  lastName                      String?                         @map("last_name")
+  postalCode                    String?                         @map("postal_code")
+  stripeCustomerId              String?                         @unique @map("stripe_customer_id")
+  stripeDefaultPaymentMethodId  String?                         @map("stripe_default_payment_method_id")
+  cardLastFourDigits            String?                         @map("card_last_four_digits")
+  imageUrl                      String?                         @map("image_url")
+  imageKey                      String?                         @map("image_key")
+  role                          Role                            @default(USER)
+  createdAt                     DateTime                        @default(now()) @map("created_at")
+  updatedAt                     DateTime                        @updatedAt @map("updated_at")
+  notificationToken             String?                         @map("notification_token")
+  basketsC                      BasketC[]
+  baskets                       Basket[]
+  hosts                         BuyingTeam[]
+  followings                    Follower[]                      @relation("followings")
+  myFollowers                   Follower[]                      @relation("myFollowers")
+  invites                       Invite[]
+  likes                         Like[]
+  notifications                 Notification[]
+  PartitionedProductUsersRecord PartitionedProductUsersRecord[]
+  payments                      Payment[]
+  producer                      Producer?
+  recentlyViewed                RecentlyViewed[]
+  reviews                       Review[]
+  searches                      Search[]
+  shipping                      Shipping?
+  teams                         TeamMember[]
+  requests                      TeamRequest[]
 
   @@map("users")
 }
 
 model Producer {
-  id  String     @default(uuid()) @id
-  userId String @unique
-  isVerified Boolean    @default(false) @map("is_verified")
-  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
-  imageKey String? @map("image_key")  
-  businessName String @unique @map("business_name")
-  businessAddress String? @map("business_address")
-  accountsEmail String? @map("acounts_email")
-  salesEmail String? @map("sales_email")
-  minimumTreshold Int @map("minimum_treshold") @default(5000)
-  website String?
-  description String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)  
-  products Product[]
-  buyingteams BuyingTeam[]
-  reviews Review[]
-  likes Like[]
-  recentlyViewed RecentlyViewed[]
-  categories ProducerCategory[]
+  id                String             @id @default(uuid())
+  userId            String             @unique
+  isVerified        Boolean            @default(false) @map("is_verified")
+  imageUrl          String?            @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png") @map("image_url")
+  imageKey          String?            @map("image_key")
+  businessName      String             @unique @map("business_name")
+  businessAddress   String?            @map("business_address")
+  accountsEmail     String?            @map("acounts_email")
+  salesEmail        String?            @map("sales_email")
+  minimumTreshold   Int                @default(5000) @map("minimum_treshold")
+  website           String?
+  description       String?
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  buyingteams       BuyingTeam[]
   deliveryAddresses DeliveryAddress[]
+  likes             Like[]
+  categories        ProducerCategory[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products          Product[]
+  recentlyViewed    RecentlyViewed[]
+  reviews           Review[]
 
   @@map("producers")
 }
 
 model ProducerCategoryOption {
-  id  String  @default(uuid()) @id  
-  name String @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
+  id         String             @id @default(uuid())
+  name       String             @unique
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
   categories ProducerCategory[]
 
   @@map("producer_categories_options")
 }
 
 model ProducerCategory {
-  id  String  @default(uuid()) @id  
-  producerId String @map("producer_id") 
-  producerCategoryOptionId String @map("producer_category_option_id") 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
- 
-  producer Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade)
-  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id], onDelete: Cascade)
+  id                       String                 @id @default(uuid())
+  producerId               String                 @map("producer_id")
+  producerCategoryOptionId String                 @map("producer_category_option_id")
+  createdAt                DateTime               @default(now()) @map("created_at")
+  updatedAt                DateTime               @updatedAt @map("updated_at")
+  category                 ProducerCategoryOption @relation(fields: [producerCategoryOptionId], references: [id], onDelete: Cascade)
+  producer                 Producer               @relation(fields: [producerId], references: [id], onDelete: Cascade)
 
   @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
   @@map("producer_categories")
 }
 
 model Shipping {
-  id  String    @default(uuid()) @id
-  userId String @unique
-  buildingNo String? @map("building_no") 
-  address String
-  city  String? 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)  
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  buildingNo String?  @map("building_no")
+  address    String
+  city       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("shippings")
 }
 
 model Product {
-  id  String     @default(uuid()) @id  
-  name String 
-  imageUrl String? @map("image_url") 
-  imageKey String? @map("image_key")  
-  description String?
-  producerId String @map("producer_id")
-  categoryId String? @map("category_id")
-  price Int
-  status ProductStatus   @default(IN_STOCK)   
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  producer  Producer       @relation(fields: [producerId], references: [id], onDelete: Cascade)  
-  category  ProductCategory?  @relation(fields: [categoryId], references: [id], onDelete: Cascade) 
-  reviews  Review[]
-  likes Like[]
-  basket Basket[]
-  BasketC BasketC[]
-  recentlyViewed RecentlyViewed[]
+  id                String                      @id @default(uuid())
+  name              String
+  imageUrl          String?                     @map("image_url")
+  imageKey          String?                     @map("image_key")
+  description       String?
+  producerId        String                      @map("producer_id")
+  categoryId        String?                     @map("category_id")
+  price             Int
+  status            ProductStatus               @default(IN_STOCK)
+  createdAt         DateTime                    @default(now()) @map("created_at")
+  updatedAt         DateTime                    @updatedAt @map("updated_at")
+  thresholdQuantity Int?
+  type              ProductType                 @default(SINGLE)
+  BasketC           BasketC[]
+  basket            Basket[]
+  likes             Like[]
+  partionedProducts PartitionedProductsBasket[]
+  category          ProductCategory?            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  producer          Producer                    @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  recentlyViewed    RecentlyViewed[]
+  reviews           Review[]
 
   @@unique([name, producerId], name: "name_unique_producer")
   @@map("products")
 }
 
 model ProductCategory {
-  id  String  @default(uuid()) @id  
-  name String @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  products Product[]
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  products  Product[]
 
   @@map("product_category")
 }
 
-model BuyingTeam {
-  id  String     @default(uuid()) @id 
-  name String @unique
-  postalCode String @map("postal_code")
-  producerId String @map("producer_id")
-  hostId String    @map("host_id")
-  frequency Int @default(104500)
-  description String?
-  isPublic Boolean @default(true) @map("is_public")
-  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png")  @map("image_url")
-  imageKey String? @map("image_key") 
-  nextDeliveryDate DateTime? @map("next_delivery_date") 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
+model PartitionedProductsBasket {
+  id                            String                          @id @default(uuid())
+  teamId                        String                          @map("team_id")
+  orderId                       String                          @map("order_id")
+  productId                     String                          @map("product_id")
+  threshold                     Int
+  accumulator                   Int
+  createdAt                     DateTime                        @default(now()) @map("created_at")
+  updatedAt                     DateTime                        @updatedAt @map("updated_at")
+  PartitionedProductUsersRecord PartitionedProductUsersRecord[]
+  order                         Order                           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product                       Product                         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team                          BuyingTeam                      @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  producer  Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade) 
-  host User  @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  members TeamMember[]
-  requests TeamRequest[]
-  likes Like[]
-  invites Invite[]
-  orders Order[]
-  notifications Notification[]
-  recentlyViewed RecentlyViewed[]
-  basket BasketC[]
+  @@map("partitioned_products_basket")
+}
+
+model PartitionedProductUsersRecord {
+  id                String                    @id @default(uuid())
+  partionedBasketId String                    @map("partioned_basket_id")
+  userId            String                    @map("user_id")
+  amount            Int
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  partionedBasket   PartitionedProductsBasket @relation(fields: [partionedBasketId], references: [id], onDelete: Cascade)
+  owner             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("partitioned_product_users_record")
+}
+
+model BuyingTeam {
+  id                String                      @id @default(uuid())
+  name              String                      @unique
+  postalCode        String                      @map("postal_code")
+  producerId        String                      @map("producer_id")
+  hostId            String                      @map("host_id")
+  frequency         Int                         @default(104500)
+  description       String?
+  isPublic          Boolean                     @default(true) @map("is_public")
+  imageUrl          String?                     @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png") @map("image_url")
+  imageKey          String?                     @map("image_key")
+  nextDeliveryDate  DateTime?                   @map("next_delivery_date")
+  createdAt         DateTime                    @default(now()) @map("created_at")
+  updatedAt         DateTime                    @updatedAt @map("updated_at")
+  basket            BasketC[]
+  host              User                        @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  producer          Producer                    @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  invites           Invite[]
+  likes             Like[]
+  notifications     Notification[]
+  orders            Order[]
+  partionedProducts PartitionedProductsBasket[]
+  recentlyViewed    RecentlyViewed[]
+  members           TeamMember[]
+  requests          TeamRequest[]
 
   @@map("buying_teams")
 }
 
 model Review {
-  id  String     @default(uuid()) @id 
-  text String
-  reviewerId String  @map("reviewer_id")
-  producerId String?  @map("producer_id")
-  productId String?  @map("product_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  reviewer User  @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
-  producer  Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade) 
-  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)  
+  id         String    @id @default(uuid())
+  text       String
+  reviewerId String    @map("reviewer_id")
+  producerId String?   @map("producer_id")
+  productId  String?   @map("product_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  producer   Producer? @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  product    Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reviewer   User      @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
 }
 
 model TeamMember {
-  id  String     @default(uuid()) @id 
-  teamId String  @map("team_id")
-  userId String  @map("user_id")
-  status TeamStatus 
-  role MembershipStatus @default(MEMBER)
-  skipNextDelivery Boolean @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  id               String           @id @default(uuid())
+  teamId           String           @map("team_id")
+  userId           String           @map("user_id")
+  status           TeamStatus
+  role             MembershipStatus @default(MEMBER)
+  skipNextDelivery Boolean          @default(false)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  team             BuyingTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId], name: "team_unique_user")
   @@map("team_members")
 }
 
 model TeamRequest {
-  id  String     @default(uuid()) @id 
-  teamId String  @map("team_id")
-  userId String  @map("user_id")
-  introduction String  
-  status TeamStatus @default(PENDING)  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  id           String     @id @default(uuid())
+  teamId       String     @map("team_id")
+  userId       String     @map("user_id")
+  introduction String
+  status       TeamStatus @default(PENDING)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  team         BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("team_requests")
 }
 
 model Follower {
-  id  String     @default(uuid()) @id 
-  userId String  @map("user_id")
-  followerId String  @map("follower_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  user User  @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade) 
-  follower User  @relation("followings", fields: [followerId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  followerId String   @map("follower_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  follower   User     @relation("followings", fields: [followerId], references: [id], onDelete: Cascade)
+  user       User     @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, followerId], name: "user_unique_follower")
   @@map("followers")
 }
 
 model Like {
-  id  String    @default(uuid()) @id 
-  userId String  @map("user_id")   
-  productId String?  @map("product_id")   
-  producerId String?  @map("producer_id")   
-  teamId String?  @map("team_id")   
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
-  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
-  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id         String      @id @default(uuid())
+  userId     String      @map("user_id")
+  productId  String?     @map("product_id")
+  producerId String?     @map("producer_id")
+  teamId     String?     @map("team_id")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  producer   Producer?   @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  product    Product?    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team       BuyingTeam? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId], name: "user_unique_product")
   @@unique([userId, producerId], name: "user_unique_producer")
@@ -265,192 +284,182 @@ model Like {
 }
 
 model Invite {
-  id  String    @default(uuid()) @id 
-  teamId String  @map("team_id")
-  status TeamStatus @default(PENDING) 
-  phone String 
-  token String?
-  userId String  @map("user_id") 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  id        String     @id @default(uuid())
+  teamId    String     @map("team_id")
+  status    TeamStatus @default(PENDING)
+  phone     String
+  token     String?
+  userId    String     @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("invites")
 }
 
 model Order {
-  id  String  @default(uuid()) @id 
-  teamId String  @map("team_id")
-  status OrderStatus @default(PENDING) 
-  minimumTreshold Int @map("minimum_treshold")
-  accumulatedAmount Int @map("accumulated_amount") @default(0)
-  deadline DateTime @default(now())
-  lastNudge DateTime? @map("last_nudge")
-  deliveryDate DateTime? @map("delivery_date")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
+  id                String                      @id @default(uuid())
+  teamId            String                      @map("team_id")
+  status            OrderStatus                 @default(PENDING)
+  minimumTreshold   Int                         @map("minimum_treshold")
+  accumulatedAmount Int                         @default(0) @map("accumulated_amount")
+  deadline          DateTime                    @default(now())
+  lastNudge         DateTime?                   @map("last_nudge")
+  deliveryDate      DateTime?                   @map("delivery_date")
+  createdAt         DateTime                    @default(now()) @map("created_at")
+  updatedAt         DateTime                    @updatedAt @map("updated_at")
+  basket            Basket[]
+  notifications     Notification[]
+  team              BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  partionedProducts PartitionedProductsBasket[]
+  payments          Payment[]
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  basket Basket[]
-  payments Payment[]
-  notifications Notification[]
-  
   @@map("orders")
 }
 
 model Basket {
-  id  String  @default(uuid()) @id 
-  orderId String @map("order_id")
-  userId String  @map("user_id")
-  productId String @map("product_id")
-  quantity Int
-  price Int
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  quantity  Int
+  price     Int
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
+  updatedAt DateTime @updatedAt @map("updated_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([orderId, userId, productId], name: "user_unique_product") 
+  @@unique([orderId, userId, productId], name: "user_unique_product")
   @@map("baskets")
 }
 
 model Payment {
-  id  String  @default(uuid()) @id 
-  orderId String? @map("order_id")  
-  userId String? @map("user_id") 
-  amount Int
-  paymentIntentId String? @unique
-  status PaymentStatus @default(PENDING) 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
+  id              String        @id @default(uuid())
+  orderId         String?       @map("order_id")
+  userId          String?       @map("user_id")
+  amount          Int
+  paymentIntentId String?       @unique
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  order           Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  order Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   @@map("payments")
 }
 
 model Notification {
-  id  String  @default(uuid()) @id 
-  orderId String? @map("order_id")  
-  userId String? @map("user_id") 
-  teamId String? @map("team_id") 
-  producerId  String? @map("producer_id") 
-  title String?
-  text String
-  isRead Boolean @default(false) @map("is_read") 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  order Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id         String      @id @default(uuid())
+  orderId    String?     @map("order_id")
+  userId     String?     @map("user_id")
+  teamId     String?     @map("team_id")
+  producerId String?     @map("producer_id")
+  title      String?
+  text       String
+  isRead     Boolean     @default(false) @map("is_read")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  order      Order?      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  team       BuyingTeam? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
 
 model RecentlyViewed {
-  id  String  @default(uuid()) @id  
-  userId String @map("user_id") 
-  teamId String? @map("team_id") 
-  producerId  String? @map("producer_id") 
-  productId String? @map("product_id")  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
- 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
-  product Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String      @id @default(uuid())
+  userId     String      @map("user_id")
+  teamId     String?     @map("team_id")
+  producerId String?     @map("producer_id")
+  productId  String?     @map("product_id")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  producer   Producer?   @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  product    Product?    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team       BuyingTeam? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("recently_viewed")
 }
 
 model Search {
-  id  String  @default(uuid()) @id 
-  keyword String
-  userId String @map("user_id") 
-  category SearchCategory
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String         @id @default(uuid())
+  keyword   String
+  userId    String         @map("user_id")
+  category  SearchCategory
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("searches")
 }
 
 model SearchCount {
-  id  String  @default(uuid()) @id 
-  keyword String
-  category SearchCategory 
-  count Int @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
+  id        String         @id @default(uuid())
+  keyword   String
+  category  SearchCategory
+  count     Int            @default(0)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
 
   @@map("search_count")
 }
 
 model DeliveryAddress {
-  id  String  @default(uuid()) @id 
-  location String
-  type DeliveryType @default(WEEKLY)
-  cutOffTime String?  @map("cut_off_time")
-  producerId String 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  producer Producer  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  id              String                  @id @default(uuid())
+  location        String
+  type            DeliveryType            @default(WEEKLY)
+  cutOffTime      String?                 @map("cut_off_time")
+  producerId      String
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
   customAddresses CustomDeliveryAddress[]
+  producer        Producer                @relation(fields: [producerId], references: [id], onDelete: Cascade)
 
   @@map("delivery_addresses")
 }
 
 model CustomDeliveryAddress {
-  id  String  @default(uuid()) @id 
+  id                String          @id @default(uuid())
   deliveryAddressId String
-  day DayOptions
-  cutOffTime String  @map("cut_off_time")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
-
-  deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
+  day               DayOptions
+  cutOffTime        String          @map("cut_off_time")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  deliveryAddress   DeliveryAddress @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
 
   @@map("custom_delivery_address")
 }
 
 model BasketC {
-  id  String  @default(uuid()) @id 
-  teamId String @map("team_id")
-  userId String  @map("user_id")
-  productId String @map("product_id")
-  quantity Int
-  price Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") 
+  id        String     @id @default(uuid())
+  teamId    String     @map("team_id")
+  userId    String     @map("user_id")
+  productId String     @map("product_id")
+  quantity  Int
+  price     Int
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, userId, productId], name: "team_unique_product") 
+  @@unique([teamId, userId, productId], name: "team_unique_product")
   @@map("basket_c")
 }
-
 
 enum OrderStatus {
   PENDING
   PENDING_DELIVERY
   SUCCESSFUL
-  FAILED  
+  FAILED
 }
 
 enum DeliveryType {
   CUSTOM
-  WEEKLY  
+  WEEKLY
 }
 
 enum Role {
@@ -498,4 +507,10 @@ enum DayOptions {
 enum MembershipStatus {
   ADMIN
   MEMBER
+}
+
+enum ProductType {
+  SINGLE
+  PORTIONED_SINGLE_PRODUCT
+  PORTIONED_DYNAMIC_PRODUCT
 }
