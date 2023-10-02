@@ -6,6 +6,7 @@ import {
   Res,
   Get,
   Param,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -95,10 +96,11 @@ export class ProductsController {
     description: 'The id of the producer',
   })
   async getProducerProducts(
+    @Query('teamId') teamId: string,
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.productsService.getProducerProducts(id);
+    const result = await this.productsService.getProducerProducts(id, teamId);
     return formatResponse(
       result,
       res,
