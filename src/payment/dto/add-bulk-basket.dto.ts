@@ -7,7 +7,9 @@ import {
   IsString,
   IsNotEmpty,
   IsNumber,
+  IsEnum,
 } from 'class-validator';
+import { ProductType } from '../../lib/types';
 
 export class AddToBasket {
   @ApiProperty({
@@ -54,6 +56,15 @@ export class AddToBasket {
   @IsNotEmpty()
   @IsNumber()
   price: number;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The product type',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsEnum(ProductType)
+  type: ProductType;
 }
 
 export class AddBulkBasketDto {

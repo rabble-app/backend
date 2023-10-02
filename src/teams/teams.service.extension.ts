@@ -234,6 +234,17 @@ export class TeamsServiceExtension {
           },
         },
         payments: true,
+        partionedProducts: {
+          select: {
+            accumulator: true,
+            threshold: true,
+            product: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',

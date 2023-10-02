@@ -7,9 +7,15 @@ import { PaymentControllerExtension } from './payment.controller.extension';
 import { PaymentServiceExtension } from './payment.service.extension';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TeamsModule } from '../teams/teams.module';
+import { ProductsModule } from '../../src/products/products.module';
 
 @Module({
-  imports: [UsersModule, NotificationsModule, forwardRef(() => TeamsModule)],
+  imports: [
+    UsersModule,
+    NotificationsModule,
+    forwardRef(() => TeamsModule),
+    ProductsModule,
+  ],
   controllers: [PaymentController, PaymentControllerExtension],
   providers: [PaymentService, PrismaService, PaymentServiceExtension],
   exports: [PaymentService, PaymentServiceExtension],

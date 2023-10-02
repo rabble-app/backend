@@ -17,6 +17,12 @@ export enum PasswordChangeRoute {
   SETTINGS = 'SETTINGS',
 }
 
+export enum ProductType {
+  SINGLE = 'SINGLE',
+  PORTIONED_SINGLE_PRODUCT = 'PORTIONED_SINGLE_PRODUCT',
+  PORTIONED_DYNAMIC_PRODUCT = 'PORTIONED_DYNAMIC_PRODUCT',
+}
+
 export enum PaymentStatus {
   PENDING = 'PENDING',
   INTENT_CREATED = 'INTENT_CREATED',
