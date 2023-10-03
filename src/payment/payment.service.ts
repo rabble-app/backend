@@ -43,6 +43,11 @@ export class PaymentService {
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
   ): Promise<{ paymentMethodId: string } | null> {
+    // attach payment method to user
+    await stripe.paymentMethods.attach(addPaymentCardDto.paymentMethodId, {
+      customer: addPaymentCardDto.stripeCustomerId,
+    });
+
     // make it user default payment method
     await this.userService.updateUser({
       where: {
