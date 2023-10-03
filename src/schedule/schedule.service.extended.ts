@@ -87,7 +87,6 @@ export class ScheduleServiceExtended {
 
   async createUserBasket(teamId: string, newOrderId: string) {
     try {
-      // Todo: there is a function that does this in team service
       const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
         teamId,
       );
@@ -116,13 +115,27 @@ export class ScheduleServiceExtended {
                 continue;
               }
 
+              const productPrice = +product.price * oldProduct.quantity;
+
               const newProduct = {
                 orderId: newOrderId,
                 userId: oldProduct.userId,
                 productId: oldProduct.productId,
                 quantity: oldProduct.quantity,
-                price: +product.price * oldProduct.quantity,
+                price: productPrice,
               };
+
+              // check for portioned products
+              if (product.type == 'PORTIONED_SINGLE_PRODUCT') {
+                await this.paymentService.processPortionedProduct(
+                  teamId,
+                  newOrderId,
+                  oldProduct.quantity,
+                  oldProduct.productId,
+                  oldProduct.userId,
+                  productPrice,
+                );
+              }
 
               // add to basket
               await this.prisma.basket.create({
@@ -131,24 +144,25 @@ export class ScheduleServiceExtended {
 
               // increment totalAmount
               totalAmount += +product.price;
-
-              // record the payment to be made by the user
-              await this.paymentService.recordPayment({
-                orderId: newOrderId,
-                userId: oldProduct.userId,
-                amount: totalAmount,
-                status: PaymentStatus.PENDING,
-              });
             }
+
+            // record the payment to be made by the user
+            await this.paymentService.recordPayment({
+              orderId: newOrderId,
+              userId: member.userId,
+              amount: totalAmount,
+              status: PaymentStatus.PENDING,
+            });
+
+            // send notification
+            await this.notificationsService.createNotification({
+              teamId,
+              title: 'New Order',
+              text: `A new order has started for your ${member.team.name} team`,
+              userId: member.userId,
+              notficationToken: member.user.notificationToken,
+            });
           }
-          // send notification
-          await this.notificationsService.createNotification({
-            teamId,
-            title: 'New Order',
-            text: `A new order has started for your ${member.team.name} team`,
-            userId: member.userId,
-            notficationToken: member.user.notificationToken,
-          });
         });
       }
     } catch (error) {}
