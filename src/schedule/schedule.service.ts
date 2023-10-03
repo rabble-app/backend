@@ -30,7 +30,6 @@ export class ScheduleService {
     // check if status is pending and threshold has been reached
     const pendingOrders =
       await this.scheduleServiceExtended.getExhaustedOrders();
-
     // if we have such orders
     if (pendingOrders.length > 0) {
       await this.processPendingOrders(pendingOrders);
@@ -151,12 +150,34 @@ export class ScheduleService {
   async captureFunds(pendingPayments: Array<PaymentWithUserInfo>) {
     pendingPayments.forEach(async (payment) => {
       let captureStatus = PaymentStatus.CAPTURED;
-      // be sure that it has not been captured before
+      // be sure that it has payment intent
       if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
+        // check to know whether he has portioned products and which ones met the threshold
+        // const portionedProducts =
+        //   await this.prisma.partitionedProductsBasket.findMany({
+        //     where: {
+        //       orderId: payment.orderId,
+        //     },
+        //     include: {
+        //       PartitionedProductUsersRecord: {
+        //         where: {
+        //           userId: payment.userId,
+        //         },
+        //       },
+        //     },
+        //   });
+        // if (portionedProducts && portionedProducts.length > 0) {
+        //   portionedProducts.forEach((product) => {
+        //     if (product.PartitionedProductUsersRecord.length > 0) {
+        //       console.log(product.PartitionedProductUsersRecord);
+        //     }
+        //   });
+        // }
+        // console.log(portionedProducts);
+
         const result = await this.paymentServiceExtension.captureFund(
           payment.paymentIntentId,
         );
-
         // check whether capture was successful and send notification if not
         if (result['status'] != 'succeeded') {
           captureStatus = PaymentStatus.FAILED;

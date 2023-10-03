@@ -29,8 +29,17 @@ export class PaymentServiceExtension {
     return await stripe.paymentMethods.detach(id);
   }
 
-  async captureFund(paymentIntentId: string): Promise<object | null> {
-    return await stripe.paymentIntents.capture(paymentIntentId);
+  async captureFund(
+    paymentIntentId: string,
+    amountToCapture = null,
+  ): Promise<object | null> {
+    let options = null;
+    if (amountToCapture) {
+      options = {
+        amount_to_capture: amountToCapture,
+      };
+    }
+    return await stripe.paymentIntents.capture(paymentIntentId, options);
   }
 
   async updateBasketItem(params: {
