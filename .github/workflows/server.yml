@@ -47,7 +47,7 @@ jobs:
         run: npm run build
 
       - name: Prisma Deploy 📦️
-        run: prisma migrate deploy 
+        run: npx prisma migrate deploy 
 
       # - name: Run tests (unit) 🧪
       #   run: npm test
