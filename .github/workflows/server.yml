@@ -9,7 +9,7 @@ on:
       - staging
       - production
 env:
-  DATABASE_URL: ${{secrets.DATABASE_URL}}
+  DATABASE_URL: ${{ github.ref == 'refs/heads/production' && secrets.PROD_DATABASE_URL || secrets.DATABASE_URL }}
   TWILO_SID: ${{secrets.TWILO_SID}}
   TWILO_AUTH_TOKEN: ${{secrets.TWILO_AUTH_TOKEN}}
   TWILO_PHONE: ${{secrets.TWILO_PHONE}}
