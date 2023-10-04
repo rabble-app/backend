@@ -25,7 +25,7 @@
     "migration:generate": "npx prisma migrate dev --name",
     "migration": "npx prisma migrate dev",
     "schema:generate": "npx prisma generate",
-    "postinstall": "npm run schema:generate",
+    "postinstall": "prisma migrate deploy && npm run schema:generate",
     "seed": "prisma db seed",
     "db:reset": "prisma migrate reset",
     "studio": "prisma studio"

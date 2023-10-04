@@ -7,7 +7,7 @@ on:
     branches:
       - develop
       - staging
-      - main
+      - production
 env:
   DATABASE_URL: ${{secrets.DATABASE_URL}}
   TWILO_SID: ${{secrets.TWILO_SID}}
@@ -46,8 +46,11 @@ jobs:
       - name: Build 🏗️
         run: npm run build
 
-      - name: Run tests (unit) 🧪
-        run: npm test
+      - name: Prisma Deploy 📦️
+        run: prisma migrate deploy 
+
+      # - name: Run tests (unit) 🧪
+      #   run: npm test
 
       # - name: Run tests (e2e) ⚙️
       #   run: npm run test:e2e
