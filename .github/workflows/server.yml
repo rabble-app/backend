@@ -1,4 +1,4 @@
-name: Server workflow
+name: Server workflow for rabble
 run-name: ${{ github.actor }} has made a pull request 🚀
 
 on:
