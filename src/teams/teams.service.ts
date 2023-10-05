@@ -197,13 +197,21 @@ export class TeamsService {
     });
   }
 
-  async getPostalCodeTeams(postalCode: string): Promise<BuyingTeam[] | null> {
+  async getPostalCodeTeams(
+    postalCode: string,
+    userId: string,
+  ): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
       where: {
         postalCode,
         isPublic: true,
       },
       include: {
+        basket: {
+          where: {
+            userId,
+          },
+        },
         members: true,
         producer: {
           include: {
