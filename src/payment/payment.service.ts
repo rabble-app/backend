@@ -285,38 +285,102 @@ export class PaymentService {
   }
 
   async saveBulkBasket(addBulkBasketDto: AddBulkBasketDto) {
-    const basketRecord = addBulkBasketDto.basket.map((item: AddToBasket) => {
-      return {
-        teamId: addBulkBasketDto.teamId,
-        userId: item.userId,
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-      };
-    });
+    try {
+      const basketRecord = addBulkBasketDto.basket.map((item: AddToBasket) => {
+        return {
+          teamId: addBulkBasketDto.teamId,
+          userId: item.userId,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        };
+      });
 
-    await this.prisma.basketC.createMany({
-      data: basketRecord,
-    });
+      await this.prisma.basketC.createMany({
+        data: basketRecord,
+      });
 
-    // check for portioned products
-    if (addBulkBasketDto.basket && addBulkBasketDto.basket.length > 0) {
-      addBulkBasketDto.basket.forEach(async (item) => {
-        if (item.type == 'PORTIONED_SINGLE_PRODUCT') {
-          await this.processPortionedProduct(
-            addBulkBasketDto.teamId,
-            item.orderId,
-            item.quantity,
-            item.productId,
-            item.userId,
-            item.price,
-          );
-        }
+      // check for portioned products
+      if (addBulkBasketDto.basket && addBulkBasketDto.basket.length > 0) {
+        addBulkBasketDto.basket.forEach(async (item) => {
+          if (item.type == 'PORTIONED_SINGLE_PRODUCT') {
+            await this.processPortionedProduct(
+              addBulkBasketDto.teamId,
+              item.orderId,
+              item.quantity,
+              item.productId,
+              item.userId,
+              item.price,
+            );
+          }
+        });
+      }
+
+      return await this.prisma.basket.createMany({
+        data: addBulkBasketDto.basket,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async processPortionedProduct(
+    teamId: string,
+    orderId: string,
+    quantity: number,
+    productId: string,
+    userId: string,
+    amount: number,
+  ): Promise<void> {
+    // check if the product has been added to the portioned table before and increment if exisiting or create a new record
+    let result = await this.prisma.partitionedProductsBasket.findFirst({
+      where: {
+        teamId,
+        orderId,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      select: {
+        accumulator: true,
+        threshold: true,
+        id: true,
+      },
+    });
+    if (result && result.accumulator < result.threshold) {
+      // update
+      await this.prisma.partitionedProductsBasket.update({
+        where: {
+          id: result.id,
+        },
+        data: {
+          accumulator: {
+            increment: quantity,
+          },
+        },
+      });
+    } else {
+      // get product info
+      const product = await this.productsService.getProduct(productId);
+
+      // create new record
+      result = await this.prisma.partitionedProductsBasket.create({
+        data: {
+          orderId,
+          productId,
+          accumulator: quantity,
+          threshold: product.thresholdQuantity,
+          teamId,
+        },
       });
     }
-
-    return await this.prisma.basket.createMany({
-      data: addBulkBasketDto.basket,
+    // record the user information in the partitition users table
+    await this.prisma.partitionedProductUsersRecord.create({
+      data: {
+        userId,
+        amount,
+        partionedBasketId: result.id,
+      },
     });
   }
 
@@ -371,66 +435,6 @@ export class PaymentService {
   ): Promise<BasketC> {
     return await this.prisma.basketC.delete({
       where,
-    });
-  }
-
-  async processPortionedProduct(
-    teamId: string,
-    orderId: string,
-    quantity: number,
-    productId: string,
-    userId: string,
-    amount: number,
-  ): Promise<void> {
-    // check if the product has been added to the portioned table before and increment if exisiting or create a new record
-    let result = await this.prisma.partitionedProductsBasket.findFirst({
-      where: {
-        teamId,
-        orderId,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      select: {
-        accumulator: true,
-        threshold: true,
-        id: true,
-      },
-    });
-    if (result && result.accumulator < result.threshold) {
-      // update
-      await this.prisma.partitionedProductsBasket.update({
-        where: {
-          id: result.id,
-        },
-        data: {
-          accumulator: {
-            increment: quantity,
-          },
-        },
-      });
-    } else {
-      // get product info
-      const product = await this.productsService.getProduct(productId);
-
-      // create new record
-      result = await this.prisma.partitionedProductsBasket.create({
-        data: {
-          teamId,
-          orderId,
-          productId,
-          accumulator: quantity,
-          threshold: product.thresholdQuantity,
-        },
-      });
-    }
-    // record the user information in the partitition users table
-    await this.prisma.partitionedProductUsersRecord.create({
-      data: {
-        userId,
-        amount,
-        partionedBasketId: result.id,
-      },
     });
   }
 }

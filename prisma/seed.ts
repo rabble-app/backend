@@ -234,6 +234,8 @@ async function main() {
       producerId: producerRecordB.id,
       categoryId: productCategoryAA.id,
       price: 2,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      thresholdQuantity: 10,
     },
   });
 }
