@@ -303,7 +303,7 @@ export class PaymentService {
       // check for portioned products
       if (addBulkBasketDto.basket && addBulkBasketDto.basket.length > 0) {
         addBulkBasketDto.basket.forEach(async (item) => {
-          if (item.type == 'PORTIONED_SINGLE_PRODUCT') {
+          if (item.type && item.type == 'PORTIONED_SINGLE_PRODUCT') {
             await this.processPortionedProduct(
               addBulkBasketDto.teamId,
               item.orderId,
@@ -315,9 +315,18 @@ export class PaymentService {
           }
         });
       }
+      const basketRecord2 = addBulkBasketDto.basket.map((item: AddToBasket) => {
+        return {
+          orderId: item.orderId,
+          userId: item.userId,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        };
+      });
 
       return await this.prisma.basket.createMany({
-        data: addBulkBasketDto.basket,
+        data: basketRecord2,
       });
     } catch (error) {
       console.log(error);
