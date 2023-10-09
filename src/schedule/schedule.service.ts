@@ -349,21 +349,23 @@ export class ScheduleService {
       await this.scheduleServiceExtended.getUsersWithNoPaymentMethod();
     if (users && users.length > 0) {
       users.forEach(async (user) => {
-        // get the users payment methods in stripe and update the default in db
-        const result: any =
-          await this.paymentServiceExtension.getUserPaymentOptions(
-            user.stripeCustomerId,
-          );
-        if (result && result.data?.length > 0) {
-          await this.usersService.updateUser({
-            where: {
-              id: user.id,
-            },
-            data: {
-              stripeDefaultPaymentMethodId: result.data[0].id,
-              cardLastFourDigits: result.data[0].card.last4,
-            },
-          });
+        if (user.stripeCustomerId) {
+          // get the users payment methods in stripe and update the default in db
+          const result: any =
+            await this.paymentServiceExtension.getUserPaymentOptions(
+              user.stripeCustomerId,
+            );
+          if (result && result.data?.length > 0) {
+            await this.usersService.updateUser({
+              where: {
+                id: user.id,
+              },
+              data: {
+                stripeDefaultPaymentMethodId: result.data[0].id,
+                cardLastFourDigits: result.data[0].card.last4,
+              },
+            });
+          }
         }
       });
     }
