@@ -49,12 +49,10 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    console.log(updateUserDto);
-    let result;
-    // const result = await this.usersService.updateUser({
-    //   where: { phone: updateUserDto.phone },
-    //   data: updateUserDto,
-    // });
+    const result = await this.usersService.updateUser({
+      where: { phone: updateUserDto.phone },
+      data: updateUserDto,
+    });
     return formatResponse(
       result,
       res,
