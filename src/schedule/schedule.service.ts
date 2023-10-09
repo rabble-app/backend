@@ -361,7 +361,7 @@ export class ScheduleService {
             },
             data: {
               stripeDefaultPaymentMethodId: result.data[0].id,
-              cardLastFourDigits: result.data[0].cardLastFourDigits,
+              cardLastFourDigits: result.data[0].card.last4,
             },
           });
         }
