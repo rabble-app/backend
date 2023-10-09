@@ -325,7 +325,6 @@ model Basket {
   productId String      @map("product_id")
   quantity  Int
   price     Int
-  type      ProductType @default(SINGLE)
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
   order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -343,7 +342,6 @@ model BasketC {
   productId String      @map("product_id")
   quantity  Int
   price     Int
-  type      ProductType @default(SINGLE)
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
   product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
