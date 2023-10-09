@@ -176,6 +176,8 @@ export class UsersService {
                 lastName: true,
               },
             },
+            members: true,
+            requests: true,
             producer: {
               include: {
                 user: {
