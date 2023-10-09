@@ -8,6 +8,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsEnum,
+  ValidateIf,
 } from 'class-validator';
 import { ProductType } from '../../lib/types';
 
@@ -62,7 +63,7 @@ export class AddToBasket {
     description: 'The product type',
     required: true,
   })
-  @IsNotEmpty()
+  @ValidateIf((o) => o.type)
   @IsEnum(ProductType)
   type: ProductType;
 }
