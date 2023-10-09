@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, TransformFnParams } from 'class-transformer';
 import { IsString, IsNotEmpty } from 'class-validator';
 export class CreateUserDto {
   @ApiProperty({
@@ -17,6 +18,7 @@ export class CreateUserDto {
   })
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }: TransformFnParams) => value?.replace(/ /g, ''))
   postalCode: string;
 
   @ApiProperty({

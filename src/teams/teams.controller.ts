@@ -9,6 +9,8 @@ import {
   Query,
   Patch,
   Delete,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -27,6 +29,7 @@ import { UpdateTeamDto } from './dto/update-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { TeamsServiceExtension } from './teams.service.extension';
+import { AuthGuard } from 'src/auth/auth.guard';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -133,6 +136,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('postalcode/:id')
   @ApiOkResponse({
     description: 'Postal code buying teams returned successfully',
@@ -144,10 +148,15 @@ export class TeamsController {
     description: 'The postal code',
   })
   async getPostalCodeTeams(
+    @Request() req,
     @Param('id') postalCode: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.getPostalCodeTeams(postalCode);
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const result = await this.teamsService.getPostalCodeTeams(
+      postalCode,
+      userId,
+    );
     return formatResponse(
       result,
       res,

@@ -8,7 +8,6 @@ import {
   Shipping,
   TeamMember,
   BuyingTeam,
-  TeamRequest,
   ProducerCategory,
   Search,
   SearchCount,

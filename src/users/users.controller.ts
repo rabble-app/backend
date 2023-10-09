@@ -1,4 +1,4 @@
-import { Controller, HttpStatus } from '@nestjs/common';
+import { Controller, HttpStatus, ValidationPipe } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
   ApiBadRequestResponse,
@@ -17,6 +17,7 @@ import {
   Query,
   Res,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common/decorators';
 import { Response } from 'express';
 import { formatResponse } from '../lib/helpers';
@@ -43,14 +44,17 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'User record updated successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @UsePipes(new ValidationPipe({ transform: true }))
   async updateUser(
     @Body() updateUserDto: UpdateUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.usersService.updateUser({
-      where: { phone: updateUserDto.phone },
-      data: updateUserDto,
-    });
+    console.log(updateUserDto);
+    let result;
+    // const result = await this.usersService.updateUser({
+    //   where: { phone: updateUserDto.phone },
+    //   data: updateUserDto,
+    // });
     return formatResponse(
       result,
       res,
