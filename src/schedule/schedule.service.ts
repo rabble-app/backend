@@ -354,7 +354,7 @@ export class ScheduleService {
           await this.paymentServiceExtension.getUserPaymentOptions(
             user.stripeCustomerId,
           );
-        if (result && result.data.length > 0) {
+        if (result && result.data?.length > 0) {
           await this.usersService.updateUser({
             where: {
               id: user.id,
