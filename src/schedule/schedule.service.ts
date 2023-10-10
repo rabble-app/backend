@@ -347,6 +347,7 @@ export class ScheduleService {
   async handleGetPaymentMethod() {
     const users =
       await this.scheduleServiceExtended.getUsersWithNoPaymentMethod();
+    // console.log(users);
     if (users && users.length > 0) {
       users.forEach(async (user) => {
         if (user.stripeCustomerId) {
@@ -355,14 +356,14 @@ export class ScheduleService {
             await this.paymentServiceExtension.getUserPaymentOptions(
               user.stripeCustomerId,
             );
-          if (result && result.data?.length > 0) {
+          if (result && result.length > 0) {
             await this.usersService.updateUser({
               where: {
                 id: user.id,
               },
               data: {
-                stripeDefaultPaymentMethodId: result.data[0].id,
-                cardLastFourDigits: result.data[0].card.last4,
+                stripeDefaultPaymentMethodId: result[0].id,
+                cardLastFourDigits: result[0].card.last4,
               },
             });
           }
