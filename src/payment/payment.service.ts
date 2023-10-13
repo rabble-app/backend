@@ -20,6 +20,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 @Injectable()
 export class PaymentService {
   constructor(
+    @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
     private prisma: PrismaService,
     private readonly notificationService: NotificationsService,
@@ -27,18 +28,6 @@ export class PaymentService {
     private readonly teamsServiceExtension: TeamsServiceExtension,
     private readonly productsService: ProductsService,
   ) {}
-
-  async createCustomer(phone: string): Promise<{ id: string } | null> {
-    try {
-      const params: Stripe.CustomerCreateParams = {
-        phone,
-      };
-      const response = await stripe.customers.create(params);
-      return {
-        id: response.id,
-      };
-    } catch (error) {}
-  }
 
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
