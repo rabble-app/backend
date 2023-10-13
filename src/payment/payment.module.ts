@@ -11,7 +11,7 @@ import { ProductsModule } from '../../src/products/products.module';
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     NotificationsModule,
     forwardRef(() => TeamsModule),
     ProductsModule,

@@ -74,7 +74,7 @@ export class AuthService {
           userExist['token'] = token;
         } else {
           // create stripe account for user
-          const stripeResponse = await this.paymentService.createCustomer(
+          const stripeResponse = await this.userService.createCustomer(
             verifyOTPDto.phone,
           );
           userExist = await this.userService.createUser({

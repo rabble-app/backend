@@ -1,3 +1,4 @@
+import Stripe from 'stripe';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
@@ -22,6 +23,10 @@ import {
   UserWithProducerInfo,
 } from '../../src/lib/types';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2022-11-15',
+});
 
 @Injectable()
 export class UsersService {
@@ -53,10 +58,19 @@ export class UsersService {
     data: Prisma.UserUpdateInput;
   }): Promise<User> {
     const { where, data } = params;
-    return await this.prisma.user.update({
+    const result = await this.prisma.user.update({
       data,
       where,
     });
+
+    // update stripe information too
+    if (data.firstName && data.lastName) {
+      await this.updateStripeCustomerInfo(result.stripeCustomerId, {
+        firstName: result.firstName,
+        lastName: result.lastName,
+      });
+    }
+    return result;
   }
 
   async getProducers(offset = 0): Promise<Producer[] | null> {
@@ -533,5 +547,32 @@ export class UsersService {
         },
       },
     });
+  }
+
+  async createCustomer(phone: string): Promise<{ id: string } | null> {
+    try {
+      const params: Stripe.CustomerCreateParams = {
+        phone,
+      };
+      const response = await stripe.customers.create(params);
+      return {
+        id: response.id,
+      };
+    } catch (error) {}
+  }
+
+  async updateStripeCustomerInfo(
+    customerId: string,
+    data: {
+      firstName: string;
+      lastName: string;
+    },
+  ): Promise<{ id: string } | null> {
+    try {
+      const params: Stripe.CustomerUpdateParams = {
+        name: `${data.lastName} ${data.firstName}`,
+      };
+      return await stripe.customers.update(customerId, params);
+    } catch (error) {}
   }
 }
