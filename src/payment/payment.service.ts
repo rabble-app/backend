@@ -228,7 +228,10 @@ export class PaymentService {
     };
   }
 
-  async createIntent(createIntentData: ICreateIntent): Promise<any | null> {
+  async createIntent(
+    createIntentData: ICreateIntent,
+    offline = false,
+  ): Promise<any | null> {
     const parameters = {
       amount: createIntentData.amount * 100,
       currency: createIntentData.currency,
@@ -240,11 +243,15 @@ export class PaymentService {
       parameters['confirm'] = true;
     }
 
+    if (offline) {
+      parameters['off_session'] = true;
+    } else {
+      parameters['setup_future_usage'] = 'off_session';
+    }
+
     return await stripe.paymentIntents.create({
       ...parameters,
       capture_method: 'manual',
-      setup_future_usage: 'off_session',
-      // off_session: 'recurring',
       use_stripe_sdk: true,
     });
   }
