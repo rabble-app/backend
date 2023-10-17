@@ -12,6 +12,7 @@ describe('PaymentController (e2e)', () => {
 
   const phone = faker.phone.number();
   let customerId = 'cus_OFCaSUidAGIJOA';
+  const paymentIntentId = '';
   let paymentMethodId: string;
   let userId: string;
   let product: Product;
@@ -201,6 +202,33 @@ describe('PaymentController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/payments/intent')
           .send({ ...chargeInfo })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
+
+    // retrieve payment intent
+    it(
+      '/payments/retrieve-intent(POST) should return payment intent',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/retrieve-intent')
+          .send({ paymentIntentId })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/payments/retrieve-intent(POST) should not return payment intent if incomplete data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/retrieve-intent')
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');

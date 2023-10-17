@@ -148,61 +148,83 @@ export class ScheduleService {
   }
 
   async captureFunds(pendingPayments: Array<PaymentWithUserInfo>) {
-    pendingPayments.forEach(async (payment) => {
-      let captureStatus = PaymentStatus.CAPTURED;
-      // be sure that it has payment intent
-      if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
-        // check to know whether he has portioned products and which ones met the threshold
-        // const portionedProducts =
-        //   await this.prisma.partitionedProductsBasket.findMany({
-        //     where: {
-        //       orderId: payment.orderId,
-        //     },
-        //     include: {
-        //       PartitionedProductUsersRecord: {
-        //         where: {
-        //           userId: payment.userId,
-        //         },
-        //       },
-        //     },
-        //   });
-        // if (portionedProducts && portionedProducts.length > 0) {
-        //   portionedProducts.forEach((product) => {
-        //     if (product.PartitionedProductUsersRecord.length > 0) {
-        //       console.log(product.PartitionedProductUsersRecord);
-        //     }
-        //   });
-        // }
-        // console.log(portionedProducts);
+    try {
+      pendingPayments.forEach(async (payment) => {
+        // be sure that it has payment intent
+        if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
+          // check to know whether he has portioned products and which ones met the threshold
+          // const portionedProducts =
+          //   await this.prisma.partitionedProductsBasket.findMany({
+          //     where: {
+          //       orderId: payment.orderId,
+          //     },
+          //     include: {
+          //       PartitionedProductUsersRecord: {
+          //         where: {
+          //           userId: payment.userId,
+          //         },
+          //       },
+          //     },
+          //   });
+          // if (portionedProducts && portionedProducts.length > 0) {
+          //   portionedProducts.forEach((product) => {
+          //     if (product.PartitionedProductUsersRecord.length > 0) {
+          //       console.log(product.PartitionedProductUsersRecord);
+          //     }
+          //   });
+          // }
+          // console.log(portionedProducts);
 
-        const result = await this.paymentServiceExtension.captureFund(
-          payment.paymentIntentId,
-        );
-        // check whether capture was successful and send notification if not
-        if (result['status'] != 'succeeded') {
-          captureStatus = PaymentStatus.FAILED;
+          const result = await this.paymentServiceExtension.captureFund(
+            payment.paymentIntentId,
+          );
+          // console.log(result);
+          // check whether capture was successful and send notification if not
+          if (result['status'] == 'succeeded') {
+            // update the payment status to captured or failed, depending on the success of the capture
+            await this.prisma.payment.update({
+              where: {
+                paymentIntentId: payment.paymentIntentId,
+              },
+              data: {
+                status: PaymentStatus.CAPTURED,
+              },
+            });
+            // send notification
+            await this.notificationsService.createNotification({
+              title: 'Rabble Payment Capture Success',
+              text: `We have captured your payment with ${payment.order.team.name} team`,
+              userId: payment.userId,
+              orderId: payment.orderId,
+              teamId: payment.order.team.id,
+              notficationToken: payment.user.notificationToken,
+            });
+          } else {
+            // send notification
+            await this.notificationsService.createNotification({
+              title: 'Rabble Payment Failure',
+              text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
+              userId: payment.userId,
+              orderId: payment.orderId,
+              teamId: payment.order.team.id,
+              notficationToken: payment.user.notificationToken,
+            });
 
-          // send notification
-          await this.notificationsService.createNotification({
-            title: 'Rabble Payment Failure',
-            text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
-            userId: payment.userId,
-            orderId: payment.orderId,
-            teamId: payment.order.team.id,
-            notficationToken: payment.user.notificationToken,
-          });
+            // update the payment status to captured or failed, depending on the success of the capture
+            await this.prisma.payment.update({
+              where: {
+                paymentIntentId: payment.paymentIntentId,
+              },
+              data: {
+                status: PaymentStatus.FAILED,
+              },
+            });
+          }
         }
-        // update the payment status to captured or failed, depending on the success of the capture
-        await this.prisma.payment.update({
-          where: {
-            paymentIntentId: payment.paymentIntentId,
-          },
-          data: {
-            status: captureStatus,
-          },
-        });
-      }
-    });
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async processNewOrders(teams: Array<IScheduleTeam>) {
@@ -281,7 +303,6 @@ export class ScheduleService {
             },
           },
         });
-
         // capture the fund
         if (pendingPayments.length > 0) {
           await this.captureFunds(pendingPayments);
