@@ -105,12 +105,15 @@ export class PaymentServiceExtension {
     iPaymentAuth: IPaymentAuth,
   ): Promise<Payment> {
     try {
-      const paymentIntent = await this.paymentService.createIntent({
-        amount: iPaymentAuth.amount,
-        currency: 'gbp',
-        customerId: iPaymentAuth.stripeCustomerId,
-        paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
-      });
+      const paymentIntent = await this.paymentService.createIntent(
+        {
+          amount: iPaymentAuth.amount,
+          currency: 'gbp',
+          customerId: iPaymentAuth.stripeCustomerId,
+          paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
+        },
+        true,
+      );
 
       // accumulate amount paid
       await this.paymentService.accumulateAmount(

@@ -32,6 +32,23 @@ export class PaymentService {
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
   ): Promise<{ paymentMethodId: string } | null> {
+    // const paymentMethod = await stripe.paymentMethods.create({
+    //   type: 'card',
+    //   card: {
+    //     number: '4000002500003155',
+    //     exp_month: 2,
+    //     exp_year: 2025,
+    //     cvc: '123',
+    //   },
+    // });
+
+    // // attach payment method to user
+    // await stripe.paymentMethods.attach(paymentMethod.id, {
+    //   customer: 'cus_OkzhCBhxZBLdrQ',
+    // });
+
+    // console.log(paymentMethod.id);
+
     // attach payment method to user
     await stripe.paymentMethods.attach(addPaymentCardDto.paymentMethodId, {
       customer: addPaymentCardDto.stripeCustomerId,
@@ -56,20 +73,16 @@ export class PaymentService {
     let orderId: string;
     let paymentIntentId: string;
 
-    if (!chargeUserDto.isApplePay) {
-      const paymentIntent = await this.handleIntentCreation(chargeUserDto);
-      paymentIntentId = paymentIntent.id;
-    } else {
-      // make it user default payment method
-      await this.userService.updateUser({
-        where: {
-          id: chargeUserDto.userId,
-        },
-        data: {
-          stripeDefaultPaymentMethodId: chargeUserDto.paymentMethodId,
-        },
-      });
+    if (chargeUserDto.paymentIntentId) {
       paymentIntentId = chargeUserDto.paymentIntentId;
+    }
+
+    if (!chargeUserDto.isApplePay && !chargeUserDto.paymentIntentId) {
+      const paymentIntent = await this.handleIntentCreation(chargeUserDto);
+      if (paymentIntent.status != 'requires_capture') {
+        return paymentIntent;
+      }
+      paymentIntentId = paymentIntent.id;
     }
 
     // if teamId exist, get the latest order of that team
@@ -92,6 +105,7 @@ export class PaymentService {
       chargeUserDto.amount,
       chargeUserDto.userId,
     );
+
     if (result) {
       return {
         paymentIntentId,
@@ -104,7 +118,7 @@ export class PaymentService {
 
   async handleIntentCreation(
     chargeUserDto: ChargeUserDto,
-  ): Promise<{ id: string; clientSecret: string } | null> {
+  ): Promise<any | null> {
     return await this.createIntent({
       amount: chargeUserDto.amount,
       currency: chargeUserDto.currency,
@@ -216,7 +230,8 @@ export class PaymentService {
 
   async createIntent(
     createIntentData: ICreateIntent,
-  ): Promise<{ id: string; clientSecret: string } | null> {
+    offline = false,
+  ): Promise<any | null> {
     const parameters = {
       amount: createIntentData.amount * 100,
       currency: createIntentData.currency,
@@ -228,15 +243,17 @@ export class PaymentService {
       parameters['confirm'] = true;
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    if (offline) {
+      parameters['off_session'] = true;
+    } else {
+      parameters['setup_future_usage'] = 'off_session';
+    }
+
+    return await stripe.paymentIntents.create({
       ...parameters,
       capture_method: 'manual',
-      setup_future_usage: 'off_session',
+      use_stripe_sdk: true,
     });
-    return {
-      id: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret,
-    };
   }
 
   async createOrder(orderData: IOrder): Promise<Order> {
@@ -434,5 +451,9 @@ export class PaymentService {
     return await this.prisma.basketC.delete({
       where,
     });
+  }
+
+  async returnPaymentIntent(paymentIntentId: string): Promise<any | null> {
+    return await stripe.paymentIntents.retrieve(paymentIntentId);
   }
 }
