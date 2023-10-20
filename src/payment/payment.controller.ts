@@ -79,7 +79,7 @@ export class PaymentController {
   ): Promise<IAPIResponse> {
     const result = await this.usersService.updateUser({
       where: {
-        id: makeCardDefaultDto.userId,
+        stripeCustomerId: makeCardDefaultDto.stripeCustomerId,
       },
       data: {
         cardLastFourDigits: makeCardDefaultDto.lastFourDigits,
@@ -91,7 +91,7 @@ export class PaymentController {
       res,
       HttpStatus.OK,
       false,
-      'Card made default payment option successfully',
+      'Card default payment option set successfully',
     );
   }
 

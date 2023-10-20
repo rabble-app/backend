@@ -13,12 +13,12 @@ export class MakeCardDefaultDto {
 
   @ApiProperty({
     type: 'string',
-    description: 'The user id',
+    description: 'The user stripe customer id',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  userId: string;
+  stripeCustomerId: string;
 
   @ApiProperty({
     type: 'string',
