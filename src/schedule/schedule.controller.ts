@@ -174,4 +174,27 @@ export class ScheduleController {
       'Get payment method id function performed successfully',
     );
   }
+
+  /**
+   * Update payment information on stripe .
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('update-payment-meta')
+  @ApiOkResponse({
+    description: 'Payment informaton updated successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async updatePaymentInfo(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleService.handlePaymentMetaDataUpdate();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Payment informaton updated successfully',
+    );
+  }
 }

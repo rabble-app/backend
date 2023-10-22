@@ -119,6 +119,9 @@ model Product {
   producerId        String                      @map("producer_id")
   categoryId        String?                     @map("category_id")
   price             Int
+  wholesalePrice    Int?                        @map("wholesale_price")
+  retailPrice       Int?                        @map("retail_price")
+  vat               Int?
   status            ProductStatus               @default(IN_STOCK)
   createdAt         DateTime                    @default(now()) @map("created_at")
   updatedAt         DateTime                    @updatedAt @map("updated_at")
@@ -157,9 +160,9 @@ model PartitionedProductsBasket {
   createdAt                     DateTime                        @default(now()) @map("created_at")
   updatedAt                     DateTime                        @updatedAt @map("updated_at")
   PartitionedProductUsersRecord PartitionedProductUsersRecord[]
-  order                         Order                         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product                       Product                       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  team                          BuyingTeam                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  order                         Order                           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product                       Product                         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team                          BuyingTeam                      @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("partitioned_products_basket")
 }
@@ -319,34 +322,34 @@ model Order {
 }
 
 model Basket {
-  id        String      @id @default(uuid())
-  orderId   String      @map("order_id")
-  userId    String      @map("user_id")
-  productId String      @map("product_id")
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
   quantity  Int
   price     Int
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([orderId, userId, productId], name: "user_unique_product")
   @@map("baskets")
 }
 
 model BasketC {
-  id        String      @id @default(uuid())
-  teamId    String      @map("team_id")
-  userId    String      @map("user_id")
-  productId String      @map("product_id")
+  id        String     @id @default(uuid())
+  teamId    String     @map("team_id")
+  userId    String     @map("user_id")
+  productId String     @map("product_id")
   quantity  Int
   price     Int
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  team      BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId, productId], name: "team_unique_product")
   @@map("basket_c")
