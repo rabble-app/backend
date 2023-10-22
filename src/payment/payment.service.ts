@@ -32,23 +32,6 @@ export class PaymentService {
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
   ): Promise<{ paymentMethodId: string } | null> {
-    // const paymentMethod = await stripe.paymentMethods.create({
-    //   type: 'card',
-    //   card: {
-    //     number: '4000002500003155',
-    //     exp_month: 2,
-    //     exp_year: 2025,
-    //     cvc: '123',
-    //   },
-    // });
-
-    // // attach payment method to user
-    // await stripe.paymentMethods.attach(paymentMethod.id, {
-    //   customer: 'cus_OkzhCBhxZBLdrQ',
-    // });
-
-    // console.log(paymentMethod.id);
-
     // attach payment method to user
     await stripe.paymentMethods.attach(addPaymentCardDto.paymentMethodId, {
       customer: addPaymentCardDto.stripeCustomerId,
@@ -253,6 +236,9 @@ export class PaymentService {
       ...parameters,
       capture_method: 'manual',
       use_stripe_sdk: true,
+      // metadata: {
+      //   order_id: '6735',
+      // },
     });
   }
 

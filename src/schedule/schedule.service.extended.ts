@@ -274,6 +274,7 @@ export class ScheduleServiceExtended {
       },
     });
   }
+
   async getUsersWithNoPaymentMethod() {
     return await this.prisma.user.findMany({
       where: {
@@ -292,6 +293,31 @@ export class ScheduleServiceExtended {
         id: true,
         stripeCustomerId: true,
         stripeDefaultPaymentMethodId: true,
+      },
+    });
+  }
+
+  async getLatestPayments() {
+    const currentDate = new Date();
+    const last24hours = new Date(
+      currentDate.getTime() - 1 * 1 * 24 * 60 * 60 * 1000,
+    );
+    return await this.prisma.payment.findMany({
+      where: {
+        createdAt: {
+          gte: last24hours,
+        },
+      },
+      include: {
+        order: {
+          include: {
+            team: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
   }
