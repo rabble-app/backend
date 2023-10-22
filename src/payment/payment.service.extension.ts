@@ -138,4 +138,11 @@ export class PaymentServiceExtension {
       console.log(error);
     }
   }
+
+  async updatePaymentIntent(
+    paymentIntentId: string,
+    metadata: Stripe.MetadataParam,
+  ): Promise<object | null> {
+    return await stripe.paymentIntents.update(paymentIntentId, { metadata });
+  }
 }

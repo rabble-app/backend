@@ -365,6 +365,24 @@ export class ScheduleService {
     return true;
   }
 
+  async handlePaymentMetaDataUpdate() {
+    const payments = await this.scheduleServiceExtended.getLatestPayments();
+    if (payments && payments.length > 0) {
+      payments.forEach(async (payment) => {
+        await this.paymentServiceExtension.updatePaymentIntent(
+          payment.paymentIntentId,
+          {
+            transactionId: payment.id,
+            orderId: payment.orderId,
+            teamId: payment.order.teamId,
+            userId: payment.userId,
+          },
+        );
+      });
+    }
+    return true;
+  }
+
   async handleGetPaymentMethod() {
     const users =
       await this.scheduleServiceExtended.getUsersWithNoPaymentMethod();
