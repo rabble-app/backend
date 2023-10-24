@@ -152,7 +152,7 @@ export class ScheduleService {
       pendingPayments.forEach(async (payment) => {
         // be sure that it has payment intent
         if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
-          // check to know whether he has portioned products and which ones met the threshold
+          // // check to know whether he has portioned products and which ones met the threshold
           // const portionedProducts =
           //   await this.prisma.partitionedProductsBasket.findMany({
           //     where: {
@@ -380,7 +380,7 @@ export class ScheduleService {
         );
       });
     }
-    return true;
+    return payments;
   }
 
   async handleGetPaymentMethod() {
