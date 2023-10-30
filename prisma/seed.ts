@@ -123,6 +123,9 @@ async function main() {
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
+      orderUnit: 'Bag',
+      unitsPerOrder: 1,
+      unitsOfMeasure: 'Kg',
     },
   });
 
@@ -143,6 +146,9 @@ async function main() {
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
+      orderUnit: 'Bag',
+      unitsPerOrder: 1,
+      unitsOfMeasure: 'Kg',
     },
   });
 
@@ -236,6 +242,9 @@ async function main() {
       price: 2,
       type: 'PORTIONED_SINGLE_PRODUCT',
       thresholdQuantity: 10,
+      orderUnit: 'Box',
+      unitsPerOrder: 10,
+      unitsOfMeasure: 'Eggs',
     },
   });
 }
