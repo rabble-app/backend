@@ -123,6 +123,10 @@ model Product {
   retailPrice       Int?                        @map("retail_price")
   vat               Int?
   status            ProductStatus               @default(IN_STOCK)
+  orderUnit         String                      @default("Box") @map("order_unit")
+  orderSubUnit      String                      @default("Carton") @map("sub_unit")
+  unitsPerOrder     Int                         @default(10) @map("units_per_order")
+  unitsOfMeasure    String                      @default("Carton") @map("units_of_measure")
   createdAt         DateTime                    @default(now()) @map("created_at")
   updatedAt         DateTime                    @updatedAt @map("updated_at")
   thresholdQuantity Int?

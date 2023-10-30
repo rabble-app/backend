@@ -22,7 +22,7 @@ env:
   RABBLE_AWS_BUCKET_NAME: ${{secrets.RABBLE_AWS_BUCKET_NAME}}
       
 jobs:
-  inbillo-backend:
+  rabble-backend:
      runs-on: ubuntu-latest
      strategy:
       matrix:
