@@ -35,8 +35,19 @@ export class ProductsService {
         producer: true,
         partionedProducts: {
           select: {
-            threshold: true,
             accumulator: true,
+            threshold: true,
+            PartitionedProductUsersRecord: {
+              select: {
+                amount: true,
+                owner: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
           },
           where: {
             teamId,

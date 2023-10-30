@@ -243,6 +243,17 @@ export class TeamsServiceExtension {
                 name: true,
               },
             },
+            PartitionedProductUsersRecord: {
+              select: {
+                amount: true,
+                owner: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
