@@ -314,6 +314,7 @@ export class ScheduleServiceExtended {
             team: {
               select: {
                 id: true,
+                producerId: true,
               },
             },
           },
