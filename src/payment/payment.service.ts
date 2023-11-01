@@ -375,7 +375,7 @@ export class PaymentService {
         },
       });
     }
-    // record the user information in the partitition users table
+    // record the user information in the partition users table
     await this.prisma.partitionedProductUsersRecord.create({
       data: {
         userId,

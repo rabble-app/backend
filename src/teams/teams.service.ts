@@ -14,6 +14,7 @@ import { PrismaService } from '../prisma.service';
 import { teamImages } from '../../src/utils';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../../src/notifications/notifications.service';
+import { TeamsServiceExtension } from './teams.service.extension';
 
 @Injectable()
 export class TeamsService {
@@ -23,6 +24,8 @@ export class TeamsService {
     private readonly paymentService: PaymentService,
     private readonly userService: UsersService,
     private notificationsService: NotificationsService,
+    @Inject(forwardRef(() => TeamsServiceExtension))
+    private teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
@@ -142,8 +145,10 @@ export class TeamsService {
     // get the team info
     const team = await this.findBuyingTeam({ id: teamData.teamId });
 
-    // get team admins
-    const teamAdmins = await this.getTeamAdmins(teamData.teamId);
+    // get team members
+    const teamAdmins = await this.teamsServiceExtension.getAllTeamUsers(
+      teamData.teamId,
+    );
 
     if (teamAdmins.length > 0) {
       teamAdmins.forEach(async (admin) => {
