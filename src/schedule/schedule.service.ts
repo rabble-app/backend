@@ -178,7 +178,6 @@ export class ScheduleService {
           const result = await this.paymentServiceExtension.captureFund(
             payment.paymentIntentId,
           );
-          // console.log(result);
           // check whether capture was successful and send notification if not
           if (result['status'] == 'succeeded') {
             // update the payment status to captured or failed, depending on the success of the capture
@@ -376,6 +375,7 @@ export class ScheduleService {
             orderId: payment.orderId,
             teamId: payment.order.teamId,
             userId: payment.userId,
+            supplierId: payment.order.team.producerId,
           },
         );
       });
@@ -386,7 +386,6 @@ export class ScheduleService {
   async handleGetPaymentMethod() {
     const users =
       await this.scheduleServiceExtended.getUsersWithNoPaymentMethod();
-    // console.log(users);
     if (users && users.length > 0) {
       users.forEach(async (user) => {
         if (user.stripeCustomerId) {
