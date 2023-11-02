@@ -380,6 +380,7 @@ export class PaymentService {
       data: {
         userId,
         amount,
+        quantity,
         partionedBasketId: result.id,
       },
     });
