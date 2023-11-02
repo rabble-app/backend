@@ -534,6 +534,20 @@ export class UsersService {
   }
 
   async getBasket(userId: string, teamId: string): Promise<BasketC[] | null> {
+    let orderId = '';
+    // get team latest order id
+    if (teamId) {
+      //Todo: abstract it out, a function like this exist in payment service
+      const result = await this.prisma.order.findFirst({
+        where: {
+          teamId: teamId,
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      });
+      orderId = result.id;
+    }
     return await this.prisma.basketC.findMany({
       where: {
         userId,
@@ -541,8 +555,22 @@ export class UsersService {
       },
       include: {
         product: {
-          select: {
-            name: true,
+          include: {
+            partionedProducts: {
+              select: {
+                threshold: true,
+                accumulator: true,
+                id: true,
+              },
+              where: {
+                teamId,
+                orderId,
+              },
+              take: 1,
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
           },
         },
       },

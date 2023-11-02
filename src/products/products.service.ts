@@ -39,7 +39,8 @@ export class ProductsService {
             threshold: true,
             PartitionedProductUsersRecord: {
               select: {
-                amount: true,
+                amount: true, // remove later
+                quantity: true,
                 owner: {
                   select: {
                     firstName: true,

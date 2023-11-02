@@ -176,11 +176,13 @@ model PartitionedProductUsersRecord {
   partionedBasketId String                    @map("partioned_basket_id")
   userId            String                    @map("user_id")
   amount            Int
+  quantity          Int                       @default(1)
   createdAt         DateTime                  @default(now()) @map("created_at")
   updatedAt         DateTime                  @updatedAt @map("updated_at")
   partionedBasket   PartitionedProductsBasket @relation(fields: [partionedBasketId], references: [id], onDelete: Cascade)
   owner             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@unique([partionedBasketId, userId], name: "user_record")
   @@map("partitioned_product_users_record")
 }
 
@@ -343,17 +345,17 @@ model Basket {
 }
 
 model BasketC {
-  id        String     @id @default(uuid())
-  teamId    String     @map("team_id")
-  userId    String     @map("user_id")
-  productId String     @map("product_id")
+  id        String      @id @default(uuid())
+  teamId    String      @map("team_id")
+  userId    String      @map("user_id")
+  productId String      @map("product_id")
   quantity  Int
   price     Int
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team      BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId, productId], name: "team_unique_product")
   @@map("basket_c")

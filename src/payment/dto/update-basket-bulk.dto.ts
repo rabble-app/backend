@@ -9,7 +9,9 @@ import {
   IsNumber,
   IsBoolean,
   ValidateIf,
+  IsEnum,
 } from 'class-validator';
+import { ProductType } from 'src/lib/types';
 
 export class UpdateBasket {
   @ApiProperty({
@@ -38,6 +40,32 @@ export class UpdateBasket {
   @IsNotEmpty()
   @IsNumber()
   price: number;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The product type',
+    required: true,
+  })
+  @IsEnum(ProductType)
+  type: ProductType;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The id of the portion of the product',
+    required: false,
+  })
+  @ValidateIf((o) => o.type == 'PORTIONED_SINGLE_PRODUCT')
+  @IsString()
+  portionId: string;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'The id of the portion of the product',
+    required: false,
+  })
+  @ValidateIf((o) => o.type == 'PORTIONED_SINGLE_PRODUCT')
+  @IsNumber()
+  newAccumulatorValue: number;
 }
 
 export class UpdateBasketBulkDto {

@@ -82,6 +82,33 @@ export class PaymentServiceExtension {
       });
 
       if (!updateBasketBulkDto.deadlineReached) {
+        // check for portioned products
+        if (product.type == 'PORTIONED_SINGLE_PRODUCT') {
+          // update the portioned product basket to reflect the new accumulator value
+          await this.prisma.partitionedProductsBasket.update({
+            where: {
+              id: product.portionId,
+            },
+            data: {
+              accumulator: product.newAccumulatorValue,
+            },
+          });
+
+          // update the portioned product record
+          await this.prisma.partitionedProductUsersRecord.update({
+            where: {
+              user_record: {
+                partionedBasketId: product.portionId,
+                userId: result.userId,
+              },
+            },
+            data: {
+              quantity: product.quantity,
+              amount: product.price,
+            },
+          });
+        }
+
         // update major basket
         await this.updateCurrentBasketItem({
           where: {
