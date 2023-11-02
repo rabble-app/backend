@@ -245,7 +245,8 @@ export class TeamsServiceExtension {
             },
             PartitionedProductUsersRecord: {
               select: {
-                amount: true,
+                amount: true, // remove later
+                quantity: true,
                 owner: {
                   select: {
                     firstName: true,

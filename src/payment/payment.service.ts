@@ -12,6 +12,7 @@ import { AddSingleBasketDto } from './dto/add-single-basket.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from 'src/products/products.service';
+import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -49,6 +50,16 @@ export class PaymentService {
 
     return {
       paymentMethodId: addPaymentCardDto.paymentMethodId,
+    };
+  }
+
+  async removeCustomerCard(
+    removePaymentCardDto: RemovePaymentCardDto,
+  ): Promise<{ paymentMethodId: string } | null> {
+    await stripe.paymentMethods.detach(removePaymentCardDto.paymentMethodId);
+
+    return {
+      paymentMethodId: removePaymentCardDto.paymentMethodId,
     };
   }
 
@@ -380,6 +391,7 @@ export class PaymentService {
       data: {
         userId,
         amount,
+        quantity,
         partionedBasketId: result.id,
       },
     });

@@ -104,6 +104,21 @@ describe('PaymentController (e2e)', () => {
       testTime,
     );
 
+    // remove payment card from user
+    it(
+      '/payments/remove-card(DELETE) should remove card from user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/add-card')
+          .send({ ...cardInfo, stripeCustomerId: customerId })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // add default card for payments
     it(
       '/payments/default-card(POST) should make card default for payment',
