@@ -25,6 +25,7 @@ import { AddBulkBasketDto } from './dto/add-bulk-basket.dto';
 import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
 import { AddSingleBasketDto } from './dto/add-single-basket.dto';
+import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -57,6 +58,33 @@ export class PaymentController {
       HttpStatus.CREATED,
       false,
       'Card added successfully',
+    );
+  }
+
+  /**
+   * Remove payment card from user.
+   * @param {Body} removePaymentCardDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Delete('remove-card')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Card added successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async removePaymentCard(
+    @Body() removePaymentCardDto: RemovePaymentCardDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentService.removeCustomerCard(
+      removePaymentCardDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Card removed successfully',
     );
   }
 
