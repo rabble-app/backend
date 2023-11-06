@@ -33,13 +33,21 @@ export class PaymentServiceExtension {
     paymentIntentId: string,
     amountToCapture = null,
   ): Promise<object | null> {
-    let options = null;
-    if (amountToCapture) {
-      options = {
-        amount_to_capture: amountToCapture,
-      };
+    try {
+      let options = null;
+      if (amountToCapture) {
+        options = {
+          amount_to_capture: amountToCapture,
+        };
+        const result = await stripe.paymentIntents.capture(
+          paymentIntentId,
+          options,
+        );
+        return result;
+      }
+    } catch (error) {
+      console.log(error);
     }
-    return await stripe.paymentIntents.capture(paymentIntentId, options);
   }
 
   async updateBasketItem(params: {

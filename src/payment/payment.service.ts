@@ -247,9 +247,6 @@ export class PaymentService {
       ...parameters,
       capture_method: 'manual',
       use_stripe_sdk: true,
-      // metadata: {
-      //   order_id: '6735',
-      // },
     });
   }
 
@@ -381,7 +378,7 @@ export class PaymentService {
           orderId,
           productId,
           accumulator: quantity,
-          threshold: product.thresholdQuantity,
+          threshold: product.quantityOfSubUnitPerOrder,
           teamId,
         },
       });

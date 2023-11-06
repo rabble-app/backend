@@ -238,11 +238,7 @@ export class TeamsServiceExtension {
           select: {
             accumulator: true,
             threshold: true,
-            product: {
-              select: {
-                name: true,
-              },
-            },
+            product: true,
             PartitionedProductUsersRecord: {
               select: {
                 amount: true, // remove later

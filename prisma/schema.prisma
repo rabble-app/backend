@@ -111,25 +111,26 @@ model Shipping {
 }
 
 model Product {
-  id                String                      @id @default(uuid())
-  name              String
-  imageUrl          String?                     @map("image_url")
-  imageKey          String?                     @map("image_key")
-  description       String?
-  producerId        String                      @map("producer_id")
-  categoryId        String?                     @map("category_id")
-  price             Int
-  wholesalePrice    Int?                        @map("wholesale_price")
-  retailPrice       Int?                        @map("retail_price")
-  vat               Int?
-  status            ProductStatus               @default(IN_STOCK)
-  orderUnit         String                      @default("Box") @map("order_unit")
-  orderSubUnit      String                      @default("Carton") @map("sub_unit")
-  unitsPerOrder     Int                         @default(10) @map("units_per_order")
-  unitsOfMeasure    String                      @default("Carton") @map("units_of_measure")
+  id                        String        @id @default(uuid())
+  name                      String
+  imageUrl                  String?       @map("image_url")
+  imageKey                  String?       @map("image_key")
+  description               String?
+  producerId                String        @map("producer_id")
+  categoryId                String?       @map("category_id")
+  price                     Int
+  wholesalePrice            Int?          @map("wholesale_price")
+  retailPrice               Int?          @map("retail_price")
+  vat                       Int?
+  status                    ProductStatus @default(IN_STOCK)
+  orderUnit                 String        @default("Box") @map("order_unit")
+  subUnit                   String        @default("Carton") @map("sub_unit")
+  quantityOfSubUnitPerOrder Int           @default(1) @map("quantity_of_subunit_per_order")
+  unitsOfMeasurePerSubUnit  String        @default("Carton") @map("units_of_measure_per_subunit")
+  measuresPerSubUnit        Int           @default(1) @map("measures_per_subunit")
+
   createdAt         DateTime                    @default(now()) @map("created_at")
   updatedAt         DateTime                    @updatedAt @map("updated_at")
-  thresholdQuantity Int?
   type              ProductType                 @default(SINGLE)
   BasketC           BasketC[]
   basket            Basket[]
@@ -181,7 +182,7 @@ model PartitionedProductUsersRecord {
   updatedAt         DateTime                  @updatedAt @map("updated_at")
   partionedBasket   PartitionedProductsBasket @relation(fields: [partionedBasketId], references: [id], onDelete: Cascade)
   owner             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@unique([partionedBasketId, userId], name: "user_record")
   @@map("partitioned_product_users_record")
 }
@@ -345,17 +346,17 @@ model Basket {
 }
 
 model BasketC {
-  id        String      @id @default(uuid())
-  teamId    String      @map("team_id")
-  userId    String      @map("user_id")
-  productId String      @map("product_id")
+  id        String     @id @default(uuid())
+  teamId    String     @map("team_id")
+  userId    String     @map("user_id")
+  productId String     @map("product_id")
   quantity  Int
   price     Int
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  team      BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId, productId], name: "team_unique_product")
   @@map("basket_c")
