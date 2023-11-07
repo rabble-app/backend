@@ -152,72 +152,83 @@ export class ScheduleService {
       pendingPayments.forEach(async (payment) => {
         // be sure that it has payment intent
         if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
-          // // check to know whether he has portioned products and which ones met the threshold
-          // const portionedProducts =
-          //   await this.prisma.partitionedProductsBasket.findMany({
-          //     where: {
-          //       orderId: payment.orderId,
-          //     },
-          //     include: {
-          //       PartitionedProductUsersRecord: {
-          //         where: {
-          //           userId: payment.userId,
-          //         },
-          //       },
-          //     },
-          //   });
-          // if (portionedProducts && portionedProducts.length > 0) {
-          //   portionedProducts.forEach((product) => {
-          //     if (product.PartitionedProductUsersRecord.length > 0) {
-          //       console.log(product.PartitionedProductUsersRecord);
-          //     }
-          //   });
-          // }
-          // console.log(portionedProducts);
-
-          const result = await this.paymentServiceExtension.captureFund(
-            payment.paymentIntentId,
-          );
-          // check whether capture was successful and send notification if not
-          if (result['status'] == 'succeeded') {
-            // update the payment status to captured or failed, depending on the success of the capture
-            await this.prisma.payment.update({
+          // check to know whether he has portioned products and
+          // which ones did not met the threshold, minus that from the overall payment amount
+          let amountToCapture = payment.amount;
+          const portionedProducts =
+            await this.prisma.partitionedProductsBasket.findFirst({
               where: {
-                paymentIntentId: payment.paymentIntentId,
+                orderId: payment.orderId,
+                threshold: {
+                  gt: this.prisma.partitionedProductsBasket.fields.accumulator,
+                },
               },
-              data: {
-                status: PaymentStatus.CAPTURED,
+              include: {
+                PartitionedProductUsersRecord: {
+                  where: {
+                    userId: payment.userId,
+                  },
+                },
               },
             });
-            // send notification
-            await this.notificationsService.createNotification({
-              title: 'Rabble Payment Capture Success',
-              text: `We have captured your payment with ${payment.order.team.name} team`,
-              userId: payment.userId,
-              orderId: payment.orderId,
-              teamId: payment.order.team.id,
-              notficationToken: payment.user.notificationToken,
-            });
-          } else {
-            // send notification
-            await this.notificationsService.createNotification({
-              title: 'Rabble Payment Failure',
-              text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
-              userId: payment.userId,
-              orderId: payment.orderId,
-              teamId: payment.order.team.id,
-              notficationToken: payment.user.notificationToken,
-            });
+          if (
+            portionedProducts &&
+            portionedProducts.PartitionedProductUsersRecord.length > 0
+          ) {
+            amountToCapture =
+              amountToCapture -
+              portionedProducts.PartitionedProductUsersRecord[0].amount;
+          }
+          if (amountToCapture > 0) {
+            const result = await this.paymentServiceExtension.captureFund(
+              payment.paymentIntentId,
+              amountToCapture * 100,
+            );
 
-            // update the payment status to captured or failed, depending on the success of the capture
-            await this.prisma.payment.update({
-              where: {
-                paymentIntentId: payment.paymentIntentId,
-              },
-              data: {
-                status: PaymentStatus.FAILED,
-              },
-            });
+            // check whether capture was successful and send notification if not
+            if (
+              result &&
+              result.hasOwnProperty('status') &&
+              result['status'] == 'succeeded'
+            ) {
+              // update the payment status to captured or failed, depending on the success of the capture
+              await this.prisma.payment.update({
+                where: {
+                  paymentIntentId: payment.paymentIntentId,
+                },
+                data: {
+                  status: PaymentStatus.CAPTURED,
+                },
+              });
+              // send notification
+              await this.notificationsService.createNotification({
+                title: 'Rabble Payment Capture Success',
+                text: `We have captured your payment with ${payment.order.team.name} team`,
+                userId: payment.userId,
+                orderId: payment.orderId,
+                teamId: payment.order.team.id,
+                notficationToken: payment.user.notificationToken,
+              });
+            } else {
+              // send notification
+              await this.notificationsService.createNotification({
+                title: 'Rabble Payment Failure',
+                text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
+                userId: payment.userId,
+                orderId: payment.orderId,
+                teamId: payment.order.team.id,
+                notficationToken: payment.user.notificationToken,
+              });
+              // update the payment status to captured or failed, depending on the success of the capture
+              await this.prisma.payment.update({
+                where: {
+                  paymentIntentId: payment.paymentIntentId,
+                },
+                data: {
+                  status: PaymentStatus.FAILED,
+                },
+              });
+            }
           }
         }
       });

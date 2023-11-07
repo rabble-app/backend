@@ -114,7 +114,14 @@ async function main() {
         producerId: producerRecord.id,
       },
     },
-    update: {},
+    update: {
+      price: 20,
+      orderUnit: 'Bag',
+      subUnit: 'Bag',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 1,
+    },
     create: {
       name: 'Espresso Blend Whole bean',
       imageUrl:
@@ -124,8 +131,10 @@ async function main() {
       categoryId: productCategoryA.id,
       price: 20,
       orderUnit: 'Bag',
-      unitsPerOrder: 1,
-      unitsOfMeasure: 'Kg',
+      subUnit: 'Bag',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 1,
     },
   });
 
@@ -137,7 +146,14 @@ async function main() {
         producerId: producerRecord.id,
       },
     },
-    update: {},
+    update: {
+      price: 20,
+      orderUnit: 'Bag',
+      subUnit: 'Bag',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 1,
+    },
     create: {
       name: 'Espresso Blend Ground',
       imageUrl:
@@ -147,8 +163,10 @@ async function main() {
       categoryId: productCategoryA.id,
       price: 20,
       orderUnit: 'Bag',
-      unitsPerOrder: 1,
-      unitsOfMeasure: 'Kg',
+      subUnit: 'Bag',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 1,
     },
   });
 
@@ -223,7 +241,7 @@ async function main() {
     },
   });
 
-  // add product A
+  // add product AA
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -231,20 +249,29 @@ async function main() {
         producerId: producerRecord.id,
       },
     },
-    update: {},
+    update: {
+      price: 2,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Carton',
+      quantityOfSubUnitPerOrder: 20,
+      unitsOfMeasurePerSubUnit: 'Eggs',
+      measuresPerSubUnit: 6,
+    },
     create: {
       name: '6 Cacklebean Eggs',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+29.png',
-      description: '6 Cacklebean Farm fresh eggs',
+      description: 'Arlington White Cacklebean eggs from Cacklebean',
       producerId: producerRecordB.id,
       categoryId: productCategoryAA.id,
       price: 2,
       type: 'PORTIONED_SINGLE_PRODUCT',
-      thresholdQuantity: 10,
       orderUnit: 'Box',
-      unitsPerOrder: 10,
-      unitsOfMeasure: 'Eggs',
+      subUnit: 'Carton',
+      quantityOfSubUnitPerOrder: 20,
+      unitsOfMeasurePerSubUnit: 'Eggs',
+      measuresPerSubUnit: 6,
     },
   });
 }
