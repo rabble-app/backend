@@ -245,7 +245,7 @@ async function main() {
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
-        name: '6 Cacklebean Eggs',
+        name: 'Cacklebean Eggs',
         producerId: producerRecord.id,
       },
     },
@@ -255,11 +255,11 @@ async function main() {
       orderUnit: 'Box',
       subUnit: 'Carton',
       quantityOfSubUnitPerOrder: 20,
-      unitsOfMeasurePerSubUnit: 'Eggs',
+      unitsOfMeasurePerSubUnit: 'Egg',
       measuresPerSubUnit: 6,
     },
     create: {
-      name: '6 Cacklebean Eggs',
+      name: 'Cacklebean Eggs',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+29.png',
       description: 'Arlington White Cacklebean eggs from Cacklebean',
@@ -270,7 +270,7 @@ async function main() {
       orderUnit: 'Box',
       subUnit: 'Carton',
       quantityOfSubUnitPerOrder: 20,
-      unitsOfMeasurePerSubUnit: 'Eggs',
+      unitsOfMeasurePerSubUnit: 'Egg',
       measuresPerSubUnit: 6,
     },
   });
