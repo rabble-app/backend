@@ -150,25 +150,29 @@ export class PaymentServiceExtension {
         true,
       );
 
-      // accumulate amount paid
-      await this.paymentService.accumulateAmount(
-        iPaymentAuth.orderId,
-        iPaymentAuth.amount,
-        iPaymentAuth.teamId,
-      );
+      if (!paymentIntent || paymentIntent.status != 'requires_capture') {
+        return null;
+      } else {
+        // accumulate amount paid
+        await this.paymentService.accumulateAmount(
+          iPaymentAuth.orderId,
+          iPaymentAuth.amount,
+          iPaymentAuth.teamId,
+        );
 
-      // update payment record
-      const paymentData = {
-        paymentIntentId: paymentIntent.id,
-        status: PaymentStatus.INTENT_CREATED,
-      };
+        // update payment record
+        const paymentData = {
+          paymentIntentId: paymentIntent.id,
+          status: PaymentStatus.INTENT_CREATED,
+        };
 
-      return await this.paymentService.updatePayment({
-        where: {
-          id: iPaymentAuth.paymentId,
-        },
-        data: paymentData,
-      });
+        return await this.paymentService.updatePayment({
+          where: {
+            id: iPaymentAuth.paymentId,
+          },
+          data: paymentData,
+        });
+      }
     } catch (error) {
       console.log(error);
     }
