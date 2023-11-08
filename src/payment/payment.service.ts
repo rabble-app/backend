@@ -73,6 +73,7 @@ export class PaymentService {
 
     if (!chargeUserDto.isApplePay && !chargeUserDto.paymentIntentId) {
       const paymentIntent = await this.handleIntentCreation(chargeUserDto);
+      if (!paymentIntent) return null;
       if (paymentIntent.status != 'requires_capture') {
         return paymentIntent;
       }
@@ -226,28 +227,45 @@ export class PaymentService {
     createIntentData: ICreateIntent,
     offline = false,
   ): Promise<any | null> {
-    const parameters = {
-      amount: createIntentData.amount * 100,
-      currency: createIntentData.currency,
-      customer: createIntentData.customerId,
-    };
+    try {
+      const parameters = {
+        amount: createIntentData.amount * 100,
+        currency: createIntentData.currency,
+        customer: createIntentData.customerId,
+      };
 
-    if (createIntentData.paymentMethodId) {
-      parameters['payment_method'] = createIntentData.paymentMethodId;
-      parameters['confirm'] = true;
+      if (createIntentData.paymentMethodId) {
+        parameters['payment_method'] = createIntentData.paymentMethodId;
+        parameters['confirm'] = true;
+      }
+
+      if (offline) {
+        parameters['off_session'] = true;
+      } else {
+        parameters['setup_future_usage'] = 'off_session';
+      }
+
+      return await stripe.paymentIntents.create({
+        ...parameters,
+        capture_method: 'manual',
+        use_stripe_sdk: true,
+      });
+    } catch (e) {
+      const charge = await stripe.charges.retrieve(
+        e.payment_intent.latest_charge,
+      );
+      if (e.type === 'StripeCardError') {
+        if (charge.outcome.type === 'blocked') {
+          console.log('Payment blocked for suspected fraud.');
+        } else if (e.code === 'card_declined') {
+          console.log('Payment declined by the issuer.');
+        } else if (e.code === 'expired_card') {
+          console.log('Card expired.');
+        } else {
+          console.log('Other card error.');
+        }
+      }
     }
-
-    if (offline) {
-      parameters['off_session'] = true;
-    } else {
-      parameters['setup_future_usage'] = 'off_session';
-    }
-
-    return await stripe.paymentIntents.create({
-      ...parameters,
-      capture_method: 'manual',
-      use_stripe_sdk: true,
-    });
   }
 
   async createOrder(orderData: IOrder): Promise<Order> {

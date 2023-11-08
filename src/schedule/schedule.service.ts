@@ -92,7 +92,6 @@ export class ScheduleService {
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
           if (payment.order.deadline.getTime() > new Date().getTime()) {
-            console.log(payment);
             const otherNotificationConditions = {
               userId: payment.userId,
               orderId: payment.orderId,
