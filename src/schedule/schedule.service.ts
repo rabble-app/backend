@@ -91,34 +91,37 @@ export class ScheduleService {
       const result = await this.scheduleServiceExtended.getPendingPayment();
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
-          const otherNotificationConditions = {
-            userId: payment.userId,
-            orderId: payment.orderId,
-            teamId: payment.order.teamId,
-            notficationToken: payment.user.notificationToken,
-          };
-          if (
-            payment.user.stripeDefaultPaymentMethodId &&
-            payment.user.stripeCustomerId
-          ) {
-            // authorize payment for this user
-            const paymentRecord = await this.handleAuthorizePayments(payment);
+          if (payment.order.deadline.getTime() > new Date().getTime()) {
+            console.log(payment);
+            const otherNotificationConditions = {
+              userId: payment.userId,
+              orderId: payment.orderId,
+              teamId: payment.order.teamId,
+              notficationToken: payment.user.notificationToken,
+            };
+            if (
+              payment.user.stripeDefaultPaymentMethodId &&
+              payment.user.stripeCustomerId
+            ) {
+              // authorize payment for this user
+              const paymentRecord = await this.handleAuthorizePayments(payment);
 
-            if (!paymentRecord) {
-              // send notification that payment failed
+              if (!paymentRecord) {
+                // send notification that payment failed
+                await this.notificationsService.createNotification({
+                  title: 'Payment Failure',
+                  text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
+                  ...otherNotificationConditions,
+                });
+              }
+            } else {
+              // send notification that user should add default payment method
               await this.notificationsService.createNotification({
                 title: 'Payment Failure',
-                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
+                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and set a default payment method`,
                 ...otherNotificationConditions,
               });
             }
-          } else {
-            // send notification that user should add default payment method
-            await this.notificationsService.createNotification({
-              title: 'Payment Failure',
-              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and set a default payment method`,
-              ...otherNotificationConditions,
-            });
           }
         });
       }
