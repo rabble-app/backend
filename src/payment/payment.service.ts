@@ -376,7 +376,7 @@ export class PaymentService {
     });
     if (result && result.accumulator < result.threshold) {
       // update
-      await this.prisma.partitionedProductsBasket.update({
+      const updateResult = await this.prisma.partitionedProductsBasket.update({
         where: {
           id: result.id,
         },
@@ -386,6 +386,19 @@ export class PaymentService {
           },
         },
       });
+
+      if (updateResult.accumulator == updateResult.threshold) {
+        // create new basket for that portionedProduct
+        await this.prisma.partitionedProductsBasket.create({
+          data: {
+            orderId,
+            productId,
+            accumulator: 0,
+            threshold: updateResult.threshold,
+            teamId,
+          },
+        });
+      }
     } else {
       // get product info
       const product = await this.productsService.getProduct(productId);
