@@ -219,7 +219,7 @@ export class PaymentService {
     });
     return {
       paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.clientSecret,
+      clientSecret: paymentIntent.client_secret,
     };
   }
 
