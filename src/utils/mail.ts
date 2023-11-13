@@ -1,11 +1,5 @@
-import * as nodemailer from 'nodemailer';
+import { CourierClient } from '@trycourier/courier';
 
-const mailTransport = nodemailer.createTransport({
-  service: 'hotmail',
-  auth: {
-    user: process.env.NEXT_PUBLIC_MAIL_USERNAME,
-    pass: process.env.NEXT_PUBLIC_MAIL_PASSWORD,
-  },
+export const courier = CourierClient({
+  authorizationToken: process.env.NEXT_COURIER_API,
 });
-
-export default mailTransport;
