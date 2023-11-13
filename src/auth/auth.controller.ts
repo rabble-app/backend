@@ -1,7 +1,9 @@
+import ChangePasswordDto from './dto/change-password.dto';
 import EmailVerificationDto from './dto/email-verification.dto';
 import ResendEmailVerificationDto from './dto/resend-email-verification.dto';
 import ResetPasswordDto from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
+import { courier } from 'src/utils/mail';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
@@ -30,9 +32,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import ChangePasswordDto from './dto/change-password.dto';
-import { SendMailOptions } from 'nodemailer';
-import mailTransport from 'src/utils/mail';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -284,20 +283,16 @@ export class AuthController {
     });
 
     // send mail
-    const messageSubject = `Rabble account confirmation`;
-    const messageBody = `Click the link to verify your account<br/><br/> <a href="${`${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`}" alt="confirm account">Click here </a> `;
-    const mailOptions: SendMailOptions = {
-      from: process.env.NEXT_PUBLIC_MAIL_USERNAME,
-      to: user.email,
-      subject: messageSubject,
-      text: messageBody,
-      html: messageBody,
-    };
-    mailTransport.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return console.log(error);
-      }
-      console.log(`Message sent: to', ${info.messageId}`);
+    await courier.send({
+      message: {
+        to: {
+          email: user.email,
+        },
+        template: `${process.env.NEXT_COURIER_EMAIL_VERIFICATION_TEMPLATE}`,
+        data: {
+          url: `${process.env.NEXT_PUBLIC_EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
+        },
+      },
     });
     return formatResponse(
       user,
@@ -341,20 +336,16 @@ export class AuthController {
       producerId: user.producer.id,
     });
     // send mail
-    const messageSubject = `Password reset`;
-    const messageBody = `Click the link to reset your password<br/><br/> <a href="${`${process.env.RESET_PASSWORD_URL}?token=${token}`}" alt="Reset password">Click here </a> `;
-    const mailOptions: SendMailOptions = {
-      from: process.env.NEXT_PUBLIC_MAIL_USERNAME,
-      to: user.email,
-      subject: messageSubject,
-      text: messageBody,
-      html: messageBody,
-    };
-    mailTransport.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return console.log(error);
-      }
-      console.log(`Message sent: to', ${info.messageId}`);
+    await courier.send({
+      message: {
+        to: {
+          email: user.email,
+        },
+        template: `${process.env.NEXT_COURIER_RESET_PASSWORD_TEMPLATE}`,
+        data: {
+          url: `${process.env.NEXT_PUBLIC_EMAIL_URL}${process.env.RESET_PASSWORD_URL}?token=${token}`,
+        },
+      },
     });
 
     return formatResponse(
