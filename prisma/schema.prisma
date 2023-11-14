@@ -43,7 +43,9 @@ model User {
   shipping                      Shipping?
   teams                         TeamMember[]
   requests                      TeamRequest[]
-
+  chats                         Chat[]
+  
+  @@index([id])
   @@map("users")
 }
 
@@ -70,7 +72,9 @@ model Producer {
   products          Product[]
   recentlyViewed    RecentlyViewed[]
   reviews           Review[]
+  chats             Chat[]
 
+  @@index([id, userId]) 
   @@map("producers")
 }
 
@@ -80,7 +84,8 @@ model ProducerCategoryOption {
   createdAt  DateTime           @default(now()) @map("created_at")
   updatedAt  DateTime           @updatedAt @map("updated_at")
   categories ProducerCategory[]
-
+  
+  @@index([id])
   @@map("producer_categories_options")
 }
 
@@ -92,7 +97,8 @@ model ProducerCategory {
   updatedAt                DateTime               @updatedAt @map("updated_at")
   category                 ProducerCategoryOption @relation(fields: [producerCategoryOptionId], references: [id], onDelete: Cascade)
   producer                 Producer               @relation(fields: [producerId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, producerId, producerCategoryOptionId])
   @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
   @@map("producer_categories")
 }
@@ -106,7 +112,8 @@ model Shipping {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, userId])
   @@map("shippings")
 }
 
@@ -140,7 +147,8 @@ model Product {
   producer          Producer                    @relation(fields: [producerId], references: [id], onDelete: Cascade)
   recentlyViewed    RecentlyViewed[]
   reviews           Review[]
-
+  
+  @@index([id, producerId, categoryId])
   @@unique([name, producerId], name: "name_unique_producer")
   @@map("products")
 }
@@ -151,7 +159,8 @@ model ProductCategory {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   products  Product[]
-
+  
+  @@index([id])
   @@map("product_category")
 }
 
@@ -168,7 +177,8 @@ model PartitionedProductsBasket {
   order                         Order                           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product                       Product                         @relation(fields: [productId], references: [id], onDelete: Cascade)
   team                          BuyingTeam                      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, teamId, orderId, productId])
   @@map("partitioned_products_basket")
 }
 
@@ -182,7 +192,8 @@ model PartitionedProductUsersRecord {
   updatedAt         DateTime                  @updatedAt @map("updated_at")
   partionedBasket   PartitionedProductsBasket @relation(fields: [partionedBasketId], references: [id], onDelete: Cascade)
   owner             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, userId, partionedBasketId])
   @@unique([partionedBasketId, userId], name: "user_record")
   @@map("partitioned_product_users_record")
 }
@@ -212,7 +223,9 @@ model BuyingTeam {
   recentlyViewed    RecentlyViewed[]
   members           TeamMember[]
   requests          TeamRequest[]
-
+  chats             Chat[]
+ 
+  @@index([id, hostId, producerId])
   @@map("buying_teams")
 }
 
@@ -227,7 +240,8 @@ model Review {
   producer   Producer? @relation(fields: [producerId], references: [id], onDelete: Cascade)
   product    Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
   reviewer   User      @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, reviewerId, producerId, productId])
   @@map("reviews")
 }
 
@@ -242,7 +256,8 @@ model TeamMember {
   updatedAt        DateTime         @updatedAt @map("updated_at")
   team             BuyingTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, teamId, userId, status])
   @@unique([teamId, userId], name: "team_unique_user")
   @@map("team_members")
 }
@@ -257,7 +272,8 @@ model TeamRequest {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   team         BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, teamId, userId, status])
   @@map("team_requests")
 }
 
@@ -269,7 +285,8 @@ model Follower {
   updatedAt  DateTime @updatedAt @map("updated_at")
   follower   User     @relation("followings", fields: [followerId], references: [id], onDelete: Cascade)
   user       User     @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, userId])
   @@unique([userId, followerId], name: "user_unique_follower")
   @@map("followers")
 }
@@ -286,7 +303,8 @@ model Like {
   product    Product?    @relation(fields: [productId], references: [id], onDelete: Cascade)
   team       BuyingTeam? @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([userId, productId, producerId, teamId])
   @@unique([userId, productId], name: "user_unique_product")
   @@unique([userId, producerId], name: "user_unique_producer")
   @@unique([userId, teamId], name: "user_unique_team")
@@ -304,7 +322,8 @@ model Invite {
   updatedAt DateTime   @updatedAt @map("updated_at")
   team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, teamId, status])
   @@map("invites")
 }
 
@@ -324,7 +343,8 @@ model Order {
   team              BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   partionedProducts PartitionedProductsBasket[]
   payments          Payment[]
-
+  
+  @@index([id, teamId, status])
   @@map("orders")
 }
 
@@ -340,7 +360,8 @@ model Basket {
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, orderId, userId])
   @@unique([orderId, userId, productId], name: "user_unique_product")
   @@map("baskets")
 }
@@ -357,7 +378,8 @@ model BasketC {
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([id, userId, teamId])
   @@unique([teamId, userId, productId], name: "team_unique_product")
   @@map("basket_c")
 }
@@ -373,7 +395,8 @@ model Payment {
   updatedAt       DateTime      @updatedAt @map("updated_at")
   order           Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@index([orderId, userId, status])
   @@map("payments")
 }
 
@@ -391,7 +414,8 @@ model Notification {
   order      Order?      @relation(fields: [orderId], references: [id], onDelete: Cascade)
   team       BuyingTeam? @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+ 
+  @@index([userId])
   @@map("notifications")
 }
 
@@ -419,7 +443,7 @@ model Search {
   createdAt DateTime       @default(now()) @map("created_at")
   updatedAt DateTime       @updatedAt @map("updated_at")
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  @@index([userId])
   @@map("searches")
 }
 
@@ -430,7 +454,7 @@ model SearchCount {
   count     Int            @default(0)
   createdAt DateTime       @default(now()) @map("created_at")
   updatedAt DateTime       @updatedAt @map("updated_at")
-
+  @@index([keyword, category])
   @@map("search_count")
 }
 
@@ -445,6 +469,7 @@ model DeliveryAddress {
   customAddresses CustomDeliveryAddress[]
   producer        Producer                @relation(fields: [producerId], references: [id], onDelete: Cascade)
 
+  @@index([id, producerId])
   @@map("delivery_addresses")
 }
 
@@ -457,7 +482,25 @@ model CustomDeliveryAddress {
   updatedAt         DateTime        @updatedAt @map("updated_at")
   deliveryAddress   DeliveryAddress @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
 
+  @@index([id])
   @@map("custom_delivery_address")
+}
+
+model Chat {
+  id         String   @id @default(uuid())
+  teamId     String  @map("team_id")
+  userId     String   @map("user_id")
+  producerId String?  @map("producer_id")
+  text       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  team     BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  producer Producer?   @relation(fields: [producerId], references: [id], onDelete: Cascade)
+
+  @@index([userId, teamId, producerId])
+  @@map("chats")
 }
 
 enum OrderStatus {
