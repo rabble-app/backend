@@ -167,9 +167,9 @@ export class AuthService {
         to: {
           email: userRecord.email,
         },
-        template: `${process.env.NEXT_COURIER_EMAIL_VERIFICATION_TEMPLATE}`,
+        template: `${process.env.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${process.env.NEXT_PUBLIC_EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
+          url: `${process.env.EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
         },
       },
     });
