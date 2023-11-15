@@ -294,5 +294,25 @@ describe('AppController (e2e)', () => {
 
       return response;
     });
+
+    // pusher user auth
+    it('/auth/pusher-user (POST) pusher user authentication', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/pusher-user')
+        .set('Authorization', `Bearer ${jwtToken}invalid`)
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+
+    // pusher channel authorization
+    it('/auth/pusher-channel (POST) pusher channel authorization', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/pusher-channel')
+        .set('Authorization', `Bearer ${jwtToken}invalid`)
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
   });
 });
