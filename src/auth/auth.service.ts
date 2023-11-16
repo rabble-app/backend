@@ -207,6 +207,7 @@ export class AuthService {
       producerId: producerRecord.id,
     });
     producerRecord['token'] = token;
+    producerRecord['businessEmail'] = user.email;
     return producerRecord;
   }
 
