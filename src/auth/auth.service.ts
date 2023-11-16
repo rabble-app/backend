@@ -159,6 +159,7 @@ export class AuthService {
       userId: userRecord.id,
       producerId: producerRecord.id,
     });
+    producerRecord['businessEmail'] = createProducerDto.email;
     producerRecord['token'] = token;
 
     // send mail
@@ -207,6 +208,7 @@ export class AuthService {
       producerId: producerRecord.id,
     });
     producerRecord['token'] = token;
+    producerRecord['businessEmail'] = user.email;
     return producerRecord;
   }
 
