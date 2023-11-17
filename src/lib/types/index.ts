@@ -58,6 +58,12 @@ export interface IScheduleTeam {
   frequency: number;
   producerId: string;
 }
+
+export interface IGetChat {
+  teamId: string;
+  producerId: string;
+  offset: number;
+}
 export interface IPaymentAuth {
   stripeDefaultPaymentMethodId: string;
   amount: number;

@@ -9,6 +9,7 @@ import { PaymentModule } from './payment/payment.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { ChatsModule } from './chats/chats.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ScheduleModule } from './schedule/schedule.module';
     NotificationsModule,
     UploadsModule,
     ScheduleModule,
+    ChatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

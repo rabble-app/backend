@@ -21,6 +21,8 @@ import {
   Delete,
   Param,
   Headers,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -32,7 +34,17 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { PusherUserAuthDto } from './dto/pusher-user-auth.dto';
+import { AuthGuard } from './auth.guard';
+import * as Pusher from 'pusher';
+import { PusherChannelAuthDto } from './dto/pusher-channel-auth.dto';
 
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID,
+  key: process.env.PUSHER_APP_KEY,
+  secret: process.env.PUSHER_APP_SECRET,
+  cluster: process.env.PUSHER_APP_CLUSTER,
+});
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -288,9 +300,9 @@ export class AuthController {
         to: {
           email: user.email,
         },
-        template: `${process.env.NEXT_COURIER_EMAIL_VERIFICATION_TEMPLATE}`,
+        template: `${process.env.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${process.env.NEXT_PUBLIC_EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
+          url: `${process.env.EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
         },
       },
     });
@@ -341,9 +353,9 @@ export class AuthController {
         to: {
           email: user.email,
         },
-        template: `${process.env.NEXT_COURIER_RESET_PASSWORD_TEMPLATE}`,
+        template: `${process.env.RESET_PASSWORD_TEMPLATE}`,
         data: {
-          url: `${process.env.NEXT_PUBLIC_EMAIL_URL}${process.env.RESET_PASSWORD_URL}?token=${token}`,
+          url: `${process.env.EMAIL_URL}${process.env.RESET_PASSWORD_URL}?token=${token}`,
         },
       },
     });
@@ -430,5 +442,89 @@ export class AuthController {
       false,
       'Password changed successfully',
     );
+  }
+
+  /**
+   * Pusher user authentication.
+   * @param {Body} pusherUserAuthDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('pusher-user')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'User authenticated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async pusherUserAuth(
+    @Request() req,
+    @Body() pusherUserAuthDto: PusherUserAuthDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const user = await this.usersService.findUser({ id: userId });
+    if (!user) {
+      return formatResponse(
+        'User record not found',
+        res,
+        HttpStatus.NOT_FOUND,
+        true,
+        'Invalid token',
+      );
+    }
+    const userData = {
+      id: userId,
+      email: user.email,
+      fullname: `${user.lastName} ${user.firstName}`,
+    };
+    const authUser = pusher.authenticateUser(
+      pusherUserAuthDto.socket_id,
+      userData,
+    );
+    res.status(200);
+    res.send(authUser);
+  }
+
+  /**
+   * Pusher user channel authentication.
+   * @param {Body} pusherChannelAuthDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof AuthController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('pusher-channel')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'User added to pusher channel successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async pusherChannelAuth(
+    @Request() req,
+    @Body() pusherChannelAuthDto: PusherChannelAuthDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const user = await this.usersService.findUser({ id: userId });
+    if (!user) {
+      return formatResponse(
+        'User record not found',
+        res,
+        HttpStatus.NOT_FOUND,
+        true,
+        'Invalid token',
+      );
+    }
+    const presenceData = {
+      user_id: user.id,
+      user_info: {
+        fullname: `${user.lastName} ${user.firstName}`,
+      },
+    };
+    const auth = pusher.authorizeChannel(
+      pusherChannelAuthDto.socket_id,
+      pusherChannelAuthDto.channel_name,
+      presenceData,
+    );
+    res.status(200);
+    res.send(auth);
   }
 }
