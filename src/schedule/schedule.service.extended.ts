@@ -143,7 +143,7 @@ export class ScheduleServiceExtended {
               });
 
               // increment totalAmount
-              totalAmount += +product.price;
+              totalAmount += +productPrice;
             }
 
             // record the payment to be made by the user
