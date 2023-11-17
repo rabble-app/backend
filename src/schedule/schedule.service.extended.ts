@@ -133,7 +133,7 @@ export class ScheduleServiceExtended {
                   oldProduct.quantity,
                   oldProduct.productId,
                   oldProduct.userId,
-                  product.price,
+                  productPrice,
                 );
               }
 

@@ -328,7 +328,7 @@ export class PaymentService {
               item.quantity,
               item.productId,
               item.userId,
-              item.price,
+              item.price * item.quantity,
             );
           }
         });
