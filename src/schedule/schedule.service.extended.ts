@@ -122,7 +122,7 @@ export class ScheduleServiceExtended {
                 userId: oldProduct.userId,
                 productId: oldProduct.productId,
                 quantity: oldProduct.quantity,
-                price: productPrice,
+                price: product.price,
               };
 
               // check for portioned products
