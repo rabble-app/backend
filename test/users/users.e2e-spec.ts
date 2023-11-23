@@ -22,7 +22,7 @@ describe('UserController (e2e)', () => {
   let jwtToken: string;
   let producerCategoryOptionId: string;
   let producerCategoryId: string;
-  let deliveryAreaId: string;
+  // let deliveryAreaId: string;
 
   const producerData = {
     businessName,
@@ -482,7 +482,7 @@ describe('UserController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
-      deliveryAreaId = typeof response.body.data.id;
+      // deliveryAreaId = typeof response.body.data.id;
     },
     testTime,
   );
@@ -495,6 +495,21 @@ describe('UserController (e2e)', () => {
         .get(`/users/basket/`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({ buyingTeamId: '' }) //Todo: get buying team id
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
+
+  // return producer categories
+  it(
+    '/users/producer/categories(GET) should return producers categories',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/producer/categories`)
+        .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

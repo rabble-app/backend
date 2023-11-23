@@ -227,7 +227,7 @@ export class AuthService {
 
     userInfo.isVerified = true;
 
-    return await this.userService.updateProducer({
+    const result = await this.userService.updateProducer({
       where: {
         id: validToken.producerId,
       },
@@ -235,6 +235,12 @@ export class AuthService {
         isVerified: true,
       },
     });
+    const userToken = this.generateToken({
+      userId: result.userId,
+      producerId: result.id,
+    });
+    result['token'] = userToken;
+    return result;
   }
 
   async changePassword(
@@ -265,7 +271,6 @@ export class AuthService {
       );
       if (!checkPassword) return 3;
     }
-
     const password = await this.encryptPassword(changePasswordDto.newPassword);
 
     return await this.userService.updateUser({
