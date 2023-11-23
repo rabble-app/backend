@@ -271,7 +271,6 @@ export class AuthService {
       );
       if (!checkPassword) return 3;
     }
-
     const password = await this.encryptPassword(changePasswordDto.newPassword);
 
     return await this.userService.updateUser({
