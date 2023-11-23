@@ -15,7 +15,6 @@ import {
   DeliveryAddress,
   BasketC,
   Payment,
-  ProducerCategoryOption,
 } from '@prisma/client';
 import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import {

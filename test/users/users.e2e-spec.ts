@@ -22,7 +22,7 @@ describe('UserController (e2e)', () => {
   let jwtToken: string;
   let producerCategoryOptionId: string;
   let producerCategoryId: string;
-  let deliveryAreaId: string;
+  // let deliveryAreaId: string;
 
   const producerData = {
     businessName,
@@ -482,7 +482,7 @@ describe('UserController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
-      deliveryAreaId = typeof response.body.data.id;
+      // deliveryAreaId = typeof response.body.data.id;
     },
     testTime,
   );
