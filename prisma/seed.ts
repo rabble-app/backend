@@ -197,7 +197,7 @@ async function main() {
         'Cackleberry Farm, Burford Road, Stow-on-the-Wold, Cheltenham, Gloucestershire GL54 1JY',
       accountsEmail: 'claire@cacklebean.com',
       salesEmail: 'orders@cacklebean.com',
-      minimumTreshold: 48,
+      minimumTreshold: 40,
       website: 'https://www.cacklebean.com/',
       description:
         'Cackleberry Farm is nestled at the foot of a hill just outside Stow-on-the-Wold. Run by Paddy and Steph Bourns, their rare breed flocks are entirely free range and live in traditional chicken houses on 12 acres of land, with lots of perches.',
@@ -208,7 +208,7 @@ async function main() {
   const producerCategoryOptionB = await prisma.producerCategoryOption.findFirst(
     {
       where: {
-        name: 'Farm and Diary',
+        name: 'Farm and Dairy',
       },
       select: {
         id: true,

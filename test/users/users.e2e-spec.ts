@@ -502,4 +502,19 @@ describe('UserController (e2e)', () => {
     },
     testTime,
   );
+
+  // return producer categories
+  it(
+    '/users/producer/categories(GET) should return producers categories',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/producer/categories`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
 });
