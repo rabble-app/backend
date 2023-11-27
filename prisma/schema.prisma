@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["distinct", "fieldReference"]
+  previewFeatures = ["distinct", "fieldReference", "filteredRelationCount"]
   binaryTargets   = ["native", "linux-arm64-openssl-1.0.x"]
 }
 

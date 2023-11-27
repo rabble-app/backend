@@ -95,4 +95,46 @@ export class TeamsServiceExtension2 {
       },
     });
   }
+
+  async getAllBuyingTeamSubscription(offset = 0) {
+    const result = await this.prisma.$transaction([
+      this.prisma.buyingTeam.count(),
+      this.prisma.buyingTeam.findMany({
+        skip: offset,
+        take: 7,
+        select: {
+          host: {
+            select: {
+              lastName: true,
+              firstName: true,
+            },
+          },
+          name: true,
+          postalCode: true,
+          frequency: true,
+          createdAt: true,
+          nextDeliveryDate: true,
+          producer: {
+            select: {
+              businessName: true,
+            },
+          },
+          orders: {
+            select: {
+              status: true,
+              accumulatedAmount: true,
+              createdAt: true,
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return result;
+  }
 }

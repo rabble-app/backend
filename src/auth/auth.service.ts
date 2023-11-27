@@ -85,6 +85,7 @@ export class AuthService {
             phone: verifyOTPDto.phone,
             userId: userExist.id,
           });
+
           userExist['token'] = token;
         }
         // add firebase push notification token
