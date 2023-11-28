@@ -360,6 +360,7 @@ describe('TeamsController (e2e)', () => {
       },
       testTime,
     );
+
     // add a user as member of team after accepting invite
     it(
       '/teams/add-member(POST) should add a user as team member',
@@ -575,6 +576,62 @@ describe('TeamsController (e2e)', () => {
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
+
+    // return all buying team subscriptions
+    it(
+      '/team/subscriptions(GET) should return all buying teams subscriptions',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/subscriptions')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // return pending team orders
+    it(
+      '/team/orders?status=pending&offset=0(GET) should return pending orders',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/orders?status=pending')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // return successful team orders
+    it(
+      '/team/orders?status=successful&offset=0(GET) should return successful orders',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/orders?status=successful')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // return successful failed orders
+    it(
+      '/team/orders?status=failed&offset=0(GET) should return failed orders',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/orders?status=failed')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
       },
       testTime,
     );

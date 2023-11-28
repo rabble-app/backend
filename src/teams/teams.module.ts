@@ -10,6 +10,7 @@ import { TeamsServiceExtension } from './teams.service.extension';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
 import { TeamsControllerExtension } from './teams.controller.extension';
 import { AuthModule } from 'src/auth/auth.module';
+import { TeamsControllerExtension2 } from './teams.controller.extension2';
 
 @Module({
   imports: [
@@ -18,7 +19,11 @@ import { AuthModule } from 'src/auth/auth.module';
     NotificationsModule,
     forwardRef(() => AuthModule),
   ],
-  controllers: [TeamsController, TeamsControllerExtension],
+  controllers: [
+    TeamsController,
+    TeamsControllerExtension,
+    TeamsControllerExtension2,
+  ],
   providers: [
     TeamsService,
     PrismaService,

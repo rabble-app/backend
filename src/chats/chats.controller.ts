@@ -60,8 +60,19 @@ export class ChatsController {
   @Get()
   @ApiOkResponse({ description: 'Chats returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async findAll(@Request() req, @Query() queryObj: IGetChat) {
+  async findAll(
+    @Request() req,
+    @Query() queryObj: IGetChat,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const userId = req.user.id ? req.user.id : req.user.userId;
-    return await this.chatsService.findAll(queryObj, userId);
+    const result = await this.chatsService.findAll(queryObj, userId);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Chat added successfully',
+    );
   }
 }
