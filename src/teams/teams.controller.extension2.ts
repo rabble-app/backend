@@ -16,6 +16,7 @@ import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { OrderStatus } from '@prisma/client';
 
 @ApiTags('teams')
 @Controller('team')
@@ -50,6 +51,36 @@ export class TeamsControllerExtension2 {
       HttpStatus.OK,
       false,
       'Buying teams subscription returned successfully',
+    );
+  }
+
+  /**
+   * return  orders.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('orders')
+  @ApiOkResponse({
+    description: 'Orders returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getOrders(
+    @Query('offset') offset: number,
+    @Query('status') status: OrderStatus,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsServiceExtension2.getOrders(
+      status,
+      offset ? +offset : undefined,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Orders returned successfully',
     );
   }
 }

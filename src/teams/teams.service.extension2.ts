@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
+import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class TeamsServiceExtension2 {
@@ -131,6 +132,68 @@ export class TeamsServiceExtension2 {
               members: true,
             },
           },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    return result;
+  }
+
+  async getOrders(status: OrderStatus, offset = 0) {
+    const result = await this.prisma.$transaction([
+      this.prisma.order.count({ where: { status } }),
+      this.prisma.order.findMany({
+        skip: offset,
+        take: 7,
+        where: {
+          status,
+        },
+        select: {
+          id: true,
+          accumulatedAmount: true,
+          deliveryDate: true,
+          createdAt: true,
+          deadline: true,
+          status: true,
+          team: {
+            select: {
+              name: true,
+              postalCode: true,
+              producer: {
+                select: {
+                  businessName: true,
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              host: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  shipping: {
+                    select: {
+                      buildingNo: true,
+                      address: true,
+                      city: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       }),
     ]);

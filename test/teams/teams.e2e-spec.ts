@@ -594,6 +594,48 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // return pending team orders
+    it(
+      '/team/orders?status=pending&offset=0(GET) should return pending orders',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/orders?status=pending')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // return successful team orders
+    it(
+      '/team/orders?status=successful&offset=0(GET) should return successful orders',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/orders?status=successful')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // return successful failed orders
+    it(
+      '/team/orders?status=failed&offset=0(GET) should return failed orders',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/orders?status=failed')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // quit buying team
     it(
       '/teams/quit(DELETE)/:id should quit buying team',
