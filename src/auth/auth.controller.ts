@@ -481,8 +481,13 @@ export class AuthController {
       pusherUserAuthDto.socket_id,
       userData,
     );
-    res.status(200);
-    res.send(authUser);
+    return formatResponse(
+      authUser,
+      res,
+      HttpStatus.OK,
+      false,
+      'User authenticated successfully',
+    );
   }
 
   /**
@@ -524,7 +529,12 @@ export class AuthController {
       pusherChannelAuthDto.channel_name,
       presenceData,
     );
-    res.status(200);
-    res.send(auth);
+    return formatResponse(
+      auth,
+      res,
+      HttpStatus.OK,
+      false,
+      'User added to pusher channel successfully',
+    );
   }
 }
