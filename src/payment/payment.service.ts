@@ -366,7 +366,7 @@ export class PaymentService {
         orderId,
       },
       orderBy: {
-        updatedAt: 'desc',
+        createdAt: 'desc',
       },
       select: {
         accumulator: true,
