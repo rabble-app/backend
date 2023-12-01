@@ -26,6 +26,7 @@ export class ProductsService {
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
+      console.log(orderId);
     }
     return await this.prisma.product.findFirst({
       where: {
@@ -39,6 +40,7 @@ export class ProductsService {
             threshold: true,
             PartitionedProductUsersRecord: {
               select: {
+                id: true,
                 amount: true, // remove later
                 quantity: true,
                 owner: {
