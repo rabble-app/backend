@@ -26,7 +26,6 @@ export class ProductsService {
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
-      console.log(orderId);
     }
     return await this.prisma.product.findFirst({
       where: {
