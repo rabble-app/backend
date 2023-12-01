@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
+import { Order, OrderStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class TeamsServiceExtension2 {
@@ -94,5 +95,290 @@ export class TeamsServiceExtension2 {
         skipNextDelivery: true,
       },
     });
+  }
+
+  async getAllBuyingTeamSubscription(offset = 0): Promise<object> {
+    const result = await this.prisma.$transaction([
+      this.prisma.buyingTeam.count(),
+      this.prisma.buyingTeam.findMany({
+        skip: offset,
+        take: 7,
+        select: {
+          host: {
+            select: {
+              lastName: true,
+              firstName: true,
+            },
+          },
+          name: true,
+          postalCode: true,
+          frequency: true,
+          createdAt: true,
+          nextDeliveryDate: true,
+          producer: {
+            select: {
+              businessName: true,
+            },
+          },
+          orders: {
+            select: {
+              status: true,
+              accumulatedAmount: true,
+              createdAt: true,
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    return result;
+  }
+
+  async getOrders(status: OrderStatus, offset = 0): Promise<object> {
+    const result = await this.prisma.$transaction([
+      this.prisma.order.count({ where: { status } }),
+      this.prisma.order.findMany({
+        skip: offset,
+        take: 7,
+        where: {
+          status,
+        },
+        select: {
+          id: true,
+          accumulatedAmount: true,
+          deliveryDate: true,
+          createdAt: true,
+          deadline: true,
+          status: true,
+          team: {
+            select: {
+              name: true,
+              postalCode: true,
+              producer: {
+                select: {
+                  businessName: true,
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              host: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  shipping: {
+                    select: {
+                      buildingNo: true,
+                      address: true,
+                      city: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    return result;
+  }
+
+  async getSingleOrder(id: string): Promise<object> {
+    const result = await this.prisma.order.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        accumulatedAmount: true,
+        createdAt: true,
+        status: true,
+        team: {
+          select: {
+            name: true,
+            producer: {
+              select: {
+                businessName: true,
+                user: {
+                  select: {
+                    shipping: {
+                      select: {
+                        buildingNo: true,
+                        address: true,
+                        city: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
+                shipping: {
+                  select: {
+                    buildingNo: true,
+                    address: true,
+                    city: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        basket: {
+          select: {
+            price: true,
+            quantity: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return result;
+  }
+
+  async updateOrder(params: {
+    where: Prisma.OrderWhereUniqueInput;
+    data: Prisma.OrderUpdateInput;
+  }): Promise<Order> {
+    const { where, data } = params;
+    return await this.prisma.order.update({
+      data,
+      where,
+    });
+  }
+
+  async search(keyword: string): Promise<object[] | null> {
+    const result = await this.prisma.order.findMany({
+      where: {
+        OR: [
+          {
+            team: {
+              name: {
+                contains: keyword,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            team: {
+              producer: {
+                businessName: {
+                  contains: keyword,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+          {
+            team: {
+              host: {
+                firstName: {
+                  contains: keyword,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+          {
+            team: {
+              host: {
+                lastName: {
+                  contains: keyword,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+          {
+            team: {
+              postalCode: {
+                contains: keyword,
+                mode: 'insensitive',
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        accumulatedAmount: true,
+        createdAt: true,
+        status: true,
+        team: {
+          select: {
+            name: true,
+            producer: {
+              select: {
+                businessName: true,
+                user: {
+                  select: {
+                    shipping: {
+                      select: {
+                        buildingNo: true,
+                        address: true,
+                        city: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            host: {
+              select: {
+                firstName: true,
+                lastName: true,
+                shipping: {
+                  select: {
+                    buildingNo: true,
+                    address: true,
+                    city: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        basket: {
+          select: {
+            price: true,
+            quantity: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return result;
   }
 }

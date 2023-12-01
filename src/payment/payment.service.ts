@@ -145,7 +145,7 @@ export class PaymentService {
         teamId: teamId,
       },
       orderBy: {
-        updatedAt: 'desc',
+        createdAt: 'desc',
       },
     });
   }

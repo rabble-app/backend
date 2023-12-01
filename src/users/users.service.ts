@@ -111,6 +111,17 @@ export class UsersService {
   async createDeliveryAddress(
     deliveryAddressDto: DeliveryAddressDto,
   ): Promise<Shipping> {
+    if (deliveryAddressDto.postalCode) {
+      await this.updateUser({
+        where: {
+          id: deliveryAddressDto.userId,
+        },
+        data: {
+          postalCode: deliveryAddressDto.postalCode,
+        },
+      });
+      delete deliveryAddressDto.postalCode;
+    }
     return await this.prisma.shipping.create({
       data: deliveryAddressDto,
     });
@@ -602,5 +613,16 @@ export class UsersService {
       };
       return await stripe.customers.update(customerId, params);
     } catch (error) {}
+  }
+
+  async getProducersCategories(): Promise<
+    { id: string; name: string }[] | null
+  > {
+    return await this.prisma.producerCategoryOption.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 }

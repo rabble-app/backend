@@ -30,6 +30,7 @@ export class ChatsService {
         ...condition,
       },
       select: {
+        userId: true,
         text: true,
         user: {
           select: {

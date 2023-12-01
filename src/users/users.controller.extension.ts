@@ -276,4 +276,27 @@ export class UsersControllerExtension {
       'User basket returned successfully',
     );
   }
+
+  /**
+   * return producer categories.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('producers/categories')
+  @ApiOkResponse({ description: 'Producer categories returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getProducerCategories(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getProducersCategories();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Producer categories returned successfully',
+    );
+  }
 }

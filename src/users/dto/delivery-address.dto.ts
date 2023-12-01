@@ -36,4 +36,13 @@ export class DeliveryAddressDto {
   @ValidateIf((o) => o.city)
   @IsString()
   city: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The postal code of the user',
+    required: false,
+  })
+  @ValidateIf((o) => o.postalCode)
+  @IsString()
+  postalCode: string;
 }
