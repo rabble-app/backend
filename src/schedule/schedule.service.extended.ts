@@ -7,7 +7,6 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
-import exp from 'node:constants';
 
 @Injectable()
 export class ScheduleServiceExtended {
