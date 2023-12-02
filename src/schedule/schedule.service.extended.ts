@@ -7,6 +7,7 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
+import exp from 'node:constants';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -35,17 +36,7 @@ export class ScheduleServiceExtended {
           },
         });
 
-        // get the order amount
-        const expectedPayments = await this.prisma.payment.aggregate({
-          where: {
-            orderId: order.id,
-          },
-          _sum: {
-            amount: true,
-          },
-        });
-
-        if (capturedPayments._sum.amount >= expectedPayments._sum.amount) {
+        if (capturedPayments._sum.amount >= order.minimumTreshold) {
           await this.paymentService.updateOrder({
             where: {
               id: order.id,
