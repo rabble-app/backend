@@ -314,38 +314,43 @@ export class PaymentService {
         };
       });
 
-      await this.prisma.basketC.createMany({
+      const result = await this.prisma.basketC.createMany({
         data: basketRecord,
       });
 
-      // check for portioned products
-      if (addBulkBasketDto.basket && addBulkBasketDto.basket.length > 0) {
-        addBulkBasketDto.basket.forEach(async (item) => {
-          if (item.type && item.type == 'PORTIONED_SINGLE_PRODUCT') {
-            await this.processPortionedProduct(
-              addBulkBasketDto.teamId,
-              item.orderId,
-              item.quantity,
-              item.productId,
-              item.userId,
-              item.price * item.quantity,
-            );
-          }
+      if (!addBulkBasketDto.deadlineReached) {
+        // check for portioned products
+        if (addBulkBasketDto.basket && addBulkBasketDto.basket.length > 0) {
+          addBulkBasketDto.basket.forEach(async (item) => {
+            if (item.type && item.type == 'PORTIONED_SINGLE_PRODUCT') {
+              await this.processPortionedProduct(
+                addBulkBasketDto.teamId,
+                item.orderId,
+                item.quantity,
+                item.productId,
+                item.userId,
+                item.price * item.quantity,
+              );
+            }
+          });
+        }
+        const basketRecord2 = addBulkBasketDto.basket.map(
+          (item: AddToBasket) => {
+            return {
+              orderId: item.orderId,
+              userId: item.userId,
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+            };
+          },
+        );
+
+        return await this.prisma.basket.createMany({
+          data: basketRecord2,
         });
       }
-      const basketRecord2 = addBulkBasketDto.basket.map((item: AddToBasket) => {
-        return {
-          orderId: item.orderId,
-          userId: item.userId,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-        };
-      });
-
-      return await this.prisma.basket.createMany({
-        data: basketRecord2,
-      });
+      return result;
     } catch (error) {
       console.log(error);
     }
@@ -387,7 +392,7 @@ export class PaymentService {
         },
       });
 
-      if (updateResult.accumulator == updateResult.threshold) {
+      if (updateResult.accumulator >= updateResult.threshold) {
         // create new basket for that portionedProduct
         await this.prisma.partitionedProductsBasket.create({
           data: {
