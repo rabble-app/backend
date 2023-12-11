@@ -104,6 +104,7 @@ export class TeamsServiceExtension2 {
         skip: offset,
         take: 7,
         select: {
+          id: true,
           host: {
             select: {
               lastName: true,

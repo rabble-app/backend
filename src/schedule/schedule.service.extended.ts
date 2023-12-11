@@ -35,17 +35,7 @@ export class ScheduleServiceExtended {
           },
         });
 
-        // get the order amount
-        const expectedPayments = await this.prisma.payment.aggregate({
-          where: {
-            orderId: order.id,
-          },
-          _sum: {
-            amount: true,
-          },
-        });
-
-        if (capturedPayments._sum.amount >= expectedPayments._sum.amount) {
+        if (capturedPayments._sum.amount >= order.minimumTreshold) {
           await this.paymentService.updateOrder({
             where: {
               id: order.id,

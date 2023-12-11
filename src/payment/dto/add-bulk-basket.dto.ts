@@ -9,6 +9,7 @@ import {
   IsNumber,
   IsEnum,
   ValidateIf,
+  IsBoolean,
 } from 'class-validator';
 import { ProductType } from '../../lib/types';
 
@@ -87,4 +88,14 @@ export class AddBulkBasketDto {
   @IsNotEmpty()
   @IsString()
   teamId: string;
+
+  @ApiProperty({
+    type: 'boolean',
+    description: 'indicates whether order deadline has been reached',
+    required: true,
+  })
+  @ValidateIf((o) => o.deadlineReached)
+  @IsNotEmpty()
+  @IsBoolean()
+  deadlineReached: boolean;
 }
