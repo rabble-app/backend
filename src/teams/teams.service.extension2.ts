@@ -216,6 +216,7 @@ export class TeamsServiceExtension2 {
         accumulatedAmount: true,
         createdAt: true,
         status: true,
+        deliveryDate: true,
         team: {
           select: {
             name: true,
@@ -239,6 +240,7 @@ export class TeamsServiceExtension2 {
               select: {
                 firstName: true,
                 lastName: true,
+                postalCode: true,
                 shipping: {
                   select: {
                     buildingNo: true,
@@ -258,6 +260,9 @@ export class TeamsServiceExtension2 {
               select: {
                 id: true,
                 name: true,
+                vat: true,
+                unitsOfMeasurePerSubUnit: true,
+                measuresPerSubUnit: true,
               },
             },
           },
