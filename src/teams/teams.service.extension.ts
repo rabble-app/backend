@@ -212,6 +212,22 @@ export class TeamsServiceExtension {
             },
           },
         },
+        chats: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            text: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
         _count: {
           select: { orders: true },
         },
