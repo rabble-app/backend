@@ -211,3 +211,16 @@ export type TeamMemberWithUserAndTeamInfo = Prisma.TeamMemberGetPayload<{
 export interface IOrderDeadline {
   deadline: Date;
 }
+export interface ITeamInformation {
+  hostId: string;
+  producer: { businessName: string };
+  members: {
+    user: {
+      id: string;
+      imageUrl: string;
+      firstName: string;
+      lastName: string;
+    };
+  }[];
+  name: string;
+}

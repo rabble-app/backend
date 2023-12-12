@@ -692,6 +692,20 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // search feature for subscription
+    it(
+      '/team/subscriptions/search/:keyword(GET) should return 200 on a successful search',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/team/subscriptions/search/:keyword')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // quit buying team
     it(
       '/teams/quit(DELETE)/:id should quit buying team',

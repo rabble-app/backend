@@ -288,7 +288,10 @@ export class TeamsServiceExtension2 {
     });
   }
 
-  async search(keyword: string, status: OrderStatus): Promise<object[] | null> {
+  async ordersSearch(
+    keyword: string,
+    status: OrderStatus,
+  ): Promise<object[] | null> {
     const result = await this.prisma.order.findMany({
       where: {
         OR: [
@@ -385,6 +388,72 @@ export class TeamsServiceExtension2 {
             },
           },
         },
+      },
+    });
+    return result;
+  }
+
+  async subscriptionSearch(keyword: string): Promise<object[] | null> {
+    const result = await this.prisma.buyingTeam.findMany({
+      where: {
+        OR: [
+          {
+            host: {
+              firstName: {
+                contains: keyword,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            host: {
+              lastName: {
+                contains: keyword,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            postalCode: {
+              contains: keyword,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        host: {
+          select: {
+            lastName: true,
+            firstName: true,
+          },
+        },
+        name: true,
+        postalCode: true,
+        frequency: true,
+        createdAt: true,
+        nextDeliveryDate: true,
+        producer: {
+          select: {
+            businessName: true,
+          },
+        },
+        orders: {
+          select: {
+            status: true,
+            accumulatedAmount: true,
+            createdAt: true,
+          },
+        },
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
     return result;

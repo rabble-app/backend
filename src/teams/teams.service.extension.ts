@@ -15,6 +15,7 @@ import { TeamsService } from './teams.service';
 import { UsersService } from '../users/users.service';
 import {
   IOrderDeadline,
+  ITeamInformation,
   Status,
   TeamMemberShip,
   TeamMemberWithUserAndTeamInfo,
@@ -159,8 +160,11 @@ export class TeamsServiceExtension {
     return result;
   }
 
-  async getTeamInfo(id: string, trim = 'false'): Promise<BuyingTeam | null> {
-    let result;
+  async getTeamInfo(
+    id: string,
+    trim = 'false',
+  ): Promise<BuyingTeam | ITeamInformation> {
+    let result: BuyingTeam | ITeamInformation | PromiseLike<BuyingTeam>;
     if (trim && trim == 'true') {
       result = await this.prisma.buyingTeam.findFirst({
         where: {
@@ -178,6 +182,7 @@ export class TeamsServiceExtension {
             select: {
               user: {
                 select: {
+                  id: true,
                   firstName: true,
                   lastName: true,
                   imageUrl: true,
