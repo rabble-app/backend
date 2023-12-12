@@ -373,9 +373,25 @@ export class TeamsService {
 
   async findManyBuyingTeam(
     buyingTeamWhereInput: Prisma.BuyingTeamWhereInput,
-  ): Promise<BuyingTeam[] | null> {
+  ): Promise<
+    | {
+        id: string;
+        name: string;
+        imageUrl: string;
+        producerId: string;
+        hostId: string;
+      }[]
+    | null
+  > {
     return await this.prisma.buyingTeam.findMany({
       where: buyingTeamWhereInput,
+      select: {
+        id: true,
+        name: true,
+        producerId: true,
+        imageUrl: true,
+        hostId: true,
+      },
     });
   }
 
