@@ -200,3 +200,7 @@ export type TeamMemberWithUserAndTeamInfo = Prisma.TeamMemberGetPayload<{
     };
   };
 }>;
+
+export interface IOrderDeadline {
+  deadline: Date;
+}
