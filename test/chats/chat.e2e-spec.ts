@@ -100,5 +100,19 @@ describe('ChatsController (e2e)', () => {
       },
       testTime,
     );
+
+    // retrieve user's buying teams chat intro
+    it(
+      '/chats/teams(GET) should return user buying teams chat intro',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('chats/teams')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

@@ -60,4 +60,38 @@ export class ChatsService {
       },
     });
   }
+
+  async findUserBuyingTeamChats(userId: string) {
+    return await this.prisma.teamMember.findMany({
+      where: {
+        userId,
+        status: 'APPROVED',
+      },
+      select: {
+        team: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+            chats: {
+              select: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                text: true,
+                createdAt: true,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+  }
 }

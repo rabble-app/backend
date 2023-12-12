@@ -231,6 +231,7 @@ export class TeamsServiceExtension {
         },
         select: {
           deadline: true,
+          id: true,
         },
         orderBy: {
           createdAt: 'desc',
