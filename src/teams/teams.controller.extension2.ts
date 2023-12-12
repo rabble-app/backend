@@ -173,6 +173,7 @@ export class TeamsControllerExtension2 {
   })
   async search(
     @Param('keyword') keyword: string,
+    @Query('status') status: OrderStatus,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     if (keyword.length < 3) {
@@ -184,7 +185,11 @@ export class TeamsControllerExtension2 {
         `Keyword must be greater than 2 characters`,
       );
     }
-    const result = await this.teamsServiceExtension2.search(keyword);
+    const queryOrderStatus = status ? status : OrderStatus.PENDING;
+    const result = await this.teamsServiceExtension2.search(
+      keyword,
+      queryOrderStatus,
+    );
     return formatResponse(
       result,
       res,

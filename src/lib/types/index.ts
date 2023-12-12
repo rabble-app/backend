@@ -12,6 +12,13 @@ export enum Status {
   REMOVED = 'REMOVED',
 }
 
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PENDING_DELIVERY = 'PENDING_DELIVERY',
+  SUCCESSFUL = 'SUCCESSFUL',
+  FAILED = 'FAILED',
+}
+
 export enum PasswordChangeRoute {
   PASSWORD_RESET = 'PASSWORD_RESET',
   SETTINGS = 'SETTINGS',
