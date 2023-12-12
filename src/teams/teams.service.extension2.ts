@@ -232,6 +232,7 @@ export class TeamsServiceExtension2 {
                         city: true,
                       },
                     },
+                    postalCode: true,
                   },
                 },
               },
