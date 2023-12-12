@@ -13,6 +13,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { IAPIResponse } from '../lib/types';
@@ -156,7 +157,7 @@ export class TeamsControllerExtension2 {
   }
 
   /**
-   * search feature.
+   * search feature for orders.
    * @param {Response} res - The payload.
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
@@ -171,7 +172,12 @@ export class TeamsControllerExtension2 {
     required: true,
     description: 'The keyword of the search',
   })
-  async search(
+  @ApiQuery({
+    name: 'status',
+    required: true,
+    description: 'The order status',
+  })
+  async orderSearch(
     @Param('keyword') keyword: string,
     @Query('status') status: OrderStatus,
     @Res({ passthrough: true }) res: Response,
@@ -186,9 +192,50 @@ export class TeamsControllerExtension2 {
       );
     }
     const queryOrderStatus = status ? status : OrderStatus.PENDING;
-    const result = await this.teamsServiceExtension2.search(
+    const result = await this.teamsServiceExtension2.ordersSearch(
       keyword,
       queryOrderStatus,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Search result returned successfully',
+    );
+  }
+
+  /**
+   * search feature for subscription.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/subscriptions/search/:keyword/')
+  @ApiOkResponse({ description: 'Search result returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiParam({
+    name: 'keyword',
+    required: true,
+    description: 'The keyword of the search',
+  })
+  async subscriptionSearch(
+    @Param('keyword') keyword: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    if (keyword.length < 3) {
+      return formatResponse(
+        'Invalid keyword length',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        `Keyword must be greater than 2 characters`,
+      );
+    }
+    const result = await this.teamsServiceExtension2.subscriptionSearch(
+      keyword,
     );
     return formatResponse(
       result,
