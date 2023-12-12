@@ -15,6 +15,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { IAPIResponse } from '../lib/types';
@@ -113,11 +114,18 @@ export class TeamsControllerExtension {
     required: true,
     description: 'The id of the buying team',
   })
+  @ApiQuery({
+    name: 'trim',
+    required: false,
+    description:
+      'This determines if a shorter version of the response should be supplied, it takes a true and false value',
+  })
   async getBuyingTeam(
     @Param('id') id: string,
+    @Query('trim') trim: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension.getTeamInfo(id);
+    const result = await this.teamsServiceExtension.getTeamInfo(id, trim);
     return formatResponse(
       result,
       res,
@@ -142,6 +150,12 @@ export class TeamsControllerExtension {
     name: 'id',
     required: true,
     description: 'The id of the buying team',
+  })
+  @ApiQuery({
+    name: 'trim',
+    required: false,
+    description:
+      'This determines if a shorter version of the response should be supplied, it takes a true and false value',
   })
   async getBuyingTeamOrderStatus(
     @Param('id') id: string,

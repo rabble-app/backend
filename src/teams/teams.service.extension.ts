@@ -159,80 +159,109 @@ export class TeamsServiceExtension {
     return result;
   }
 
-  async getTeamInfo(id: string): Promise<BuyingTeam | null> {
-    return await this.prisma.buyingTeam.findFirst({
-      where: {
-        id,
-      },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                email: true,
-                firstName: true,
-                lastName: true,
-                phone: true,
-                imageUrl: true,
-                cardLastFourDigits: true,
+  async getTeamInfo(id: string, trim = 'false'): Promise<BuyingTeam | null> {
+    let result;
+    if (trim && trim == 'true') {
+      result = await this.prisma.buyingTeam.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          name: true,
+          producer: {
+            select: {
+              businessName: true,
+            },
+          },
+          members: {
+            select: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  imageUrl: true,
+                },
               },
             },
           },
         },
-        host: {
-          include: {
-            shipping: true,
-          },
+      });
+    } else {
+      result = await this.prisma.buyingTeam.findFirst({
+        where: {
+          id,
         },
-        producer: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-            categories: {
-              include: {
-                category: true,
-              },
-            },
-          },
-        },
-        requests: {
-          where: {
-            status: 'PENDING',
-          },
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                  imageUrl: true,
+                  cardLastFourDigits: true,
+                },
               },
             },
           },
-        },
-        chats: {
-          select: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
+          host: {
+            include: {
+              shipping: true,
+            },
+          },
+          producer: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              categories: {
+                include: {
+                  category: true,
+                },
               },
             },
-            text: true,
-            createdAt: true,
           },
-          orderBy: {
-            createdAt: 'desc',
+          requests: {
+            where: {
+              status: 'PENDING',
+            },
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
           },
-          take: 1,
+          chats: {
+            select: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              text: true,
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+          _count: {
+            select: { orders: true },
+          },
         },
-        _count: {
-          select: { orders: true },
-        },
-      },
-    });
+      });
+    }
+    return result;
   }
 
   async getTeamCurrentOrderStatus(
