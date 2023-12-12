@@ -14,6 +14,7 @@ import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
 import { UsersService } from '../users/users.service';
 import {
+  IOrderDeadline,
   Status,
   TeamMemberShip,
   TeamMemberWithUserAndTeamInfo,
@@ -158,106 +159,173 @@ export class TeamsServiceExtension {
     return result;
   }
 
-  async getTeamInfo(id: string): Promise<BuyingTeam | null> {
-    return await this.prisma.buyingTeam.findFirst({
-      where: {
-        id,
-      },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                email: true,
-                firstName: true,
-                lastName: true,
-                phone: true,
-                imageUrl: true,
-                cardLastFourDigits: true,
+  async getTeamInfo(id: string, trim = 'false'): Promise<BuyingTeam | null> {
+    let result;
+    if (trim && trim == 'true') {
+      result = await this.prisma.buyingTeam.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          name: true,
+          hostId: true,
+          producer: {
+            select: {
+              businessName: true,
+            },
+          },
+          members: {
+            select: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  imageUrl: true,
+                },
               },
             },
           },
         },
-        host: {
-          include: {
-            shipping: true,
-          },
+      });
+    } else {
+      result = await this.prisma.buyingTeam.findFirst({
+        where: {
+          id,
         },
-        producer: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-            categories: {
-              include: {
-                category: true,
-              },
-            },
-          },
-        },
-        requests: {
-          where: {
-            status: 'PENDING',
-          },
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                  imageUrl: true,
+                  cardLastFourDigits: true,
+                },
               },
             },
           },
+          host: {
+            include: {
+              shipping: true,
+            },
+          },
+          producer: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              categories: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
+          requests: {
+            where: {
+              status: 'PENDING',
+            },
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+          chats: {
+            select: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              text: true,
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+          _count: {
+            select: { orders: true },
+          },
         },
-        _count: {
-          select: { orders: true },
-        },
-      },
-    });
+      });
+    }
+    return result;
   }
 
-  async getTeamCurrentOrderStatus(teamId: string): Promise<Order | null> {
-    return await this.prisma.order.findFirst({
-      where: {
-        teamId,
-      },
-      include: {
-        basket: {
-          include: {
-            product: {
-              select: {
-                name: true,
+  async getTeamCurrentOrderStatus(
+    teamId: string,
+    trim = 'false',
+  ): Promise<Order | IOrderDeadline> {
+    let result: IOrderDeadline | PromiseLike<Order>;
+    if (trim && trim == 'true') {
+      result = await this.prisma.order.findFirst({
+        where: {
+          teamId,
+        },
+        select: {
+          deadline: true,
+          id: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } else {
+      result = await this.prisma.order.findFirst({
+        where: {
+          teamId,
+        },
+        include: {
+          basket: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                },
               },
             },
           },
-        },
-        payments: true,
-        partionedProducts: {
-          select: {
-            accumulator: true,
-            threshold: true,
-            product: true,
-            PartitionedProductUsersRecord: {
-              select: {
-                amount: true, // remove later
-                quantity: true,
-                owner: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
+          payments: true,
+          partionedProducts: {
+            select: {
+              accumulator: true,
+              threshold: true,
+              product: true,
+              PartitionedProductUsersRecord: {
+                select: {
+                  amount: true, // remove later
+                  quantity: true,
+                  owner: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
+    return result;
   }
 
   async nudgeTeam(id: string): Promise<boolean> {

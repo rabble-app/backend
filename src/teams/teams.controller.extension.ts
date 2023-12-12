@@ -7,6 +7,7 @@ import {
   Get,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import {
@@ -14,6 +15,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { IAPIResponse } from '../lib/types';
@@ -112,11 +114,18 @@ export class TeamsControllerExtension {
     required: true,
     description: 'The id of the buying team',
   })
+  @ApiQuery({
+    name: 'trim',
+    required: false,
+    description:
+      'This determines if a shorter version of the response should be supplied, it takes a true and false value',
+  })
   async getBuyingTeam(
     @Param('id') id: string,
+    @Query('trim') trim: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension.getTeamInfo(id);
+    const result = await this.teamsServiceExtension.getTeamInfo(id, trim);
     return formatResponse(
       result,
       res,
@@ -142,12 +151,20 @@ export class TeamsControllerExtension {
     required: true,
     description: 'The id of the buying team',
   })
+  @ApiQuery({
+    name: 'trim',
+    required: false,
+    description:
+      'This determines if a shorter version of the response should be supplied, it takes a true and false value',
+  })
   async getBuyingTeamOrderStatus(
     @Param('id') id: string,
+    @Query('trim') trim: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.teamsServiceExtension.getTeamCurrentOrderStatus(
       id,
+      trim,
     );
     return formatResponse(
       result,
@@ -364,14 +381,14 @@ export class TeamsControllerExtension {
    */
   @Post('check-name/:keyword')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Buying team created successfully' })
+  @ApiOkResponse({ description: 'Buying team name is taken' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiParam({
     name: 'keyword',
     required: true,
     description: 'The name you want to check',
   })
-  async createBuyingTeam(
+  async checkBuyingTeamExist(
     @Param('keyword') name: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
@@ -385,6 +402,44 @@ export class TeamsControllerExtension {
       HttpStatus.OK,
       false,
       `Buying team name is ${isExisting ? 'taken' : 'still available'}`,
+    );
+  }
+
+  /**
+   * check if buying team exist for a postal code under a producer
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('check-producer-group/:producerId/:postalCode')
+  @ApiOkResponse({ description: 'Buying teams returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'producerId',
+    required: true,
+    description: 'The id of the producer',
+  })
+  @ApiParam({
+    name: 'postalCode',
+    required: true,
+    description: 'The postal code',
+  })
+  async checkProducerBuyingTeam(
+    @Param('producerId') producerId: string,
+    @Param('postalCode') postalCode: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsService.findManyBuyingTeam({
+      producerId,
+      postalCode,
+    });
+
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      `Buying teams returned successfully`,
     );
   }
 }

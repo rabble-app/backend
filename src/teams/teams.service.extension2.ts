@@ -49,6 +49,7 @@ export class TeamsServiceExtension2 {
     record['teamName'] = team.name;
     record['producerInfo'] = producer;
     record['orderId'] = recentOrder.id;
+    record['deadline'] = recentOrder.deadline;
     return record;
   }
 
@@ -72,7 +73,9 @@ export class TeamsServiceExtension2 {
     });
   }
 
-  async returnCurrentOrder(teamId: string): Promise<{ id: string }> {
+  async returnCurrentOrder(
+    teamId: string,
+  ): Promise<{ id: string; deadline: Date }> {
     return await this.prisma.order.findFirst({
       where: {
         teamId,
@@ -82,6 +85,7 @@ export class TeamsServiceExtension2 {
       },
       select: {
         id: true,
+        deadline: true,
       },
     });
   }
@@ -212,11 +216,15 @@ export class TeamsServiceExtension2 {
         accumulatedAmount: true,
         createdAt: true,
         status: true,
+        deliveryDate: true,
+        deadline: true,
         team: {
           select: {
             name: true,
             producer: {
               select: {
+                vat: true,
+                paymentTerm: true,
                 businessName: true,
                 user: {
                   select: {
@@ -227,6 +235,7 @@ export class TeamsServiceExtension2 {
                         city: true,
                       },
                     },
+                    postalCode: true,
                   },
                 },
               },
@@ -235,6 +244,7 @@ export class TeamsServiceExtension2 {
               select: {
                 firstName: true,
                 lastName: true,
+                postalCode: true,
                 shipping: {
                   select: {
                     buildingNo: true,
@@ -254,6 +264,9 @@ export class TeamsServiceExtension2 {
               select: {
                 id: true,
                 name: true,
+                vat: true,
+                unitsOfMeasurePerSubUnit: true,
+                measuresPerSubUnit: true,
               },
             },
           },
@@ -275,7 +288,7 @@ export class TeamsServiceExtension2 {
     });
   }
 
-  async search(keyword: string): Promise<object[] | null> {
+  async search(keyword: string, status: OrderStatus): Promise<object[] | null> {
     const result = await this.prisma.order.findMany({
       where: {
         OR: [
@@ -286,6 +299,7 @@ export class TeamsServiceExtension2 {
                 mode: 'insensitive',
               },
             },
+            status,
           },
           {
             team: {
@@ -296,6 +310,7 @@ export class TeamsServiceExtension2 {
                 },
               },
             },
+            status,
           },
           {
             team: {
@@ -306,6 +321,7 @@ export class TeamsServiceExtension2 {
                 },
               },
             },
+            status,
           },
           {
             team: {
@@ -316,6 +332,7 @@ export class TeamsServiceExtension2 {
                 },
               },
             },
+            status,
           },
           {
             team: {
@@ -324,27 +341,29 @@ export class TeamsServiceExtension2 {
                 mode: 'insensitive',
               },
             },
+            status,
           },
         ],
       },
       select: {
         id: true,
         accumulatedAmount: true,
+        deliveryDate: true,
         createdAt: true,
+        deadline: true,
         status: true,
         team: {
           select: {
             name: true,
+            postalCode: true,
             producer: {
               select: {
                 businessName: true,
-                user: {
+                categories: {
                   select: {
-                    shipping: {
+                    category: {
                       select: {
-                        buildingNo: true,
-                        address: true,
-                        city: true,
+                        name: true,
                       },
                     },
                   },
@@ -362,18 +381,6 @@ export class TeamsServiceExtension2 {
                     city: true,
                   },
                 },
-              },
-            },
-          },
-        },
-        basket: {
-          select: {
-            price: true,
-            quantity: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
               },
             },
           },

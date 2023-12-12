@@ -75,4 +75,25 @@ export class ChatsController {
       'Chat added successfully',
     );
   }
+
+  @UseGuards(AuthGuard)
+  @Get('teams')
+  @ApiOkResponse({
+    description: 'User buying team chats intro returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async returnUsersTeamChatsIntro(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const result = await this.chatsService.findUserBuyingTeamChats(userId);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User buying team chats intro returned successfully',
+    );
+  }
 }
