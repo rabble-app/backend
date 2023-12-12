@@ -168,6 +168,7 @@ export class TeamsServiceExtension {
         },
         select: {
           name: true,
+          hostId: true,
           producer: {
             select: {
               businessName: true,
