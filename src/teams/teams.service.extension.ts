@@ -14,6 +14,7 @@ import { AuthService } from '../auth/auth.service';
 import { TeamsService } from './teams.service';
 import { UsersService } from '../users/users.service';
 import {
+  IOrderDeadline,
   Status,
   TeamMemberShip,
   TeamMemberWithUserAndTeamInfo,
@@ -218,46 +219,65 @@ export class TeamsServiceExtension {
     });
   }
 
-  async getTeamCurrentOrderStatus(teamId: string): Promise<Order | null> {
-    return await this.prisma.order.findFirst({
-      where: {
-        teamId,
-      },
-      include: {
-        basket: {
-          include: {
-            product: {
-              select: {
-                name: true,
+  async getTeamCurrentOrderStatus(
+    teamId: string,
+    trim = 'false',
+  ): Promise<Order | IOrderDeadline> {
+    let result: IOrderDeadline | PromiseLike<Order>;
+    if (trim && trim == 'true') {
+      result = await this.prisma.order.findFirst({
+        where: {
+          teamId,
+        },
+        select: {
+          deadline: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } else {
+      result = await this.prisma.order.findFirst({
+        where: {
+          teamId,
+        },
+        include: {
+          basket: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                },
               },
             },
           },
-        },
-        payments: true,
-        partionedProducts: {
-          select: {
-            accumulator: true,
-            threshold: true,
-            product: true,
-            PartitionedProductUsersRecord: {
-              select: {
-                amount: true, // remove later
-                quantity: true,
-                owner: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
+          payments: true,
+          partionedProducts: {
+            select: {
+              accumulator: true,
+              threshold: true,
+              product: true,
+              PartitionedProductUsersRecord: {
+                select: {
+                  amount: true, // remove later
+                  quantity: true,
+                  owner: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
+    return result;
   }
 
   async nudgeTeam(id: string): Promise<boolean> {

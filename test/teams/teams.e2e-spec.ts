@@ -217,6 +217,20 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // check if producer team exist for a buying team
+    it(
+      '/teams/check-producer-group/:producerId/:postalCode(POST) should check if buying team already exist for a producer under a particular postal code',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/teams/check-producer-group/:producerId/:postalCode`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     it(
       '/teams/create(POST) should not create buying team if uncompleted data is supplied',
       async () => {

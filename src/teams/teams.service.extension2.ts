@@ -49,6 +49,7 @@ export class TeamsServiceExtension2 {
     record['teamName'] = team.name;
     record['producerInfo'] = producer;
     record['orderId'] = recentOrder.id;
+    record['deadline'] = recentOrder.deadline;
     return record;
   }
 
@@ -72,7 +73,9 @@ export class TeamsServiceExtension2 {
     });
   }
 
-  async returnCurrentOrder(teamId: string): Promise<{ id: string }> {
+  async returnCurrentOrder(
+    teamId: string,
+  ): Promise<{ id: string; deadline: Date }> {
     return await this.prisma.order.findFirst({
       where: {
         teamId,
@@ -82,6 +85,7 @@ export class TeamsServiceExtension2 {
       },
       select: {
         id: true,
+        deadline: true,
       },
     });
   }

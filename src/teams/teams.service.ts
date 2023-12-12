@@ -371,6 +371,14 @@ export class TeamsService {
     });
   }
 
+  async findManyBuyingTeam(
+    buyingTeamWhereInput: Prisma.BuyingTeamWhereInput,
+  ): Promise<BuyingTeam[] | null> {
+    return await this.prisma.buyingTeam.findMany({
+      where: buyingTeamWhereInput,
+    });
+  }
+
   async getTeamAdmins(
     teamId: string,
   ): Promise<TeamMemberWithUserInfo[] | null> {
