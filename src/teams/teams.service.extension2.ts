@@ -217,11 +217,14 @@ export class TeamsServiceExtension2 {
         createdAt: true,
         status: true,
         deliveryDate: true,
+        deadline: true,
         team: {
           select: {
             name: true,
             producer: {
               select: {
+                vat: true,
+                paymentTerm: true,
                 businessName: true,
                 user: {
                   select: {
