@@ -267,6 +267,7 @@ export class TeamsServiceExtension2 {
                 vat: true,
                 unitsOfMeasurePerSubUnit: true,
                 measuresPerSubUnit: true,
+                quantityOfSubUnitPerOrder: true,
               },
             },
           },
