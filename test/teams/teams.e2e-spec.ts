@@ -706,6 +706,20 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // return the total count for different order status
+    it(
+      '/team/orders/status/count(GET) should return 200 on a successful differen order status count',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/team/orders/status/count')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // quit buying team
     it(
       '/teams/quit(DELETE)/:id should quit buying team',
