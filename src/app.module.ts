@@ -19,7 +19,7 @@ import { JwtModule } from '@nestjs/jwt';
     TeamsModule,
     ProductsModule,
     PaymentModule,
-    NotificationsModule,
+    // NotificationsModule,
     UploadsModule,
     ScheduleModule,
     ChatsModule,
