@@ -5,10 +5,12 @@ import { Notification, Prisma } from '@prisma/client';
 import { ICreateNotification } from '../../src/lib/types';
 import * as firebase from 'firebase-admin';
 
+const pk = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+console.log({ pk });
 firebase.initializeApp({
   credential: firebase.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    privateKey: pk,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
 });
