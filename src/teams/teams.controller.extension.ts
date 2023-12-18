@@ -9,6 +9,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import {
@@ -440,12 +441,17 @@ export class TeamsControllerExtension {
   async checkProducerBuyingTeam(
     @Param('producerId') producerId: string,
     @Param('postalCode') postalCode: string,
+    @Request() req,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsService.findManyBuyingTeam({
-      producerId,
-      postalCode,
-    });
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const result = await this.teamsService.findProducerPCTeams(
+      {
+        producerId,
+        postalCode,
+      },
+      userId,
+    );
 
     return formatResponse(
       result,

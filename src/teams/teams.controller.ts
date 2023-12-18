@@ -154,11 +154,13 @@ export class TeamsController {
     @Request() req,
     @Param('id') postalCode: string,
     @Res({ passthrough: true }) res: Response,
+    @Query('offset') offset: number,
   ): Promise<IAPIResponse> {
     const userId = req.user.id ? req.user.id : req.user.userId;
     const result = await this.teamsService.getPostalCodeTeams(
       postalCode,
       userId,
+      offset ? +offset : undefined,
     );
     return formatResponse(
       result,
