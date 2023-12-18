@@ -14,9 +14,10 @@ describe('UserController (e2e)', () => {
   let authService: AuthService;
 
   const phone = faker.phone.number();
-  const phone2 = faker.phone.number();
-  const businessName = faker.company.catchPhraseNoun();
-  const email = faker.internet.email();
+  const phone2 = faker.phone.number() + '34';
+  const businessName =
+    faker.company.catchPhraseNoun() + Math.floor(Math.random() * 30);
+  const email = Math.floor(Math.random() * 30) + faker.internet.email();
   const password = 'password';
 
   let user: User;
@@ -28,8 +29,7 @@ describe('UserController (e2e)', () => {
   let teamId: string;
   let producerToken: string;
 
-  const producerData = {
-    businessName,
+  const producerInfoUpdate = {
     businessAddress: 'Business Address',
     accountsEmail: 'dummyaccounts@mail.com',
     salesEmail: 'dummysales@mail.com',
@@ -40,7 +40,7 @@ describe('UserController (e2e)', () => {
   const producerInfo = {
     email,
     password,
-    businessName: faker.company.catchPhraseNoun(),
+    businessName,
     businessAddress: 'Business Address',
     phone: phone2,
   };
@@ -87,7 +87,7 @@ describe('UserController (e2e)', () => {
     // get producer category option id to work with
     const result = await prisma.producerCategoryOption.create({
       data: {
-        name: faker.company.catchPhraseNoun(),
+        name: faker.company.catchPhraseNoun() + Math.floor(Math.random() * 30),
       },
     });
     producerCategoryOptionId = result.id;
@@ -96,7 +96,8 @@ describe('UserController (e2e)', () => {
     const producer = await prisma.producer.create({
       data: {
         userId,
-        businessName: faker.internet.userName(),
+        businessName:
+          faker.internet.userName() + Math.floor(Math.random() * 30),
       },
     });
 
@@ -105,7 +106,7 @@ describe('UserController (e2e)', () => {
       data: {
         producerId: producer.id,
         hostId: userId,
-        name: faker.internet.userName(),
+        name: faker.internet.userName() + Math.floor(Math.random() * 30),
         postalCode: '12345',
       },
     });
@@ -176,7 +177,7 @@ describe('UserController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .patch(`/users/producer/${producerId}`)
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ ...producerData, businessName: 'New business name' })
+          .send({ ...producerInfoUpdate })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -191,7 +192,10 @@ describe('UserController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .patch(`/users/producer/${producerId}`)
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send(producerData)
+          .send({
+            ...producerInfoUpdate,
+            businessName,
+          })
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
