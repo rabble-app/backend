@@ -7,6 +7,10 @@ import { PrismaService } from '../../src/prisma.service';
 import { ProductsService } from '../../src/products/products.service';
 import { PaymentServiceExtension } from '../../src/payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
+import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
+import { TeamsService } from '../../src/teams/teams.service';
+import { AuthService } from '../../src/auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
 
 describe('ScheduleService', () => {
   let service: ScheduleService;
@@ -22,6 +26,13 @@ describe('ScheduleService', () => {
         ProductsService,
         PaymentServiceExtension,
         ScheduleServiceExtended,
+        UsersService,
+        NotificationsService,
+        TeamsServiceExtension,
+        TeamsService,
+        ProductsService,
+        AuthService,
+        JwtService,
       ],
     }).compile();
 

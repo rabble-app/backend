@@ -6,6 +6,7 @@ import {
   Post,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -22,6 +23,7 @@ import { ProfilePixUploadDto } from './dto/profile-pix-upload.dto';
 import { UsersService } from '../users/users.service';
 import { TeamPixUploadDto } from './dto/team-pix-upload.dto';
 import { TeamsService } from '../teams/teams.service';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('uploads')
 @Controller('uploads')
@@ -38,6 +40,7 @@ export class UploadsController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('/profile-pix')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOkResponse({ description: 'Profile photo uploaded successfully' })
@@ -79,6 +82,7 @@ export class UploadsController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('/team-pix')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOkResponse({ description: 'Buying team photo uploaded successfully' })
@@ -98,6 +102,7 @@ export class UploadsController {
       'teams/',
       teamPixUploadDto.imageKey,
     );
+
     await this.teamsService.updateTeam({
       where: { id: teamPixUploadDto.teamId },
       data: {

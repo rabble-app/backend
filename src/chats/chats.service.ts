@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { PrismaService } from '../../src/prisma.service';
 import { IGetChat } from '../../src/lib/types';
-import { NotificationsService } from 'src/notifications/notifications.service';
-import { TeamsServiceExtension } from 'src/teams/teams.service.extension';
-import { UsersService } from 'src/users/users.service';
+import { NotificationsService } from '../../src/notifications/notifications.service';
+import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
+import { UsersService } from '../../src/users/users.service';
 
 @Injectable()
 export class ChatsService {

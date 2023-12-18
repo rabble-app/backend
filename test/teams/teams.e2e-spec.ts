@@ -1,12 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import Stripe from 'stripe';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaService } from '../../src/prisma.service';
-import { BuyingTeam, Producer, TeamMember, User } from '@prisma/client';
-import { faker } from '@faker-js/faker';
-import { CreateTeamDto } from '../../src/teams/dto/create-team.dto';
 import { AuthService } from '../../src/auth/auth.service';
+import { TeamMember } from '@prisma/client';
+import { CreateTeamDto } from '../../src/teams/dto/create-team.dto';
+import { faker } from '@faker-js/faker';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { PrismaService } from '../../src/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2022-11-15',
+});
 
 describe('TeamsController (e2e)', () => {
   let app: INestApplication;
@@ -14,24 +19,24 @@ describe('TeamsController (e2e)', () => {
   let authService: AuthService;
 
   const phone = faker.phone.number();
-  let customerId = 'cus_OFCaSUidAGIJOA';
   let paymentMethodId: string;
   let inviteToken: string;
 
-  let user: User;
-  let producer: Producer;
   let teamMember: TeamMember;
-  let team: BuyingTeam;
+  let teamId: string;
   let producerId: string;
   let buyingTeamId: string;
   let teamRequestId: string;
   let paymentIntentId: string;
   let teamMemberId: string;
   let orderId: string;
+  let customerId: string;
+  let userId: string;
+  let jwtToken: string;
   const testTime = 120000;
 
   const buyingTeam: CreateTeamDto = {
-    name: 'Team 003',
+    name: faker.internet.userName(),
     postalCode: '234-54',
     hostId: '',
     frequency: 604800,
@@ -43,7 +48,7 @@ describe('TeamsController (e2e)', () => {
   };
 
   const buyingTeamUpdate = {
-    name: 'Team 003',
+    name: faker.internet.userName(),
     postalCode: '234-54',
     description: 'Dummy description',
   };
@@ -51,13 +56,6 @@ describe('TeamsController (e2e)', () => {
   const teamRequest = {
     userId: '',
     teamId: '',
-  };
-
-  const cardInfo = {
-    cardNumber: '4242424242424242',
-    expiringMonth: 1,
-    expiringYear: 2033,
-    cvc: '314',
   };
 
   const chargeInfo = {
@@ -80,41 +78,74 @@ describe('TeamsController (e2e)', () => {
 
     await app.init();
     await app.listen(process.env.PORT);
+
+    // create dummy stripe user for test
+    const stripeUser = await stripe.customers.create({
+      phone,
+    });
+    customerId = stripeUser.id;
+
     // create dummy user for test
-    user = await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         phone,
+        stripeCustomerId: customerId,
       },
     });
+    userId = user.id;
     buyingTeam.hostId = user.id;
     teamRequest.userId = user.id;
 
-    // create dummy producer for test
-    producer = await prisma.producer.create({
-      data: {
-        userId: user.id,
-        businessAddress: 'dummy Addresss',
-        businessName: 'dummy name',
+    // create payment method for the test
+    const paymentMethod = await stripe.paymentMethods.create({
+      type: 'card',
+      card: {
+        number: '4242424242424242',
+        exp_month: 8,
+        exp_year: 2026,
+        cvc: '314',
       },
     });
+    paymentMethodId = paymentMethod.id;
+
+    // attach paymemt method to user
+    await stripe.paymentMethods.attach(paymentMethodId, {
+      customer: customerId,
+    });
+
+    // create dummy producer for test
+    const producer = await prisma.producer.create({
+      data: {
+        userId,
+        businessName: faker.internet.userName(),
+      },
+    });
+    producerId = producer.id;
     buyingTeam.producerId = producer.id;
 
-    // get dummy team id for test
-    team = await prisma.buyingTeam.findFirst();
+    // create  team for test
+    const team = await prisma.buyingTeam.create({
+      data: {
+        producerId,
+        hostId: userId,
+        name: faker.internet.userName(),
+        postalCode: '12345',
+      },
+    });
+    teamId = team.id;
 
     // create team member for test
     teamMember = await prisma.teamMember.create({
       data: {
-        userId: user.id,
-        teamId: team.id,
+        userId,
+        teamId,
         status: 'APPROVED',
       },
     });
-
     teamMemberId = teamMember.id;
 
     // get dummy invite for test
-    await prisma.invite.create({
+    const invite = await prisma.invite.create({
       data: {
         userId: user.id,
         teamId: team.id,
@@ -126,57 +157,40 @@ describe('TeamsController (e2e)', () => {
         }),
       },
     });
-    const result = await prisma.invite.findFirst({
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
-    inviteToken = result.token;
+    inviteToken = invite.token;
 
-    // stripe customer id for test
-    const result1 = await prisma.user.findFirst({
-      where: {
-        stripeCustomerId: {
-          not: 'NULL',
-        },
-      },
-      select: {
-        stripeCustomerId: true,
+    // create  order for test
+    await prisma.order.create({
+      data: {
+        teamId,
+        minimumTreshold: 50,
       },
     });
-    if (result1) {
-      customerId = result1.stripeCustomerId;
-    }
+
+    // create token for test
+    jwtToken = authService.generateToken({
+      userId,
+    });
   }, testTime);
 
   afterAll(async () => {
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
     await app.close();
   });
 
   describe('TeamsController (e2e)', () => {
-    // add payment card to user
-    it(
-      '/payments/add-card(POST) should add card to user account',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/add-card')
-          .send({ ...cardInfo, stripeCustomerId: customerId })
-          .expect(201);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-        paymentMethodId = response.body.data.paymentMethodId;
-      },
-      testTime,
-    );
-
     // charge user successfully
     it(
       '/payments/charge(POST) should charge a user',
       async () => {
         const response = await request(app.getHttpServer())
           .post('/payments/charge')
-          .send({ ...chargeInfo, customerId, paymentMethodId, userId: user.id })
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ ...chargeInfo, customerId, paymentMethodId, userId })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -192,6 +206,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/create')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...buyingTeam, paymentIntentId })
           .expect(201);
         expect(response.body).toHaveProperty('data');
@@ -208,11 +223,12 @@ describe('TeamsController (e2e)', () => {
       '/teams/check-name/:keyword(POST) should check if buying team name already exist',
       async () => {
         const response = await request(app.getHttpServer())
-          .post(`/teams/check-team_name/dummy`)
+          .post(`/teams/check-name/dummy`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
+        expect(typeof response.body.data).toBe('boolean');
       },
       testTime,
     );
@@ -223,6 +239,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/check-producer-group/:producerId/:postalCode`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -236,6 +253,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/create')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ hostId: buyingTeam.hostId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -250,6 +268,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get('/teams')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -264,6 +283,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/producer/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -278,6 +298,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/postalcode/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -292,11 +313,59 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .patch(`/teams/${buyingTeamId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send(buyingTeamUpdate)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    //  verify invite token
+    it(
+      '/teams/verify-invite(POST) should verify invite token',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            token: inviteToken,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/verify-invite(POST) should not allow the request if the token is not supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            token: 'invalid invite',
+          })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
+
+    it(
+      '/teams/verify-invite(POST) should not pass invalid invite',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/teams/verify-invite`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
       },
       testTime,
     );
@@ -307,6 +376,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/join')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({
             ...teamRequest,
             teamId: buyingTeamId,
@@ -326,6 +396,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/join')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send(teamRequest)
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -339,6 +410,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/join')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...teamRequest, teamId: buyingTeamId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -353,6 +425,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .patch('/teams/request/update')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ id: teamRequestId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -366,6 +439,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .patch('/teams/request/update')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ id: teamRequestId, status: 'APPROVED' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -381,7 +455,8 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/add-member')
-          .send({ userId: user.id, teamId: buyingTeamId, status: 'APPROVED' })
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ userId, teamId: buyingTeamId, status: 'APPROVED' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -395,7 +470,8 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/add-member')
-          .send({ userId: user.id })
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ userId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
@@ -409,6 +485,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/members/${buyingTeamId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -423,6 +500,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/members/skip-delivery/${teamMemberId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -436,7 +514,8 @@ describe('TeamsController (e2e)', () => {
       '/teams/user/:id(GET) should return the buying teams of a user',
       async () => {
         const response = await request(app.getHttpServer())
-          .get(`/teams/user/${user.id}`)
+          .get(`/teams/user/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -451,6 +530,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/${buyingTeamId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -465,6 +545,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/teams/current-order/${buyingTeamId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -479,6 +560,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/teams/nudge/${orderId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -493,6 +575,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/teams/nudge`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ teamName: buyingTeam.name, memberPhone: phone })
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -507,6 +590,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/teams/nudge')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ teamName: buyingTeam.name })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -540,53 +624,10 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/teams/bulk-invite`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({
             link: 'https://www.google.com',
           })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    //  verify invite token
-    it(
-      '/teams/verify-invite(POST) should verify invite token',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post(`/teams/verify-invite`)
-          .send({
-            token: inviteToken,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
-    it(
-      '/teams/verify-invite(POST) should not allow the request if the token is not supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post(`/teams/verify-invite`)
-          .send({
-            token: 'invalid invite',
-          })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    it(
-      '/teams/verify-invite(POST) should not pass invalid invite',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post(`/teams/verify-invite`)
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
@@ -600,6 +641,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get('/team/subscriptions')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -610,10 +652,11 @@ describe('TeamsController (e2e)', () => {
 
     // return pending team orders
     it(
-      '/team/orders?status=pending&offset=0(GET) should return pending orders',
+      '/team/orders?status=PENDING&offset=0(GET) should return pending orders',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('/team/orders?status=pending')
+          .get('/team/orders?status=PENDING')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -624,10 +667,11 @@ describe('TeamsController (e2e)', () => {
 
     // return successful team orders
     it(
-      '/team/orders?status=successful&offset=0(GET) should return successful orders',
+      '/team/orders?status=SUCCESSFUL&offset=0(GET) should return successful orders',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('/team/orders?status=successful')
+          .get('/team/orders?status=SUCCESSFUL')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -636,12 +680,13 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
-    // return successful failed orders
+    // return failed team orders
     it(
-      '/team/orders?status=failed&offset=0(GET) should return failed orders',
+      '/team/orders?status=FAILED&offset=0(GET) should return failed orders',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('/team/orders?status=failed')
+          .get('/team/orders?status=FAILED')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -656,6 +701,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get('/team/orders/:id')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -669,7 +715,8 @@ describe('TeamsController (e2e)', () => {
       '/team/orders/:id(POST) should mark order as completed',
       async () => {
         const response = await request(app.getHttpServer())
-          .post('/team/orders/:id')
+          .post(`/team/orders/${orderId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -683,7 +730,8 @@ describe('TeamsController (e2e)', () => {
       '/team/orders/search/:keyword(GET) should return 200 on a successful search',
       async () => {
         const response = await request(app.getHttpServer())
-          .post('/team/orders/search/:keyword')
+          .get('/team/orders/search/myteamName')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -697,7 +745,8 @@ describe('TeamsController (e2e)', () => {
       '/team/subscriptions/search/:keyword(GET) should return 200 on a successful search',
       async () => {
         const response = await request(app.getHttpServer())
-          .post('/team/subscriptions/search/:keyword')
+          .get('/team/subscriptions/search/myTeamName')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -711,7 +760,8 @@ describe('TeamsController (e2e)', () => {
       '/team/orders/status/count(GET) should return 200 on a successful differen order status count',
       async () => {
         const response = await request(app.getHttpServer())
-          .post('/team/orders/status/count')
+          .get('/team/orders/status/count')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -726,6 +776,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .delete(`/teams/quit/${teamMemberId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -740,6 +791,7 @@ describe('TeamsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .delete(`/teams/${buyingTeamId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

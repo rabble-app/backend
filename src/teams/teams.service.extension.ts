@@ -339,6 +339,9 @@ export class TeamsServiceExtension {
       where: {
         id,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
     // check whether 24 hours has passed after last nudge
     if (

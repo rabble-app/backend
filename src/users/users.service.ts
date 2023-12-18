@@ -554,7 +554,7 @@ export class UsersService {
           teamId: teamId,
         },
         orderBy: {
-          updatedAt: 'desc',
+          createdAt: 'desc',
         },
       });
       orderId = result.id;

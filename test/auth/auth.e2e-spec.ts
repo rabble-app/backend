@@ -13,14 +13,15 @@ describe('AppController (e2e)', () => {
   const testTime = 120000;
 
   const phone = faker.phone.number();
-  const email = faker.internet.email();
+  const producerPhone = faker.phone.number() + '34';
+  const email = 'me' + faker.internet.email();
   const password = 'password';
 
   const producerInfo = {
-    phone,
+    phone: producerPhone,
     email,
     password,
-    businessName: faker.company.catchPhraseNoun(),
+    businessName: 'The' + faker.company.catchPhraseNoun(),
     businessAddress: 'Business Address',
   };
 
@@ -111,19 +112,6 @@ describe('AppController (e2e)', () => {
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    it(
-      '/auth/quit/:id (DELETE) should quit rabble',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .delete(`/auth/quit/${userId}`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
       },
       testTime,
     );
@@ -256,6 +244,7 @@ describe('AppController (e2e)', () => {
     it('/auth/send-reset-password-link (POST) should send password reset link if email is valid', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/send-reset-password-link')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({ email })
         .expect(200);
       expect(response.body).toHaveProperty('data');
@@ -296,10 +285,10 @@ describe('AppController (e2e)', () => {
     });
 
     // pusher user auth
-    it('/auth/pusher-user (POST) pusher user authentication', async () => {
+    it('/auth/pusher-user (POST) pusher user authentication should', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/pusher-user')
-        .set('Authorization', `Bearer ${jwtToken}invalid`)
+        .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
       expect(response.body).toHaveProperty('error');
       expect(typeof response.body.error).toBe('string');
@@ -309,10 +298,24 @@ describe('AppController (e2e)', () => {
     it('/auth/pusher-channel (POST) pusher channel authorization', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/pusher-channel')
-        .set('Authorization', `Bearer ${jwtToken}invalid`)
+        .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
       expect(response.body).toHaveProperty('error');
       expect(typeof response.body.error).toBe('string');
     });
+
+    it(
+      '/auth/quit/:id (DELETE) should quit rabble',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/auth/quit/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import {
@@ -28,6 +29,7 @@ import { VerifyInviteDto } from './dto/verify-invite.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { TeamsServiceExtension } from './teams.service.extension';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -45,6 +47,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('user/:id')
   @ApiOkResponse({
     description: 'User buying teams returned successfully',
@@ -76,6 +79,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Delete('quit/:id')
   @ApiOkResponse({ description: 'User removed from team successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -106,6 +110,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get(':id')
   @ApiOkResponse({ description: 'Buying team returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -141,6 +146,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('current-order/:id')
   @ApiOkResponse({
     description: 'Buying team order status returned successfully',
@@ -181,6 +187,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('nudge/:orderId')
   @ApiOkResponse({
     description: 'Buying team nudged to collect delivery successfully',
@@ -221,6 +228,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('nudge')
   @ApiOkResponse({
     description: 'Team member nudged to update card info successfully',
@@ -250,6 +258,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('bulk-invite')
   @ApiOkResponse({
     description: 'Users invited to the team successfully',
@@ -322,6 +331,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('/members/skip-delivery/:id')
   @ApiOkResponse({
     description: 'Next delivery skipped successfully',
@@ -353,6 +363,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('/add-member')
   @ApiOkResponse({
     description: 'New member added successfully',
@@ -379,6 +390,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('check-name/:keyword')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Buying team name is taken' })
@@ -411,6 +423,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('check-producer-group/:producerId/:postalCode')
   @ApiOkResponse({ description: 'Buying teams returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })

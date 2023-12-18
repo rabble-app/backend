@@ -1,17 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaService } from '../../src/prisma.service';
-import { User } from '@prisma/client';
+import { AuthService } from '../../src/auth/auth.service';
 import { faker } from '@faker-js/faker';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { PrismaService } from '../../src/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { User } from '@prisma/client';
 import { describe } from 'node:test';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
 
   const phone = faker.phone.number();
+  const phone2 = faker.phone.number();
   const businessName = faker.company.catchPhraseNoun();
   const email = faker.internet.email();
   const password = 'password';
@@ -22,7 +25,8 @@ describe('UserController (e2e)', () => {
   let jwtToken: string;
   let producerCategoryOptionId: string;
   let producerCategoryId: string;
-  // let deliveryAreaId: string;
+  let teamId: string;
+  let producerToken: string;
 
   const producerData = {
     businessName,
@@ -30,24 +34,28 @@ describe('UserController (e2e)', () => {
     accountsEmail: 'dummyaccounts@mail.com',
     salesEmail: 'dummysales@mail.com',
     minimumTreshold: 200,
-    website: 'www.dummy.com',
     description: 'We are professional in backery business',
   };
 
   const producerInfo = {
-    phone,
     email,
     password,
     businessName: faker.company.catchPhraseNoun(),
     businessAddress: 'Business Address',
+    phone: phone2,
   };
 
   const deliveryAddressInfo = {
     location: faker.company.catchPhraseNoun(),
-    cutOffTime: '09:00',
+    type: 'WEEKLY',
+    cutOffTime: '09;00',
     customAreas: [
       {
-        day: 'SUNDAY',
+        day: 'MONDAY',
+        cutOffTime: '09:00',
+      },
+      {
+        day: 'FRIDAY',
         cutOffTime: '09:00',
       },
     ],
@@ -62,6 +70,7 @@ describe('UserController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -76,30 +85,57 @@ describe('UserController (e2e)', () => {
     userId = user.id;
 
     // get producer category option id to work with
-    const result = await prisma.producerCategoryOption.findFirst();
+    const result = await prisma.producerCategoryOption.create({
+      data: {
+        name: faker.company.catchPhraseNoun(),
+      },
+    });
     producerCategoryOptionId = result.id;
+
+    // create dummy producer for test
+    const producer = await prisma.producer.create({
+      data: {
+        userId,
+        businessName: faker.internet.userName(),
+      },
+    });
+
+    // create  team for test
+    const team = await prisma.buyingTeam.create({
+      data: {
+        producerId: producer.id,
+        hostId: userId,
+        name: faker.internet.userName(),
+        postalCode: '12345',
+      },
+    });
+    teamId = team.id;
+
+    // create  order for test
+    await prisma.order.create({
+      data: {
+        teamId,
+        minimumTreshold: 50,
+      },
+    });
+
+    // create producer token
+    producerToken = authService.generateToken({
+      userId,
+      producerId: producer.id,
+    });
   }, testTime);
 
   afterAll(async () => {
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
     await app.close();
   });
 
   describe('UsersController (e2e)', () => {
-    // update user record
-    it(
-      '/users/update(PATCH) should update a users record',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .patch('/users/update')
-          .send({ phone, postalCode: '1234' })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
     // register producer
     it(
       '/auth/register (POST) should register a producer',
@@ -117,6 +153,22 @@ describe('UserController (e2e)', () => {
       testTime,
     );
 
+    // update user record
+    it(
+      '/users/update(PATCH) should update a users record',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/users/update')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ phone, postalCode: '1234' })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // update producer record
     it(
       '/users/update/producerId(PATCH) should update a producers record',
@@ -124,7 +176,7 @@ describe('UserController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .patch(`/users/producer/${producerId}`)
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send(producerData)
+          .send({ ...producerData, businessName: 'New business name' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -153,6 +205,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get('/users/producers')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -167,6 +220,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/producer/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -181,6 +235,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/users/delivery-address')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ userId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -194,6 +249,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/users/delivery-address')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({
             userId,
             buildingNo: 'Rabble21',
@@ -213,6 +269,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/delivery-address/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -226,6 +283,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .patch(`/users/delivery-address/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({
             userId,
             buildingNo: 'Rabble21',
@@ -244,6 +302,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/order-history/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -257,6 +316,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/subscription/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -270,6 +330,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/my-teams/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -283,6 +344,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/requests/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -355,7 +417,7 @@ describe('UserController (e2e)', () => {
           producerId,
         },
       });
-      producerCategoryId = result.id;
+      producerCategoryId = result?.id;
     });
 
     it(
@@ -363,6 +425,7 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .delete('/users/producer/category/remove')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -474,7 +537,7 @@ describe('UserController (e2e)', () => {
     async () => {
       const response = await request(app.getHttpServer())
         .post('/users/producer/delivery-area')
-        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Authorization', `Bearer ${producerToken}`)
         .send({
           ...deliveryAddressInfo,
         })
@@ -482,7 +545,6 @@ describe('UserController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
-      // deliveryAreaId = typeof response.body.data.id;
     },
     testTime,
   );
@@ -492,9 +554,9 @@ describe('UserController (e2e)', () => {
     '/users/basket/(GET) should return users basket',
     async () => {
       const response = await request(app.getHttpServer())
-        .get(`/users/basket/`)
+        .post(`/users/basket/`)
         .set('Authorization', `Bearer ${jwtToken}`)
-        .send({ buyingTeamId: '' }) //Todo: get buying team id
+        .send({ teamId }) //Todo: get buying team id
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import {
@@ -24,6 +25,7 @@ import { CreateIntentDto } from './dto/create-intent.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 import { ReturnIntentDto } from './dto/return-intent.dto';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -39,6 +41,7 @@ export class PaymentControllerExtension {
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('options/:id')
   @ApiOkResponse({
     description: 'User payment option returned successfully',
@@ -64,42 +67,13 @@ export class PaymentControllerExtension {
   }
 
   /**
-   * remove payment option from user.
-   * @param {Response} res - The payload.
-   * @memberof PaymentControllerExtension
-   * @returns {JSON} - A JSON success response.
-   */
-  @Patch('options/:id')
-  @ApiOkResponse({
-    description: 'Payment option removed successfully',
-  })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The user payment method id',
-  })
-  async removePaymentOption(
-    @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.removePaymentOption(id);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'Payment option removed successfully',
-    );
-  }
-
-  /**
    * Update item in basket
    * @param {Body} updateBasketItemDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch('basket/:itemId')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Item updated successfully' })
@@ -133,6 +107,7 @@ export class PaymentControllerExtension {
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('intent')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Payment intent created successfully' })
@@ -160,6 +135,7 @@ export class PaymentControllerExtension {
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch('basket-bulk')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Items updated successfully' })
@@ -187,6 +163,7 @@ export class PaymentControllerExtension {
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('retrieve-intent')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Payment intent created successfully' })

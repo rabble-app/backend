@@ -40,6 +40,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch('update')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'User record updated successfully' })
@@ -119,6 +120,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('producers')
   @ApiOkResponse({ description: 'Producers returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -144,6 +146,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('producer/:id')
   @ApiOkResponse({ description: 'Producer returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -173,6 +176,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('delivery-address')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Delivery address created successfully' })
@@ -199,6 +203,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('order-history/:id')
   @ApiOkResponse({ description: 'Order history returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -227,6 +232,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('subscription/:id')
   @ApiOkResponse({ description: 'Subscriptions returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -255,6 +261,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('delivery-address/:id')
   @ApiOkResponse({ description: 'Delivery address returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -284,6 +291,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch('delivery-address/:id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Delivery address updated successfully' })
@@ -317,6 +325,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('my-teams/:id')
   @ApiOkResponse({ description: 'Users teams returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
