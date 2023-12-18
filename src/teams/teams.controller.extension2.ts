@@ -20,7 +20,7 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../../src/auth/auth.guard';
 import { OrderStatus } from '@prisma/client';
 
 @ApiTags('teams')

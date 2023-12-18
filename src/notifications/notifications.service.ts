@@ -60,8 +60,8 @@ export class NotificationsService {
           token: notificationToken,
           android: { priority: 'high' },
         })
-        .catch((error: any) => {
-          console.error(error);
+        .catch((/*error: any*/) => {
+          // console.error(error);
         });
     }
 

@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import {
@@ -23,6 +24,7 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('notifications')
 @Controller('notifications')
@@ -36,6 +38,7 @@ export class NotificationsController {
    * @memberof NotificationsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Notification added successfully' })
@@ -63,6 +66,7 @@ export class NotificationsController {
    * @memberof NotificationsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch('')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Notification updated successfully' })
@@ -89,6 +93,7 @@ export class NotificationsController {
    * @memberof NotificationsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Delete(':id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Notification deleted successfully' })
@@ -118,6 +123,7 @@ export class NotificationsController {
    * @memberof NotificationsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get(':id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Notification returned successfully' })

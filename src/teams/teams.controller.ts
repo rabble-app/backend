@@ -29,7 +29,7 @@ import { UpdateTeamDto } from './dto/update-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { TeamsServiceExtension } from './teams.service.extension';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -46,6 +46,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('create')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Buying team created successfully' })
@@ -83,6 +84,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('')
   @ApiOkResponse({ description: 'Buying teams returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -108,6 +110,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('producer/:id')
   @ApiOkResponse({ description: 'Producer buying teams returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -174,6 +177,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch(':id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Team record updated successfully' })
@@ -208,6 +212,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Delete(':id')
   @ApiOkResponse({ description: 'Team record deleted successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -237,6 +242,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('join')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Request sent successfully' })
@@ -271,6 +277,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Patch('/request/update')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Request updated successfully' })
@@ -306,6 +313,7 @@ export class TeamsController {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('/members/:id')
   @ApiOkResponse({ description: 'Team members returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })

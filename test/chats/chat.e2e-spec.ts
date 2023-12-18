@@ -5,10 +5,12 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { BuyingTeam, Producer, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { AuthService } from '../../src/auth/auth.service';
 
 describe('ChatsController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
 
   const phone = faker.phone.number();
   let user: User;
@@ -17,12 +19,12 @@ describe('ChatsController (e2e)', () => {
   let userId: string;
   let producerId: string;
   let teamId: string;
+  let jwtToken: string;
   const testTime = 120000;
 
   const chat = {
-    teamId: faker.internet.userName(),
-    userId: faker.lorem.paragraph(),
-    text: 200,
+    teamId: '',
+    text: 'hi we are coming',
   };
 
   beforeAll(async () => {
@@ -32,6 +34,7 @@ describe('ChatsController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -66,9 +69,17 @@ describe('ChatsController (e2e)', () => {
       },
     });
     teamId = team.id;
+
+    // create dummy token
+    jwtToken = authService.generateToken({ userId });
   }, testTime);
 
   afterAll(async () => {
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
     await app.close();
   });
 
@@ -79,7 +90,8 @@ describe('ChatsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/chats')
-          .send({ ...chat, teamId, userId })
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ ...chat, teamId })
           .expect(201);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -89,14 +101,14 @@ describe('ChatsController (e2e)', () => {
     );
     // retrieve chat
     it(
-      '/chats(GET) should not create product if uncompleted data is supplied',
+      '/chats(GET) should not create chat if uncompleted data is supplied',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('chats')
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
+          .post('/chats')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
       },
       testTime,
     );
@@ -106,7 +118,8 @@ describe('ChatsController (e2e)', () => {
       '/chats/teams(GET) should return user buying teams chat intro',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('chats/teams')
+          .get('/chats/teams')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

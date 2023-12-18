@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
+jest.useFakeTimers();
 
 describe('ScheduleController (e2e)', () => {
   let app: INestApplication;
@@ -24,6 +25,16 @@ describe('ScheduleController (e2e)', () => {
   });
 
   describe('ScheduleController (e2e)', () => {
+    it(
+      '/schedule/cancel-orders(GET) should cancel orders if deadline has reached and threshold was not reached',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/cancel-orders')
+          .expect(200);
+      },
+      testTime,
+    );
+
     it(
       '/schedule/charge-users(GET) should charge users if group treshold has been reached',
       async () => {
@@ -49,16 +60,6 @@ describe('ScheduleController (e2e)', () => {
       async () => {
         await request(app.getHttpServer())
           .get('/schedule/create-orders')
-          .expect(200);
-      },
-      testTime,
-    );
-
-    it(
-      '/schedule/cancel-orders(GET) should cancel orders if deadline has reached and threshold was not reached',
-      async () => {
-        await request(app.getHttpServer())
-          .get('/schedule/cancel-orders')
           .expect(200);
       },
       testTime,

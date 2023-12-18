@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import {
@@ -26,6 +27,7 @@ import { MakeCardDefaultDto } from './dto/make-card-default.dto';
 import { UsersService } from '../users/users.service';
 import { AddSingleBasketDto } from './dto/add-single-basket.dto';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -43,6 +45,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('add-card')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Card added successfully' })
@@ -68,6 +71,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Delete('remove-card')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Card added successfully' })
@@ -95,6 +99,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('default-card')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({
@@ -130,6 +135,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('charge')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'User charged successfully' })
@@ -164,6 +170,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('basket-bulk')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Items added to basket successfully' })
@@ -189,6 +196,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('basket')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Item added to basket successfully' })
@@ -229,6 +237,7 @@ export class PaymentController {
    * @memberof PaymentController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Delete('basket/:id')
   @ApiOkResponse({ description: 'Item deleted successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })

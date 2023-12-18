@@ -8,6 +8,7 @@ import { PaymentServiceExtension } from './payment.service.extension';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TeamsModule } from '../teams/teams.module';
 import { ProductsModule } from '../../src/products/products.module';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -17,7 +18,12 @@ import { ProductsModule } from '../../src/products/products.module';
     ProductsModule,
   ],
   controllers: [PaymentController, PaymentControllerExtension],
-  providers: [PaymentService, PrismaService, PaymentServiceExtension],
+  providers: [
+    PaymentService,
+    PrismaService,
+    PaymentServiceExtension,
+    JwtService,
+  ],
   exports: [PaymentService, PaymentServiceExtension],
 })
 export class PaymentModule {}

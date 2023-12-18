@@ -46,12 +46,12 @@ export class TeamsService {
         if (typeof teamImages[category] == 'function') {
           imageUrl =
             teamImages[category]()[
-              Math.floor(Math.random() * teamImages[category]().length)
+              Math.floor(Math.floor(Math.random()*10) * teamImages[category]().length)
             ];
         } else {
           imageUrl =
             teamImages[category][
-              Math.floor(Math.random() * teamImages[category].length)
+              Math.floor(Math.floor(Math.random()*10) * teamImages[category].length)
             ];
         }
       }
@@ -59,7 +59,7 @@ export class TeamsService {
     if (!imageUrl) {
       imageUrl =
         teamImages.General[
-          Math.floor(Math.random() * teamImages.General.length)
+          Math.floor(Math.floor(Math.random()*10) * teamImages.General.length)
         ];
     }
 

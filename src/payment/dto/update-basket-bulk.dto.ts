@@ -11,7 +11,7 @@ import {
   ValidateIf,
   IsEnum,
 } from 'class-validator';
-import { ProductType } from 'src/lib/types';
+import { ProductType } from '../../../src/lib/types';
 
 export class UpdateBasket {
   @ApiProperty({
