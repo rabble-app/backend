@@ -67,11 +67,10 @@ jobs:
 
       - name: Prisma Deploy 📦️
         run: npx prisma migrate deploy 
-      {{ if eq  github.ref "refs/heads/production"}}
-      - name: 'We are in production'
-      {{ else }}
+
       - name: Run tests (unit) 🧪
         run: npm test
+        
       - name: Run tests (e2e) ⚙️
         run: npm run test:e2e
-      {{ end }}
+  
