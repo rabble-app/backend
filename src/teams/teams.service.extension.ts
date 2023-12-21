@@ -461,6 +461,9 @@ export class TeamsServiceExtension {
           },
         },
       },
+      orderBy: {
+        createdAt: 'asc',
+      },
     });
   }
 }

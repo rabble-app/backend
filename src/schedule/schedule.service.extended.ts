@@ -81,7 +81,8 @@ export class ScheduleServiceExtended {
         teamId,
       );
       if (teamMembers.length > 0) {
-        teamMembers.forEach(async (member) => {
+        for (let index = 0; index < teamMembers.length; index++) {
+          const member = teamMembers[index];
           // create their basket for them
           const lastOrderProducts = await this.prisma.basketC.findMany({
             where: {
@@ -117,14 +118,16 @@ export class ScheduleServiceExtended {
 
               // check for portioned products
               if (product.type == 'PORTIONED_SINGLE_PRODUCT') {
-                await this.paymentService.processPortionedProduct(
-                  teamId,
-                  newOrderId,
-                  oldProduct.quantity,
-                  oldProduct.productId,
-                  oldProduct.userId,
-                  productPrice,
-                );
+                setTimeout(async () => {
+                  await this.paymentService.processPortionedProduct(
+                    teamId,
+                    newOrderId,
+                    oldProduct.quantity,
+                    oldProduct.productId,
+                    oldProduct.userId,
+                    productPrice,
+                  );
+                }, 4000 * index);
               }
 
               // add to basket
@@ -153,7 +156,7 @@ export class ScheduleServiceExtended {
               notficationToken: member.user.notificationToken,
             });
           }
-        });
+        }
       }
     } catch (error) {}
   }
