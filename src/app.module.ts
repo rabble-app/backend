@@ -11,6 +11,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ChatsModule } from './chats/chats.module';
 import { JwtModule } from '@nestjs/jwt';
+import { ParametersModule } from './parameters.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { JwtModule } from '@nestjs/jwt';
     UploadsModule,
     ScheduleModule,
     ChatsModule,
+    ParametersModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
     }),

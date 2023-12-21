@@ -4,21 +4,27 @@ import { PrismaService } from '../prisma.service';
 import { Notification, Prisma } from '@prisma/client';
 import { ICreateNotification } from '../../src/lib/types';
 import * as firebase from 'firebase-admin';
-
-const pk = process.env.FIREBASE_PRIVATE_KEY;
-console.log({ privateKey: pk });
-firebase.initializeApp({
-  credential: firebase.credential.cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: pk,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  }),
-});
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {
+    firebase.initializeApp({
+      credential: firebase.credential.cert({
+        projectId: this.getParameterValue('FIREBASE_PROJECT_ID'),
+        privateKey: this.getParameterValue('FIREBASE_PRIVATE_KEY'),
+        clientEmail: this.getParameterValue('FIREBASE_CLIENT_EMAIL'),
+      }),
+    });
+  }
 
+  getParameterValue(key: string): string {
+    const params = this.configService.get<string>(key);
+    return params;
+  }
   async sendSMS(message: string, receiver: string): Promise<object> {
     try {
       const client = twilio(
