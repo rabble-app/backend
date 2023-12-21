@@ -7,6 +7,7 @@ import {
   Get,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -22,6 +23,7 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('products')
 @Controller('products')
@@ -35,6 +37,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('create')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Product created successfully' })
@@ -59,6 +62,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get(':id')
   @ApiOkResponse({ description: 'Product returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -88,6 +92,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('/producer/:id')
   @ApiOkResponse({ description: 'Producer products returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -118,6 +123,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Post('recently-viewed')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({
@@ -146,6 +152,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('/recently-viewed/:id')
   @ApiOkResponse({
     description: 'Recently viewed products returned successfully',
@@ -176,6 +183,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('also-bought/:producerId')
   @ApiOkResponse({
     description: 'Items other users also bought returned successfully',
@@ -206,6 +214,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('normal/:producerId')
   @ApiOkResponse({
     description: 'Producers products returned successfully',

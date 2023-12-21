@@ -46,12 +46,16 @@ export class TeamsService {
         if (typeof teamImages[category] == 'function') {
           imageUrl =
             teamImages[category]()[
-              Math.floor(Math.random() * teamImages[category]().length)
+              Math.floor(
+                Math.floor(Math.random() * 10) * teamImages[category]().length,
+              )
             ];
         } else {
           imageUrl =
             teamImages[category][
-              Math.floor(Math.random() * teamImages[category].length)
+              Math.floor(
+                Math.floor(Math.random() * 10) * teamImages[category].length,
+              )
             ];
         }
       }
@@ -59,7 +63,7 @@ export class TeamsService {
     if (!imageUrl) {
       imageUrl =
         teamImages.General[
-          Math.floor(Math.random() * teamImages.General.length)
+          Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
         ];
     }
 
@@ -205,8 +209,11 @@ export class TeamsService {
   async getPostalCodeTeams(
     postalCode: string,
     userId: string,
+    offset = 0,
   ): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
+      skip: offset,
+      take: 10,
       where: {
         postalCode,
         isPublic: true,
@@ -371,8 +378,9 @@ export class TeamsService {
     });
   }
 
-  async findManyBuyingTeam(
+  async findProducerPCTeams(
     buyingTeamWhereInput: Prisma.BuyingTeamWhereInput,
+    userId: string,
   ): Promise<
     | {
         id: string;
@@ -385,12 +393,35 @@ export class TeamsService {
   > {
     return await this.prisma.buyingTeam.findMany({
       where: buyingTeamWhereInput,
-      select: {
-        id: true,
-        name: true,
-        producerId: true,
-        imageUrl: true,
-        hostId: true,
+      include: {
+        basket: {
+          where: {
+            userId,
+          },
+        },
+        members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        host: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        requests: true,
       },
     });
   }

@@ -5,21 +5,19 @@ import { CreateProducerDto } from './dto/create-producer.dto';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginProducerDto } from './dto/login-producer.dto';
-import { PaymentService } from '../payment/payment.service';
 import { PrismaService } from '../prisma.service';
 import { Producer, User } from '@prisma/client';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
-import { courier } from 'src/utils/mail';
+import { courier } from '../../src/utils/mail';
 
-import { UserWithProducerInfo } from 'src/lib/types';
+import { UserWithProducerInfo } from '../../src/lib/types';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
-    private readonly paymentService: PaymentService,
     private jwtService: JwtService,
     private prisma: PrismaService,
   ) {}

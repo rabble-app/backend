@@ -18,10 +18,10 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { IAPIResponse, IGetChat } from 'src/lib/types';
-import { formatResponse } from 'src/lib/helpers';
+import { IAPIResponse, IGetChat } from '../../src/lib/types';
+import { formatResponse } from '../../src/lib/helpers';
 import { Response } from 'express';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('chats')
 @Controller('chats')

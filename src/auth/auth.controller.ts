@@ -3,7 +3,7 @@ import EmailVerificationDto from './dto/email-verification.dto';
 import ResendEmailVerificationDto from './dto/resend-email-verification.dto';
 import ResetPasswordDto from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
-import { courier } from 'src/utils/mail';
+import { courier } from '../../src/utils/mail';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
@@ -119,6 +119,7 @@ export class AuthController {
    * @memberof AuthController
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Delete('quit/:id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Removed from rabble app successfully' })

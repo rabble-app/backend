@@ -4,12 +4,15 @@ import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
+import { AuthService } from '../../src/auth/auth.service';
 
 describe('NotificationController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
   let userId: string;
   let notificationId: string;
+  let jwtToken: string;
   const testTime = 120000;
 
   const phone = faker.phone.number();
@@ -25,6 +28,7 @@ describe('NotificationController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -37,9 +41,17 @@ describe('NotificationController (e2e)', () => {
       },
     });
     userId = user.id;
+
+    // create dummy token
+    jwtToken = authService.generateToken({ userId });
   }, testTime);
 
   afterAll(async () => {
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
     await app.close();
   });
 
@@ -49,6 +61,7 @@ describe('NotificationController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/notifications/')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...notificationData, userId })
           .expect(201);
         expect(response.body).toHaveProperty('data');
@@ -64,6 +77,7 @@ describe('NotificationController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/notifications/')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...notificationData })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -77,6 +91,7 @@ describe('NotificationController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .patch(`/notifications`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ userId })
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -91,6 +106,7 @@ describe('NotificationController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .patch(`/notifications`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...notificationData })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -104,6 +120,7 @@ describe('NotificationController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/notifications/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -118,6 +135,7 @@ describe('NotificationController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .delete(`/notifications/${notificationId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

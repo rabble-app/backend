@@ -38,6 +38,7 @@ export class UsersControllerExtension {
    * @memberof UsersControllerExtension
    * @returns {JSON} - A JSON success response.
    */
+  @UseGuards(AuthGuard)
   @Get('requests/:id')
   @ApiOkResponse({ description: 'Users requests returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })

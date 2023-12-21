@@ -5,15 +5,19 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { AuthService } from '../../src/auth/auth.service';
 
 describe('UploadController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
 
-  const phone = faker.phone.number();
+  const phone = faker.phone.number() + Math.floor(Math.random() * 10);
   let user: User;
   let userId: string;
   let teamId: string;
+  let producerId: string;
+  let jwtToken: string;
 
   const testTime = 120000;
 
@@ -23,6 +27,7 @@ describe('UploadController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    authService = app.get<AuthService>(AuthService);
     prisma = app.get<PrismaService>(PrismaService);
     app.useGlobalPipes(new ValidationPipe());
 
@@ -37,12 +42,38 @@ describe('UploadController (e2e)', () => {
     });
     userId = user.id;
 
-    // get buying team for test
-    const result = await prisma.buyingTeam.findFirst();
-    teamId = result.id;
+    // create dummy producer for test
+    const producer = await prisma.producer.create({
+      data: {
+        userId,
+        businessName: faker.internet.userName(),
+      },
+    });
+    producerId = producer.id;
+
+    // create  team for test
+    const team = await prisma.buyingTeam.create({
+      data: {
+        producerId,
+        hostId: userId,
+        name: faker.internet.userName(),
+        postalCode: '12345',
+      },
+    });
+    teamId = team.id;
+
+    // create token for test
+    jwtToken = authService.generateToken({
+      userId,
+    });
   }, testTime);
 
   afterAll(async () => {
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
     await app.close();
   });
 
@@ -52,6 +83,7 @@ describe('UploadController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/uploads/profile-pix/`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .field('userId', userId)
           .set('Content-Type', 'multipart/form-data')
           .attach('file', './test/testImage.jpg')
@@ -68,6 +100,7 @@ describe('UploadController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/uploads/profile-pix/`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .set('Content-Type', 'multipart/form-data')
           .attach('file', './test/testImage.jpg')
           .expect(400);
@@ -82,6 +115,7 @@ describe('UploadController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/uploads/team-pix/`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .field('teamId', teamId)
           .set('Content-Type', 'multipart/form-data')
           .attach('file', './test/testImage.jpg')
@@ -98,6 +132,7 @@ describe('UploadController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/uploads/team-pix/`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .set('Content-Type', 'multipart/form-data')
           .attach('file', './test/testImage.jpg')
           .expect(400);

@@ -159,6 +159,7 @@ export class TeamsServiceExtension2 {
         select: {
           id: true,
           accumulatedAmount: true,
+          minimumTreshold: true,
           deliveryDate: true,
           createdAt: true,
           deadline: true,
@@ -267,6 +268,7 @@ export class TeamsServiceExtension2 {
                 vat: true,
                 unitsOfMeasurePerSubUnit: true,
                 measuresPerSubUnit: true,
+                quantityOfSubUnitPerOrder: true,
               },
             },
           },
@@ -355,6 +357,7 @@ export class TeamsServiceExtension2 {
         createdAt: true,
         deadline: true,
         status: true,
+        minimumTreshold: true,
         team: {
           select: {
             name: true,
@@ -456,6 +459,17 @@ export class TeamsServiceExtension2 {
         createdAt: 'desc',
       },
     });
+    return result;
+  }
+
+  async orderStatusCount(): Promise<object> {
+    const result = await this.prisma.$transaction([
+      this.prisma.order.count({ where: { status: 'PENDING' } }),
+      this.prisma.order.count({ where: { status: 'PENDING_DELIVERY' } }),
+      this.prisma.order.count({ where: { status: 'SUCCESSFUL' } }),
+      this.prisma.order.count({ where: { status: 'FAILED' } }),
+    ]);
+
     return result;
   }
 }

@@ -6,6 +6,8 @@ import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { TeamsServiceExtension } from './teams.service.extension';
+import { TeamsServiceExtension2 } from './teams.service.extension2';
 
 describe('TeamsService', () => {
   let service: TeamsService;
@@ -15,11 +17,14 @@ describe('TeamsService', () => {
       providers: [
         TeamsService,
         PrismaService,
-        PaymentService,
         UsersService,
+        PaymentService,
         NotificationsService,
         AuthService,
         JwtService,
+        TeamsServiceExtension,
+        TeamsServiceExtension2,
+        TeamsService,
       ],
     }).compile();
 

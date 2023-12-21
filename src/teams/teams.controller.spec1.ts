@@ -1,33 +1,37 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UploadsController } from './uploads.controller';
-import { UploadsService } from './uploads.service';
-import { UsersService } from '../users/users.service';
-import { TeamsService } from '../teams/teams.service';
+import { TeamsController } from './teams.controller';
+import { TeamsService } from './teams.service';
 import { PrismaService } from '../prisma.service';
+import { UsersService } from '../users/users.service';
 import { PaymentService } from '../payment/payment.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { TeamsServiceExtension } from './teams.service.extension';
+import { TeamsServiceExtension2 } from './teams.service.extension2';
+import { TeamsModule } from './teams.module';
 
-describe('UploadsController', () => {
-  let controller: UploadsController;
+describe('TeamsController', () => {
+  let controller: TeamsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UploadsController],
+      controllers: [TeamsController],
       providers: [
-        UploadsService,
-        UsersService,
         TeamsService,
         PrismaService,
+        UsersService,
         PaymentService,
         NotificationsService,
         AuthService,
         JwtService,
+        TeamsServiceExtension,
+        TeamsServiceExtension2,
       ],
+      imports: [TeamsModule],
     }).compile();
 
-    controller = module.get<UploadsController>(UploadsController);
+    controller = module.get<TeamsController>(TeamsController);
   });
 
   it('should be defined', () => {

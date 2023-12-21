@@ -9,9 +9,9 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
 import { PaymentService } from '../payment/payment.service';
-import { UsersService } from 'src/users/users.service';
-import { TeamsService } from 'src/teams/teams.service';
-import { TeamsServiceExtension } from 'src/teams/teams.service.extension';
+import { UsersService } from '../../src/users/users.service';
+import { TeamsService } from '../../src/teams/teams.service';
+import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
 
 @Injectable()
 export class ScheduleService {

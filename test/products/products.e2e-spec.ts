@@ -5,10 +5,12 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { Producer, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { AuthService } from '../../src/auth/auth.service';
 
 describe('ProductsController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
 
   const phone = faker.phone.number();
   let user: User;
@@ -17,6 +19,7 @@ describe('ProductsController (e2e)', () => {
   let producerId: string;
   let userId: string;
   const testTime = 120000;
+  let jwtToken: string;
 
   const product = {
     name: faker.internet.userName(),
@@ -32,6 +35,7 @@ describe('ProductsController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -55,9 +59,17 @@ describe('ProductsController (e2e)', () => {
     });
     product.producerId = producer.id;
     producerId = producer.id;
+
+    // create dummy token
+    jwtToken = authService.generateToken({ userId });
   }, testTime);
 
   afterAll(async () => {
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
     await app.close();
   });
 
@@ -68,6 +80,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/products/create')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send(product)
           .expect(201);
         expect(response.body).toHaveProperty('data');
@@ -83,6 +96,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/products/create')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ name: 'product name' })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -97,6 +111,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/products/${productId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -111,6 +126,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/products/producer/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -125,6 +141,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/products/recently-viewed')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ productId, userId })
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -139,6 +156,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/products/recently-viewed')
+          .set('Authorization', `Bearer ${jwtToken}`)
           .send({ productId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
@@ -152,6 +170,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/products/recently-viewed/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -166,6 +185,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/products/also-bought/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
@@ -180,6 +200,7 @@ describe('ProductsController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/products/normal/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

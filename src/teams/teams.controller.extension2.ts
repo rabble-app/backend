@@ -20,7 +20,7 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../../src/auth/auth.guard';
 import { OrderStatus } from '@prisma/client';
 
 @ApiTags('teams')
@@ -243,6 +243,29 @@ export class TeamsControllerExtension2 {
       HttpStatus.OK,
       false,
       'Search result returned successfully',
+    );
+  }
+
+  /**
+   * count for different order status.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/orders/status/count')
+  @ApiOkResponse({ description: 'Order status counts returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async orderStatusCount(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsServiceExtension2.orderStatusCount();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Order status counts returned successfully',
     );
   }
 }

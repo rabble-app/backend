@@ -11,7 +11,7 @@ import { ChargeUserDto } from './dto/charge-user.dto ';
 import { AddSingleBasketDto } from './dto/add-single-basket.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
-import { ProductsService } from 'src/products/products.service';
+import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -379,7 +379,11 @@ export class PaymentService {
         id: true,
       },
     });
-    if (result && result.accumulator < result.threshold) {
+    if (
+      result &&
+      result.accumulator < result.threshold &&
+      result.accumulator + quantity <= result.threshold
+    ) {
       // update
       const updateResult = await this.prisma.partitionedProductsBasket.update({
         where: {
