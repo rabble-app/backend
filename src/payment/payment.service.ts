@@ -379,7 +379,11 @@ export class PaymentService {
         id: true,
       },
     });
-    if (result && result.accumulator < result.threshold) {
+    if (
+      result &&
+      result.accumulator < result.threshold &&
+      result.accumulator + quantity <= result.threshold
+    ) {
       // update
       const updateResult = await this.prisma.partitionedProductsBasket.update({
         where: {
