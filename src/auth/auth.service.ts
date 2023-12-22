@@ -179,7 +179,7 @@ export class AuthService {
 
   async loginProducer(
     loginProducerDto: LoginProducerDto,
-  ): Promise<object | null> {
+  ): Promise<object | null | string> {
     // get the user record
     const user = await this.userService.findUser({
       email: loginProducerDto.email,
@@ -202,9 +202,15 @@ export class AuthService {
       userId: user.id,
     });
 
+    // check whether the user have verified their email
+    if (!producerRecord.isVerified) {
+      return 'not verified';
+    }
+
     const token = this.generateToken({
       userId: user.id,
       producerId: producerRecord.id,
+      role: user.role,
     });
     producerRecord['token'] = token;
     producerRecord['businessEmail'] = user.email;
