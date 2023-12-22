@@ -203,6 +203,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Producer login successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiUnauthorizedResponse({ description: 'Unverified email' })
   async login(
     @Body() loginProducerDto: LoginProducerDto,
     @Res({ passthrough: true }) res: Response,
@@ -215,6 +216,14 @@ export class AuthController {
         HttpStatus.BAD_REQUEST,
         true,
         'Incorrect email/password',
+      );
+    } else if (result && typeof result === 'string') {
+      return formatResponse(
+        'Unverified email',
+        res,
+        HttpStatus.UNAUTHORIZED,
+        true,
+        'Please verify your email',
       );
     }
     return formatResponse(
