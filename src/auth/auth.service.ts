@@ -205,6 +205,7 @@ export class AuthService {
     const token = this.generateToken({
       userId: user.id,
       producerId: producerRecord.id,
+      role: user.role,
     });
     producerRecord['token'] = token;
     producerRecord['businessEmail'] = user.email;
