@@ -154,11 +154,11 @@ export class ScheduleService {
       pendingPayments.forEach(async (payment) => {
         // be sure that it has payment intent
         if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
-          // check to know whether he has portioned products and
-          // which ones did not met the threshold, minus that from the overall payment amount
           let amountToCapture = payment.amount;
+          // check all portioned product for that order that did not meet treshold to know whether he has items there if so
+          // minus that from the overall payment amount
           const portionedProducts =
-            await this.prisma.partitionedProductsBasket.findFirst({
+            await this.prisma.partitionedProductsBasket.findMany({
               where: {
                 orderId: payment.orderId,
                 threshold: {
@@ -173,14 +173,19 @@ export class ScheduleService {
                 },
               },
             });
-          if (
-            portionedProducts &&
-            portionedProducts.PartitionedProductUsersRecord.length > 0
-          ) {
-            amountToCapture =
-              amountToCapture -
-              portionedProducts.PartitionedProductUsersRecord[0].amount;
+          if (portionedProducts && portionedProducts.length > 0) {
+            portionedProducts.forEach((portionedProduct) => {
+              if (
+                portionedProduct &&
+                portionedProduct.PartitionedProductUsersRecord.length > 0
+              ) {
+                amountToCapture =
+                  amountToCapture -
+                  portionedProduct.PartitionedProductUsersRecord[0].amount;
+              }
+            });
           }
+
           if (amountToCapture > 0) {
             const result = await this.paymentServiceExtension.captureFund(
               payment.paymentIntentId,
