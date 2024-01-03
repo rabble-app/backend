@@ -74,15 +74,37 @@ export class ScheduleServiceExtended {
       });
     } catch (error) {}
   }
-
   async createUserBasket(teamId: string, newOrderId: string) {
     try {
-      const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
-        teamId,
-      );
+      // loop from the users basketc but keep track of the users you have done so that you won't need to do it twice
+      const teamMembers = await this.prisma.basketC.findMany({
+        where: {
+          teamId,
+        },
+        include: {
+          team: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              notificationToken: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
       if (teamMembers.length > 0) {
+        const tracker = [];
         for (let index = 0; index < teamMembers.length; index++) {
           const member = teamMembers[index];
+          // if we have created basker for this user before, skip
+          if (tracker.includes(member.userId)) {
+            continue;
+          }
           // create their basket for them
           const lastOrderProducts = await this.prisma.basketC.findMany({
             where: {
@@ -155,6 +177,9 @@ export class ScheduleServiceExtended {
               userId: member.userId,
               notficationToken: member.user.notificationToken,
             });
+
+            // record the user in the tracker so that the basket will not be created twice
+            tracker.push(member.userId);
           }
         }
       }
