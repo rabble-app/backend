@@ -10,6 +10,7 @@ describe('AppController (e2e)', () => {
   let prisma: PrismaService;
   let userId: string;
   let jwtToken: string;
+  let accountId: string;
   const testTime = 120000;
 
   const phone = faker.phone.number();
@@ -145,34 +146,6 @@ describe('AppController (e2e)', () => {
       testTime,
     );
 
-    // login producer
-    it(
-      '/auth/login (POST) should login a producer',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/auth/login')
-          .send({ email, password })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
-    it(
-      '/auth/login (POST) should not login a producer if incomplete data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/auth/login')
-          .send({ email })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
     // Email Verification
     it('/auth/email-verification (POST) should not verify email if email verification token is invalid/expired', async () => {
       const response = await request(app.getHttpServer())
@@ -222,6 +195,34 @@ describe('AppController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
     });
+
+    // login producer
+    it(
+      '/auth/login (POST) should login a producer',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ email, password })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/auth/login (POST) should not login a producer if incomplete data is supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ email })
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
 
     // Password Reset
     it('/auth/send-reset-password-link (POST) should not send password reset link if user does not exist', async () => {
@@ -310,6 +311,47 @@ describe('AppController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .delete(`/auth/quit/${userId}`)
           .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // stripe onboarding
+    it(
+      '/auth-ext/stripe-onboarding (POST) should get stripe onboarding url',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/auth-ext/stripe-onboarding`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        accountId = response.body.data.accountId;
+      },
+      testTime,
+    );
+
+    it(
+      '/auth-ext/stripe-onboarding?accountId=123 (GET) should get stripe onboarding url',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/auth-ext/stripe-onboarding?accountId=${accountId}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/users/stripe-profile?accountId=123 (GET) should get user stripe profile',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/stripe-profile?accountId=${accountId}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
