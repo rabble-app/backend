@@ -1,5 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import * as twilio from 'twilio';
+import Stripe from 'stripe';
 import ChangePasswordDto from './dto/change-password.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
 import { Injectable } from '@nestjs/common';
@@ -11,8 +12,11 @@ import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { courier } from '../../src/utils/mail';
-
 import { UserWithProducerInfo } from '../../src/lib/types';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2022-11-15',
+});
 
 @Injectable()
 export class AuthService {
@@ -291,5 +295,49 @@ export class AuthService {
   async encryptPassword(pass: string): Promise<string> {
     const salt = await bcrypt.genSalt();
     return await bcrypt.hash(pass, salt);
+  }
+
+  async stripeOnboard(): Promise<{ url: string; accountId: string }> {
+    const account = await stripe.accounts.create({
+      type: 'express',
+      country: 'US',
+      capabilities: {
+        card_payments: {
+          requested: true,
+        },
+        transfers: {
+          requested: true,
+        },
+        bank_transfer_payments: {
+          requested: true,
+        },
+      },
+    });
+
+    const accountLinkURL = await this.generateAccountLink(account.id);
+    return {
+      url: accountLinkURL,
+      accountId: account.id,
+    };
+  }
+  async stripeOnboardRefresh(
+    accountId: string,
+  ): Promise<{ url: string; accountId: string }> {
+    const accountLinkURL = await this.generateAccountLink(accountId);
+    return {
+      url: accountLinkURL,
+      accountId: accountId,
+    };
+  }
+
+  async generateAccountLink(accountId: string): Promise<string> {
+    return stripe.accountLinks
+      .create({
+        type: 'account_onboarding',
+        account: accountId,
+        refresh_url: `${process.env.STRIPE_REFRESH_URL}?accountId=${accountId}`,
+        return_url: `${process.env.STRIPE_RETURN_URL}?accountId=${accountId}`,
+      })
+      .then((link) => link.url);
   }
 }

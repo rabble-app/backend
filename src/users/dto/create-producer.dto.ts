@@ -78,4 +78,13 @@ export class CreateProducerDto {
   @ValidateIf((o) => o.imageUrl)
   @IsString()
   imageUrl: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The business stripe connect id',
+    required: false,
+  })
+  @ValidateIf((o) => o.stripeConnectId)
+  @IsString()
+  stripeConnectId: string;
 }
