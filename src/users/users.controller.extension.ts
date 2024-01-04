@@ -14,6 +14,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   Res,
   UseGuards,
@@ -298,6 +299,29 @@ export class UsersControllerExtension {
       HttpStatus.OK,
       false,
       'Producer categories returned successfully',
+    );
+  }
+
+  /**
+   * return user stripe profile.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('/stripe-profile')
+  @ApiOkResponse({ description: 'Stripe profile returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async stripeProfile(
+    @Query('accountId') accountId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getStripeProfile(accountId);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Stripe profile returned successfully',
     );
   }
 }
