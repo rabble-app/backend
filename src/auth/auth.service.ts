@@ -302,6 +302,9 @@ export class AuthService {
       type: 'express',
       country: 'GB',
       capabilities: {
+        card_payments: {
+          requested: true,
+        },
         transfers: {
           requested: true,
         },
