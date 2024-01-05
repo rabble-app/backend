@@ -300,7 +300,7 @@ export class AuthService {
   async stripeOnboard(): Promise<{ url: string; accountId: string }> {
     const account = await stripe.accounts.create({
       type: 'express',
-      country: 'US',
+      country: 'GB',
       capabilities: {
         card_payments: {
           requested: true,
@@ -320,6 +320,7 @@ export class AuthService {
       accountId: account.id,
     };
   }
+
   async stripeOnboardRefresh(
     accountId: string,
   ): Promise<{ url: string; accountId: string }> {
@@ -335,8 +336,8 @@ export class AuthService {
       .create({
         type: 'account_onboarding',
         account: accountId,
-        refresh_url: `${process.env.STRIPE_REFRESH_URL}?accountId=${accountId}`,
-        return_url: `${process.env.STRIPE_RETURN_URL}?accountId=${accountId}`,
+        refresh_url: `${process.env.STRIPE_REFRESH_URL}`,
+        return_url: `${process.env.STRIPE_RETURN_URL}`,
       })
       .then((link) => link.url);
   }
