@@ -70,7 +70,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard) uncomment this after the two suppliers have updated their accouunt
   @Patch('producer/:id')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'User record updated successfully' })
