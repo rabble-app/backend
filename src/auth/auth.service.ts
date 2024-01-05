@@ -300,11 +300,8 @@ export class AuthService {
   async stripeOnboard(): Promise<{ url: string; accountId: string }> {
     const account = await stripe.accounts.create({
       type: 'express',
-      country: 'US',
+      country: 'GB',
       capabilities: {
-        card_payments: {
-          requested: true,
-        },
         transfers: {
           requested: true,
         },
