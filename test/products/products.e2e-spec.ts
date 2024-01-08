@@ -208,5 +208,20 @@ describe('ProductsController (e2e)', () => {
       },
       testTime,
     );
+
+    // return products for admin panel
+    it(
+      '/products/admin/section(GET) should return products of a producer',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/products/admin/section?offset=0&approved=true`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

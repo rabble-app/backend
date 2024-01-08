@@ -1,3 +1,10 @@
+import { AuthGuard } from '../../src/auth/auth.guard';
+import { CreateProductDto } from './dto/create-product.dto';
+import { formatResponse } from '../lib/helpers';
+import { IAPIResponse } from '../lib/types';
+import { ProductsService } from './products.service';
+import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
+import { Response } from 'express';
 import {
   Controller,
   Post,
@@ -9,8 +16,6 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -19,11 +24,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { IAPIResponse } from '../lib/types';
-import { formatResponse } from '../lib/helpers';
-import { Response } from 'express';
-import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
-import { AuthGuard } from '../../src/auth/auth.guard';
+import { app } from 'firebase-admin';
 
 @ApiTags('products')
 @Controller('products')
@@ -236,6 +237,36 @@ export class ProductsController {
       HttpStatus.OK,
       false,
       'Producers products returned successfully',
+    );
+  }
+
+  /**
+   * return products for admin panel
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/admin/section')
+  @ApiOkResponse({
+    description: 'Products returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async productsAdmin(
+    @Query('offset') offset: number,
+    @Query('approved') approved: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getProductsAdmin(
+      approved == 'true' ? true : false,
+      offset ? +offset : undefined,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Products returned successfully',
     );
   }
 }

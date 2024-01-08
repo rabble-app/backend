@@ -80,6 +80,7 @@ export class ProductsService {
         products: {
           where: {
             producerId: id,
+            approved: true,
           },
           include: {
             partionedProducts: {
@@ -176,7 +177,59 @@ export class ProductsService {
     return await this.prisma.product.findMany({
       where: {
         producerId,
+        approved: true,
       },
     });
+  }
+
+  async getProductsAdmin(approved = true, offset = 0): Promise<object> {
+    const result = await this.prisma.$transaction([
+      this.prisma.product.count({ where: { approved } }),
+      this.prisma.product.findMany({
+        skip: offset,
+        take: 7,
+        where: {
+          approved,
+        },
+        select: {
+          id: true,
+          imageUrl: true,
+          name: true,
+          description: true,
+          stock: true,
+          producer: {
+            select: {
+              categories: {
+                select: {
+                  category: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          type: true,
+          measuresPerSubUnit: true,
+          quantityOfSubUnitPerOrder: true,
+          wholesalePrice: true,
+          price: true,
+          vat: true,
+          unitsOfMeasurePerSubUnit: true,
+          subUnit: true,
+          approved: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+    return result;
   }
 }
