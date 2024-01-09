@@ -1,12 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductApprovalStatus } from '@prisma/client';
-import {
-  ArrayMinSize,
-  IsArray,
-  IsEnum,
-  IsNotEmpty,
-  ValidateNested,
-} from 'class-validator';
+import { ArrayMinSize, IsArray, IsEnum, IsNotEmpty } from 'class-validator';
 
 export class UpdateProductStatusDto {
   @ApiProperty({
