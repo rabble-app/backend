@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { ITeamWithOtherInfo, ProductApprovalStatus } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
+import { UpdateProductStatusDto } from './dto/update-product-status';
 
 @Injectable()
 export class ProductsService {
@@ -315,5 +316,21 @@ export class ProductsService {
       },
     });
     return result;
+  }
+
+  async updateProductApprovalStatus(
+    updateProductStatusDto: UpdateProductStatusDto,
+  ): Promise<string | null> {
+    updateProductStatusDto.products.forEach(async (productId) => {
+      await this.prisma.product.update({
+        where: {
+          id: productId,
+        },
+        data: {
+          approvalStatus: updateProductStatusDto.approvalStatus,
+        },
+      });
+    });
+    return 'Update Successful';
   }
 }

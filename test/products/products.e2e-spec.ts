@@ -243,21 +243,23 @@ describe('ProductsController (e2e)', () => {
       testTime,
     );
 
-    // // approve/reject product
-    // it(
-    //   '/products/admin/update?approved=false(PATCH) should return 200 on a successful update',
-    //   async () => {
-    //     const response = await request(app.getHttpServer())
-    //       .patch(
-    //         `/products/admin/update?approvalStatus=${ProductApprovalStatus.APPROVED}`,
-    //       )
-    //       .set('Authorization', `Bearer ${jwtToken}`)
-    //       .expect(200);
-    //     expect(response.body).toHaveProperty('data');
-    //     expect(response.body.error).toBeUndefined();
-    //     expect(typeof response.body.data).toBe('object');
-    //   },
-    //   testTime,
-    // );
+    // approve/reject product
+    it(
+      '/products/admin/update(PATCH) should return 200 on a successful update',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/products/admin/update`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            products: [productId],
+            approvalStatus: ProductApprovalStatus.APPROVED,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('string');
+      },
+      testTime,
+    );
   });
 });

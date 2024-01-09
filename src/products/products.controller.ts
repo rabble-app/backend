@@ -15,6 +15,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -24,6 +25,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { UpdateProductStatusDto } from './dto/update-product-status';
 
 @ApiTags('products')
 @Controller('products')
@@ -309,6 +311,34 @@ export class ProductsController {
       HttpStatus.OK,
       false,
       'Search result returned successfully',
+    );
+  }
+
+  /**
+   * Update product approval status.
+   * @param {Body} updateProductStatusDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch('/admin/update')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Products updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async createBuyingTeam(
+    @Body() updateProductStatusDto: UpdateProductStatusDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.updateProductApprovalStatus(
+      updateProductStatusDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Products updated successfully',
     );
   }
 }
