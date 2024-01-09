@@ -223,5 +223,20 @@ describe('ProductsController (e2e)', () => {
       },
       testTime,
     );
+
+    // search feature
+    it(
+      '/products/admin/search/:keyword(GET) should return 200 on a successful search',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/products/admin/search/teamone')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

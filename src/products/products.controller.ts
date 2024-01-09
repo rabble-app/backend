@@ -24,7 +24,6 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { app } from 'firebase-admin';
 
 @ApiTags('products')
 @Controller('products')
@@ -267,6 +266,49 @@ export class ProductsController {
       HttpStatus.OK,
       false,
       'Products returned successfully',
+    );
+  }
+
+  /**
+   * search feature for products.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/admin/search/:keyword/')
+  @ApiOkResponse({ description: 'Search result returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiParam({
+    name: 'keyword',
+    required: true,
+    description: 'The keyword of the search',
+  })
+  async productSearch(
+    @Param('keyword') keyword: string,
+    @Query('approved') approved: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    if (keyword.length < 3) {
+      return formatResponse(
+        'Invalid keyword length',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        `Keyword must be greater than 2 characters`,
+      );
+    }
+    const result = await this.productsService.productSearch(
+      keyword,
+      approved == 'true' ? true : false,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Search result returned successfully',
     );
   }
 }

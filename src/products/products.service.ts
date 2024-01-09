@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { ITeamWithOtherInfo } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
+import { app } from 'firebase-admin';
 
 @Injectable()
 export class ProductsService {
@@ -230,6 +231,87 @@ export class ProductsService {
         },
       }),
     ]);
+    return result;
+  }
+
+  async productSearch(
+    keyword: string,
+    approved = true,
+  ): Promise<object[] | null> {
+    const result = await this.prisma.product.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: keyword,
+              mode: 'insensitive',
+            },
+            approved,
+          },
+          {
+            category: {
+              name: {
+                contains: keyword,
+                mode: 'insensitive',
+              },
+            },
+            approved,
+          },
+          {
+            producer: {
+              categories: {
+                some: {
+                  category: {
+                    name: {
+                      contains: keyword,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+            },
+            approved,
+          },
+        ],
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+        name: true,
+        description: true,
+        stock: true,
+        producer: {
+          select: {
+            categories: {
+              select: {
+                category: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        category: {
+          select: {
+            name: true,
+          },
+        },
+        type: true,
+        measuresPerSubUnit: true,
+        quantityOfSubUnitPerOrder: true,
+        wholesalePrice: true,
+        price: true,
+        vat: true,
+        unitsOfMeasurePerSubUnit: true,
+        subUnit: true,
+        approved: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
     return result;
   }
 }
