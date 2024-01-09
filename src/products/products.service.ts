@@ -3,9 +3,8 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
-import { ITeamWithOtherInfo } from '../../src/lib/types';
+import { ITeamWithOtherInfo, ProductApprovalStatus } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
-import { app } from 'firebase-admin';
 
 @Injectable()
 export class ProductsService {
@@ -81,7 +80,7 @@ export class ProductsService {
         products: {
           where: {
             producerId: id,
-            approved: true,
+            approvalStatus: ProductApprovalStatus.APPROVED,
           },
           include: {
             partionedProducts: {
@@ -178,19 +177,22 @@ export class ProductsService {
     return await this.prisma.product.findMany({
       where: {
         producerId,
-        approved: true,
+        approvalStatus: ProductApprovalStatus.APPROVED,
       },
     });
   }
 
-  async getProductsAdmin(approved = true, offset = 0): Promise<object> {
+  async getProductsAdmin(
+    approvalStatus = ProductApprovalStatus.APPROVED,
+    offset = 0,
+  ): Promise<object> {
     const result = await this.prisma.$transaction([
-      this.prisma.product.count({ where: { approved } }),
+      this.prisma.product.count({ where: { approvalStatus } }),
       this.prisma.product.findMany({
         skip: offset,
         take: 7,
         where: {
-          approved,
+          approvalStatus,
         },
         select: {
           id: true,
@@ -224,7 +226,7 @@ export class ProductsService {
           vat: true,
           unitsOfMeasurePerSubUnit: true,
           subUnit: true,
-          approved: true,
+          approvalStatus: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -236,7 +238,7 @@ export class ProductsService {
 
   async productSearch(
     keyword: string,
-    approved = true,
+    approvalStatus = ProductApprovalStatus.APPROVED,
   ): Promise<object[] | null> {
     const result = await this.prisma.product.findMany({
       where: {
@@ -246,7 +248,7 @@ export class ProductsService {
               contains: keyword,
               mode: 'insensitive',
             },
-            approved,
+            approvalStatus,
           },
           {
             category: {
@@ -255,7 +257,7 @@ export class ProductsService {
                 mode: 'insensitive',
               },
             },
-            approved,
+            approvalStatus,
           },
           {
             producer: {
@@ -270,7 +272,7 @@ export class ProductsService {
                 },
               },
             },
-            approved,
+            approvalStatus,
           },
         ],
       },
@@ -306,7 +308,7 @@ export class ProductsService {
         vat: true,
         unitsOfMeasurePerSubUnit: true,
         subUnit: true,
-        approved: true,
+        approvalStatus: true,
       },
       orderBy: {
         createdAt: 'desc',
