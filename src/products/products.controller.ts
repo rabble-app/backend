@@ -1,7 +1,7 @@
 import { AuthGuard } from '../../src/auth/auth.guard';
 import { CreateProductDto } from './dto/create-product.dto';
 import { formatResponse } from '../lib/helpers';
-import { IAPIResponse } from '../lib/types';
+import { IAPIResponse, ProductApprovalStatus } from '../lib/types';
 import { ProductsService } from './products.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { Response } from 'express';
@@ -253,11 +253,11 @@ export class ProductsController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async productsAdmin(
     @Query('offset') offset: number,
-    @Query('approved') approved: string,
+    @Query('approvalStatus') approvalStatus: ProductApprovalStatus,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.productsService.getProductsAdmin(
-      approved == 'true' ? true : false,
+      approvalStatus,
       offset ? +offset : undefined,
     );
     return formatResponse(
@@ -287,7 +287,7 @@ export class ProductsController {
   })
   async productSearch(
     @Param('keyword') keyword: string,
-    @Query('approved') approved: string,
+    @Query('approvalStatus') approvalStatus: ProductApprovalStatus,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     if (keyword.length < 3) {
@@ -301,7 +301,7 @@ export class ProductsController {
     }
     const result = await this.productsService.productSearch(
       keyword,
-      approved == 'true' ? true : false,
+      approvalStatus,
     );
     return formatResponse(
       result,

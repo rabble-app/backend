@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
-import { Producer, User } from '@prisma/client';
+import { Producer, ProductApprovalStatus, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 
@@ -214,7 +214,9 @@ describe('ProductsController (e2e)', () => {
       '/products/admin/section(GET) should return products of a producer',
       async () => {
         const response = await request(app.getHttpServer())
-          .get(`/products/admin/section?offset=0&approved=true`)
+          .get(
+            `/products/admin/section?offset=0&approvalStatus=${ProductApprovalStatus.APPROVED}`,
+          )
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -229,7 +231,9 @@ describe('ProductsController (e2e)', () => {
       '/products/admin/search/:keyword(GET) should return 200 on a successful search',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('/products/admin/search/teamone')
+          .get(
+            `/products/admin/search/teamone?approvalStatus=${ProductApprovalStatus.APPROVED}`,
+          )
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -238,5 +242,22 @@ describe('ProductsController (e2e)', () => {
       },
       testTime,
     );
+
+    // // approve/reject product
+    // it(
+    //   '/products/admin/update?approved=false(PATCH) should return 200 on a successful update',
+    //   async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .patch(
+    //         `/products/admin/update?approvalStatus=${ProductApprovalStatus.APPROVED}`,
+    //       )
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(typeof response.body.data).toBe('object');
+    //   },
+    //   testTime,
+    // );
   });
 });
