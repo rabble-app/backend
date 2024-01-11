@@ -11,6 +11,7 @@ import { TeamsServiceExtension2 } from './teams.service.extension2';
 import { TeamsControllerExtension } from './teams.controller.extension';
 import { AuthModule } from '../../src/auth/auth.module';
 import { TeamsControllerExtension2 } from './teams.controller.extension2';
+import { ProductsModule } from '../../src/products/products.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TeamsControllerExtension2 } from './teams.controller.extension2';
     UsersModule,
     NotificationsModule,
     forwardRef(() => AuthModule),
+    ProductsModule,
   ],
   controllers: [
     TeamsController,

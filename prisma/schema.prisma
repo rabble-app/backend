@@ -129,9 +129,9 @@ model Product {
   producerId                String          @map("producer_id")
   categoryId                String?         @map("category_id")
   price                     Int
-  wholesalePrice            Int?            @map("wholesale_price")
-  retailPrice               Int?            @map("retail_price")
-  vat                       Int?
+  wholesalePrice            Int?            @default(0) @map("wholesale_price")
+  retailPrice               Int?            @default(0) @map("retail_price")
+  vat                       Int?            
   status                    ProductStatus   @default(IN_STOCK)
   orderUnit                 String          @default("Box") @map("order_unit")
   subUnit                   String          @default("Carton") @map("sub_unit")
