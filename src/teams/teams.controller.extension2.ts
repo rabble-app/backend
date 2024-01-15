@@ -96,7 +96,7 @@ export class TeamsControllerExtension2 {
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
-  @Get('orders/:orderId/:producerId')
+  @Get('admin/orders/:orderId/:producerId')
   @ApiOkResponse({
     description: 'Order invoice infor returned successfully',
   })
