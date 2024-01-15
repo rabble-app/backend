@@ -219,10 +219,12 @@ export class TeamsServiceExtension2 {
     const products = await this.productsService.getProductNormal(producerId);
     for (let index = 0; index < products.length; index++) {
       const product = products[index];
-      const count = await this.prisma.basket.count({
+      const aggregations = await this.prisma.basket.aggregate({
         where: {
           orderId,
-          productId: product.id,
+        },
+        _sum: {
+          quantity: true,
         },
       });
       productLog.push({
@@ -232,7 +234,7 @@ export class TeamsServiceExtension2 {
         measuresPerSubUnit: product.measuresPerSubUnit,
         quantityOfSubUnitPerOrder: product.quantityOfSubUnitPerOrder,
         cost: product.wholesalePrice,
-        quantity: count,
+        quantity: aggregations._sum.quantity,
         vat: product.vat,
       });
     }
@@ -282,8 +284,7 @@ export class TeamsServiceExtension2 {
         },
       },
     });
-
-    productLog
+    productLog.length > 0
       ? (result['productLog'] = productLog)
       : (result['productLog'] = []);
 
