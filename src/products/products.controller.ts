@@ -1,3 +1,10 @@
+import { AuthGuard } from '../../src/auth/auth.guard';
+import { CreateProductDto } from './dto/create-product.dto';
+import { formatResponse } from '../lib/helpers';
+import { IAPIResponse, ProductApprovalStatus } from '../lib/types';
+import { ProductsService } from './products.service';
+import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
+import { Response } from 'express';
 import {
   Controller,
   Post,
@@ -8,9 +15,8 @@ import {
   Param,
   Query,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -19,11 +25,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { IAPIResponse } from '../lib/types';
-import { formatResponse } from '../lib/helpers';
-import { Response } from 'express';
-import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
-import { AuthGuard } from '../../src/auth/auth.guard';
+import { UpdateProductStatusDto } from './dto/update-product-status';
 
 @ApiTags('products')
 @Controller('products')
@@ -236,6 +238,107 @@ export class ProductsController {
       HttpStatus.OK,
       false,
       'Producers products returned successfully',
+    );
+  }
+
+  /**
+   * return products for admin panel
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/admin/section')
+  @ApiOkResponse({
+    description: 'Products returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async productsAdmin(
+    @Query('offset') offset: number,
+    @Query('approvalStatus') approvalStatus: ProductApprovalStatus,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getProductsAdmin(
+      approvalStatus,
+      offset ? +offset : undefined,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Products returned successfully',
+    );
+  }
+
+  /**
+   * search feature for products.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/admin/search/:keyword/')
+  @ApiOkResponse({ description: 'Search result returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiParam({
+    name: 'keyword',
+    required: true,
+    description: 'The keyword of the search',
+  })
+  async productSearch(
+    @Param('keyword') keyword: string,
+    @Query('approvalStatus') approvalStatus: ProductApprovalStatus,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    if (keyword.length < 3) {
+      return formatResponse(
+        'Invalid keyword length',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        `Keyword must be greater than 2 characters`,
+      );
+    }
+    const result = await this.productsService.productSearch(
+      keyword,
+      approvalStatus,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Search result returned successfully',
+    );
+  }
+
+  /**
+   * Update product approval status.
+   * @param {Body} updateProductStatusDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch('/admin/update')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiCreatedResponse({ description: 'Products updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async createBuyingTeam(
+    @Body() updateProductStatusDto: UpdateProductStatusDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.updateProductApprovalStatus(
+      updateProductStatusDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Products updated successfully',
     );
   }
 }

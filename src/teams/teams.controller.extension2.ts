@@ -90,33 +90,42 @@ export class TeamsControllerExtension2 {
   }
 
   /**
-   * return  single order.
+   * return  single order invoice information.
    * @param {Response} res - The payload.
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
-  @Get('orders/:id')
+  @Get('admin/orders/:orderId/:producerId')
   @ApiOkResponse({
-    description: 'Order returned successfully',
+    description: 'Order invoice infor returned successfully',
   })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiParam({
-    name: 'id',
+    name: 'orderId',
     required: true,
     description: 'The id of the order',
   })
-  async getSingleOrder(
-    @Param('id') id: string,
+  @ApiParam({
+    name: 'producerId',
+    required: true,
+    description: 'The id of the producer',
+  })
+  async getOrderInvoice(
+    @Param('orderId') orderId: string,
+    @Param('producerId') producerId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension2.getSingleOrder(id);
+    const result = await this.teamsServiceExtension2.getOrderInvoiceDetails(
+      orderId,
+      producerId,
+    );
     return formatResponse(
       result,
       res,
       HttpStatus.OK,
       false,
-      'Order returned successfully',
+      'Order invoice infor returned successfully',
     );
   }
 

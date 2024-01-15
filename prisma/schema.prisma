@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["distinct", "fieldReference", "filteredRelationCount"]
+  previewFeatures = ["distinct", "fieldReference", "filteredRelationCount", "nativeTypes"]
   binaryTargets   = ["native", "linux-arm64-openssl-1.0.x"]
 }
 
@@ -121,23 +121,25 @@ model Shipping {
 }
 
 model Product {
-  id                        String        @id @default(uuid())
+  id                        String          @id @default(uuid())
   name                      String
-  imageUrl                  String?       @map("image_url")
-  imageKey                  String?       @map("image_key")
+  imageUrl                  String?         @map("image_url")
+  imageKey                  String?         @map("image_key")
   description               String?
-  producerId                String        @map("producer_id")
-  categoryId                String?       @map("category_id")
+  producerId                String          @map("producer_id")
+  categoryId                String?         @map("category_id")
   price                     Int
-  wholesalePrice            Int?          @map("wholesale_price")
-  retailPrice               Int?          @map("retail_price")
-  vat                       Int?
-  status                    ProductStatus @default(IN_STOCK)
-  orderUnit                 String        @default("Box") @map("order_unit")
-  subUnit                   String        @default("Carton") @map("sub_unit")
-  quantityOfSubUnitPerOrder Int           @default(1) @map("quantity_of_subunit_per_order")
-  unitsOfMeasurePerSubUnit  String        @default("Carton") @map("units_of_measure_per_subunit")
-  measuresPerSubUnit        Int           @default(1) @map("measures_per_subunit")
+  wholesalePrice            Int?            @default(0) @map("wholesale_price")
+  retailPrice               Int?            @default(0) @map("retail_price")
+  vat                       Int?            
+  status                    ProductStatus   @default(IN_STOCK)
+  orderUnit                 String          @default("Box") @map("order_unit")
+  subUnit                   String          @default("Carton") @map("sub_unit")
+  quantityOfSubUnitPerOrder Int             @default(1) @map("quantity_of_subunit_per_order")
+  unitsOfMeasurePerSubUnit  String          @default("Carton") @map("units_of_measure_per_subunit")
+  measuresPerSubUnit        Int             @default(1) @map("measures_per_subunit")
+  approvalStatus            ProductApprovalStatus @default(PENDING) @map("approval_status")
+  stock                     Int?            @default(0)
 
   createdAt         DateTime                    @default(now()) @map("created_at")
   updatedAt         DateTime                    @updatedAt @map("updated_at")
@@ -533,6 +535,13 @@ enum ProductStatus {
 }
 
 enum TeamStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REMOVED
+}
+
+enum ProductApprovalStatus {
   PENDING
   APPROVED
   REJECTED

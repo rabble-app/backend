@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
-import { Producer, User } from '@prisma/client';
+import { Producer, ProductApprovalStatus, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 
@@ -205,6 +205,59 @@ describe('ProductsController (e2e)', () => {
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // return products for admin panel
+    it(
+      '/products/admin/section(GET) should return products of a producer',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(
+            `/products/admin/section?offset=0&approvalStatus=${ProductApprovalStatus.APPROVED}`,
+          )
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // search feature
+    it(
+      '/products/admin/search/:keyword(GET) should return 200 on a successful search',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(
+            `/products/admin/search/teamone?approvalStatus=${ProductApprovalStatus.APPROVED}`,
+          )
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // approve/reject product
+    it(
+      '/products/admin/update(PATCH) should return 200 on a successful update',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/products/admin/update`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            products: [productId],
+            approvalStatus: ProductApprovalStatus.APPROVED,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('string');
       },
       testTime,
     );

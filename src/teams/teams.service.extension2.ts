@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
 import { Order, OrderStatus, Prisma } from '@prisma/client';
+import { ProductsService } from '../../src/products/products.service';
 
 @Injectable()
 export class TeamsServiceExtension2 {
@@ -10,6 +11,7 @@ export class TeamsServiceExtension2 {
     private prisma: PrismaService,
     private readonly authService: AuthService,
     private readonly userService: UsersService,
+    private readonly productsService: ProductsService,
   ) {}
 
   async verifyInvite(token: string): Promise<boolean | object> {
@@ -170,6 +172,7 @@ export class TeamsServiceExtension2 {
               postalCode: true,
               producer: {
                 select: {
+                  id: true,
                   businessName: true,
                   categories: {
                     select: {
@@ -207,10 +210,36 @@ export class TeamsServiceExtension2 {
     return result;
   }
 
-  async getSingleOrder(id: string): Promise<object> {
+  async getOrderInvoiceDetails(
+    orderId: string,
+    producerId: string,
+  ): Promise<object> {
+    const productLog = [];
+    // get all producers product
+    const products = await this.productsService.getProductNormal(producerId);
+    for (let index = 0; index < products.length; index++) {
+      const product = products[index];
+      const count = await this.prisma.basket.count({
+        where: {
+          orderId,
+          productId: product.id,
+        },
+      });
+      productLog.push({
+        productSku: product.id,
+        name: product.name,
+        unitsOfMeasurePerSubUnit: product.unitsOfMeasurePerSubUnit,
+        measuresPerSubUnit: product.measuresPerSubUnit,
+        quantityOfSubUnitPerOrder: product.quantityOfSubUnitPerOrder,
+        cost: product.wholesalePrice,
+        quantity: count,
+        vat: product.vat,
+      });
+    }
+    // check the order basket for each product and get the count
     const result = await this.prisma.order.findUnique({
       where: {
-        id,
+        id: orderId,
       },
       select: {
         id: true,
@@ -227,15 +256,9 @@ export class TeamsServiceExtension2 {
                 vat: true,
                 paymentTerm: true,
                 businessName: true,
+                businessAddress: true,
                 user: {
                   select: {
-                    shipping: {
-                      select: {
-                        buildingNo: true,
-                        address: true,
-                        city: true,
-                      },
-                    },
                     postalCode: true,
                   },
                 },
@@ -257,24 +280,12 @@ export class TeamsServiceExtension2 {
             },
           },
         },
-        basket: {
-          select: {
-            price: true,
-            quantity: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                vat: true,
-                unitsOfMeasurePerSubUnit: true,
-                measuresPerSubUnit: true,
-                quantityOfSubUnitPerOrder: true,
-              },
-            },
-          },
-        },
       },
     });
+
+    productLog
+      ? (result['productLog'] = productLog)
+      : (result['productLog'] = []);
 
     return result;
   }

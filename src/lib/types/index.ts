@@ -117,6 +117,13 @@ export enum DeliveryType {
   CUSTOM = 'CUSTOM',
 }
 
+export enum ProductApprovalStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  REMOVED = 'REMOVED',
+}
+
 export type ProducerWithCategories = Prisma.ProducerGetPayload<{
   include: {
     categories: {

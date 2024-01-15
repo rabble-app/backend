@@ -697,10 +697,10 @@ describe('TeamsController (e2e)', () => {
 
     // return single order info
     it(
-      '/team/orders/:id(GET) should return single order',
+      '/team/admin/orders/:orderId/:producerId(GET) should return single order',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('/team/orders/:id')
+          .get(`/team/admin/orders/${orderId}/${producerId}`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');

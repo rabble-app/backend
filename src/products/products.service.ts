@@ -3,8 +3,9 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { Product, ProductCategory, RecentlyViewed } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
-import { ITeamWithOtherInfo } from '../../src/lib/types';
+import { ITeamWithOtherInfo, ProductApprovalStatus } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
+import { UpdateProductStatusDto } from './dto/update-product-status';
 
 @Injectable()
 export class ProductsService {
@@ -80,6 +81,7 @@ export class ProductsService {
         products: {
           where: {
             producerId: id,
+            approvalStatus: ProductApprovalStatus.APPROVED,
           },
           include: {
             partionedProducts: {
@@ -176,7 +178,159 @@ export class ProductsService {
     return await this.prisma.product.findMany({
       where: {
         producerId,
+        approvalStatus: ProductApprovalStatus.APPROVED,
       },
     });
+  }
+
+  async getProductsAdmin(
+    approvalStatus = ProductApprovalStatus.APPROVED,
+    offset = 0,
+  ): Promise<object> {
+    const result = await this.prisma.$transaction([
+      this.prisma.product.count({ where: { approvalStatus } }),
+      this.prisma.product.findMany({
+        skip: offset,
+        take: 7,
+        where: {
+          approvalStatus,
+        },
+        select: {
+          id: true,
+          imageUrl: true,
+          name: true,
+          description: true,
+          stock: true,
+          producer: {
+            select: {
+              categories: {
+                select: {
+                  category: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          type: true,
+          measuresPerSubUnit: true,
+          quantityOfSubUnitPerOrder: true,
+          wholesalePrice: true,
+          price: true,
+          vat: true,
+          unitsOfMeasurePerSubUnit: true,
+          subUnit: true,
+          approvalStatus: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+    return result;
+  }
+
+  async productSearch(
+    keyword: string,
+    approvalStatus = ProductApprovalStatus.APPROVED,
+  ): Promise<object[] | null> {
+    const result = await this.prisma.product.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: keyword,
+              mode: 'insensitive',
+            },
+            approvalStatus,
+          },
+          {
+            category: {
+              name: {
+                contains: keyword,
+                mode: 'insensitive',
+              },
+            },
+            approvalStatus,
+          },
+          {
+            producer: {
+              categories: {
+                some: {
+                  category: {
+                    name: {
+                      contains: keyword,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+            },
+            approvalStatus,
+          },
+        ],
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+        name: true,
+        description: true,
+        stock: true,
+        producer: {
+          select: {
+            categories: {
+              select: {
+                category: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        category: {
+          select: {
+            name: true,
+          },
+        },
+        type: true,
+        measuresPerSubUnit: true,
+        quantityOfSubUnitPerOrder: true,
+        wholesalePrice: true,
+        price: true,
+        vat: true,
+        unitsOfMeasurePerSubUnit: true,
+        subUnit: true,
+        approvalStatus: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return result;
+  }
+
+  async updateProductApprovalStatus(
+    updateProductStatusDto: UpdateProductStatusDto,
+  ): Promise<string | null> {
+    updateProductStatusDto.products.forEach(async (productId) => {
+      await this.prisma.product.update({
+        where: {
+          id: productId,
+        },
+        data: {
+          approvalStatus: updateProductStatusDto.approvalStatus,
+        },
+      });
+    });
+    return 'Update Successful';
   }
 }
