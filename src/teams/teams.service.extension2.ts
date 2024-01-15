@@ -283,7 +283,9 @@ export class TeamsServiceExtension2 {
       },
     });
 
-    result['productLog'] = productLog;
+    productLog
+      ? (result['productLog'] = productLog)
+      : (result['productLog'] = []);
 
     return result;
   }
