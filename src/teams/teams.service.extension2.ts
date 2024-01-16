@@ -248,16 +248,18 @@ export class TeamsServiceExtension2 {
             productQuantityCount - portionedProduct.accumulator;
         }
       }
-      productLog.push({
-        productSku: product.id,
-        name: product.name,
-        unitsOfMeasurePerSubUnit: product.unitsOfMeasurePerSubUnit,
-        measuresPerSubUnit: product.measuresPerSubUnit,
-        quantityOfSubUnitPerOrder: product.quantityOfSubUnitPerOrder,
-        cost: product.wholesalePrice,
-        quantity: productQuantityCount,
-        vat: product.vat,
-      });
+      if (productQuantityCount > 0) {
+        productLog.push({
+          productSku: product.id,
+          name: product.name,
+          unitsOfMeasurePerSubUnit: product.unitsOfMeasurePerSubUnit,
+          measuresPerSubUnit: product.measuresPerSubUnit,
+          quantityOfSubUnitPerOrder: product.quantityOfSubUnitPerOrder,
+          cost: product.wholesalePrice,
+          quantity: productQuantityCount,
+          vat: product.vat,
+        });
+      }
     }
     const result = await this.prisma.order.findUnique({
       where: {
