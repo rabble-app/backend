@@ -219,14 +219,35 @@ export class TeamsServiceExtension2 {
     const products = await this.productsService.getProductNormal(producerId);
     for (let index = 0; index < products.length; index++) {
       const product = products[index];
+      // get the total quantity for the order per product
       const aggregations = await this.prisma.basket.aggregate({
         where: {
           orderId,
+          productId: product.id,
         },
         _sum: {
           quantity: true,
         },
       });
+      let productQuantityCount = aggregations._sum.quantity;
+      // check for portion product that is not fulfilled
+      if (product.type === 'PORTIONED_SINGLE_PRODUCT') {
+        const portionedProduct =
+          await this.prisma.partitionedProductsBasket.findFirst({
+            where: {
+              orderId: orderId,
+              productId: product.id,
+              threshold: {
+                gt: this.prisma.partitionedProductsBasket.fields.accumulator,
+              },
+            },
+          });
+
+        if (portionedProduct) {
+          productQuantityCount =
+            productQuantityCount - portionedProduct.accumulator;
+        }
+      }
       productLog.push({
         productSku: product.id,
         name: product.name,
@@ -234,11 +255,10 @@ export class TeamsServiceExtension2 {
         measuresPerSubUnit: product.measuresPerSubUnit,
         quantityOfSubUnitPerOrder: product.quantityOfSubUnitPerOrder,
         cost: product.wholesalePrice,
-        quantity: aggregations._sum.quantity,
+        quantity: productQuantityCount,
         vat: product.vat,
       });
     }
-    // check the order basket for each product and get the count
     const result = await this.prisma.order.findUnique({
       where: {
         id: orderId,
