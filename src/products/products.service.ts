@@ -230,7 +230,7 @@ export class ProductsService {
           approvalStatus: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          updatedAt: 'desc',
         },
       }),
     ]);
