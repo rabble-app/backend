@@ -130,6 +130,7 @@ async function main() {
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
+      wholesalePrice: 17.5,
       orderUnit: 'Bag',
       subUnit: 'Bag',
       quantityOfSubUnitPerOrder: 1,
@@ -167,6 +168,7 @@ async function main() {
       quantityOfSubUnitPerOrder: 1,
       unitsOfMeasurePerSubUnit: 'Kg',
       measuresPerSubUnit: 1,
+      wholesalePrice: 17.5,
     },
   });
 
@@ -272,6 +274,7 @@ async function main() {
       quantityOfSubUnitPerOrder: 20,
       unitsOfMeasurePerSubUnit: 'Egg',
       measuresPerSubUnit: 6,
+      wholesalePrice: 1.7,
     },
   });
 }
