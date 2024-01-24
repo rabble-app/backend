@@ -130,7 +130,7 @@ async function main() {
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
-      wholesalePrice: 17.5,
+      wholesalePrice: 18.45,
       orderUnit: 'Bag',
       subUnit: 'Bag',
       quantityOfSubUnitPerOrder: 1,
@@ -168,7 +168,7 @@ async function main() {
       quantityOfSubUnitPerOrder: 1,
       unitsOfMeasurePerSubUnit: 'Kg',
       measuresPerSubUnit: 1,
-      wholesalePrice: 17.5,
+      wholesalePrice: 18.45,
     },
   });
 
@@ -248,7 +248,7 @@ async function main() {
     where: {
       name_unique_producer: {
         name: 'Cacklebean Eggs',
-        producerId: producerRecord.id,
+        producerId: producerRecordB.id,
       },
     },
     update: {
@@ -275,6 +275,189 @@ async function main() {
       unitsOfMeasurePerSubUnit: 'Egg',
       measuresPerSubUnit: 6,
       wholesalePrice: 1.7,
+    },
+  });
+
+  // producer C
+  // save user record
+  const userRecordC = await prisma.user.upsert({
+    where: { email: 'www.fossemeadows.co.uk' },
+    update: {},
+    create: {
+      email: 'www.fossemeadows.co.uk',
+      phone: '01858 88 1000',
+      password: 'rabble-www.fossemeadows.co.uk',
+      role: 'PRODUCER',
+    },
+  });
+
+  // save producer record
+  const producerRecordC = await prisma.producer.upsert({
+    where: { userId: userRecordC.id },
+    update: {},
+    create: {
+      isVerified: true,
+      userId: userRecordC.id,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Fosse+-+Producer.jpg',
+      businessName: 'Fosse Meadows',
+      businessAddress:
+        'Stud Farm  Station Road  North KilworthLeicestershire LE17 6JD',
+      accountsEmail: 'www.fossemeadows.co.uk',
+      salesEmail: 'orders@fossemeadows.co.uk',
+      minimumTreshold: 180,
+      website: '',
+      description:
+        'At Fosse Meadows we pride ourselves on the welfare we deliver for our birds. We grow our birds slowly and traditionally. The Fosse bird is totally free ranging and grown naturally in small flocks to a minimum of 81 days. That’s three times longer than standard commercially-reared supermarket chicken, and two weeks longer than organic birds. Like the much-admired French chicken, we use three strains of French breeds and grow them to full maturity. This means our birds have longer legs, allowing them to roam and forage on rich, wildflower pasture. They are fed a cereal-based diet that is locally sourced where possible, with no antibiotics, additives or hormones. Fosse chicken simply has richer and more succulent meat, with stronger, nutritionally-rich bones too. Just how chicken should, and used to, taste.',
+    },
+  });
+
+  // get producer category id
+  const producerCategoryOptionC = await prisma.producerCategoryOption.findFirst(
+    {
+      where: {
+        name: 'Meat',
+      },
+      select: {
+        id: true,
+      },
+    },
+  );
+
+  // add category id to the producer
+  await prisma.producerCategory.upsert({
+    where: {
+      producer_unique_category_option: {
+        producerId: producerRecordC.id,
+        producerCategoryOptionId: producerCategoryOptionC.id,
+      },
+    },
+    update: {},
+    create: {
+      producerId: producerRecordC.id,
+      producerCategoryOptionId: producerCategoryOptionC.id,
+    },
+  });
+
+  // get producer product id
+  const productCategoryCC = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Fresh meat',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  // add product 1
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Whole Chicken + 3KG Breast',
+        producerId: producerRecordC.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Whole Chicken + 3KG Breast',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Fosse+-+Product.jpg',
+      description:
+        '1 x Fosse 81 Day Total Freedom Free Range Chicken along with a 3KG vacuum pack of skin on breast',
+      producerId: producerRecordC.id,
+      categoryId: productCategoryCC.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Box',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Bundle',
+      measuresPerSubUnit: 1,
+      price: 54.78,
+      wholesalePrice: 49.8,
+    },
+  });
+
+  // add product 2
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: '2 Whole Chickens + 3KG Breast',
+        producerId: producerRecordC.id,
+      },
+    },
+    update: {},
+    create: {
+      name: '2 Whole Chickens + 3KG Breast',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Fosse+-+Product.jpg',
+      description:
+        '2 x Fosse 81 Day Total Freedom Free Range Chicken along with a 3KG vacuum pack of skin on breast',
+      producerId: producerRecordC.id,
+      categoryId: productCategoryCC.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Box',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Bundle',
+      measuresPerSubUnit: 1,
+      price: 68.51,
+      wholesalePrice: 49.8,
+    },
+  });
+
+  // add product 3
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Whole Chicken + 3KG Thigh',
+        producerId: producerRecordC.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Whole Chicken + 3KG Thigh',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Fosse+-+Product.jpg',
+      description:
+        '1 x Fosse 81 Day Total Freedom Free Range Chicken along with a 3KG vacuum pack of thigh',
+      producerId: producerRecordC.id,
+      categoryId: productCategoryCC.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Box',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Bundle',
+      measuresPerSubUnit: 1,
+      price: 49.1,
+      wholesalePrice: 44.64,
+    },
+  });
+
+  // add product 4
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: '2 Whole Chickens + 3KG Thigh',
+        producerId: producerRecordC.id,
+      },
+    },
+    update: {},
+    create: {
+      name: '2 Whole Chickens + 3KG Thigh',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Fosse+-+Product.jpg',
+      description:
+        '2 x Fosse 81 Day Total Freedom Free Range Chicken along with a 3KG vacuum pack of thigh',
+      producerId: producerRecordC.id,
+      categoryId: productCategoryCC.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Box',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Bundle',
+      measuresPerSubUnit: 1,
+      price: 62.83,
+      wholesalePrice: 57.12,
     },
   });
 }
