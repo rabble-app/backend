@@ -181,7 +181,7 @@ export class ScheduleService {
               ) {
                 amountToCapture =
                   amountToCapture -
-                  portionedProduct.PartitionedProductUsersRecord[0].amount;
+                  +portionedProduct.PartitionedProductUsersRecord[0].amount;
               }
             });
           }
