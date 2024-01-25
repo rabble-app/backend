@@ -12,6 +12,7 @@ import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../../src/users/users.service';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
+import { Decimal } from '@prisma/client/runtime';
 
 @Injectable()
 export class ScheduleService {
@@ -154,7 +155,7 @@ export class ScheduleService {
       pendingPayments.forEach(async (payment) => {
         // be sure that it has payment intent
         if (payment.paymentIntentId && payment.paymentIntentId !== 'null') {
-          let amountToCapture = payment.amount;
+          let amountToCapture: Decimal = payment.amount;
           // check all portioned product for that order that did not meet treshold to know whether he has items there if so
           // minus that from the overall payment amount
           const portionedProducts =
@@ -179,17 +180,18 @@ export class ScheduleService {
                 portionedProduct &&
                 portionedProduct.PartitionedProductUsersRecord.length > 0
               ) {
-                amountToCapture =
-                  amountToCapture -
-                  +portionedProduct.PartitionedProductUsersRecord[0].amount;
+                amountToCapture = new Decimal(
+                  +amountToCapture -
+                    +portionedProduct.PartitionedProductUsersRecord[0].amount,
+                );
               }
             });
           }
 
-          if (amountToCapture > 0) {
+          if (+amountToCapture > 0) {
             const result = await this.paymentServiceExtension.captureFund(
               payment.paymentIntentId,
-              amountToCapture * 100,
+              +amountToCapture * 100,
             );
 
             // check whether capture was successful and send notification if not

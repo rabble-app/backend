@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime';
 
 export interface IAPIResponse {
   data?: object | string;
@@ -38,7 +39,7 @@ export enum PaymentStatus {
 }
 export interface IOrder {
   teamId: string;
-  minimumTreshold: number;
+  minimumTreshold: Decimal;
   deadline: Date;
 }
 export interface IPayment {

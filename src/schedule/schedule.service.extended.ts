@@ -7,6 +7,7 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
+import { Decimal } from '@prisma/client/runtime';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -20,7 +21,7 @@ export class ScheduleServiceExtended {
   ) {}
 
   async processCompleteOrders(
-    pendingOrders: Array<{ id: string; minimumTreshold: number }>,
+    pendingOrders: Array<{ id: string; minimumTreshold: Decimal }>,
   ) {
     try {
       pendingOrders.forEach(async (order) => {
@@ -35,7 +36,7 @@ export class ScheduleServiceExtended {
           },
         });
 
-        if (capturedPayments._sum.amount >= order.minimumTreshold) {
+        if (+capturedPayments._sum.amount >= +order.minimumTreshold) {
           await this.paymentService.updateOrder({
             where: {
               id: order.id,
