@@ -251,20 +251,20 @@ export class PaymentService {
         use_stripe_sdk: true,
       });
     } catch (e) {
-      const charge = await stripe.charges.retrieve(
-        e.payment_intent.latest_charge,
-      );
-      if (e.type === 'StripeCardError') {
-        if (charge.outcome.type === 'blocked') {
-          console.log('Payment blocked for suspected fraud.');
-        } else if (e.code === 'card_declined') {
-          console.log('Payment declined by the issuer.');
-        } else if (e.code === 'expired_card') {
-          console.log('Card expired.');
-        } else {
-          console.log('Other card error.');
-        }
-      }
+      // const charge = await stripe.charges.retrieve(
+      //   e.payment_intent.latest_charge,
+      // );
+      // if (e.type === 'StripeCardError') {
+      //   if (charge.outcome.type === 'blocked') {
+      //     console.log('Payment blocked for suspected fraud.');
+      //   } else if (e.code === 'card_declined') {
+      //     console.log('Payment declined by the issuer.');
+      //   } else if (e.code === 'expired_card') {
+      //     console.log('Card expired.');
+      //   } else {
+      //     console.log('Other card error.');
+      //   }
+      // }
     }
   }
 
