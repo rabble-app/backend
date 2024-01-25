@@ -60,7 +60,7 @@ model Producer {
   businessAddress   String?            @map("business_address")
   accountsEmail     String?            @map("acounts_email")
   salesEmail        String?            @map("sales_email")
-  minimumTreshold   Int                @default(5000) @map("minimum_treshold")
+  minimumTreshold   Decimal            @default(5000.00) @db.Decimal(9, 2) @map("minimum_treshold")
   website           String?
   description       String?
   vat               String?            @unique
@@ -336,8 +336,8 @@ model Order {
   id                String                      @id @default(uuid())
   teamId            String                      @map("team_id")
   status            OrderStatus                 @default(PENDING)
-  minimumTreshold   Int                         @map("minimum_treshold")
-  accumulatedAmount Int                         @default(0) @map("accumulated_amount")
+  minimumTreshold   Decimal                     @default(0) @db.Decimal(9, 2) @map("minimum_treshold")
+  accumulatedAmount Decimal                     @default(0) @db.Decimal(9, 2) @map("accumulated_amount")
   deadline          DateTime                    @default(now())
   lastNudge         DateTime?                   @map("last_nudge")
   deliveryDate      DateTime?                   @map("delivery_date")
@@ -393,7 +393,7 @@ model Payment {
   id              String        @id @default(uuid())
   orderId         String?       @map("order_id")
   userId          String?       @map("user_id")
-  amount          Int
+  amount          Decimal       @default(0) @db.Decimal(9, 2)
   paymentIntentId String?       @unique
   status          PaymentStatus @default(PENDING)
   createdAt       DateTime      @default(now()) @map("created_at")

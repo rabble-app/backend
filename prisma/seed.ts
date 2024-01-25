@@ -13,7 +13,7 @@ async function main() {
     'General',
     'Meat',
     'Speciality',
-    'Farm and Diary',
+    'Farm and Dairy',
   ];
   for (let index = 0; index < producerCategories.length; index++) {
     const element = producerCategories[index];
@@ -306,7 +306,7 @@ async function main() {
       accountsEmail: 'www.fossemeadows.co.uk',
       salesEmail: 'orders@fossemeadows.co.uk',
       minimumTreshold: 180,
-      website: '',
+      website: 'https://fossemeadows.com',
       description:
         'At Fosse Meadows we pride ourselves on the welfare we deliver for our birds. We grow our birds slowly and traditionally. The Fosse bird is totally free ranging and grown naturally in small flocks to a minimum of 81 days. That’s three times longer than standard commercially-reared supermarket chicken, and two weeks longer than organic birds. Like the much-admired French chicken, we use three strains of French breeds and grow them to full maturity. This means our birds have longer legs, allowing them to roam and forage on rich, wildflower pasture. They are fed a cereal-based diet that is locally sourced where possible, with no antibiotics, additives or hormones. Fosse chicken simply has richer and more succulent meat, with stronger, nutritionally-rich bones too. Just how chicken should, and used to, taste.',
     },
