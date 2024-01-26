@@ -12,7 +12,7 @@ import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../../src/users/users.service';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
-import { Decimal } from '@prisma/client/runtime';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ScheduleService {
@@ -41,7 +41,6 @@ export class ScheduleService {
 
   async cancelOrders() {
     const expiredOrders = await this.scheduleServiceExtended.getExpiredOrders();
-
     // if we have such orders
     if (expiredOrders.length > 0) {
       expiredOrders.forEach(async (order) => {
@@ -187,7 +186,6 @@ export class ScheduleService {
               }
             });
           }
-
           if (+amountToCapture > 0) {
             const result = await this.paymentServiceExtension.captureFund(
               payment.paymentIntentId,
