@@ -136,6 +136,7 @@ async function main() {
       quantityOfSubUnitPerOrder: 1,
       unitsOfMeasurePerSubUnit: 'Kg',
       measuresPerSubUnit: 1,
+      approvalStatus: 'APPROVED',
     },
   });
 
@@ -169,6 +170,7 @@ async function main() {
       unitsOfMeasurePerSubUnit: 'Kg',
       measuresPerSubUnit: 1,
       wholesalePrice: 18.45,
+      approvalStatus: 'APPROVED',
     },
   });
 
@@ -275,6 +277,7 @@ async function main() {
       unitsOfMeasurePerSubUnit: 'Egg',
       measuresPerSubUnit: 6,
       wholesalePrice: 1.7,
+      approvalStatus: 'APPROVED',
     },
   });
 
@@ -374,6 +377,7 @@ async function main() {
       measuresPerSubUnit: 1,
       price: 54.78,
       wholesalePrice: 49.8,
+      approvalStatus: 'APPROVED',
     },
   });
 
@@ -402,6 +406,7 @@ async function main() {
       measuresPerSubUnit: 1,
       price: 68.51,
       wholesalePrice: 49.8,
+      approvalStatus: 'APPROVED',
     },
   });
 
@@ -430,6 +435,7 @@ async function main() {
       measuresPerSubUnit: 1,
       price: 49.1,
       wholesalePrice: 44.64,
+      approvalStatus: 'APPROVED',
     },
   });
 
@@ -458,6 +464,7 @@ async function main() {
       measuresPerSubUnit: 1,
       price: 62.83,
       wholesalePrice: 57.12,
+      approvalStatus: 'APPROVED',
     },
   });
 }
