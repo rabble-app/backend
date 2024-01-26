@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export interface IAPIResponse {
   data?: object | string;

@@ -12,7 +12,7 @@ import { PaymentService } from '../payment/payment.service';
 import { UsersService } from '../../src/users/users.service';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
-import { Decimal } from '@prisma/client/runtime';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ScheduleService {

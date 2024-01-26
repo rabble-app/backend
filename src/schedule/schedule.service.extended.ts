@@ -7,7 +7,7 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
-import { Decimal } from '@prisma/client/runtime';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ScheduleServiceExtended {
