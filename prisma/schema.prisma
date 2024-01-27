@@ -60,7 +60,7 @@ model Producer {
   businessAddress   String?            @map("business_address")
   accountsEmail     String?            @map("acounts_email")
   salesEmail        String?            @map("sales_email")
-  minimumTreshold   Int                @default(5000) @map("minimum_treshold")
+  minimumTreshold   Decimal            @default(5000.00) @db.Decimal(9, 2) @map("minimum_treshold")
   website           String?
   description       String?
   vat               String?            @unique
@@ -121,25 +121,25 @@ model Shipping {
 }
 
 model Product {
-  id                        String          @id @default(uuid())
+  id                        String                @id @default(uuid())
   name                      String
-  imageUrl                  String?         @map("image_url")
-  imageKey                  String?         @map("image_key")
+  imageUrl                  String?               @map("image_url")
+  imageKey                  String?               @map("image_key")
   description               String?
-  producerId                String          @map("producer_id")
-  categoryId                String?         @map("category_id")
-  price                     Int
-  wholesalePrice            Decimal?        @db.Decimal(9,2) @default(0) @map("wholesale_price")
-  retailPrice               Int?            @default(0) @map("retail_price")
-  vat                       Int?            
-  status                    ProductStatus   @default(IN_STOCK)
-  orderUnit                 String          @default("Box") @map("order_unit")
-  subUnit                   String          @default("Carton") @map("sub_unit")
-  quantityOfSubUnitPerOrder Int             @default(1) @map("quantity_of_subunit_per_order")
-  unitsOfMeasurePerSubUnit  String          @default("Carton") @map("units_of_measure_per_subunit")
-  measuresPerSubUnit        Int             @default(1) @map("measures_per_subunit")
+  producerId                String                @map("producer_id")
+  categoryId                String?               @map("category_id")
+  price                     Decimal               @default(0) @db.Decimal(9, 2)
+  wholesalePrice            Decimal?              @default(0) @map("wholesale_price") @db.Decimal(9, 2)
+  retailPrice               Decimal?              @default(0) @map("retail_price") @db.Decimal(9, 2)
+  vat                       Decimal?              @default(0) @db.Decimal(9, 2)
+  status                    ProductStatus         @default(IN_STOCK)
+  orderUnit                 String                @default("Box") @map("order_unit")
+  subUnit                   String                @default("Carton") @map("sub_unit")
+  quantityOfSubUnitPerOrder Int                   @default(1) @map("quantity_of_subunit_per_order")
+  unitsOfMeasurePerSubUnit  String                @default("Carton") @map("units_of_measure_per_subunit")
+  measuresPerSubUnit        Int                   @default(1) @map("measures_per_subunit")
   approvalStatus            ProductApprovalStatus @default(PENDING) @map("approval_status")
-  stock                     Int?            @default(0)
+  stock                     Int?                  @default(0)
 
   createdAt         DateTime                    @default(now()) @map("created_at")
   updatedAt         DateTime                    @updatedAt @map("updated_at")
@@ -191,7 +191,7 @@ model PartitionedProductUsersRecord {
   id                String                    @id @default(uuid())
   partionedBasketId String                    @map("partioned_basket_id")
   userId            String                    @map("user_id")
-  amount            Int
+  amount            Decimal                   @default(0) @db.Decimal(9, 2)
   quantity          Int                       @default(1)
   createdAt         DateTime                  @default(now()) @map("created_at")
   updatedAt         DateTime                  @updatedAt @map("updated_at")
@@ -336,8 +336,8 @@ model Order {
   id                String                      @id @default(uuid())
   teamId            String                      @map("team_id")
   status            OrderStatus                 @default(PENDING)
-  minimumTreshold   Int                         @map("minimum_treshold")
-  accumulatedAmount Int                         @default(0) @map("accumulated_amount")
+  minimumTreshold   Decimal                     @default(0) @db.Decimal(9, 2) @map("minimum_treshold")
+  accumulatedAmount Decimal                     @default(0) @db.Decimal(9, 2) @map("accumulated_amount")
   deadline          DateTime                    @default(now())
   lastNudge         DateTime?                   @map("last_nudge")
   deliveryDate      DateTime?                   @map("delivery_date")
@@ -359,7 +359,7 @@ model Basket {
   userId    String   @map("user_id")
   productId String   @map("product_id")
   quantity  Int
-  price     Int
+  price     Decimal  @default(0) @db.Decimal(9, 2)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -377,7 +377,7 @@ model BasketC {
   userId    String     @map("user_id")
   productId String     @map("product_id")
   quantity  Int
-  price     Int
+  price     Decimal    @default(0) @db.Decimal(9, 2)
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -393,7 +393,7 @@ model Payment {
   id              String        @id @default(uuid())
   orderId         String?       @map("order_id")
   userId          String?       @map("user_id")
-  amount          Int
+  amount          Decimal       @default(0) @db.Decimal(9, 2)
   paymentIntentId String?       @unique
   status          PaymentStatus @default(PENDING)
   createdAt       DateTime      @default(now()) @map("created_at")
