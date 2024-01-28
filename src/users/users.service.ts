@@ -75,6 +75,13 @@ export class UsersService {
 
   async getProducers(offset = 0): Promise<Producer[] | null> {
     return await this.prisma.producer.findMany({
+      where: {
+        NOT: {
+          businessName: {
+            contains: 'Rabble Ltd',
+          },
+        },
+      },
       skip: offset,
       take: 10,
       include: {
