@@ -5,7 +5,6 @@ const parametersProvider: Provider = {
   provide: 'AWS_PARAMETERS',
   useFactory: async () => {
     const parameters = await loadParameters();
-    // console.log({ parameters });
     return parameters;
   },
 };
