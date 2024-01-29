@@ -34,7 +34,6 @@ export const loadParameters = async () => {
 
   let data = await client.send(command);
   let Parameters = data.Parameters;
-
   Parameters.forEach((Parameter) => {
     config[Parameter.Name.split('/').at(-1)] = Parameter.Value;
   });
