@@ -638,6 +638,6 @@ export class UsersService {
   }
 
   async getStripeProfile(accountId: string): Promise<object> {
-    return await stripe.accounts.retrieve(accountId);
+    return await this.stripe.accounts.retrieve(accountId);
   }
 }
