@@ -18,8 +18,7 @@ terraform {
 
 provider "aws" {
   region = "eu-west-2"
-  access_key = "AKIA2NVZZYOTGFF5XGN7"
-  secret_key = "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"
+  profile = "rabble_api_dev"
 }
 
 locals {
