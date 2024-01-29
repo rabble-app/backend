@@ -1,40 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as twilio from 'twilio';
 import { PrismaService } from '../prisma.service';
 import { Notification, Prisma } from '@prisma/client';
 import { ICreateNotification } from '../../src/lib/types';
 import * as firebase from 'firebase-admin';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService,
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
   ) {
     firebase.initializeApp({
       credential: firebase.credential.cert({
-        projectId: this.getParameterValue('FIREBASE_PROJECT_ID'),
-        privateKey: this.getParameterValue('FIREBASE_PRIVATE_KEY'),
-        clientEmail: this.getParameterValue('FIREBASE_CLIENT_EMAIL'),
+        projectId: this.parameters.FIREBASE_PROJECT_ID,
+        privateKey: this.parameters.FIREBASE_PRIVATE_KEY,
+        clientEmail: this.parameters.FIREBASE_CLIENT_EMAIL,
       }),
     });
-  }
-
-  getParameterValue(key: string): string {
-    const params = this.configService.get<string>(key);
-    return params;
   }
   async sendSMS(message: string, receiver: string): Promise<object> {
     try {
       const client = twilio(
-        process.env.TWILO_SID,
-        process.env.TWILO_AUTH_TOKEN,
+        this.parameters.TWILO_SID,
+        this.parameters.TWILO_AUTH_TOKEN,
       );
 
       return await client.messages.create({
         body: message,
-        from: process.env.TWILO_PHONE,
+        from: this.parameters.TWILO_PHONE,
         to: receiver,
       });
     } catch (error) {
@@ -119,8 +113,8 @@ export class NotificationsService {
   async createConversation(title: string) {
     try {
       const client = twilio(
-        process.env.TWILO_SID,
-        process.env.TWILO_AUTH_TOKEN,
+        this.parameters.TWILO_SID,
+        this.parameters.TWILO_AUTH_TOKEN,
       );
       const response = await client.conversations.v1.conversations.create({
         friendlyName: `${title}`,
@@ -132,8 +126,8 @@ export class NotificationsService {
   async addParticipant(converstionId: string, participantPhoneNumber: string) {
     try {
       const client = twilio(
-        process.env.TWILO_SID,
-        process.env.TWILO_AUTH_TOKEN,
+        this.parameters.TWILO_SID,
+        this.parameters.TWILO_AUTH_TOKEN,
       );
       // await client.conversations.v1
       //   .conversations(converstionId)
@@ -155,8 +149,8 @@ export class NotificationsService {
   async sendConversationMessage(converstionId: string, message: string) {
     try {
       const client = twilio(
-        process.env.TWILO_SID,
-        process.env.TWILO_AUTH_TOKEN,
+        this.parameters.TWILO_SID,
+        this.parameters.TWILO_AUTH_TOKEN,
       );
       const response = await client.conversations.v1
         .conversations(converstionId)

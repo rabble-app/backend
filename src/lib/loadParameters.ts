@@ -21,10 +21,11 @@ const getEnv = () => {
   }
 };
 export const loadParameters = async () => {
-  const dev = getEnv();
+  const env = getEnv();
 
   const inputParams = {
-    Path: `/api/${dev}`,
+    Path: `/api/${env}`,
+    WithDecryption: true,
   };
 
   const command = new GetParametersByPathCommand(inputParams);

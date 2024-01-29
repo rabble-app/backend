@@ -44,3 +44,9 @@ lerna-debug.log*
 firebase-adminsdk.json
 test1
 cockroach-data/
+tf/*/.terraform
+tf/*/.terraform.lock.hcl
+tf/*/terraform.tfstate
+tf/*/terraform.tfstate.backup
+tf/*/terraform.tfvars
+tf/*/terraform.tfstate.d

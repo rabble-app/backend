@@ -11,7 +11,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ChatsModule } from './chats/chats.module';
 import { JwtModule } from '@nestjs/jwt';
-import { ParametersModule } from './parameters.module';
+import { ParametersModule } from '@/config/config.module';
 
 @Module({
   imports: [
@@ -25,8 +25,11 @@ import { ParametersModule } from './parameters.module';
     ScheduleModule,
     ChatsModule,
     ParametersModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
+    JwtModule.registerAsync({
+      useFactory: async (parameters: Record<string, any>) => ({
+        secret: parameters.JWT_SECRET,
+      }),
+      inject: ['AWS_PARAMETERS'],
     }),
   ],
   controllers: [AppController],

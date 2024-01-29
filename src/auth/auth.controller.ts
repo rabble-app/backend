@@ -23,6 +23,7 @@ import {
   Headers,
   UseGuards,
   Request,
+  Inject,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -38,20 +39,26 @@ import { PusherUserAuthDto } from './dto/pusher-user-auth.dto';
 import { AuthGuard } from './auth.guard';
 import * as Pusher from 'pusher';
 import { PusherChannelAuthDto } from './dto/pusher-channel-auth.dto';
+import { ICourierClient } from '@trycourier/courier';
 
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_APP_KEY,
-  secret: process.env.PUSHER_APP_SECRET,
-  cluster: process.env.PUSHER_APP_CLUSTER,
-});
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private courierClient: ICourierClient;
+  private pusher: Pusher;
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
-  ) {}
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+  ) {
+    this.courierClient = courier(this.parameters.COURIER_API);
+    this.pusher = new Pusher({
+      appId: this.parameters.PUSHER_APP_ID,
+      key: this.parameters.PUSHER_APP_KEY,
+      secret: this.parameters.PUSHER_APP_SECRET,
+      cluster: this.parameters.PUSHER_APP_CLUSTER,
+    });
+  }
 
   /**
    * Send phone verification code.
@@ -305,14 +312,14 @@ export class AuthController {
     });
 
     // send mail
-    await courier.send({
+    await this.courierClient.send({
       message: {
         to: {
           email: user.email,
         },
-        template: `${process.env.EMAIL_VERIFICATION_TEMPLATE}`,
+        template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${process.env.EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
+          url: `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`,
         },
       },
     });
@@ -358,14 +365,14 @@ export class AuthController {
       producerId: user.producer.id,
     });
     // send mail
-    await courier.send({
+    await this.courierClient.send({
       message: {
         to: {
           email: user.email,
         },
-        template: `${process.env.RESET_PASSWORD_TEMPLATE}`,
+        template: `${this.parameters.RESET_PASSWORD_TEMPLATE}`,
         data: {
-          url: `${process.env.EMAIL_URL}${process.env.RESET_PASSWORD_URL}?token=${token}`,
+          url: `${this.parameters.EMAIL_URL}${this.parameters.RESET_PASSWORD_URL}?token=${token}`,
         },
       },
     });
@@ -487,7 +494,7 @@ export class AuthController {
       email: user.email,
       fullname: `${user.lastName} ${user.firstName}`,
     };
-    const authUser = pusher.authenticateUser(
+    const authUser = this.pusher.authenticateUser(
       pusherUserAuthDto.socket_id,
       userData,
     );
@@ -529,7 +536,7 @@ export class AuthController {
         fullname: `${user.lastName} ${user.firstName}`,
       },
     };
-    const auth = pusher.authorizeChannel(
+    const auth = this.pusher.authorizeChannel(
       pusherChannelAuthDto.socket_id,
       pusherChannelAuthDto.channel_name,
       presenceData,

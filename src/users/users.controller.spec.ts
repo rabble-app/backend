@@ -13,7 +13,7 @@ describe('UsersController', () => {
       providers: [UsersService, PrismaService],
       imports: [
         JwtModule.register({
-          secret: process.env.JWT_SECRET,
+          secret: 'test-secretxx',
         }),
       ],
     }).compile();

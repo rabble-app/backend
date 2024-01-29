@@ -6,7 +6,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
-import { describe } from 'node:test';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
