@@ -27,7 +27,12 @@ async function main() {
   }
 
   // add product categories
-  const productCategories = ['Fresh fruits', 'Fresh meat', 'Coffee', 'Eggs'];
+  const productCategories = [
+    'Fresh Fruits',
+    'Meat & Poultry',
+    'Coffee',
+    'Eggs',
+  ];
   for (let index = 0; index < productCategories.length; index++) {
     const element = productCategories[index];
     await prisma.productCategory.upsert({
@@ -126,7 +131,8 @@ async function main() {
       name: 'Espresso Blend Whole bean',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+28.png',
-      description: '1KG Whole bean',
+      description:
+        'Our signature brew. It’s easy to understand why this coffee is our best-seller. Two coffee regions roasted to perfection.',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
@@ -160,7 +166,8 @@ async function main() {
       name: 'Espresso Blend Ground',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+28.png',
-      description: '1KG Ground for Filter',
+      description:
+        'Our signature brew. It’s easy to understand why this coffee is our best-seller. Two coffee regions roasted to perfection.',
       producerId: producerRecord.id,
       categoryId: productCategoryA.id,
       price: 20,
@@ -266,7 +273,8 @@ async function main() {
       name: 'Cacklebean Eggs',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/image+29.png',
-      description: 'Arlington White Cacklebean eggs from Cacklebean',
+      description:
+        'One carton of 6 farm fresh Cacklebean eggs. This product is shipped as a 20 carton box and all cartons must be sold to your team before it is processed.',
       producerId: producerRecordB.id,
       categoryId: productCategoryAA.id,
       price: 2,
@@ -345,7 +353,7 @@ async function main() {
   // get producer product id
   const productCategoryCC = await prisma.productCategory.findFirst({
     where: {
-      name: 'Fresh meat',
+      name: 'Meat & Poultry',
     },
     select: {
       id: true,
