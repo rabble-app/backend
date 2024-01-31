@@ -386,6 +386,23 @@ export class ScheduleService {
     const payments = await this.scheduleServiceExtended.getLatestPayments();
     if (payments && payments.length > 0) {
       payments.forEach(async (payment) => {
+        // get user products details and save it with other information to the metadata
+        const userProducts = await this.prisma.basket.findMany({
+          where: {
+            userId: payment.userId,
+            orderId: payment.orderId,
+          },
+          select: {
+            product: {
+              select: {
+                name: true,
+                wholesalePrice: true,
+                vat: true,
+              },
+            },
+            price: true,
+          },
+        });
         await this.paymentServiceExtension.updatePaymentIntent(
           payment.paymentIntentId,
           {
@@ -394,11 +411,12 @@ export class ScheduleService {
             teamId: payment.order.teamId,
             userId: payment.userId,
             supplierId: payment.order.team.producerId,
+            product: JSON.stringify(userProducts),
           },
         );
       });
     }
-    return payments;
+    return true;
   }
 
   async handleGetPaymentMethod() {
