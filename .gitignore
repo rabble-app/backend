@@ -38,6 +38,8 @@ lerna-debug.log*
 
 .env
 .env.prod
+.env.dev
+.env.test
 .serverless/
 firebase-adminsdk.json
 test1
