@@ -43,4 +43,4 @@ lerna-debug.log*
 .serverless/
 firebase-adminsdk.json
 test1
-cockroach-data
+cockroach-data/
