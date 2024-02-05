@@ -206,6 +206,8 @@ export class AuthService {
       userId: user.id,
     });
 
+    if (!producerRecord) return null;
+
     // check whether the user have verified their email
     if (!producerRecord.isVerified) {
       return 'not verified';
