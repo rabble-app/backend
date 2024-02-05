@@ -60,7 +60,7 @@ model Producer {
   businessAddress   String?            @map("business_address")
   accountsEmail     String?            @map("acounts_email")
   salesEmail        String?            @map("sales_email")
-  minimumTreshold   Decimal            @default(5000.00) @db.Decimal(9, 2) @map("minimum_treshold")
+  minimumTreshold   Decimal            @default(5000.00) @map("minimum_treshold") @db.Decimal(9, 2)
   website           String?
   description       String?
   vat               String?            @unique
@@ -132,6 +132,8 @@ model Product {
   wholesalePrice            Decimal?              @default(0) @map("wholesale_price") @db.Decimal(9, 2)
   retailPrice               Decimal?              @default(0) @map("retail_price") @db.Decimal(9, 2)
   vat                       Decimal?              @default(0) @db.Decimal(9, 2)
+  rabbleMarkUp              Decimal?              @default(0) @map("rabble_mark_up") @db.Decimal(9, 2)
+  rrp                       Decimal?              @default(0) @db.Decimal(9, 2)
   status                    ProductStatus         @default(IN_STOCK)
   orderUnit                 String                @default("Box") @map("order_unit")
   subUnit                   String                @default("Carton") @map("sub_unit")
@@ -336,8 +338,8 @@ model Order {
   id                String                      @id @default(uuid())
   teamId            String                      @map("team_id")
   status            OrderStatus                 @default(PENDING)
-  minimumTreshold   Decimal                     @default(0) @db.Decimal(9, 2) @map("minimum_treshold")
-  accumulatedAmount Decimal                     @default(0) @db.Decimal(9, 2) @map("accumulated_amount")
+  minimumTreshold   Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
+  accumulatedAmount Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
   deadline          DateTime                    @default(now())
   lastNudge         DateTime?                   @map("last_nudge")
   deliveryDate      DateTime?                   @map("delivery_date")
