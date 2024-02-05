@@ -22,7 +22,7 @@ describe('ScheduleController (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
-  });
+  }, testTime);
 
   describe('ScheduleController (e2e)', () => {
     it(

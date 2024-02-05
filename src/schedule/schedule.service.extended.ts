@@ -47,6 +47,7 @@ export class ScheduleServiceExtended {
           });
         }
       });
+      return true;
     } catch (error) {}
   }
 
@@ -75,6 +76,7 @@ export class ScheduleServiceExtended {
       });
     } catch (error) {}
   }
+
   async createUserBasket(teamId: string, newOrderId: string) {
     try {
       // loop from the users basketc but keep track of the users you have done so that you won't need to do it twice

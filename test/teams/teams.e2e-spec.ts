@@ -18,7 +18,7 @@ describe('TeamsController (e2e)', () => {
   let prisma: PrismaService;
   let authService: AuthService;
 
-  const phone = faker.phone.number();
+  const phone = faker.phone.number('101-###-###');
   let paymentMethodId: string;
   let inviteToken: string;
 
