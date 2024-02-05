@@ -10,7 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "prestart": "npx prisma generate",
     "start": "nest start",
-    "start:dev": "npm run start:local:db && nest start --watch",
+    "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
     "start:local:db":"cockroach start-single-node --advertise-addr 'localhost' --insecure",
