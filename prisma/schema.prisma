@@ -1,10 +1,11 @@
 generator client {
   provider        = "prisma-client-js"
+  previewFeatures = ["distinct", "fieldReference", "filteredRelationCount", "nativeTypes"]
   binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-1.0.x", "linux-arm64-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "cockroachdb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
