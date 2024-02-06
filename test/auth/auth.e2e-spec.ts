@@ -11,18 +11,19 @@ describe('AppController (e2e)', () => {
   let userId: string;
   let jwtToken: string;
   let accountId: string;
+  let producerId: string;
   const testTime = 120000;
 
-  const phone = faker.phone.number();
-  const producerPhone = faker.phone.number() + '34';
-  const email = 'me' + faker.internet.email();
+  const phone = faker.phone.number('501-###-###');
+  const producerPhone = faker.phone.number('201-###-###');
+  const email = faker.internet.email();
   const password = 'password';
 
   const producerInfo = {
-    phone: producerPhone,
     email,
     password,
-    businessName: 'The' + faker.company.catchPhraseNoun(),
+    phone: producerPhone,
+    businessName: 'Tur Business987 Name',
     businessAddress: 'Business Address',
   };
 
@@ -59,8 +60,13 @@ describe('AppController (e2e)', () => {
   }, testTime);
 
   afterAll(async () => {
+    await prisma.producer.deleteMany({
+      where: {
+        id: producerId,
+      },
+    });
     await app.close();
-  });
+  }, testTime);
 
   describe('AppController (e2e)', () => {
     // Send OTP
@@ -129,6 +135,7 @@ describe('AppController (e2e)', () => {
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
         jwtToken = response.body.data.token;
+        producerId = response.body.data.id;
       },
       testTime,
     );
