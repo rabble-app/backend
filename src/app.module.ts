@@ -11,7 +11,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ChatsModule } from './chats/chats.module';
 import { JwtModule } from '@nestjs/jwt';
-import { ParametersModule } from '@/config/config.module';
+import { ParametersModule } from './config/config.module';
 
 @Module({
   imports: [

@@ -1,5 +1,5 @@
 import { Global, Module, Provider } from '@nestjs/common';
-import { loadParameters } from '@/lib/loadParameters';
+import { loadParameters } from '../lib/loadParameters';
 
 const parametersProvider: Provider = {
   provide: 'AWS_PARAMETERS',

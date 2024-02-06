@@ -10,6 +10,7 @@ import { UsersService } from '../../src/users/users.service';
 import { PaymentService } from '../../src/payment/payment.service';
 import { ProductsService } from '../../src/products/products.service';
 import { JwtService } from '@nestjs/jwt';
+import { ParametersModule } from '../config/config.module';
 
 describe('ChatsController', () => {
   let controller: ChatsController;
@@ -29,6 +30,7 @@ describe('ChatsController', () => {
         ProductsService,
         JwtService,
       ],
+      imports: [ParametersModule],
     }).compile();
 
     controller = module.get<ChatsController>(ChatsController);

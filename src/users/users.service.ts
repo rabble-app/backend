@@ -21,7 +21,7 @@ import {
   SearchCategory,
   ProducerWithCategories,
   UserWithProducerInfo,
-} from '@/lib/types';
+} from '../lib/types';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 
 @Injectable()

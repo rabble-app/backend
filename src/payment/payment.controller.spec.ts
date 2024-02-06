@@ -9,6 +9,7 @@ import { TeamsService } from '../../src/teams/teams.service';
 import { ProductsService } from '../../src/products/products.service';
 import { AuthService } from '../../src/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { ParametersModule } from '../config/config.module';
 
 describe('PaymentController', () => {
   let controller: PaymentController;
@@ -27,6 +28,7 @@ describe('PaymentController', () => {
         AuthService,
         JwtService,
       ],
+      imports: [ParametersModule],
     }).compile();
 
     controller = module.get<PaymentController>(PaymentController);

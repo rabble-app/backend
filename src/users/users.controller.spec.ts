@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { JwtModule } from '@nestjs/jwt';
+import { ParametersModule } from '../config/config.module';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -15,6 +16,7 @@ describe('UsersController', () => {
         JwtModule.register({
           secret: 'test-secretxx',
         }),
+        ParametersModule,
       ],
     }).compile();
 

@@ -9,6 +9,7 @@ import { UsersService } from '../../src/users/users.service';
 import { PaymentService } from '../../src/payment/payment.service';
 import { ProductsService } from '../../src/products/products.service';
 import { JwtService } from '@nestjs/jwt';
+import { ParametersModule } from '../config/config.module';
 
 describe('ChatsService', () => {
   let service: ChatsService;
@@ -27,6 +28,7 @@ describe('ChatsService', () => {
         ProductsService,
         JwtService,
       ],
+      imports: [ParametersModule],
     }).compile();
 
     service = module.get<ChatsService>(ChatsService);
