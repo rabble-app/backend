@@ -14,7 +14,7 @@ export class UploadsService {
       accessKeyId: this.parameters.RABBLE_AWS_ACCESS_KEY_ID,
       secretAccessKey: this.parameters.RABBLE_AWS_SECRET_ACCESS_KEY,
     },
-    region: process.env.RABBLE_AWS_REGION,
+    region: 'us-east-2',
   });
 
   async uploadFile(
