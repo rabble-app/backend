@@ -1,6 +1,6 @@
 ## Description
 
-[Rabble Product]
+[Rabble Backend]
 
 ## Installation
 
