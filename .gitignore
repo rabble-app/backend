@@ -14,6 +14,8 @@ lerna-debug.log*
 # OS
 .DS_Store
 
+.serverless
+
 # Tests
 /coverage
 /.nyc_output
@@ -35,3 +37,16 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 .env
+.env.prod
+.env.dev
+.env.test
+.serverless/
+firebase-adminsdk.json
+test1
+cockroach-data/
+tf/*/.terraform
+tf/*/.terraform.lock.hcl
+tf/*/terraform.tfstate
+tf/*/terraform.tfstate.backup
+tf/*/terraform.tfvars
+tf/*/terraform.tfstate.d

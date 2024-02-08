@@ -1,0 +1,494 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"  
+  binaryTargets = ["native", "linux-arm64-openssl-1.0.x"]
+  previewFeatures = ["fieldReference", "distinct"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    String  @default(uuid()) @id
+  phone String  @unique
+  email String?  @unique
+  password String?
+  firstName String?  @map("first_name")
+  lastName String?   @map("last_name")
+  postalCode String? @map("postal_code")  
+  stripeCustomerId String? @unique @map("stripe_customer_id")  
+  stripeDefaultPaymentMethodId String? @map("stripe_default_payment_method_id")
+  cardLastFourDigits String? @map("card_last_four_digits") 
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/profile/img.png") @map("image_url")
+  imageKey String? @map("image_key")  
+  role Role    @default(USER) 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  hosts BuyingTeam[]
+  reviews Review[]
+  teams TeamMember[] 
+  requests TeamRequest[] 
+  myFollowers Follower[] @relation("myFollowers")
+  followings  Follower[] @relation("followings")
+  likes Like[]
+  payments Payment[]
+  notifications Notification[]
+  recentlyViewed RecentlyViewed[]
+  shipping Shipping?
+  producer Producer?
+  baskets Basket[] 
+  BasketC BasketC[]
+  invites Invite[]
+  searches Search[] 
+
+  @@map("users")
+}
+
+model Producer {
+  id  String     @default(uuid()) @id
+  userId String @unique
+  isVerified Boolean    @default(false) @map("is_verified")
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png")  @map("image_url")
+  imageKey String? @map("image_key")  
+  businessName String @unique @map("business_name")
+  businessAddress String? @map("business_address")
+  accountsEmail String? @map("acounts_email")
+  salesEmail String? @map("sales_email")
+  minimumTreshold Int @map("minimum_treshold") @default(5000)
+  website String?
+  description String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)  
+  products Product[]
+  buyingteams BuyingTeam[]
+  reviews Review[]
+  likes Like[]
+  recentlyViewed RecentlyViewed[]
+  categories ProducerCategory[]
+  deliveryAddresses DeliveryAddress[]
+
+  @@map("producers")
+}
+
+model ProducerCategoryOption {
+  id  String  @default(uuid()) @id  
+  name String @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  categories ProducerCategory[]
+
+  @@map("producer_categories_options")
+}
+
+model ProducerCategory {
+  id  String  @default(uuid()) @id  
+  producerId String @map("producer_id") 
+  producerCategoryOptionId String @map("producer_category_option_id") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+ 
+  producer Producer  @relation(fields: [producerId], references: [id])
+  category ProducerCategoryOption  @relation(fields: [producerCategoryOptionId], references: [id])
+
+  @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
+  @@map("producer_categories")
+}
+
+model Shipping {
+  id  String    @default(uuid()) @id
+  userId String @unique
+  buildingNo String? @map("building_no") 
+  address String
+  city  String? 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)  
+
+  @@map("shippings")
+}
+
+model Product {
+  id  String     @default(uuid()) @id  
+  name String 
+  imageUrl String? @map("image_url") 
+  imageKey String? @map("image_key")  
+  description String?
+  producerId String @map("producer_id")
+  categoryId String? @map("category_id")
+  price Int
+  status ProductStatus   @default(IN_STOCK)   
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer  Producer       @relation(fields: [producerId], references: [id])  
+  category  ProductCategory?  @relation(fields: [categoryId], references: [id]) 
+  reviews  Review[]
+  likes Like[]
+  basket Basket[]
+  BasketC BasketC[]
+  recentlyViewed RecentlyViewed[]
+
+  @@unique([name, producerId], name: "name_unique_producer")
+  @@map("products")
+}
+
+model ProductCategory {
+  id  String  @default(uuid()) @id  
+  name String @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  products Product[]
+
+  @@map("product_category")
+}
+
+model BuyingTeam {
+  id  String     @default(uuid()) @id 
+  name String @unique
+  postalCode String @map("postal_code")
+  producerId String @map("producer_id")
+  hostId String    @map("host_id")
+  frequency Int @default(104500)
+  description String?
+  isPublic Boolean @default(true) @map("is_public")
+  imageUrl String? @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png")  @map("image_url")
+  imageKey String? @map("image_key") 
+  nextDeliveryDate DateTime? @map("next_delivery_date") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer  Producer  @relation(fields: [producerId], references: [id]) 
+  host User  @relation(fields: [hostId], references: [id])
+  members TeamMember[]
+  requests TeamRequest[]
+  likes Like[]
+  invites Invite[]
+  orders Order[]
+  notifications Notification[]
+  recentlyViewed RecentlyViewed[]
+  BasketC BasketC[]
+
+  @@map("buying_teams")
+}
+
+model Review {
+  id  String     @default(uuid()) @id 
+  text String
+  reviewerId String  @map("reviewer_id")
+  producerId String?  @map("producer_id")
+  productId String?  @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  reviewer User  @relation(fields: [reviewerId], references: [id])
+  producer  Producer?  @relation(fields: [producerId], references: [id]) 
+  product Product?  @relation(fields: [productId], references: [id])  
+
+  @@map("reviews")
+}
+
+model TeamMember {
+  id  String     @default(uuid()) @id 
+  teamId String  @map("team_id")
+  userId String  @map("user_id")
+  status TeamStatus 
+  skipNextDelivery Boolean @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+
+  @@unique([teamId, userId], name: "team_unique_user")
+  @@map("team_members")
+}
+
+model TeamRequest {
+  id  String     @default(uuid()) @id 
+  teamId String  @map("team_id")
+  userId String  @map("user_id")
+  introduction String  
+  status TeamStatus @default(PENDING)  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+
+  @@unique([teamId, userId], name: "team_unique_user")
+  @@map("team_requests")
+}
+
+model Follower {
+  id  String     @default(uuid()) @id 
+  userId String  @map("user_id")
+  followerId String  @map("follower_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation("myFollowers", fields: [userId], references: [id], onDelete: Cascade) 
+  follower User  @relation("followings", fields: [followerId], references: [id])
+
+  @@unique([userId, followerId], name: "user_unique_follower")
+  @@map("followers")
+}
+
+model Like {
+  id  String    @default(uuid()) @id 
+  userId String  @map("user_id")   
+  productId String?  @map("product_id")   
+  producerId String?  @map("producer_id")   
+  teamId String?  @map("team_id")   
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  product Product?  @relation(fields: [productId], references: [id])
+  producer Producer?  @relation(fields: [producerId], references: [id])
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId], name: "user_unique_product")
+  @@unique([userId, producerId], name: "user_unique_producer")
+  @@unique([userId, teamId], name: "user_unique_team")
+  @@map("likes")
+}
+
+model Invite {
+  id  String    @default(uuid()) @id 
+  teamId String  @map("team_id")
+  status TeamStatus @default(PENDING) 
+  phone String 
+  token String?
+  userId String  @map("user_id") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade) 
+
+  @@unique([teamId, userId], name: "team_unique_user")
+  @@map("invites")
+}
+
+model Order {
+  id  String  @default(uuid()) @id 
+  teamId String  @map("team_id")
+  status OrderStatus @default(PENDING) 
+  minimumTreshold Int @map("minimum_treshold")
+  accumulatedAmount Int @map("accumulated_amount") @default(0)
+  deadline DateTime @default(now())
+  lastNudge DateTime? @map("last_nudge")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  basket Basket[]
+  payments Payment[]
+  notifications Notification[]
+  
+  @@map("orders")
+}
+
+model Basket {
+  id  String  @default(uuid()) @id 
+  orderId String @map("order_id")
+  userId String  @map("user_id")
+  productId String @map("product_id")
+  quantity Int
+  price Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  order Order  @relation(fields: [orderId], references: [id])
+  product Product  @relation(fields: [productId], references: [id])
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId, productId], name: "user_unique_product") 
+  @@map("basket")
+}
+
+model Payment {
+  id  String  @default(uuid()) @id 
+  orderId String? @map("order_id")  
+  userId String? @map("user_id") 
+  amount Int
+  paymentIntentId String @unique
+  status PaymentStatus @default(PENDING) 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  order Order?  @relation(fields: [orderId], references: [id])
+  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+}
+
+model Notification {
+  id  String  @default(uuid()) @id 
+  orderId String? @map("order_id")  
+  userId String? @map("user_id") 
+  teamId String? @map("team_id") 
+  producerId  String? @map("producer_id") 
+  title String?
+  text String
+  isRead Boolean @default(false) @map("is_read") 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  order Order?  @relation(fields: [orderId], references: [id])
+  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model RecentlyViewed {
+  id  String  @default(uuid()) @id  
+  userId String @map("user_id") 
+  teamId String? @map("team_id") 
+  producerId  String? @map("producer_id") 
+  productId String? @map("product_id")  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+ 
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team BuyingTeam?  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  producer Producer?  @relation(fields: [producerId], references: [id])
+  product Product?  @relation(fields: [productId], references: [id])
+
+  @@map("recently_viewed")
+}
+
+model Search {
+  id  String  @default(uuid()) @id 
+  keyword String
+  userId String @map("user_id") 
+  category SearchCategory
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("searches")
+}
+
+model SearchCount {
+  id  String  @default(uuid()) @id 
+  keyword String
+  category SearchCategory 
+  count Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  @@map("search_count")
+}
+
+model DeliveryAddress {
+  id  String  @default(uuid()) @id 
+  location String
+  type DeliveryType @default(WEEKLY)
+  cutOffTime String?  @map("cut_off_time")
+  producerId String 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  producer Producer  @relation(fields: [producerId], references: [id])
+  customAddresses CustomDeliveryAddress[]
+
+  @@map("delivery_addresses")
+}
+
+model CustomDeliveryAddress {
+  id  String  @default(uuid()) @id 
+  deliveryAddressId String
+  day DayOptions
+  cutOffTime String  @map("cut_off_time")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  deliveryAddress DeliveryAddress  @relation(fields: [deliveryAddressId], references: [id])
+
+  @@map("custom_delivery_address")
+}
+
+model BasketC {
+  id  String  @default(uuid()) @id 
+  teamId String @map("team_id")
+  userId String  @map("user_id")
+  productId String @map("product_id")
+  quantity Int
+  price Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") 
+
+  team BuyingTeam  @relation(fields: [teamId], references: [id])
+  product Product  @relation(fields: [productId], references: [id])
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId, productId], name: "team_unique_product") 
+  @@map("basket_c")
+}
+
+
+enum OrderStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED  
+}
+
+enum DeliveryType {
+  CUSTOM
+  WEEKLY  
+}
+
+enum Role {
+  USER
+  PRODUCER
+  ADMIN
+}
+
+enum ProductStatus {
+  OUT_OF_STOCK
+  IN_STOCK
+  RUNNING_LOW
+}
+
+enum TeamStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REMOVED
+}
+
+enum PaymentStatus {
+  PENDING
+  FAILED
+  INTENT_CREATED
+  CAPTURED
+}
+
+enum SearchCategory {
+  SUPPLIER
+  PRODUCT
+  TEAM
+}
+
+enum DayOptions {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}

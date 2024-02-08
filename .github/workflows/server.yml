@@ -1,0 +1,78 @@
+name: Server workflow for rabble
+run-name: ${{ github.actor }} has made a pull request 🚀
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - staging
+      - production
+env:
+  DATABASE_URL: ${{ github.ref == 'refs/heads/production' && secrets.PROD_DATABASE_URL || secrets.DATABASE_URL }}
+  TWILO_SID: ${{secrets.TWILO_SID}}
+  TWILO_AUTH_TOKEN: ${{secrets.TWILO_AUTH_TOKEN}}
+  TWILO_PHONE: ${{secrets.TWILO_PHONE}}
+  JWT_SECRET: ${{secrets.JWT_SECRET}}
+  STRIPE_SECRET_KEY: ${{secrets.STRIPE_SECRET_KEY}}
+  STRIPE_PERISHABLE_KEY: ${{secrets.STRIPE_PERISHABLE_KEY}}
+  RABBLE_AWS_REGION: ${{secrets.RABBLE_AWS_REGION}}
+  RABBLE_AWS_ACCESS_KEY_ID: ${{secrets.RABBLE_AWS_ACCESS_KEY_ID}}
+  RABBLE_AWS_SECRET_ACCESS_KEY: ${{secrets.RABBLE_AWS_SECRET_ACCESS_KEY}}
+  RABBLE_AWS_BUCKET_NAME: ${{secrets.RABBLE_AWS_BUCKET_NAME}}
+  NEXT_PUBLIC_MAIL_USERNAME: ${{secrets.NEXT_PUBLIC_MAIL_USERNAME}}
+  NEXT_PUBLIC_MAIL_PASSWORD: ${{secrets.NEXT_PUBLIC_MAIL_PASSWORD}}
+  CONFIRM_ACCOUNT_URL: ${{secrets.CONFIRM_ACCOUNT_URL}}
+  RESET_PASSWORD_URL: ${{secrets.RESET_PASSWORD_URL}}
+  FIREBASE_PROJECT_ID: ${{secrets.FIREBASE_PROJECT_ID}}
+  FIREBASE_PRIVATE_KEY: ${{secrets.FIREBASE_PRIVATE_KEY}}
+  FIREBASE_CLIENT_EMAIL: ${{secrets.FIREBASE_CLIENT_EMAIL}}
+  COURIER_API: ${{secrets.COURIER_API}}
+  EMAIL_VERIFICATION_TEMPLATE: ${{secrets.EMAIL_VERIFICATION_TEMPLATE}}
+  RESET_PASSWORD_TEMPLATE: ${{secrets.RESET_PASSWORD_TEMPLATE}}
+  EMAIL_URL: ${{secrets.EMAIL_URL}}
+  TEST_STRIPE_SECRET_KEY: ${{secrets.TEST_STRIPE_SECRET_KEY}}
+  TEST_STRIPE_PERISHABLE_KEY: ${{secrets.TEST_STRIPE_PERISHABLE_KEY}}
+  PROD_STRIPE_PERISHABLE_KEY: ${{secrets.PROD_STRIPE_PERISHABLE_KEY}}
+  PROD_STRIPE_SECRET_KEY: ${{secrets.PROD_STRIPE_SECRET_KEY}}
+  PUSHER_APP_ID: ${{secrets.PUSHER_APP_ID}}
+  PUSHER_APP_KEY: ${{secrets.PUSHER_APP_KEY}}
+  PUSHER_APP_SECRET: ${{secrets.PUSHER_APP_SECRET}}
+  PUSHER_APP_CLUSTER: ${{secrets.PUSHER_APP_CLUSTER}}
+  STRIPE_REFRESH_URL: ${{secrets.STRIPE_REFRESH_URL}}
+  STRIPE_RETURN_URL: ${{secrets.STRIPE_RETURN_URL}}
+
+jobs:
+  rabble-backend:
+     runs-on: ubuntu-latest
+     strategy:
+      matrix:
+       node-version: [16.x]  
+       
+     steps:
+      - name: Checkout Source 📄
+        uses: actions/checkout@v3     
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies 📦️
+        run: npm ci
+
+      - name: Lint 🧐
+        run: npm run lint
+
+      - name: Build 🏗️
+        run: npm run build
+
+      - name: Prisma Deploy 📦️
+        run: npx prisma migrate deploy 
+
+      - name: Run tests (unit) 🧪
+        run: npm test
+        
+      # - name: Run tests (e2e) ⚙️
+      #   run: npm run test:e2e
+  
