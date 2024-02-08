@@ -3,7 +3,7 @@ import * as twilio from 'twilio';
 import Stripe from 'stripe';
 import ChangePasswordDto from './dto/change-password.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginProducerDto } from './dto/login-producer.dto';
 import { PrismaService } from '../prisma.service';
@@ -13,6 +13,7 @@ import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { courier } from '../../src/utils/mail';
 import { UserWithProducerInfo } from '../../src/lib/types';
+import { ICourierClient } from '@trycourier/courier';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -20,17 +21,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 @Injectable()
 export class AuthService {
+  private courierClient: ICourierClient;
   constructor(
     private readonly userService: UsersService,
     private jwtService: JwtService,
     private prisma: PrismaService,
-  ) {}
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+  ) {
+    this.courierClient = courier(this.parameters.COURIER_API);
+  }
 
   async sendOTP(sendOTPDto: SendOTPDto): Promise<string> {
     try {
       const client = twilio(
-        process.env.TWILO_SID,
-        process.env.TWILO_AUTH_TOKEN,
+        this.parameters.TWILO_SID,
+        this.parameters.TWILO_AUTH_TOKEN,
       );
       // create a verification service
       const result = await client.verify.v2.services.create({
@@ -49,8 +54,8 @@ export class AuthService {
   async verifyOTP(verifyOTPDto: VerifyOTPDto): Promise<boolean | object> {
     try {
       const client = twilio(
-        process.env.TWILO_SID,
-        process.env.TWILO_AUTH_TOKEN,
+        this.parameters.TWILO_SID,
+        this.parameters.TWILO_AUTH_TOKEN,
       );
       // verify token
       const result = await client.verify.v2
@@ -111,12 +116,16 @@ export class AuthService {
   }
 
   generateToken(data: any): string {
-    return this.jwtService.sign(data, { secret: process.env.JWT_SECRET });
+    return this.jwtService.sign(data, {
+      secret: this.parameters.JWT_SECRET,
+    });
   }
 
   decodeToken(token: string): string | any {
     try {
-      return this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+      return this.jwtService.verify(token, {
+        secret: this.parameters.JWT_SECRET,
+      });
     } catch (error) {
       return null;
     }
@@ -166,14 +175,14 @@ export class AuthService {
     producerRecord['token'] = token;
 
     // send mail
-    await courier.send({
+    await this.courierClient.send({
       message: {
         to: {
           email: userRecord.email,
         },
-        template: `${process.env.EMAIL_VERIFICATION_TEMPLATE}`,
+        template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${process.env.EMAIL_URL}${process.env.CONFIRM_ACCOUNT_URL}?token=${token}`,
+          url: `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`,
         },
       },
     });

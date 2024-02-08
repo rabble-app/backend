@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
   User,
@@ -21,16 +21,20 @@ import {
   SearchCategory,
   ProducerWithCategories,
   UserWithProducerInfo,
-} from '../../src/lib/types';
+} from '../lib/types';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-});
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly stripe: Stripe;
+  constructor(
+    private prisma: PrismaService,
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+  ) {
+    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
+  }
 
   async findUser(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
@@ -600,7 +604,7 @@ export class UsersService {
       const params: Stripe.CustomerCreateParams = {
         phone,
       };
-      const response = await stripe.customers.create(params);
+      const response = await this.stripe.customers.create(params);
       return {
         id: response.id,
       };
@@ -618,7 +622,7 @@ export class UsersService {
       const params: Stripe.CustomerUpdateParams = {
         name: `${data.lastName} ${data.firstName}`,
       };
-      return await stripe.customers.update(customerId, params);
+      return await this.stripe.customers.update(customerId, params);
     } catch (error) {}
   }
 
@@ -634,6 +638,6 @@ export class UsersService {
   }
 
   async getStripeProfile(accountId: string): Promise<object> {
-    return await stripe.accounts.retrieve(accountId);
+    return await this.stripe.accounts.retrieve(accountId);
   }
 }

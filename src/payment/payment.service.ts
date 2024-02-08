@@ -14,12 +14,9 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-});
-
 @Injectable()
 export class PaymentService {
+  private readonly stripe: Stripe;
   constructor(
     @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
@@ -28,13 +25,18 @@ export class PaymentService {
     @Inject(forwardRef(() => TeamsServiceExtension))
     private readonly teamsServiceExtension: TeamsServiceExtension,
     private readonly productsService: ProductsService,
-  ) {}
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+  ) {
+    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
+  }
 
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
   ): Promise<{ paymentMethodId: string } | null> {
     // attach payment method to user
-    await stripe.paymentMethods.attach(addPaymentCardDto.paymentMethodId, {
+    await this.stripe.paymentMethods.attach(addPaymentCardDto.paymentMethodId, {
       customer: addPaymentCardDto.stripeCustomerId,
     });
 
@@ -56,7 +58,9 @@ export class PaymentService {
   async removeCustomerCard(
     removePaymentCardDto: RemovePaymentCardDto,
   ): Promise<{ paymentMethodId: string } | null> {
-    await stripe.paymentMethods.detach(removePaymentCardDto.paymentMethodId);
+    await this.stripe.paymentMethods.detach(
+      removePaymentCardDto.paymentMethodId,
+    );
 
     return {
       paymentMethodId: removePaymentCardDto.paymentMethodId,
@@ -245,13 +249,13 @@ export class PaymentService {
         parameters['setup_future_usage'] = 'off_session';
       }
 
-      return await stripe.paymentIntents.create({
+      return await this.stripe.paymentIntents.create({
         ...parameters,
         capture_method: 'manual',
         use_stripe_sdk: true,
       });
     } catch (e) {
-      // const charge = await stripe.charges.retrieve(
+      // const charge = await this.stripe.charges.retrieve(
       //   e.payment_intent.latest_charge,
       // );
       // if (e.type === 'StripeCardError') {
@@ -489,6 +493,6 @@ export class PaymentService {
   }
 
   async returnPaymentIntent(paymentIntentId: string): Promise<any | null> {
-    return await stripe.paymentIntents.retrieve(paymentIntentId);
+    return await this.stripe.paymentIntents.retrieve(paymentIntentId);
   }
 }
