@@ -17,7 +17,7 @@ describe('AppController (e2e)', () => {
   const phone = faker.phone.number('501-###-###');
   const producerPhone = faker.phone.number('201-###-###');
   const email = faker.internet.email();
-  const password = 'password';
+  const password = 'passwordd';
 
   const producerInfo = {
     email,
