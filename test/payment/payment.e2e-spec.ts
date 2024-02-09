@@ -7,10 +7,6 @@ import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-});
-
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -28,6 +24,7 @@ describe('PaymentController (e2e)', () => {
   let teamId: string;
   let itemId: string;
   let jwtToken: string;
+  let stripe: Stripe;
   const testTime = 120000;
 
   const chargeInfo = {
@@ -47,10 +44,13 @@ describe('PaymentController (e2e)', () => {
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
-
+    const params = app.get('AWS_PARAMETERS');
     await app.init();
     await app.listen(process.env.PORT);
 
+    stripe = new Stripe(params.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
     // create dummy stripe user for test
     const stripeUser = await stripe.customers.create({
       phone,

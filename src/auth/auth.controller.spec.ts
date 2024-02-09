@@ -9,6 +9,7 @@ import { NotificationsService } from '../../src/notifications/notifications.serv
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
 import { TeamsService } from '../../src/teams/teams.service';
 import { ProductsService } from '../../src/products/products.service';
+import { ParametersModule } from '../config/config.module';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -27,6 +28,7 @@ describe('AuthController', () => {
         TeamsService,
         ProductsService,
       ],
+      imports: [ParametersModule],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);

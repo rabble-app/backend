@@ -8,6 +8,7 @@ import { NotificationsService } from '../../src/notifications/notifications.serv
 import { ProductsService } from '../../src/products/products.service';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
+import { ParametersModule } from '../config/config.module';
 
 describe('PaymentService', () => {
   let service: PaymentService;
@@ -25,6 +26,7 @@ describe('PaymentService', () => {
         AuthService,
         JwtService,
       ],
+      imports: [ParametersModule],
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);

@@ -11,6 +11,7 @@ import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
 import { TeamsService } from '../../src/teams/teams.service';
 import { AuthService } from '../../src/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { ParametersModule } from '../config/config.module';
 
 describe('ScheduleService', () => {
   let service: ScheduleService;
@@ -34,6 +35,7 @@ describe('ScheduleService', () => {
         AuthService,
         JwtService,
       ],
+      imports: [ParametersModule],
     }).compile();
 
     service = module.get<ScheduleService>(ScheduleService);

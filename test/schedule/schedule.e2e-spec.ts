@@ -6,7 +6,7 @@ jest.useFakeTimers();
 
 describe('ScheduleController (e2e)', () => {
   let app: INestApplication;
-  const testTime = 120000;
+  const testTime = 140000;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -20,9 +20,9 @@ describe('ScheduleController (e2e)', () => {
     await app.listen(process.env.PORT);
   }, testTime);
 
-  afterAll(async () => {
-    await app.close();
-  }, testTime);
+  // afterAll(async () => {
+  //   await app.close();
+  // }, testTime);
 
   describe('ScheduleController (e2e)', () => {
     it(

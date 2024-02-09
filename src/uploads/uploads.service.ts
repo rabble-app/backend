@@ -1,17 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { v4 as uuid } from 'uuid';
 import { Upload } from '@aws-sdk/lib-storage';
 
 @Injectable()
 export class UploadsService {
-  AWS_S3_BUCKET = process.env.RABBLE_AWS_BUCKET_NAME;
+  constructor(
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+  ) {}
+  AWS_S3_BUCKET = this.parameters.RABBLE_AWS_BUCKET_NAME;
   s3 = new S3Client({
     credentials: {
-      accessKeyId: process.env.RABBLE_AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.RABBLE_AWS_SECRET_ACCESS_KEY,
+      accessKeyId: this.parameters.RABBLE_AWS_ACCESS_KEY_ID,
+      secretAccessKey: this.parameters.RABBLE_AWS_SECRET_ACCESS_KEY,
     },
-    region: process.env.RABBLE_AWS_REGION,
+    region: 'us-east-2',
   });
 
   async uploadFile(

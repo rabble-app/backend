@@ -1,24 +1,26 @@
 import Stripe from 'stripe';
 import { Basket, BasketC, Payment, Prisma } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-});
-
 @Injectable()
 export class PaymentServiceExtension {
+  private readonly stripe: Stripe;
   constructor(
     private readonly paymentService: PaymentService,
     private prisma: PrismaService,
-  ) {}
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+  ) {
+    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
+  }
 
   async getUserPaymentOptions(id: string): Promise<object | null> {
-    const result = await stripe.customers.listPaymentMethods(id);
+    const result = await this.stripe.customers.listPaymentMethods(id);
     const unique = [
       ...new Map(result.data.map((m) => [m.card.last4, m])).values(),
     ];
@@ -26,7 +28,7 @@ export class PaymentServiceExtension {
   }
 
   async removePaymentOption(id: string): Promise<object | null> {
-    return await stripe.paymentMethods.detach(id);
+    return await this.stripe.paymentMethods.detach(id);
   }
 
   async captureFund(
@@ -39,7 +41,7 @@ export class PaymentServiceExtension {
         options = {
           amount_to_capture: amountToCapture,
         };
-        const result = await stripe.paymentIntents.capture(
+        const result = await this.stripe.paymentIntents.capture(
           paymentIntentId,
           options,
         );
@@ -182,6 +184,8 @@ export class PaymentServiceExtension {
     paymentIntentId: string,
     metadata: Stripe.MetadataParam,
   ): Promise<object | null> {
-    return await stripe.paymentIntents.update(paymentIntentId, { metadata });
+    return await this.stripe.paymentIntents.update(paymentIntentId, {
+      metadata,
+    });
   }
 }

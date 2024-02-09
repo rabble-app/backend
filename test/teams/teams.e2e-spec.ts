@@ -9,10 +9,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-});
-
 describe('TeamsController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -33,6 +29,7 @@ describe('TeamsController (e2e)', () => {
   let customerId: string;
   let userId: string;
   let jwtToken: string;
+  let stripe: Stripe;
   const testTime = 120000;
 
   const buyingTeam: CreateTeamDto = {
@@ -75,10 +72,13 @@ describe('TeamsController (e2e)', () => {
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
+    const params = app.get('AWS_PARAMETERS');
 
     await app.init();
     await app.listen(process.env.PORT);
-
+    stripe = new Stripe(params.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
     // create dummy stripe user for test
     const stripeUser = await stripe.customers.create({
       phone,
