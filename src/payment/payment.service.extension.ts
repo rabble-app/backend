@@ -207,14 +207,11 @@ export class PaymentServiceExtension {
         address_source: 'billing',
       },
     });
-
-    // record the tax
     const tax = await this.stripe.tax.transactions.createFromCalculation({
       calculation: calculation.id,
       reference: `${Math.floor(Math.random() * 100)}`, // put payment intent
       expand: ['line_items'],
     });
-
     // update payment intent
     await this.updatePaymentIntent('paymentIntent', {
       tax_transaction: '{{TAX_TRANSACTION}}',
