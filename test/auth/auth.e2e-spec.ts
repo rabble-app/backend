@@ -60,7 +60,7 @@ describe('AppController (e2e)', () => {
   }, testTime);
 
   afterAll(async () => {
-    await prisma.producer.deleteMany({
+    await prisma.producer.delete({
       where: {
         id: producerId,
       },

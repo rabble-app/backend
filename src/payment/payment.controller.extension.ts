@@ -183,4 +183,22 @@ export class PaymentControllerExtension {
       'Payment intent retrieved successfully',
     );
   }
+
+  /**
+   * This is for test
+   * @param {Body} returnIntentDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('test')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Payment intent created successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async testTax(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.recordTax();
+    return formatResponse(result, res, HttpStatus.OK, false, 'Test completed');
+  }
 }
