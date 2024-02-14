@@ -190,7 +190,6 @@ export class PaymentServiceExtension {
   }
 
   async recordTax() {
-    // calculate tax
     const calculation = await this.stripe.tax.calculations.create({
       currency: 'gbp',
       line_items: [
