@@ -188,4 +188,34 @@ export class PaymentServiceExtension {
       metadata,
     });
   }
+
+  async recordTax() {
+    const calculation = await this.stripe.tax.calculations.create({
+      currency: 'gbp',
+      line_items: [
+        {
+          amount: 3000,
+          reference: 'L1',
+          tax_behavior: 'exclusive',
+          tax_code: 'txcd_41020003',
+        },
+      ],
+      customer_details: {
+        address: {
+          country: 'GB',
+        },
+        address_source: 'billing',
+      },
+    });
+    const tax = await this.stripe.tax.transactions.createFromCalculation({
+      calculation: calculation.id,
+      reference: `${Math.floor(Math.random() * 100)}`, // put payment intent
+      expand: ['line_items'],
+    });
+    // update payment intent
+    await this.updatePaymentIntent('paymentIntent', {
+      tax_transaction: '{{TAX_TRANSACTION}}',
+    });
+    return tax;
+  }
 }

@@ -3,12 +3,14 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
+import rawBodyMiddleware from '../src/middlewares/raw-body.middleware';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
+  app.use(rawBodyMiddleware());
   // API doc configuration
   const config = new DocumentBuilder()
     .setTitle('Rabble API')
