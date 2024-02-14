@@ -6,7 +6,6 @@ import { OrderStatus } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -17,7 +16,6 @@ export class ScheduleServiceExtended {
     private usersService: UsersService,
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
-    private teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async processCompleteOrders(
@@ -325,9 +323,10 @@ export class ScheduleServiceExtended {
     );
     return await this.prisma.payment.findMany({
       where: {
-        createdAt: {
+        updatedAt: {
           gte: last24hours,
         },
+        status: 'CAPTURED',
       },
       include: {
         order: {

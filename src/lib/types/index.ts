@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Request } from 'express';
 
 export interface IAPIResponse {
   data?: object | string;
@@ -231,4 +232,8 @@ export interface ITeamInformation {
     };
   }[];
   name: string;
+}
+
+export interface RequestWithRawBody extends Request {
+  rawBody: Buffer;
 }

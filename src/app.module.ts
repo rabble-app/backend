@@ -12,6 +12,7 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { ChatsModule } from './chats/chats.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ParametersModule } from './config/config.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ParametersModule } from './config/config.module';
       }),
       inject: ['AWS_PARAMETERS'],
     }),
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [AppService],

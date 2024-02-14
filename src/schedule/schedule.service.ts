@@ -388,11 +388,15 @@ export class ScheduleService {
       payments.forEach(async (payment) => {
         let formattedProducts: {
           name: string;
+          quantity: number;
           retail_price: Decimal;
           wholesale_price: Decimal;
-          vat: Decimal;
+          vat_rate: Decimal;
+          retail_price_vat: Decimal;
+          wholesale_price_vat: Decimal;
         }[];
         // get user products details and save it with other information to the metadata
+        let totalTax: Decimal = new Decimal(0.0);
         const userProducts = await this.prisma.basket.findMany({
           where: {
             userId: payment.userId,
@@ -407,15 +411,29 @@ export class ScheduleService {
               },
             },
             price: true,
+            quantity: true,
           },
         });
         if (userProducts && userProducts.length > 0) {
           formattedProducts = userProducts.map((item) => {
+            const retailTax = new Decimal(
+              (+item.price * item.quantity * +item.product.vat) / 100,
+            );
+            const wholesaleTax = new Decimal(
+              (+item.product.wholesalePrice *
+                item.quantity *
+                +item.product.vat) /
+                100,
+            );
+            totalTax = new Decimal(+totalTax + +retailTax);
             return {
               name: item.product.name,
+              quantity: item.quantity,
               retail_price: item.price,
               wholesale_price: item.product.wholesalePrice,
-              vat: item.product.vat,
+              vat_rate: item.product.vat,
+              retail_price_vat: retailTax,
+              wholesale_price_vat: wholesaleTax,
             };
           });
         }
@@ -428,6 +446,7 @@ export class ScheduleService {
             userId: payment.userId,
             supplierId: payment.order.team.producerId,
             product: JSON.stringify(formattedProducts),
+            totalRetailPriceVat: +totalTax,
           },
         );
       });
