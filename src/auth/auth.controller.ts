@@ -37,7 +37,7 @@ import {
 } from '@nestjs/swagger';
 import { PusherUserAuthDto } from './dto/pusher-user-auth.dto';
 import { AuthGuard } from './auth.guard';
-import * as Pusher from 'pusher';
+import Pusher from 'pusher';
 import { PusherChannelAuthDto } from './dto/pusher-channel-auth.dto';
 import { ICourierClient } from '@trycourier/courier';
 

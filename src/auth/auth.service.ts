@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import * as twilio from 'twilio';
+import twilio from 'twilio';
 import Stripe from 'stripe';
 import ChangePasswordDto from './dto/change-password.dto';
 import { CreateProducerDto } from './dto/create-producer.dto';

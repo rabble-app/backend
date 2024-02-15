@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import * as twilio from 'twilio';
+import twilio from 'twilio';
 import { PrismaService } from '../prisma.service';
 import { Notification, Prisma } from '@prisma/client';
 import { ICreateNotification } from '../../src/lib/types';
