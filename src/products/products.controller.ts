@@ -64,7 +64,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get(':id')
   @ApiOkResponse({ description: 'Product returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -185,7 +185,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('also-bought/:producerId')
   @ApiOkResponse({
     description: 'Items other users also bought returned successfully',
