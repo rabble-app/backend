@@ -25,7 +25,7 @@ export class ChatsService {
       const sender = await this.usersService.findUser({
         id: userId,
       });
-      const title = `${sender.firstName} sent message in ${teamMembers[0].team.name}' team`;
+      const title = `${sender.firstName}\n${teamMembers[0].team.name}`;
       teamMembers.forEach(async (member) => {
         // don't send notification to the message owner
         if (userId != member.userId) {
