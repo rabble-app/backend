@@ -120,7 +120,7 @@ export class UsersController {
    * @memberof UsersController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('producers')
   @ApiOkResponse({ description: 'Producers returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
