@@ -94,7 +94,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('/producer/:id')
   @ApiOkResponse({ description: 'Producer products returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
