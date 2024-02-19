@@ -19,6 +19,7 @@ import {
   Status,
   TeamMemberShip,
   TeamMemberWithUserAndTeamInfo,
+  notificationType,
 } from '../lib/types';
 
 @Injectable()
@@ -67,6 +68,7 @@ export class TeamsServiceExtension {
           userId: result.userId,
           teamId: result.teamId,
           notficationToken: result.user.notificationToken,
+          type: notificationType.TEAM,
         });
       }
       return await this.prisma.teamRequest.update({
@@ -378,7 +380,9 @@ export class TeamsServiceExtension {
             title: 'Collect your items',
             text: message,
             userId: member.userId,
+            teamId: order.teamId,
             notficationToken: member.user.notificationToken,
+            type: notificationType.TEAM,
           });
         });
       }

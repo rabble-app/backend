@@ -7,6 +7,7 @@ import {
   TeamMemberShip,
   TeamMemberWithUserInfo,
   TeamRequestWithOtherInfo,
+  notificationType,
 } from '../lib/types';
 import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
@@ -165,6 +166,7 @@ export class TeamsService {
             userId: admin.userId,
             teamId: admin.teamId,
             notficationToken: admin.user.notificationToken,
+            type: notificationType.TEAM,
           });
         }
       });
@@ -342,6 +344,7 @@ export class TeamsService {
           userId: admin.userId,
           teamId: admin.teamId,
           notficationToken: admin.user.notificationToken,
+          type: notificationType.TEAM,
         });
       });
     }

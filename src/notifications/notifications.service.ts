@@ -59,6 +59,7 @@ export class NotificationsService {
             title: createNotificationDto.title,
             body: createNotificationDto.text,
             teamId: createNotificationDto.teamId,
+            type: createNotificationDto.type,
           },
           token: notificationToken,
           android: { priority: 'high' },

@@ -4,7 +4,13 @@ import { AddPaymentCardDto } from './dto/add-payment-card.dto';
 import { BasketC, Order, Payment, Prisma } from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
-import { ICreateIntent, IOrder, IPayment, PaymentStatus } from '../lib/types';
+import {
+  ICreateIntent,
+  IOrder,
+  IPayment,
+  PaymentStatus,
+  notificationType,
+} from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChargeUserDto } from './dto/charge-user.dto ';
@@ -196,6 +202,7 @@ export class PaymentService {
           userId: member.userId,
           teamId: member.teamId,
           notficationToken: member.user.notificationToken,
+          type: notificationType.TEAM,
         });
       });
     }

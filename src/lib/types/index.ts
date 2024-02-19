@@ -176,6 +176,12 @@ export type TeamMemberWithUserInfo = Prisma.TeamMemberGetPayload<{
   };
 }>;
 
+export enum notificationType {
+  CHAT = 'CHAT',
+  TEAM = 'TEAM',
+  PAYMENT = 'PAYMENT',
+}
+
 export interface ICreateNotification {
   userId: string;
   teamId?: string;
@@ -184,6 +190,7 @@ export interface ICreateNotification {
   title: string;
   text: string;
   notficationToken?: string;
+  type: notificationType;
 }
 
 export type TeamRequestWithOtherInfo = Prisma.TeamRequestGetPayload<{
