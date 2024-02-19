@@ -5,8 +5,8 @@ import {
   StyleDictionary,
 } from 'pdfmake/interfaces';
 import * as path from 'path';
-import { TeamsServiceExtension2 } from 'teams/teams.service.extension2';
-import { OrderDetailsDto } from 'invoices/dto/invoice-data.dto';
+import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
+import { OrderDetailsDto } from './dto/invoice-data.dto';
 import { format } from 'date-fns';
 import {
   getPDFPrinter,
@@ -15,7 +15,7 @@ import {
   itemsTableLayout,
   summaryTableLayout,
   totalTableLayout,
-} from 'utils/pdf/helper';
+} from '../utils/pdf/helper';
 @Injectable()
 export class InvoiceService {
   constructor(
