@@ -9,7 +9,6 @@ import {
 import type { Response } from 'express';
 import { InvoiceService } from './invoices.service';
 import { AuthGuard } from 'auth/auth.guard';
-import * as fs from 'fs';
 
 @Controller('invoices')
 export class InvoiceController {
@@ -32,7 +31,6 @@ export class InvoiceController {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,
       });
-      pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${fileName}`));
       pdfDoc.pipe(res);
       pdfDoc.end();
     } catch (error) {

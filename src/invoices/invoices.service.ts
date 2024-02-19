@@ -5,6 +5,7 @@ import {
   StyleDictionary,
 } from 'pdfmake/interfaces';
 import * as path from 'path';
+import * as fs from 'fs';
 import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 import { OrderDetailsDto } from './dto/invoice-data.dto';
 import { format } from 'date-fns';
@@ -53,6 +54,7 @@ export class InvoiceService {
   ): Promise<string> {
     const pdfDoc = await this.generateInvoice(producerId, orderId);
     const fileName = `invoice-${orderId}-${new Date()}.pdf`;
+    pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${fileName}`));
     pdfDoc.end();
     const filePath = path.resolve(
       __dirname,

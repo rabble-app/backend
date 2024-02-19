@@ -53,7 +53,7 @@ export const invoiceHeaderLayout: CustomTableLayout = {
 
 export const itemsTableLayout: CustomTableLayout = {
   ...customTableLayout,
-  fillColor: function (rowIndex, node, columnIndex) {
+  fillColor: function (rowIndex, _, __) {
     return rowIndex === 0 ? '#D0D5DD' : null;
   },
   paddingBottom: function (i: number) {
@@ -95,13 +95,13 @@ export const summaryTableLayout: CustomTableLayout = {
 
 export const totalTableLayout: CustomTableLayout = {
   ...customTableLayout,
-  paddingBottom: function (i: number) {
+  paddingBottom: function (_: number) {
     return 10;
   },
-  paddingTop: function (i: number) {
+  paddingTop: function (_: number) {
     return 10;
   },
-  paddingLeft: function (i: number) {
+  paddingLeft: function (_: number) {
     return 10;
   },
   hLineWidth: function (i: number) {
