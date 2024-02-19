@@ -5,6 +5,7 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
+import { notificationType } from '../../src/lib/types';
 
 describe('NotificationController (e2e)', () => {
   let app: INestApplication;
@@ -19,6 +20,7 @@ describe('NotificationController (e2e)', () => {
   const notificationData = {
     userId: '',
     text: faker.lorem.paragraph(),
+    type: notificationType.TEAM,
   };
 
   beforeAll(async () => {
