@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
-import { IScheduleTeam, PaymentStatus } from '../lib/types';
+import { IScheduleTeam, PaymentStatus, notificationType } from '../lib/types';
 import { OrderStatus } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
@@ -177,6 +177,7 @@ export class ScheduleServiceExtended {
               text: `A new order has started for your ${member.team.name} team`,
               userId: member.userId,
               notficationToken: member.user.notificationToken,
+              type: notificationType.TEAM,
             });
 
             // record the user in the tracker so that the basket will not be created twice

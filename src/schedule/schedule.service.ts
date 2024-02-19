@@ -4,6 +4,7 @@ import {
   IScheduleTeam,
   PaymentStatus,
   PaymentWithUserInfo,
+  notificationType,
 } from '../lib/types';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
@@ -65,6 +66,7 @@ export class ScheduleService {
               userId: member.userId,
               teamId: member.teamId,
               notficationToken: member.user.notificationToken,
+              type: notificationType.TEAM,
             });
           });
         }
@@ -97,6 +99,7 @@ export class ScheduleService {
               orderId: payment.orderId,
               teamId: payment.order.teamId,
               notficationToken: payment.user.notificationToken,
+              type: notificationType.PAYMENT,
             };
             if (
               payment.user.stripeDefaultPaymentMethodId &&
@@ -215,6 +218,7 @@ export class ScheduleService {
                 orderId: payment.orderId,
                 teamId: payment.order.team.id,
                 notficationToken: payment.user.notificationToken,
+                type: notificationType.PAYMENT,
               });
             } else {
               // send notification
@@ -225,6 +229,7 @@ export class ScheduleService {
                 orderId: payment.orderId,
                 teamId: payment.order.team.id,
                 notficationToken: payment.user.notificationToken,
+                type: notificationType.PAYMENT,
               });
               // update the payment status to captured or failed, depending on the success of the capture
               await this.prisma.payment.update({
@@ -373,6 +378,7 @@ export class ScheduleService {
               userId: member.userId,
               teamId: member.teamId,
               notficationToken: member.user.notificationToken,
+              type: notificationType.TEAM,
             });
           });
         }
