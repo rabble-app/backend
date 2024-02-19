@@ -416,6 +416,7 @@ model Notification {
   title      String?
   text       String
   isRead     Boolean     @default(false) @map("is_read")
+  type       NotificationType @default(TEAM)
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
   order      Order?      @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -582,4 +583,10 @@ enum ProductType {
   SINGLE
   PORTIONED_SINGLE_PRODUCT
   PORTIONED_DYNAMIC_PRODUCT
+}
+
+enum NotificationType {
+  CHAT
+  TEAM
+  PAYMENT
 }
