@@ -4,36 +4,37 @@ import {
   HttpStatus,
   Param,
   Res,
-  StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import * as fs from 'fs';
 import { InvoiceService } from './invoices.service';
+import { AuthGuard } from 'auth/auth.guard';
+import * as fs from 'fs';
 
 @Controller('invoices')
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
-  @Get()
+  @UseGuards(AuthGuard)
+  @Get('/:orderId/:producerId')
   async getInvoices(
     @Param('orderId') orderId: string,
     @Param('producerId') producerId: string,
-    @Res({ passthrough: true }) res: Response,
+    @Res() res: Response,
   ) {
     try {
       const pdfDoc = await this.invoiceService.generateInvoice(
         producerId,
         orderId,
       );
-      const file = fs.createReadStream(pdfDoc);
-      file.on('end', () => {
-        fs.unlinkSync(pdfDoc);
-      });
+      const fileName = `invoice-${orderId}-${new Date().getTime()}.pdf`;
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="invoice.pdf"',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
       });
-      return new StreamableFile(file);
+      pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${fileName}`));
+      pdfDoc.pipe(res);
+      pdfDoc.end();
     } catch (error) {
       res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
