@@ -582,4 +582,19 @@ describe('UserController (e2e)', () => {
     },
     testTime,
   );
+
+  // return producer recent orders
+  it(
+    '/users/producer/orders/recent(GET) should return producers recent orders',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/producer/orders/recent`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
 });
