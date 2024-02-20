@@ -25,13 +25,13 @@ export class ChatsService {
       const sender = await this.usersService.findUser({
         id: userId,
       });
-      const title = `${sender.firstName}\n${teamMembers[0].team.name}`;
+      const title = sender.firstName;
       teamMembers.forEach(async (member) => {
         // don't send notification to the message owner
         if (userId != member.userId) {
           await this.notificationService.createNotification({
             title,
-            text: createChatDto.text,
+            text: `${teamMembers[0].team.name} \n ${createChatDto.text}`,
             userId: member.userId,
             teamId: member.teamId,
             notficationToken: member.user.notificationToken,
