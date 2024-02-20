@@ -27,11 +27,15 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RemoveProducerCategoryDto } from './dto/remove-producer-category.dto';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 import { UserBasketDto } from './dto/user-basket.dto';
+import { UsersServiceExtension } from './users.service.extension';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersControllerExtension {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly usersServiceExtension: UsersServiceExtension,
+  ) {}
 
   /**
    * return user requests
@@ -252,7 +256,7 @@ export class UsersControllerExtension {
   /**
    * return users basket.
    * @param {Body} userBasketDto - Request body object.
-   * @param {Response} res - The payload.
+   * @param {Response} res - The response.
    * @memberof UsersControllerExtension
    * @returns {JSON} - A JSON success response.
    */
@@ -322,6 +326,33 @@ export class UsersControllerExtension {
       HttpStatus.OK,
       false,
       'Stripe profile returned successfully',
+    );
+  }
+
+  /**
+   * return producers recent orders.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/producer/orders/recent')
+  @ApiOkResponse({ description: 'Recent orders returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async recentOrders(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const producerId = req.user.producerId;
+    const result = await this.usersServiceExtension.getProducerRecentOrders(
+      producerId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Recent orders returned successfully',
     );
   }
 }

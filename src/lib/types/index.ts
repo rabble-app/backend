@@ -244,3 +244,14 @@ export interface ITeamInformation {
 export interface RequestWithRawBody extends Request {
   rawBody: Buffer;
 }
+
+export interface IProducerOrder {
+  id: string;
+  status: string;
+  accumulatedAmount: Decimal;
+  deliveryDate: Date;
+  team: {
+    name: string;
+    frequency: number;
+  };
+}

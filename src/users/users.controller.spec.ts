@@ -4,6 +4,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
+import { UsersServiceExtension } from './users.service.extension';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -11,7 +12,7 @@ describe('UsersController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [UsersService, PrismaService],
+      providers: [UsersService, UsersServiceExtension, PrismaService],
       imports: [
         JwtModule.register({
           secret: 'test-secretxx',
