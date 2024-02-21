@@ -13,7 +13,7 @@ export const customTableLayout: CustomTableLayout = {
     }
     return 1;
   },
-  vLineWidth: function (i: number) {
+  vLineWidth: function () {
     return 0;
   },
   hLineColor: '#ccc',
@@ -33,7 +33,7 @@ export const invoiceHeaderLayout: CustomTableLayout = {
   hLineColor: 'black',
   vLineColor: 'black',
   fillColor: 'black',
-  vLineWidth: function (i: number) {
+  vLineWidth: function () {
     return 1;
   },
   fillOpacity: 1,
@@ -53,16 +53,16 @@ export const invoiceHeaderLayout: CustomTableLayout = {
 
 export const itemsTableLayout: CustomTableLayout = {
   ...customTableLayout,
-  fillColor: function (rowIndex, _, __) {
+  fillColor: function (rowIndex) {
     return rowIndex === 0 ? '#D0D5DD' : null;
   },
-  paddingBottom: function (i: number) {
+  paddingBottom: function () {
     return 10;
   },
-  paddingTop: function (i: number) {
+  paddingTop: function () {
     return 10;
   },
-  paddingLeft: function (i: number) {
+  paddingLeft: function () {
     return 20;
   },
   fillOpacity: 0.2,
@@ -76,13 +76,13 @@ export const itemsTableLayout: CustomTableLayout = {
 
 export const summaryTableLayout: CustomTableLayout = {
   ...customTableLayout,
-  paddingBottom: function (i: number) {
+  paddingBottom: function () {
     return 10;
   },
-  paddingTop: function (i: number) {
+  paddingTop: function () {
     return 10;
   },
-  paddingLeft: function (i: number) {
+  paddingLeft: function () {
     return 10;
   },
   hLineWidth: function (i: number) {
@@ -95,13 +95,13 @@ export const summaryTableLayout: CustomTableLayout = {
 
 export const totalTableLayout: CustomTableLayout = {
   ...customTableLayout,
-  paddingBottom: function (_: number) {
+  paddingBottom: function () {
     return 10;
   },
-  paddingTop: function (_: number) {
+  paddingTop: function () {
     return 10;
   },
-  paddingLeft: function (_: number) {
+  paddingLeft: function () {
     return 10;
   },
   hLineWidth: function (i: number) {
