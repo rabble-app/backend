@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.341.0",
+    "@aws-sdk/client-ses": "^3.515.0",
     "@aws-sdk/client-ssm": "^3.507.0",
     "@aws-sdk/lib-storage": "^3.507.0",
     "@nestjs/common": "^9.0.0",
@@ -57,7 +58,7 @@
     "firebase": "^10.3.1",
     "firebase-admin": "^11.10.1",
     "helmet": "^7.1.0",
-    "nodemailer": "^6.9.4",
+    "nodemailer": "^6.9.10",
     "passport-jwt": "^4.0.1",
     "pdfmake": "^0.2.9",
     "pusher": "^5.2.0",
