@@ -8,11 +8,15 @@ import {
 import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
+import { ScheduleServiceExtended } from './schedule.service.extended';
 
 @ApiTags('schedule')
 @Controller('schedule')
 export class ScheduleController {
-  constructor(private readonly scheduleService: ScheduleService) {}
+  constructor(
+    private readonly scheduleService: ScheduleService,
+    private readonly scheduleServiceExtended: ScheduleServiceExtended,
+  ) {}
 
   /**
    * charge users.
@@ -195,6 +199,29 @@ export class ScheduleController {
       HttpStatus.OK,
       false,
       'Payment informaton updated successfully',
+    );
+  }
+
+  /**
+   * Update the platform insights .
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('update-insights')
+  @ApiOkResponse({
+    description: 'Insights updated successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async updateInsight(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleServiceExtended.handleInsightsUpdate();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Insights updated successfully',
     );
   }
 }

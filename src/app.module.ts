@@ -14,6 +14,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ParametersModule } from './config/config.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { InvoicesModule } from 'invoices/invoices.module';
+import { InsightsModule } from './insights/insights.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { InvoicesModule } from 'invoices/invoices.module';
       inject: ['AWS_PARAMETERS'],
     }),
     WebhookModule,
+    InsightsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

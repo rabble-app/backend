@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { AuthService } from '../../src/auth/auth.service';
 import { TeamMember } from '@prisma/client';
