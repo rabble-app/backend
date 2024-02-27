@@ -7,6 +7,8 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Decimal } from '@prisma/client/runtime/library';
+import { InsightsService } from '../insights/insights.service';
+import { getWeek } from 'date-fns';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -16,6 +18,7 @@ export class ScheduleServiceExtended {
     private usersService: UsersService,
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
+    private insightsService: InsightsService,
   ) {}
 
   async processCompleteOrders(
@@ -342,5 +345,15 @@ export class ScheduleServiceExtended {
         },
       },
     });
+  }
+
+  async handleInsightsUpdate(): Promise<boolean> {
+    // get current week and year
+    const currentDate = new Date();
+    const currentWeek = getWeek(currentDate);
+    const currentYear = currentDate.getFullYear();
+    // await this.insightsService.calculateNWRO(currentWeek, currentYear);
+    await this.insightsService.calculateUniqueUsers(currentWeek, currentYear);
+    return true;
   }
 }

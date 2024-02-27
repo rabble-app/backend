@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 jest.useFakeTimers();
 
@@ -90,6 +90,16 @@ describe('ScheduleController (e2e)', () => {
       async () => {
         await request(app.getHttpServer())
           .get('/schedule/change-stripe-token')
+          .expect(200);
+      },
+      testTime,
+    );
+
+    it(
+      '/schedule/update-insights(GET) should update the insights record',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/update-insights')
           .expect(200);
       },
       testTime,

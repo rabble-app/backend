@@ -252,6 +252,7 @@ export class TeamsServiceExtension {
             select: {
               user: {
                 select: {
+                  id: true,
                   firstName: true,
                   lastName: true,
                 },

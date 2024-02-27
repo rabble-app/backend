@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import rawBodyMiddleware from '../src/middlewares/raw-body.middleware';
+import helmet from 'helmet';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   app.enableCors();
   app.enableShutdownHooks();
+  app.use(helmet());
   await app.listen(port);
   console.log(`Server running on port ${await app.getUrl()}`);
 }

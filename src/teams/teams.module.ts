@@ -32,7 +32,6 @@ import { ProductsModule } from '../../src/products/products.module';
     JwtService,
     TeamsServiceExtension,
     TeamsServiceExtension2,
-    JwtService,
   ],
   exports: [TeamsService, TeamsServiceExtension],
 })

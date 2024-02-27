@@ -8,6 +8,7 @@ import { ProductsModule } from '../products/products.module';
 import { UsersModule } from '../users/users.module';
 import { ScheduleServiceExtended } from './schedule.service.extended';
 import { TeamsModule } from '../teams/teams.module';
+import { InsightsModule } from '../insights/insights.module';
 
 @Module({
   controllers: [ScheduleController],
@@ -18,6 +19,7 @@ import { TeamsModule } from '../teams/teams.module';
     ProductsModule,
     UsersModule,
     TeamsModule,
+    InsightsModule,
   ],
 })
 export class ScheduleModule {}

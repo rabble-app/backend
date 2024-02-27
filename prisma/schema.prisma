@@ -408,20 +408,20 @@ model Payment {
 }
 
 model Notification {
-  id         String      @id @default(uuid())
-  orderId    String?     @map("order_id")
-  userId     String?     @map("user_id")
-  teamId     String?     @map("team_id")
-  producerId String?     @map("producer_id")
+  id         String           @id @default(uuid())
+  orderId    String?          @map("order_id")
+  userId     String?          @map("user_id")
+  teamId     String?          @map("team_id")
+  producerId String?          @map("producer_id")
   title      String?
   text       String
-  isRead     Boolean     @default(false) @map("is_read")
+  isRead     Boolean          @default(false) @map("is_read")
   type       NotificationType @default(TEAM)
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  order      Order?      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  team       BuyingTeam? @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  order      Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  team       BuyingTeam?      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("notifications")
@@ -511,6 +511,30 @@ model Chat {
 
   @@index([userId, teamId, producerId])
   @@map("chats")
+}
+
+model NWRO {
+  id        String   @id @default(uuid())
+  week      Int
+  year      Int
+  value     Decimal  @default(0.0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@unique([week, year], name: "nwro_unique")
+  @@map("nwro")
+}
+
+model UniqueUsers {
+  id        String   @id @default(uuid())
+  week      Int
+  year      Int
+  value     Decimal  @default(0.0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@unique([week, year], name: "unique_record")
+  @@map("unique_users")
 }
 
 enum OrderStatus {

@@ -13,6 +13,8 @@ import { ChatsModule } from './chats/chats.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ParametersModule } from './config/config.module';
 import { WebhookModule } from './webhook/webhook.module';
+import { InvoicesModule } from 'invoices/invoices.module';
+import { InsightsModule } from './insights/insights.module';
 
 @Module({
   imports: [
@@ -26,6 +28,7 @@ import { WebhookModule } from './webhook/webhook.module';
     ScheduleModule,
     ChatsModule,
     ParametersModule,
+    InvoicesModule,
     JwtModule.registerAsync({
       useFactory: async (parameters: Record<string, any>) => ({
         secret: parameters.JWT_SECRET,
@@ -33,6 +36,7 @@ import { WebhookModule } from './webhook/webhook.module';
       inject: ['AWS_PARAMETERS'],
     }),
     WebhookModule,
+    InsightsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
