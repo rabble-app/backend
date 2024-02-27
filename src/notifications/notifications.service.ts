@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
-import twilio from 'twilio';
-import { PrismaService } from '../prisma.service';
-import { Notification, Prisma } from '@prisma/client';
-import { ICreateNotification } from '../../src/lib/types';
 import * as firebase from 'firebase-admin';
+import twilio from 'twilio';
+import { ICreateNotification } from '../../src/lib/types';
+import { Inject, Injectable } from '@nestjs/common';
+import { Notification, Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class NotificationsService {
@@ -103,12 +103,35 @@ export class NotificationsService {
   }
 
   async returnNotifications(userId: string): Promise<Notification[]> {
-    return await this.prisma.notification.findMany({
+    const notificationsWithoutChat = await this.prisma.notification.findMany({
       where: {
         userId,
         isRead: false,
+        type: {
+          not: 'CHAT',
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
+
+    const chatNotifications = await this.prisma.notification.findMany({
+      where: {
+        userId,
+        isRead: false,
+        type: 'CHAT',
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    const chatNotificationUnique = [
+      ...new Map(chatNotifications.map((m) => [m.teamId, m])).values(),
+    ];
+
+    return notificationsWithoutChat.concat(chatNotificationUnique);
   }
 
   async createConversation(title: string) {
