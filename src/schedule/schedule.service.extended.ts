@@ -352,7 +352,7 @@ export class ScheduleServiceExtended {
     const currentDate = new Date();
     const currentWeek = getWeek(currentDate);
     const currentYear = currentDate.getFullYear();
-    // await this.insightsService.calculateNWRO(currentWeek, currentYear);
+    await this.insightsService.calculateNWRO(currentWeek, currentYear);
     await this.insightsService.calculateUniqueUsers(currentWeek, currentYear);
     return true;
   }
