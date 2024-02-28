@@ -16,6 +16,7 @@ import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -33,6 +34,7 @@ import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('teams')
 @Controller('teams')
+@ApiBearerAuth()
 export class TeamsController {
   constructor(
     private readonly teamsService: TeamsService,

@@ -255,3 +255,10 @@ export interface IProducerOrder {
     frequency: number;
   };
 }
+
+export interface InsightResponse {
+  id: string;
+  week: number;
+  year: number;
+  value: Decimal;
+}

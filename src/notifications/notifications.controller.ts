@@ -13,6 +13,7 @@ import {
 import { NotificationsService } from './notifications.service';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -28,6 +29,7 @@ import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('notifications')
 @Controller('notifications')
+@ApiBearerAuth()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

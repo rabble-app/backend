@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { InvoiceService } from './invoices.service';
-import { AuthGuard } from 'auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import {
   ApiBadRequestResponse,
   ApiInternalServerErrorResponse,
