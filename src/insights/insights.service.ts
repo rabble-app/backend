@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { InsightResponse } from '../lib/types';
 
 @Injectable()
 export class InsightsService {
@@ -52,6 +53,70 @@ export class InsightsService {
           week,
           year,
           value: unique.length,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async getNwroData(years = '2024'): Promise<InsightResponse[]> {
+    try {
+      const conditionArray = years.split(',').map((item) => {
+        return parseInt(item, 10);
+      });
+      return await this.prisma.nWRO.findMany({
+        select: {
+          id: true,
+          week: true,
+          year: true,
+          value: true,
+          createdAt: true,
+        },
+        orderBy: [
+          {
+            year: 'asc',
+          },
+          {
+            week: 'asc',
+          },
+        ],
+        where: {
+          year: {
+            in: conditionArray,
+          },
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async getUniqueUsersData(years = '2024'): Promise<InsightResponse[]> {
+    try {
+      const conditionArray = years.split(',').map((item) => {
+        return parseInt(item, 10);
+      });
+      return await this.prisma.uniqueUsers.findMany({
+        select: {
+          id: true,
+          week: true,
+          year: true,
+          value: true,
+          createdAt: true,
+        },
+        orderBy: [
+          {
+            year: 'asc',
+          },
+          {
+            week: 'asc',
+          },
+        ],
+        where: {
+          year: {
+            in: conditionArray,
+          },
         },
       });
     } catch (error) {

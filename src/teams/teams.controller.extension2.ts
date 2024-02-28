@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
@@ -25,6 +26,7 @@ import { OrderStatus } from '@prisma/client';
 
 @ApiTags('teams')
 @Controller('team')
+@ApiBearerAuth()
 export class TeamsControllerExtension2 {
   constructor(
     private readonly teamsServiceExtension2: TeamsServiceExtension2,

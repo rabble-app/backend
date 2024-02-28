@@ -12,6 +12,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from './uploads.service';
 import {
+  ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiTags,
@@ -27,6 +28,7 @@ import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('uploads')
 @Controller('uploads')
+@ApiBearerAuth()
 export class UploadsController {
   constructor(
     private readonly uploadsService: UploadsService,
