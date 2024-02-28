@@ -31,7 +31,7 @@ export class ChatsService {
         if (userId != member.userId) {
           await this.notificationService.createNotification({
             title,
-            text: `${teamMembers[0].team.name} \n ${createChatDto.text}`,
+            text: `${teamMembers[0].team.name}\n${createChatDto.text}`,
             userId: member.userId,
             teamId: member.teamId,
             notficationToken: member.user.notificationToken,
