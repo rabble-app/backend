@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-
+import { IsString, IsNotEmpty } from 'class-validator';
 interface User {
   postalCode: string | null;
 }
@@ -63,6 +63,8 @@ export class InvoiceEmailDto {
     description: 'The order ID',
     required: true,
   })
+  @IsNotEmpty()
+  @IsString()
   orderId: string;
 
   @ApiProperty({
@@ -70,5 +72,7 @@ export class InvoiceEmailDto {
     description: 'The producer ID',
     required: true,
   })
+  @IsNotEmpty()
+  @IsString()
   producerId: string;
 }

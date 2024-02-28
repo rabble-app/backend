@@ -94,18 +94,13 @@ export class InvoiceController {
     @Res() res: Response,
   ) {
     try {
-      if (!orderId || !producerId) {
-        return res
-          .status(HttpStatus.BAD_REQUEST)
-          .json({ message: 'Order ID and Producer ID are required' });
-      }
       const { pdfDoc, orderDetails } =
         await this.invoiceService.generateInvoice(producerId, orderId);
       const response = await this.invoiceService.sendInvoiceByEmail(
         pdfDoc,
         orderId,
         orderDetails.team.producer.businessName,
-        orderDetails.team.producer.accountsEmail,
+        'nedsoftdeveloper@gmail.com',
       );
       if (!response.messageId) {
         throw new Error('Error sending invoice');

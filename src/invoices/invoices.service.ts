@@ -57,7 +57,7 @@ export class InvoiceService {
     pdfDoc: PDFKit.PDFDocument,
     orderId: string,
   ) {
-    const filename = `invoice-${orderId}-${new Date()}.pdf`;
+    const filename = `purchase-order-${orderId}.pdf`;
     pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${filename}`));
     pdfDoc.end();
     const filePath = path.resolve(
