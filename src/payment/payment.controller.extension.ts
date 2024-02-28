@@ -12,6 +12,7 @@ import {
 import { PaymentService } from './payment.service';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
@@ -29,6 +30,7 @@ import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('payments')
 @Controller('payments')
+@ApiBearerAuth()
 export class PaymentControllerExtension {
   teamsService: any;
   constructor(

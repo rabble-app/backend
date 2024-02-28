@@ -13,6 +13,7 @@ import { ChatsService } from './chats.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -25,6 +26,7 @@ import { AuthGuard } from '../../src/auth/auth.guard';
 
 @ApiTags('chats')
 @Controller('chats')
+@ApiBearerAuth()
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 

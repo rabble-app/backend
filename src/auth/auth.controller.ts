@@ -27,6 +27,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -43,6 +44,7 @@ import { ICourierClient } from '@trycourier/courier';
 
 @ApiTags('auth')
 @Controller('auth')
+@ApiBearerAuth()
 export class AuthController {
   private courierClient: ICourierClient;
   private pusher: Pusher;

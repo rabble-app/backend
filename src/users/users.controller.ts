@@ -2,6 +2,7 @@ import { Controller, HttpStatus, ValidationPipe } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -30,6 +31,7 @@ import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('users')
 @Controller('users')
+@ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

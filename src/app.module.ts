@@ -13,7 +13,7 @@ import { ChatsModule } from './chats/chats.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ParametersModule } from './config/config.module';
 import { WebhookModule } from './webhook/webhook.module';
-import { InvoicesModule } from 'invoices/invoices.module';
+import { InvoicesModule } from './invoices/invoices.module';
 import { InsightsModule } from './insights/insights.module';
 
 @Module({

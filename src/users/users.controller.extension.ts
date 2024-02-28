@@ -2,6 +2,7 @@ import { Controller, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
@@ -31,6 +32,7 @@ import { UsersServiceExtension } from './users.service.extension';
 
 @ApiTags('users')
 @Controller('users')
+@ApiBearerAuth()
 export class UsersControllerExtension {
   constructor(
     private readonly usersService: UsersService,
