@@ -1,3 +1,5 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty } from 'class-validator';
 interface User {
   postalCode: string | null;
 }
@@ -7,6 +9,7 @@ interface BusinessInfo {
   paymentTerm: number;
   businessName: string;
   businessAddress: string;
+  accountsEmail: string;
 }
 
 interface ShippingInfo {
@@ -52,4 +55,24 @@ export class OrderDetailsDto {
   deadline: string;
   team: Team;
   productLog: ProductLog[];
+}
+
+export class InvoiceEmailDto {
+  @ApiProperty({
+    type: 'string',
+    description: 'The order ID',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The producer ID',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  producerId: string;
 }

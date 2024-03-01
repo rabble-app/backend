@@ -281,6 +281,7 @@ export class TeamsServiceExtension2 {
                 paymentTerm: true,
                 businessName: true,
                 businessAddress: true,
+                accountsEmail: true,
                 user: {
                   select: {
                     postalCode: true,
@@ -503,7 +504,6 @@ export class TeamsServiceExtension2 {
       this.prisma.order.count({ where: { status: 'SUCCESSFUL' } }),
       this.prisma.order.count({ where: { status: 'FAILED' } }),
     ]);
-
     return result;
   }
 }
