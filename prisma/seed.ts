@@ -14,6 +14,7 @@ async function main() {
     'Meat',
     'Speciality',
     'Farm and Dairy',
+    'Wine',
   ];
   for (let index = 0; index < producerCategories.length; index++) {
     const element = producerCategories[index];
@@ -32,6 +33,10 @@ async function main() {
     'Meat & Poultry',
     'Coffee',
     'Eggs',
+    'Red',
+    'Orange',
+    'White',
+    'Pet Nat',
   ];
   for (let index = 0; index < productCategories.length; index++) {
     const element = productCategories[index];
@@ -473,6 +478,194 @@ async function main() {
       price: 62.83,
       wholesalePrice: 57.12,
       approvalStatus: 'APPROVED',
+    },
+  });
+
+  // wine producer
+  // save user record
+  const userRecordD = await prisma.user.upsert({
+    where: { email: 'sales@lescaves.co.uk' },
+    update: {},
+    create: {
+      email: 'sales@lescaves.co.uk',
+      phone: '01483 538820',
+      password: 'rabble-sales@lescaves.co.uk',
+      role: 'PRODUCER',
+      postalCode: 'GU3 1LP',
+    },
+  });
+
+  // save producer record
+  const producerRecordD = await prisma.producer.upsert({
+    where: { userId: userRecordD.id },
+    update: {},
+    create: {
+      isVerified: true,
+      userId: userRecordD.id,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Producer+-+Les+Caves.jpg',
+      businessName: 'Les Caves De Pyrene',
+      businessAddress: 'Pew Corner, Old Portsmouth Rd, Guildford',
+      accountsEmail: 'sales@lescaves.co.uk',
+      salesEmail: 'sales@lescaves.co.uk',
+      minimumTreshold: 320,
+      website: 'https://www.lescaves.co.uk/',
+      description:
+        'Les Caves de Pyrene is an importer, agent, distributor and retailer of wines from around the world. They believe in promoting ‘natural’ wines: those that are expressive of their homeland; wines made by hand with minimal chemical intervention; and where the winemaking shows maximum respect for the environment.',
+    },
+  });
+
+  // get producer category id
+  const producerCategoryOptionD = await prisma.producerCategoryOption.findFirst(
+    {
+      where: {
+        name: 'Wine',
+      },
+      select: {
+        id: true,
+      },
+    },
+  );
+
+  // add category id to the producer
+  await prisma.producerCategory.upsert({
+    where: {
+      producer_unique_category_option: {
+        producerId: producerRecordD.id,
+        producerCategoryOptionId: producerCategoryOptionD.id,
+      },
+    },
+    update: {},
+    create: {
+      producerId: producerRecordD.id,
+      producerCategoryOptionId: producerCategoryOptionD.id,
+    },
+  });
+
+  // get producer products(Red, Orange, White, Pet Nat) id
+  const productCategoryRed = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Red',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const productCategoryOrange = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Orange',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const productCategoryWhite = await prisma.productCategory.findFirst({
+    where: {
+      name: 'White',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const productCategoryPet = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Pet Nat',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  // add product 1
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Beck Ink, 2021',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Beck Ink, 2021',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Weingut Judith Beck',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 13.54,
+      wholesalePrice: 12.31,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '17.00',
+    },
+  });
+
+  // add product 2
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Birch Barbera, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Birch Barbera, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Agricola Gaia Di Chiari Azzetti Gaia',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 12.18,
+      wholesalePrice: 11.07,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '15.00',
+    },
+  });
+
+  // add product 3
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Birch Barbera, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Birch Barbera, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Agricola Gaia Di Chiari Azzetti Gaia',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 12.18,
+      wholesalePrice: 11.07,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '15.00',
     },
   });
 }
