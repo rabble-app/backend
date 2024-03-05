@@ -112,6 +112,11 @@ export class UsersService {
             category: true,
           },
         },
+        user: {
+          select: {
+            phone: true,
+          },
+        },
         _count: {
           select: { buyingteams: true },
         },
