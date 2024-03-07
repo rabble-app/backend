@@ -27,6 +27,11 @@ export class UsersServiceExtension {
           select: {
             name: true,
             frequency: true,
+            producer: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
