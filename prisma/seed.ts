@@ -510,8 +510,7 @@ async function main() {
       salesEmail: 'sales@lescaves.co.uk',
       minimumTreshold: 320,
       website: 'https://www.lescaves.co.uk/',
-      description:
-        'Les Caves de Pyrene is an importer, agent, distributor and retailer of wines from around the world. They believe in promoting ‘natural’ wines: those that are expressive of their homeland; wines made by hand with minimal chemical intervention; and where the winemaking shows maximum respect for the environment.',
+      description: `Les Caves de Pyrene is an importer, agent, distributor and retailer of wines from around the world. They believe in promoting ‘natural’ wines: those that are expressive of their homeland; wines made by hand with minimal chemical intervention; and where the winemaking shows maximum respect for the environment.`,
     },
   });
 
@@ -579,7 +578,7 @@ async function main() {
     },
   });
 
-  // add product 1
+  // add product 2
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -595,7 +594,7 @@ async function main() {
       description: 'Weingut Judith Beck',
       producerId: producerRecordD.id,
       categoryId: productCategoryRed.id,
-      type: 'SINGLE',
+      type: 'PORTIONED_SINGLE_PRODUCT',
       orderUnit: 'Box',
       subUnit: 'Bottle',
       quantityOfSubUnitPerOrder: 6,
@@ -606,36 +605,6 @@ async function main() {
       approvalStatus: 'APPROVED',
       vat: '20',
       rrp: '17.00',
-    },
-  });
-
-  // add product 2
-  await prisma.product.upsert({
-    where: {
-      name_unique_producer: {
-        name: 'Birch Barbera, 2022',
-        producerId: producerRecordD.id,
-      },
-    },
-    update: {},
-    create: {
-      name: 'Birch Barbera, 2022',
-      imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
-      description: 'Agricola Gaia Di Chiari Azzetti Gaia',
-      producerId: producerRecordD.id,
-      categoryId: productCategoryRed.id,
-      type: 'SINGLE',
-      orderUnit: 'Box',
-      subUnit: 'Bottle',
-      quantityOfSubUnitPerOrder: 6,
-      unitsOfMeasurePerSubUnit: 'ML',
-      measuresPerSubUnit: 750,
-      price: 12.18,
-      wholesalePrice: 11.07,
-      approvalStatus: 'APPROVED',
-      vat: '20',
-      rrp: '15.00',
     },
   });
 
@@ -655,7 +624,7 @@ async function main() {
       description: 'Agricola Gaia Di Chiari Azzetti Gaia',
       producerId: producerRecordD.id,
       categoryId: productCategoryRed.id,
-      type: 'SINGLE',
+      type: 'PORTIONED_SINGLE_PRODUCT',
       orderUnit: 'Box',
       subUnit: 'Bottle',
       quantityOfSubUnitPerOrder: 6,
@@ -666,6 +635,876 @@ async function main() {
       approvalStatus: 'APPROVED',
       vat: '20',
       rrp: '15.00',
+    },
+  });
+
+  // add product 4
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Rainbow Juice, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Rainbow Juice, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Gentle Folk',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'SINGLE',
+      orderUnit: 'Bottle',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 20.2,
+      wholesalePrice: 18.36,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '26.00',
+    },
+  });
+
+  // add product 6
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Baglio Antico Bianco, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Baglio Antico Bianco, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Ciello',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 14.08,
+      wholesalePrice: 12.8,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '18.00',
+    },
+  });
+
+  // add product 7
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Saliciorino Malvasia, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Saliciorino Malvasia, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Finca Casa Balaguer',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.99,
+      wholesalePrice: 15.44,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '22.00',
+    },
+  });
+
+  // add product 8
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Tragolargo Blanco, 2023',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Tragolargo Blanco, 2023',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Finca Casa Balaguer',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.16,
+      wholesalePrice: 14.69,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '19.00',
+    },
+  });
+
+  // add product 9
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Calcarius Nu Litre Orange, NV',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Calcarius Nu Litre Orange, NV',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Azienda Agricola Passalacqua Valentina',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'SINGLE',
+      orderUnit: 'Bottle',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 1000,
+      price: 19.31,
+      wholesalePrice: 17.55,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '25.00',
+    },
+  });
+
+  // add product 10
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Schele Amber, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Schele Amber, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Ma Arndorfer, Martin & Anna Arndorfer',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 15.38,
+      wholesalePrice: 13.99,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '19.50',
+    },
+  });
+
+  // add product 11
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Runer Veltliner Handcrafted, 2023',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Runer Veltliner Handcrafted, 2023',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Ma Arndorfer, Martin & Anna Arndorfer',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 14.37,
+      wholesalePrice: 13.07,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '17.50',
+    },
+  });
+
+  // add product 12
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Chianti Podere Gamba, 2021',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Chianti Podere Gamba, 2021',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'San Ferdinando, Val Di Chiana',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 13.66,
+      wholesalePrice: 12.42,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '18.00',
+    },
+  });
+
+  // add product 13
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Le Roc Ambulle, 2022 (single)',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Le Roc Ambulle, 2022 (single)',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Chateau Le Roc, Famille Ribes',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'SINGLE',
+      orderUnit: 'Bottle',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 1500,
+      price: 27.5,
+      wholesalePrice: 25.0,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '33.00',
+    },
+  });
+
+  // add product 14
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Le Roc Ambulle, 2022 (shared)',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Le Roc Ambulle, 2022 (shared)',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Chateau Le Roc, Famille Ribes',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 13.37,
+      wholesalePrice: 12.15,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '16.50',
+    },
+  });
+
+  // add product 15
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Cora Bianco, 2022',
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Cora Bianco, 2022',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Loxarel, Mitjans',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 13.19,
+      wholesalePrice: 11.99,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '16.50',
+    },
+  });
+
+  // add product 16
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Lo Petit Fantet D'Hippolyte Blanc, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Lo Petit Fantet D'Hippolyte Blanc, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Chateaux Ollieux Romanis, Domaine Pierre Bories',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 12.18,
+      wholesalePrice: 11.07,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '15.00',
+    },
+  });
+
+  // add product 17
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Lo Petit Fantet D'Hippolyte Rouge, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Lo Petit Fantet D'Hippolyte Rouge, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Chateaux Ollieux Romanis, Domaine Pierre Bories',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 12.0,
+      wholesalePrice: 10.91,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '15.00',
+    },
+  });
+
+  // add product 18
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Trebbiano D'Abruzzo Frentang, 2023`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Trebbiano D'Abruzzo Frentang, 2023`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Cantina Sociale Frentana',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 8.61,
+      wholesalePrice: 7.83,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '11.55',
+    },
+  });
+
+  // add product 19
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Gran Cerdo Blanco, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Gran Cerdo Blanco, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Gran Cerdo',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 9.92,
+      wholesalePrice: 9.02,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '12.50',
+    },
+  });
+
+  // add product 20
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Trebbiano Secco, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Trebbiano Secco, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Camillo Donati',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.81,
+      wholesalePrice: 15.28,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '21.00',
+    },
+  });
+
+  // add product 21
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Lambrusco Rosso, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Lambrusco Rosso, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Camillo Donati',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.81,
+      wholesalePrice: 15.28,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '22.00',
+    },
+  });
+
+  // add product 22
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Malvasia Secco, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Malvasia Secco, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Camillo Donati',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.81,
+      wholesalePrice: 15.28,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '22.00',
+    },
+  });
+
+  // add product 23
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `IGT Marche Bianco "Di Gino", 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `IGT Marche Bianco "Di Gino", 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Fattoria San Lorenzo',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 13.07,
+      wholesalePrice: 11.88,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '16.25',
+    },
+  });
+
+  // add product 24
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Saint Cyrgues VDF "Salamandre", 2023`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Saint Cyrgues VDF "Salamandre", 2023`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Chateaux Saint Cyrgues',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 12.3,
+      wholesalePrice: 11.18,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '16.00',
+    },
+  });
+
+  // add product 25
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Rosso Piceno "Bacchus", 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Rosso Piceno "Bacchus", 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Ciu Ciu',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryRed.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 10.63,
+      wholesalePrice: 9.67,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '13.50',
+    },
+  });
+
+  // add product 26
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Calcarius Frecciabomb Pet Nat Rosato, NV`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Calcarius Frecciabomb Pet Nat Rosato, NV`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Azienda Agricola Passalacqua Valentina',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.57,
+      wholesalePrice: 15.07,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '21.00',
+    },
+  });
+
+  // add product 27
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Pet Nat Rose, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Pet Nat Rose, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Fuchs Und Hase',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'SINGLE',
+      orderUnit: 'Bottle',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 21.56,
+      wholesalePrice: 19.6,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '26.00',
+    },
+  });
+
+  // add product 28
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Moussamoussettes, 2021`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Moussamoussettes, 2021`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Domaine Rene Mosse',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 20.2,
+      wholesalePrice: 18.36,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '27.00',
+    },
+  });
+
+  // add product 29
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Salicornio Moscatel, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Salicornio Moscatel, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Finca Casa Balaguer',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 16.99,
+      wholesalePrice: 15.44,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '21.00',
+    },
+  });
+
+  // add product 30
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Calcarius Nu Litre Bianco, NV`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Calcarius Nu Litre Bianco, NV`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Azienda Agricola Passalacqua Valentina',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryWhite.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 1000,
+      price: 19.01,
+      wholesalePrice: 17.28,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '24.40',
+    },
+  });
+
+  // add product 31
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Orange Wine, NV`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Orange Wine, NV`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Ancre Hill Estates',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'SINGLE',
+      orderUnit: 'Bottle',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 21.86,
+      wholesalePrice: 19.87,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '28.00',
+    },
+  });
+
+  // add product 32
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Vincenzo Bianco, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Vincenzo Bianco, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Fattoria Di Vaira',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryOrange.id,
+      type: 'PORTIONED_SINGLE_PRODUCT',
+      orderUnit: 'Box',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 6,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 12.47,
+      wholesalePrice: 11.34,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '16.00',
+    },
+  });
+
+  // add product 33
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: `Crazy Crazy Pet Nat, 2022`,
+        producerId: producerRecordD.id,
+      },
+    },
+    update: {},
+    create: {
+      name: `Crazy Crazy Pet Nat, 2022`,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+-+Les+Caves.jpg',
+      description: 'Marto Wines',
+      producerId: producerRecordD.id,
+      categoryId: productCategoryPet.id,
+      type: 'SINGLE',
+      orderUnit: 'Bottle',
+      subUnit: 'Bottle',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'ML',
+      measuresPerSubUnit: 750,
+      price: 19.54,
+      wholesalePrice: 17.77,
+      approvalStatus: 'APPROVED',
+      vat: '20',
+      rrp: '27.00',
     },
   });
 }
