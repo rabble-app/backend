@@ -141,5 +141,38 @@ describe('UploadController (e2e)', () => {
       },
       testTime,
     );
+
+    // supplier image
+    it(
+      '/uploads/producer-pix/(POST) should upload supplier profile picture',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/uploads/producer-pix/`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .field('producerId', producerId)
+          .set('Content-Type', 'multipart/form-data')
+          .attach('file', './test/testImage.jpg')
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/uploads/producer-pix/(POST) should not upload supplier profile picture if required data is not supplied',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/uploads/producer-pix/`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .set('Content-Type', 'multipart/form-data')
+          .attach('file', './test/testImage.jpg')
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
+      },
+      testTime,
+    );
   });
 });

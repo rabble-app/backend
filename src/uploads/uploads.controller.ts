@@ -25,6 +25,7 @@ import { UsersService } from '../users/users.service';
 import { TeamPixUploadDto } from './dto/team-pix-upload.dto';
 import { TeamsService } from '../teams/teams.service';
 import { AuthGuard } from '../../src/auth/auth.guard';
+import { ProducerPixUploadDto } from './dto/producer-pix-upload.dto';
 
 @ApiTags('uploads')
 @Controller('uploads')
@@ -39,7 +40,7 @@ export class UploadsController {
   /**
    * update profile photo
    * @param {Response} res - The payload.
-   * @memberof UsersController
+   * @memberof UploadsController
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
@@ -81,7 +82,7 @@ export class UploadsController {
   /**
    * update buying team photo
    * @param {Response} res - The payload.
-   * @memberof UsersController
+   * @memberof UploadsController
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
@@ -118,6 +119,49 @@ export class UploadsController {
       HttpStatus.OK,
       false,
       'Buying team photo uploaded successfully',
+    );
+  }
+
+  /**
+   * update supplier photo
+   * @param {Response} res - The payload.
+   * @memberof UploadsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('/producer-pix')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOkResponse({ description: 'Supplier photo uploaded successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async supplierPhoto(
+    @UploadedFile(
+      new ParseFilePipeBuilder().build({
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() producerPixUploadDto: ProducerPixUploadDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.uploadsService.uploadFile(
+      file,
+      'suppliers/',
+      producerPixUploadDto.imageKey,
+    );
+
+    await this.usersService.updateProducer({
+      where: { id: producerPixUploadDto.producerId },
+      data: {
+        imageUrl: result.Location,
+        imageKey: result.Key,
+      },
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Producer photo uploaded successfully',
     );
   }
 }
