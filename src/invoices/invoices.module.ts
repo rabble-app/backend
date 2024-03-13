@@ -5,8 +5,9 @@ import { PrismaService } from '../prisma.service';
 import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 import { InvoiceController } from './invoices.controller';
 import { AuthModule } from '../auth/auth.module';
-import { UsersModule } from '../users/users.module';
 import { ProductsModule } from '../products/products.module';
+import { UsersModule } from '../users/users.module';
+import { EmailModule } from '../emails/email.module';
 
 @Module({
   providers: [
@@ -15,7 +16,12 @@ import { ProductsModule } from '../products/products.module';
     TeamsServiceExtension2,
     JwtService,
   ],
-  imports: [forwardRef(() => AuthModule), UsersModule, ProductsModule],
+  imports: [
+    forwardRef(() => AuthModule),
+    UsersModule,
+    ProductsModule,
+    EmailModule,
+  ],
   controllers: [InvoiceController],
 })
 export class InvoicesModule {}

@@ -9,6 +9,8 @@ import * as fs from 'fs';
 import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 import { OrderDetailsDto } from './dto/invoice-data.dto';
 import { format } from 'date-fns';
+import { EmailService } from '../emails/email.service';
+import generateEmailTemplate from '../utils/invoice-email.template';
 import {
   getPDFPrinter,
   horizontalLine,
@@ -17,10 +19,13 @@ import {
   summaryTableLayout,
   totalTableLayout,
 } from '../utils/pdf/helper';
+import Mail from 'nodemailer/lib/mailer';
+
 @Injectable()
 export class InvoiceService {
   constructor(
     private readonly teamsServiceExtension2: TeamsServiceExtension2,
+    private readonly emailService: EmailService,
   ) {}
 
   async generateInvoice(producerId: string, orderId: string) {
@@ -41,26 +46,56 @@ export class InvoiceService {
         ...this.getSummaryTable(orderDetails),
       ],
       styles: this.getStyles(),
-      defaultStyle: {
-        // alignment: 'justify'
-      },
     };
     const pdfPrinter = getPDFPrinter();
-    return pdfPrinter.createPdfKitDocument(docDefinition);
+    return {
+      pdfDoc: pdfPrinter.createPdfKitDocument(docDefinition),
+      orderDetails,
+    };
   }
   async generateLocalFileInvoicePDF(
-    producerId: string,
+    pdfDoc: PDFKit.PDFDocument,
     orderId: string,
-  ): Promise<string> {
-    const pdfDoc = await this.generateInvoice(producerId, orderId);
-    const fileName = `invoice-${orderId}-${new Date()}.pdf`;
-    pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${fileName}`));
+  ) {
+    const filename = `purchase-order-${orderId}.pdf`;
+    pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${filename}`));
     pdfDoc.end();
     const filePath = path.resolve(
       __dirname,
-      `../../../public/pdfs/${fileName}`,
+      `../../../public/pdfs/${filename}`,
     );
-    return filePath;
+    return { filePath, filename };
+  }
+
+  async sendInvoiceByEmail(
+    pdfDoc: PDFKit.PDFDocument,
+    orderId: string,
+    supplierName: string,
+    supplierEmail: string,
+  ) {
+    const { filename, filePath } = await this.generateLocalFileInvoicePDF(
+      pdfDoc,
+      orderId,
+    );
+
+    const mailOptions: Mail.Options = {
+      to: supplierEmail,
+      subject: 'Purchase Order from the Rabble Marketplace',
+      html: generateEmailTemplate(
+        supplierName,
+        `https://supplier.rabble.market/${orderId}`,
+      ),
+      attachments: [
+        {
+          filename: filename,
+          content: fs.createReadStream(filePath),
+        },
+      ],
+      ...this.emailService.getOrderEmailOptions(),
+    };
+    const response = await this.emailService.sendEmail(mailOptions);
+    fs.unlinkSync(filePath);
+    return response;
   }
 
   getHeader(orderNo: string, deliveryDate?: string): Content {
@@ -104,7 +139,7 @@ export class InvoiceService {
                   body: [
                     [
                       {
-                        text: 'Order N0:',
+                        text: 'Purchase Order N0:',
                         alignment: 'left',
                         color: '#FFFFFF',
                       },
@@ -142,7 +177,7 @@ export class InvoiceService {
     return {
       margin: [0, 5, 0, 25],
       table: {
-        widths: ['40%', '40%', '20%'],
+        widths: ['40%', '30%', '30%'],
         body: [
           [
             [
@@ -204,7 +239,7 @@ export class InvoiceService {
                   body: [
                     [
                       {
-                        text: 'Invoice N0:',
+                        text: 'Purchase Order N0:',
                         alignment: 'left',
                         color: '#667085',
                         fontSize: 10,
@@ -217,7 +252,7 @@ export class InvoiceService {
                     ],
                     [
                       {
-                        text: 'Invoice Date:',
+                        text: 'Purchase Order Date:',
                         alignment: 'left',
                         color: '#667085',
                         fontSize: 10,
@@ -226,38 +261,6 @@ export class InvoiceService {
                         text: format(new Date(), 'dd/MM/yyyy'),
                         color: '#101828',
                         fontSize: 10,
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Payment Terms:',
-                        alignment: 'left',
-                        color: '#667085',
-                        fontSize: 10,
-                      },
-                      {
-                        text: orderDetails.team.producer.paymentTerm,
-                        color: '#101828',
-                        fontSize: 10,
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Payment Due:',
-                        alignment: 'left',
-                        color: '#667085',
-                        fontSize: 10,
-                      },
-                      {
-                        text: orderDetails.deadline
-                          ? format(
-                              new Date(orderDetails.deadline),
-                              'dd/MM/yyyy',
-                            )
-                          : '',
-                        color: '#101828',
-                        fontSize: 10,
-                        alignment: 'right',
                       },
                     ],
                   ],

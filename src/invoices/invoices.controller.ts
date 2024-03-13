@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   HttpStatus,
   Param,
+  Post,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -20,6 +22,7 @@ import {
   ApiHeader,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { InvoiceEmailDto } from './dto/invoice-data.dto';
 
 @ApiTags('invoices')
 @Controller('invoices')
@@ -57,7 +60,7 @@ export class InvoiceController {
           .status(HttpStatus.BAD_REQUEST)
           .json({ message: 'Order ID and Producer ID are required' });
       }
-      const pdfDoc = await this.invoiceService.generateInvoice(
+      const { pdfDoc } = await this.invoiceService.generateInvoice(
         producerId,
         orderId,
       );
@@ -72,6 +75,43 @@ export class InvoiceController {
       res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .json({ message: 'Error generating invoice', error: error.message });
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('email')
+  @ApiOkResponse({ description: 'Invoice emailed successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBadRequestResponse({
+    description: 'Order ID and Producer ID are required',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  async emailInvoices(
+    @Body() { orderId, producerId }: InvoiceEmailDto,
+    @Res() res: Response,
+  ) {
+    try {
+      const { pdfDoc, orderDetails } =
+        await this.invoiceService.generateInvoice(producerId, orderId);
+      const response = await this.invoiceService.sendInvoiceByEmail(
+        pdfDoc,
+        orderId,
+        orderDetails.team.producer.businessName,
+        'nedsoftdeveloper@gmail.com',
+      );
+      if (!response.messageId) {
+        throw new Error('Error sending invoice');
+      }
+      return res
+        .status(HttpStatus.OK)
+        .json({ message: 'Invoice emailed successfully' });
+    } catch (error) {
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Error Emailing invoice', error: error.message });
     }
   }
 }
