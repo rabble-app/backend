@@ -49,7 +49,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x]
-        sequelize-version: [5, 6]
         cockroachdb-docker-version: ["cockroachdb/cockroach:v21.2.4", "cockroachdb/cockroach:v21.1.13"]
       fail-fast: false 
     runs-on: ubuntu-latest  
@@ -62,7 +61,6 @@ jobs:
           sudo apt update && sudo apt install wait-for-it -y
           wait-for-it -h localhost -p 26257
           docker exec roach bash -c "echo 'CREATE DATABASE defaultdb;' | $CONTAINER_ENTRYPOINT sql --insecure"
-        shell: cmd
 
       - name: Checkout Source 📄
         uses: actions/checkout@v3     
