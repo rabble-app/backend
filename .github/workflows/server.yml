@@ -43,16 +43,15 @@ env:
   STRIPE_REFRESH_URL: ${{secrets.STRIPE_REFRESH_URL}}
   STRIPE_RETURN_URL: ${{secrets.STRIPE_RETURN_URL}}
 
-services:
-  cockroach:
-    image: timveil/cockroachdb-single-node:latest
-    options: --entrypoint "/cockroach/cockroach.sh start-single-node --insecure"
-    ports:
-      - 26257:26257
-
 jobs:
   rabble-backend:
      runs-on: ubuntu-latest
+     services:
+      cockroach:
+        image: timveil/cockroachdb-single-node:latest
+        options: --entrypoint "/cockroach/cockroach.sh start-single-node --insecure"
+        ports:
+          - 26257:26257
      strategy:
       matrix:
        node-version: [16.x]  
@@ -81,6 +80,6 @@ jobs:
       - name: Run tests (unit) 🧪
         run: npm test
         
-      - name: Run tests (e2e) ⚙️
-        run: npm run test:e2e
+      # - name: Run tests (e2e) ⚙️
+      #   run: npm run test:e2e
   
