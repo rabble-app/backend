@@ -48,7 +48,7 @@ jobs:
      runs-on: ubuntu-latest
      services:
       cockroach:
-        image: timveil/cockroachdb-single-node:latest
+        image: cockroachdb/cockroach:latest
         options: --entrypoint "/cockroach/cockroach.sh start-single-node --insecure"
         ports:
           - 26257:26257
