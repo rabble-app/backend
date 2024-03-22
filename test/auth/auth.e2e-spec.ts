@@ -23,7 +23,7 @@ describe('AppController (e2e)', () => {
     email,
     password,
     phone: producerPhone,
-    businessName: 'Tur Business987 Name',
+    businessName: faker.internet.domainName(),
     businessAddress: 'Business Address',
   };
 
