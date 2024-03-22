@@ -262,6 +262,7 @@ export class PaymentService {
         use_stripe_sdk: true,
       });
     } catch (e) {
+      console.log(e);
       // const charge = await this.stripe.charges.retrieve(
       //   e.payment_intent.latest_charge,
       // );

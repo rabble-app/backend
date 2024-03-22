@@ -44,6 +44,10 @@ model User {
   teams                         TeamMember[]
   requests                      TeamRequest[]
   chats                         Chat[]
+  partner                       Partner?
+  employee                      Employee[]
+  orderConfirmation             Order[]
+  collection                    Collection[]
 
   @@index([id])
   @@map("users")
@@ -104,6 +108,75 @@ model ProducerCategory {
   @@unique([producerId, producerCategoryOptionId], name: "producer_unique_category_option")
   @@index([id, producerId, producerCategoryOptionId])
   @@map("producer_categories")
+}
+
+model Partner {
+  id              String       @id @default(uuid())
+  userId          String       @unique @map("user_id")
+  name            String       @unique
+  postalCode      String       @map("postal_code")
+  stripeConnectId String?      @unique @map("stripe_connect_id")
+  city            String
+  streetNumber    String       @map("street_number")
+  direction       String
+  storeType       String       @map("store_type")
+  shelfSpace      String       @map("shelf_type")
+  dryStorageSpace String       @map("dry_storage_space")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  buyingteams     BuyingTeam[]
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chats           Chat[]
+  Employee        Employee[]
+  openhour        OpenHours?
+
+  @@index([id, userId])
+  @@map("partners")
+}
+
+model Employee {
+  id        String @id @default(uuid())
+  userId    String @map("user_id")
+  partnerId String @map("partner_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, partnerId])
+  @@index([id, userId, partnerId])
+  @@map("employees")
+}
+
+model OpenHours {
+  id        String          @id @default(uuid())
+  partnerId String          @unique @map("partner_id")
+  type      PartnerOpenHour @default(ALL_THE_TIME)
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  partner         Partner           @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  CustomOpenHours CustomOpenHours[]
+
+  @@index([id, partnerId])
+  @@map("open_hours")
+}
+
+model CustomOpenHours {
+  id         String     @id @default(uuid())
+  openHourId String     @map("open_hour_id")
+  day        DayOptions
+  startTime  String     @map("start_time")
+  endTime    String     @map("end_time")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  openHour OpenHours @relation(fields: [openHourId], references: [id], onDelete: Cascade)
+
+  @@index([id, openHourId])
+  @@map("custom-open_hours")
 }
 
 model Shipping {
@@ -217,6 +290,8 @@ model BuyingTeam {
   imageUrl          String?                     @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/renaissance16.png") @map("image_url")
   imageKey          String?                     @map("image_key")
   nextDeliveryDate  DateTime?                   @map("next_delivery_date")
+  productLimit      Decimal?                    @map("product_limit")
+  deliveryDay       DayOptions?                 @map("delivery_day")
   createdAt         DateTime                    @default(now()) @map("created_at")
   updatedAt         DateTime                    @updatedAt @map("updated_at")
   basket            BasketC[]
@@ -231,6 +306,8 @@ model BuyingTeam {
   members           TeamMember[]
   requests          TeamRequest[]
   chats             Chat[]
+  Partner           Partner?                    @relation(fields: [partnerId], references: [id])
+  partnerId         String?
 
   @@index([id, hostId, producerId])
   @@map("buying_teams")
@@ -335,24 +412,46 @@ model Invite {
 }
 
 model Order {
-  id                String                      @id @default(uuid())
-  teamId            String                      @map("team_id")
-  status            OrderStatus                 @default(PENDING)
-  minimumTreshold   Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
-  accumulatedAmount Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
-  deadline          DateTime                    @default(now())
-  lastNudge         DateTime?                   @map("last_nudge")
-  deliveryDate      DateTime?                   @map("delivery_date")
-  createdAt         DateTime                    @default(now()) @map("created_at")
-  updatedAt         DateTime                    @updatedAt @map("updated_at")
-  basket            Basket[]
-  notifications     Notification[]
-  team              BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  partionedProducts PartitionedProductsBasket[]
-  payments          Payment[]
+  id                   String                      @id @default(uuid())
+  teamId               String                      @map("team_id")
+  status               OrderStatus                 @default(PENDING)
+  minimumTreshold      Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
+  accumulatedAmount    Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
+  deadline             DateTime                    @default(now())
+  lastNudge            DateTime?                   @map("last_nudge")
+  deliveryDate         DateTime?                   @map("delivery_date")
+  confirmDelivery      Boolean                     @default(false) @map("confirm_delivery")
+  confirmerId          String?                     @map("confirmer_id")
+  confirmationImageUrl String?                     @map("confirmation_image_url")
+  confirmationImageKey String?                     @map("confirmation_image_key")
+  createdAt            DateTime                    @default(now()) @map("created_at")
+  updatedAt            DateTime                    @updatedAt @map("updated_at")
+  basket               Basket[]
+  notifications        Notification[]
+  team                 BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  confirmer            User?                       @relation(fields: [confirmerId], references: [id], onDelete: Cascade)
+  partionedProducts    PartitionedProductsBasket[]
+  payments             Payment[]
+  collection           Collection[]
 
   @@index([id, teamId, status])
   @@map("orders")
+}
+
+model Collection {
+  id               String                @id @default(uuid())
+  orderId          String                @map("order_id")
+  userId           String                @map("user_id")
+  dateOfCollection DateTime              @map("date_of_collection")
+  status           OrderCollectionStatus @default(PENDING)
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  order            Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId], name: "user_unique_collection")
+  @@index([id, orderId, userId])
+  @@map("collections")
 }
 
 model Basket {
@@ -505,9 +604,11 @@ model Chat {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  team     BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  producer Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  producer  Producer?  @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  Partner   Partner?   @relation(fields: [partnerId], references: [id])
+  partnerId String?
 
   @@index([userId, teamId, producerId])
   @@map("chats")
@@ -520,7 +621,7 @@ model NWRO {
   value     Decimal  @default(0.0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@unique([week, year], name: "nwro_unique")
   @@map("nwro")
 }
@@ -532,7 +633,7 @@ model UniqueUsers {
   value     Decimal  @default(0.0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@unique([week, year], name: "unique_record")
   @@map("unique_users")
 }
@@ -553,6 +654,8 @@ enum Role {
   USER
   PRODUCER
   ADMIN
+  PARTNER
+  EMPLOYEE
 }
 
 enum ProductStatus {
@@ -613,4 +716,15 @@ enum NotificationType {
   CHAT
   TEAM
   PAYMENT
+}
+
+enum PartnerOpenHour {
+  ALL_THE_TIME
+  MON_TO_FRI
+  CUSTOM
+}
+
+enum OrderCollectionStatus {
+  PENDING
+  COLLECTED
 }
