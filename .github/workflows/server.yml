@@ -60,7 +60,6 @@ jobs:
           docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 ${{ matrix.cockroachdb-docker-version }} start-single-node --insecure
           sudo apt update && sudo apt install wait-for-it -y
           wait-for-it -h localhost -p 26257
-          docker exec roach bash -c "echo 'CREATE DATABASE defaultdb;' | $CONTAINER_ENTRYPOINT sql --insecure"
 
       - name: Checkout Source 📄
         uses: actions/checkout@v3     
