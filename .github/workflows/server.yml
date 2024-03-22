@@ -55,13 +55,14 @@ jobs:
     runs-on: ubuntu-latest  
     steps:
       - name: Start a single CockroachDB instance (${{ matrix.cockroachdb-docker-version }}) with docker
-          run: |
-            echo $CONTAINER_ENTRYPOINT
-            docker pull ${{ matrix.cockroachdb-docker-version }}
-            docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 ${{ matrix.cockroachdb-docker-version }} start-single-node --insecure
-            sudo apt update && sudo apt install wait-for-it -y
-            wait-for-it -h localhost -p 26257
-            docker exec roach bash -c "echo 'CREATE DATABASE defaultdb;' | $CONTAINER_ENTRYPOINT sql --insecure"
+        run: | 
+          echo $CONTAINER_ENTRYPOINT
+          docker pull ${{ matrix.cockroachdb-docker-version }}
+          docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 ${{ matrix.cockroachdb-docker-version }} start-single-node --insecure
+          sudo apt update && sudo apt install wait-for-it -y
+          wait-for-it -h localhost -p 26257
+          docker exec roach bash -c "echo 'CREATE DATABASE defaultdb;' | $CONTAINER_ENTRYPOINT sql --insecure"
+        shell: cmd
 
       - name: Checkout Source 📄
         uses: actions/checkout@v3     
