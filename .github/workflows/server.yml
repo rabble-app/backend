@@ -55,8 +55,6 @@ jobs:
     runs-on: ubuntu-latest  
     steps:
       - name: Start a single CockroachDB instance (${{ matrix.cockroachdb-docker-version }}) with docker
-          env:
-            CONTAINER_ENTRYPOINT: ${{ 'cockroach' }}
           run: |
             echo $CONTAINER_ENTRYPOINT
             docker pull ${{ matrix.cockroachdb-docker-version }}
