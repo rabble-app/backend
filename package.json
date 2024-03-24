@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && mkdir -p dist/public && cp -r public dist/public",,
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "prestart": "npx prisma generate",
     "start": "nest start",
@@ -21,6 +21,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "dotenv -e .env.test -- npm run migration && jest --config ./test/jest-e2e.json",
     "test:e2e:watch": "dotenv -e .env.test -- npm run migration && jest --config ./test/jest-e2e.json --watch --detectOpenHandles",
+    "test:e2e:github": "set NODE_ENV=test && jest --config ./test/jest-e2e.json",
     "test:clear-cache": "jest --clearCache",
     "deploy": "npm ci && npm run build && npm run start:prod",
     "migration:generate": "npx prisma migrate dev --name",
