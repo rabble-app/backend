@@ -82,9 +82,10 @@ jobs:
 
       - name: Run tests (unit) 🧪
         run: npm test
-
+      {{ if github.ref == 'refs/heads/develop' }}
       - name: Run tests (e2e) ⚙️
         # run: npm run test:e2e:github
         # run: | 
         # echo 'We are fine'
+      {{ end }}
   
