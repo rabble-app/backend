@@ -84,7 +84,6 @@ jobs:
         run: npm test
 
       - name: Run tests (e2e) ⚙️
-        # run: npm run test:e2e:github
-        # run: | 
-        # echo 'We are fine'
+        run: ${{ github.ref == 'refs/heads/production' && 'echo production' || 'echo develop'  }}
+
   
