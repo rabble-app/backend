@@ -113,7 +113,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get(':id')
   @ApiOkResponse({ description: 'Buying team returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
