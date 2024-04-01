@@ -15,6 +15,7 @@ import { ParametersModule } from './config/config.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { InsightsModule } from './insights/insights.module';
+import { StoreModule } from './store/store.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { InsightsModule } from './insights/insights.module';
     }),
     WebhookModule,
     InsightsModule,
+    StoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

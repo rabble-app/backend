@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateIf, IsEnum } from 'class-validator';
+import { Role } from '../../lib/types';
 
 export class VerifyOTPDto {
   @ApiProperty({
@@ -38,4 +39,14 @@ export class VerifyOTPDto {
   @IsNotEmpty()
   @IsString()
   notificationToken: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The role of the user',
+    required: false,
+  })
+  @ValidateIf((o) => o.role)
+  @IsNotEmpty()
+  @IsEnum(Role)
+  role: Role;
 }

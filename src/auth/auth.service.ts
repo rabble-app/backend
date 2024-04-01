@@ -12,7 +12,7 @@ import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { courier } from '../../src/utils/mail';
-import { UserWithProducerInfo } from '../../src/lib/types';
+import { Role, UserWithProducerAndPartnerInfo } from '../../src/lib/types';
 import { ICourierClient } from '@trycourier/courier';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -69,10 +69,10 @@ export class AuthService {
         result['status'] == 'approved' ||
         verifyOTPDto.phone == '+2347000000000' // Todo: remove test logic
       ) {
-        let userExist: UserWithProducerInfo | User =
-          await this.userService.findUser({
-            phone: verifyOTPDto.phone,
-          });
+        let userExist: UserWithProducerAndPartnerInfo | User;
+        userExist = await this.userService.findUser({
+          phone: verifyOTPDto.phone,
+        });
         if (userExist) {
           const token = this.generateToken({
             phone: verifyOTPDto.phone,
@@ -80,13 +80,21 @@ export class AuthService {
           });
           userExist['token'] = token;
         } else {
-          // create stripe account for user
-          const stripeResponse = await this.userService.createCustomer(
-            verifyOTPDto.phone,
-          );
+          let stripeCustomerId = '';
+          let role = Role.USER;
+          if (verifyOTPDto.role != Role.PARTNER) {
+            // create stripe account for user
+            const stripeResponse = await this.userService.createCustomer(
+              verifyOTPDto.phone,
+            );
+            stripeCustomerId = stripeResponse.id;
+          } else {
+            role = verifyOTPDto.role;
+          }
           userExist = await this.userService.createUser({
+            role,
+            stripeCustomerId,
             phone: verifyOTPDto.phone,
-            stripeCustomerId: stripeResponse.id,
           });
           const token = this.generateToken({
             phone: verifyOTPDto.phone,

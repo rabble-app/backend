@@ -14,6 +14,12 @@ export enum Status {
   REMOVED = 'REMOVED',
 }
 
+export enum PartnerOpenHour {
+  ALL_THE_TIME = 'ALL_THE_TIME',
+  MON_TO_FRI = 'MON_TO_FRI',
+  CUSTOM = 'CUSTOM',
+}
+
 export enum OrderStatus {
   PENDING = 'PENDING',
   PENDING_DELIVERY = 'PENDING_DELIVERY',
@@ -37,6 +43,14 @@ export enum PaymentStatus {
   INTENT_CREATED = 'INTENT_CREATED',
   CAPTURED = 'CAPTURED',
   FAILED = 'FAILED',
+}
+
+export enum Role {
+  USER = 'USER',
+  PRODUCER = 'PRODUCER',
+  ADMIN = 'ADMIN',
+  PARTNER = 'PARTNER',
+  EMPLOYEE = 'EMPLOYEE',
 }
 export interface IOrder {
   teamId: string;
@@ -136,9 +150,14 @@ export type ProducerWithCategories = Prisma.ProducerGetPayload<{
   };
 }>;
 
-export type UserWithProducerInfo = Prisma.UserGetPayload<{
+export type UserWithProducerAndPartnerInfo = Prisma.UserGetPayload<{
   include: {
     producer: {
+      select: {
+        id: true;
+      };
+    };
+    partner: {
       select: {
         id: true;
       };
