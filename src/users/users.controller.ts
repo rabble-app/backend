@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -16,6 +17,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   Res,
   UseGuards,
   UsePipes,
@@ -46,14 +48,32 @@ export class UsersController {
   @Patch('update')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'User record updated successfully' })
+  @ApiConflictResponse({ description: 'Email already exist' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateUser(
     @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    // check if email already exist
+    if (updateUserDto.email) {
+      const isExisting = await this.usersService.findUser({
+        email: updateUserDto.email,
+      });
+      if (isExisting) {
+        return formatResponse(
+          'Duplicate email',
+          res,
+          HttpStatus.CONFLICT,
+          true,
+          'Email already exist',
+        );
+      }
+    }
     const result = await this.usersService.updateUser({
-      where: { phone: updateUserDto.phone },
+      where: { id: userId },
       data: updateUserDto,
     });
     return formatResponse(
