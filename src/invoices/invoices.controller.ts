@@ -100,7 +100,7 @@ export class InvoiceController {
         pdfDoc,
         orderId,
         orderDetails.team.producer.businessName,
-        'nedsoftdeveloper@gmail.com',
+        orderDetails.team.producer.accountsEmail,
       );
       if (!response.messageId) {
         throw new Error('Error sending invoice');

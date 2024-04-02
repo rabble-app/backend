@@ -58,12 +58,9 @@ export class InvoiceService {
     orderId: string,
   ) {
     const filename = `purchase-order-${orderId}.pdf`;
-    pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${filename}`));
+    const filePath = path.resolve(__dirname, `../../assets/pdfs/${filename}`);
+    pdfDoc.pipe(fs.createWriteStream(filePath));
     pdfDoc.end();
-    const filePath = path.resolve(
-      __dirname,
-      `../../../public/pdfs/${filename}`,
-    );
     return { filePath, filename };
   }
 

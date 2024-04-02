@@ -5,6 +5,8 @@ import {
   CustomTableLayout,
   TFontDictionary,
 } from 'pdfmake/interfaces';
+import fs from 'fs';
+import * as path from 'path';
 
 export const customTableLayout: CustomTableLayout = {
   hLineWidth: function (i: number) {
@@ -126,11 +128,12 @@ export const horizontalLine: ContentCanvas = {
 };
 
 export const getPDFPrinter = (fonts?: TFontDictionary) => {
+  const _path = path.resolve(__dirname, '../../../assets');
   const _fonts = {
     Roboto: {
-      normal: 'public/assets/fonts/Lato-Regular.ttf',
-      bold: 'public/assets/fonts/Lato-Bold.ttf',
-      bolditalics: 'public/assets/fonts/Manrope-SemiBold.ttf',
+      normal: `${_path}/fonts/Lato-Regular.ttf`,
+      bold: `${_path}/fonts/Lato-Bold.ttf`,
+      bolditalics: `${_path}/fonts/Manrope-SemiBold.ttf`,
     },
   };
   return new PdfPrinter(fonts ?? _fonts);
