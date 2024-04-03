@@ -139,6 +139,7 @@ describe('StoreController (e2e)', () => {
       },
       testTime,
     );
+
     it(
       '/store/open-hours(PATCH) should add store open hours if all required data is supplied',
       async () => {
@@ -146,6 +147,22 @@ describe('StoreController (e2e)', () => {
           .patch('/store/open-hours')
           .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...openHours, storeId })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // update store info
+    it(
+      '/store/(PATCH) should update store information successfully',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/store/${storeId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ city: 'London' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

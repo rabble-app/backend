@@ -299,6 +299,23 @@ export class TeamsServiceExtension {
           teamId,
         },
         include: {
+          team: {
+            select: {
+              producer: {
+                select: {
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
           basket: {
             include: {
               product: {

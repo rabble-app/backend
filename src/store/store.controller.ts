@@ -7,6 +7,7 @@ import {
   Request,
   HttpStatus,
   Patch,
+  Param,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -16,6 +17,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
@@ -23,6 +25,7 @@ import { IAPIResponse } from '../lib/types';
 import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
+import { UpdateStoreDto } from './dto/update-store.dto';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -34,7 +37,7 @@ export class StoreController {
    * create new store.
    * @param {Body} createStoreDto - Request body object.
    * @param {Response} res - The payload.
-   * @memberof ProductsController
+   * @memberof StoreController
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
@@ -75,7 +78,7 @@ export class StoreController {
    * Add store open hours.
    * @param {Body} createOpenHoursDto - Request body object.
    * @param {Response} res - The payload.
-   * @memberof ProductsController
+   * @memberof StoreController
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
@@ -109,6 +112,55 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store open hours added successfully',
+    );
+  }
+
+  /**
+   * update store record.
+   * @param {Body} updateStoreDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch(':storeId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Store record updated successfully' })
+  @ApiConflictResponse({
+    description: 'Store name/stripe connect id already exist',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async updateStore(
+    @Param('storeId') storeId: string,
+    @Body() updateStoreDto: UpdateStoreDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    // check if name already exist
+    if (updateStoreDto.name) {
+      const isExisting = await this.storeService.findStore({
+        name: updateStoreDto.name,
+      });
+      if (isExisting) {
+        return formatResponse(
+          'Duplicate name',
+          res,
+          HttpStatus.CONFLICT,
+          true,
+          'Store name already exist',
+        );
+      }
+    }
+
+    const result = await this.storeService.updateStore({
+      where: { id: storeId },
+      data: updateStoreDto,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store record updated successfully',
     );
   }
 }

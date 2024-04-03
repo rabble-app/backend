@@ -54,4 +54,15 @@ export class StoreService {
       },
     });
   }
+
+  async updateStore(params: {
+    where: Prisma.PartnerWhereUniqueInput;
+    data: Prisma.PartnerUpdateInput;
+  }): Promise<Partner> {
+    const { where, data } = params;
+    return await this.prisma.partner.update({
+      data,
+      where,
+    });
+  }
 }
