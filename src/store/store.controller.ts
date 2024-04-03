@@ -151,22 +151,6 @@ export class StoreController {
       }
     }
 
-    // check if stripe connect id already exist
-    if (updateStoreDto.stripeConnectId) {
-      const isExisting = await this.storeService.findStore({
-        stripeConnectId: updateStoreDto.stripeConnectId,
-      });
-      if (isExisting) {
-        return formatResponse(
-          'Duplicate stripe connect id',
-          res,
-          HttpStatus.CONFLICT,
-          true,
-          'Stripe connect id already exist',
-        );
-      }
-    }
-
     const result = await this.storeService.updateStore({
       where: { id: storeId },
       data: updateStoreDto,
