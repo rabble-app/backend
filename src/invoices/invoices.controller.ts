@@ -64,7 +64,7 @@ export class InvoiceController {
         producerId,
         orderId,
       );
-      const fileName = `invoice-${orderId}-${new Date().getTime()}.pdf`;
+      const fileName = `purchase-order-${orderId}.pdf`;
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,

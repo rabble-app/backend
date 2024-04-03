@@ -54,3 +54,13 @@ export const teamImages = {
     return [...teamImages.Alcohol];
   },
 };
+
+export const getFileBasePath = (location: string) => {
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  switch (location) {
+    case 'utils':
+      return isTestEnv ? '../../assets' : '../../../assets';
+    case 'invoice-service':
+      return isTestEnv ? '../assets' : '../../assets';
+  }
+};

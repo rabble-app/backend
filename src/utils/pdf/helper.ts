@@ -5,8 +5,8 @@ import {
   CustomTableLayout,
   TFontDictionary,
 } from 'pdfmake/interfaces';
-import fs from 'fs';
 import * as path from 'path';
+import { getFileBasePath } from '../';
 
 export const customTableLayout: CustomTableLayout = {
   hLineWidth: function (i: number) {
@@ -128,7 +128,8 @@ export const horizontalLine: ContentCanvas = {
 };
 
 export const getPDFPrinter = (fonts?: TFontDictionary) => {
-  const _path = path.resolve(__dirname, '../../../assets');
+  const relativePath = getFileBasePath('utils');
+  const _path = path.resolve(__dirname, relativePath);
   const _fonts = {
     Roboto: {
       normal: `${_path}/fonts/Lato-Regular.ttf`,
