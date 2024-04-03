@@ -20,7 +20,7 @@ import { AddProducerCategoryDto } from './dto/add-producer-category.dto';
 import {
   SearchCategory,
   ProducerWithCategories,
-  UserWithProducerInfo,
+  UserWithProducerAndPartnerInfo,
 } from '../lib/types';
 import { CreateDeliveryAreaDto } from './dto/create-delivery-area.dto';
 
@@ -38,11 +38,16 @@ export class UsersService {
 
   async findUser(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
-  ): Promise<UserWithProducerInfo | null> {
+  ): Promise<UserWithProducerAndPartnerInfo | null> {
     return await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
       include: {
         producer: {
+          select: {
+            id: true,
+          },
+        },
+        partner: {
           select: {
             id: true,
           },
@@ -62,13 +67,14 @@ export class UsersService {
     data: Prisma.UserUpdateInput;
   }): Promise<User> {
     const { where, data } = params;
+    delete data.phone;
     const result = await this.prisma.user.update({
       data,
       where,
     });
 
     // update stripe information too
-    if (data.firstName && data.lastName) {
+    if (data.firstName && data.lastName && result.stripeCustomerId) {
       await this.updateStripeCustomerInfo(result.stripeCustomerId, {
         firstName: result.firstName,
         lastName: result.lastName,

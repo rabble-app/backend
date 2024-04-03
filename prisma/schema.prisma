@@ -117,7 +117,7 @@ model Partner {
   postalCode      String       @map("postal_code")
   stripeConnectId String?      @unique @map("stripe_connect_id")
   city            String
-  streetNumber    String       @map("street_number")
+  streetAddress    String       @map("street_address")
   direction       String
   storeType       String       @map("store_type")
   shelfSpace      String       @map("shelf_type")

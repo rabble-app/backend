@@ -149,7 +149,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('current-order/:id')
   @ApiOkResponse({
     description: 'Buying team order status returned successfully',
