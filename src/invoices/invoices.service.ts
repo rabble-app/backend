@@ -20,6 +20,7 @@ import {
   totalTableLayout,
 } from '../utils/pdf/helper';
 import Mail from 'nodemailer/lib/mailer';
+import { getFileBasePath } from '../utils';
 
 @Injectable()
 export class InvoiceService {
@@ -58,12 +59,13 @@ export class InvoiceService {
     orderId: string,
   ) {
     const filename = `purchase-order-${orderId}.pdf`;
-    pdfDoc.pipe(fs.createWriteStream(`public/pdfs/${filename}`));
-    pdfDoc.end();
+
     const filePath = path.resolve(
       __dirname,
-      `../../../public/pdfs/${filename}`,
+      `${getFileBasePath('invoice-service')}/pdfs/${filename}`,
     );
+    pdfDoc.pipe(fs.createWriteStream(filePath));
+    pdfDoc.end();
     return { filePath, filename };
   }
 

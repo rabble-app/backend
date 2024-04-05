@@ -64,7 +64,7 @@ export class InvoiceController {
         producerId,
         orderId,
       );
-      const fileName = `invoice-${orderId}-${new Date().getTime()}.pdf`;
+      const fileName = `purchase-order-${orderId}.pdf`;
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,
@@ -100,7 +100,7 @@ export class InvoiceController {
         pdfDoc,
         orderId,
         orderDetails.team.producer.businessName,
-        'nedsoftdeveloper@gmail.com',
+        orderDetails.team.producer.accountsEmail,
       );
       if (!response.messageId) {
         throw new Error('Error sending invoice');
