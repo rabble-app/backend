@@ -1,12 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsEnum,
   IsISO8601,
   IsNotEmpty,
   IsNumber,
   IsString,
   ValidateIf,
 } from 'class-validator';
+import { DayOptions } from '../../lib/types';
 
 export class CreateTeamDto {
   @ApiProperty({
@@ -47,6 +49,16 @@ export class CreateTeamDto {
 
   @ApiProperty({
     type: 'string',
+    description: 'The id of the partne that own the buying team',
+    required: true,
+  })
+  @ValidateIf((o) => o.partnerId)
+  @IsNotEmpty()
+  @IsString()
+  partnerId: string;
+
+  @ApiProperty({
+    type: 'string',
     description: 'The frequency of the buying team',
     required: true,
   })
@@ -68,6 +80,7 @@ export class CreateTeamDto {
     description: 'The payment intent id gotten after making payment',
     required: true,
   })
+  @ValidateIf((o) => o.paymentIntentId)
   @IsString()
   paymentIntentId: string;
 
@@ -88,4 +101,22 @@ export class CreateTeamDto {
   @ValidateIf((o) => o.nextDeliveryDate)
   @IsISO8601()
   nextDeliveryDate: Date;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The product limit of the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.productLimit)
+  @IsNumber()
+  productLimit: number;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The preferred delivery day for the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.deliveryDay)
+  @IsEnum(DayOptions)
+  deliveryDay: DayOptions;
 }
