@@ -333,16 +333,20 @@ export class PaymentService {
       if (!addBulkBasketDto.deadlineReached) {
         // check for portioned products
         if (addBulkBasketDto.basket && addBulkBasketDto.basket.length > 0) {
+          let index = 0;
           addBulkBasketDto.basket.forEach(async (item) => {
             if (item.type && item.type == 'PORTIONED_SINGLE_PRODUCT') {
-              await this.processPortionedProduct(
-                addBulkBasketDto.teamId,
-                item.orderId,
-                item.quantity,
-                item.productId,
-                item.userId,
-                item.price * item.quantity,
-              );
+              setTimeout(async () => {
+                index++;
+                await this.processPortionedProduct(
+                  addBulkBasketDto.teamId,
+                  item.orderId,
+                  item.quantity,
+                  item.productId,
+                  item.userId,
+                  item.price * item.quantity,
+                );
+              }, 4000 * index);
             }
           });
         }
