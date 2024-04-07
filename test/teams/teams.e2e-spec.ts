@@ -32,7 +32,7 @@ describe('TeamsController (e2e)', () => {
   let stripe: Stripe;
   const testTime = 120000;
 
-  const buyingTeam: CreateTeamDto = {
+  const buyingTeam = {
     name: faker.internet.userName(),
     postalCode: '234-54',
     hostId: '',
