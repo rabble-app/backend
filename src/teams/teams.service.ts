@@ -16,7 +16,6 @@ import { teamImages } from '../../src/utils';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../../src/notifications/notifications.service';
 import { TeamsServiceExtension } from './teams.service.extension';
-import { Decimal } from '@prisma/client/runtime';
 
 @Injectable()
 export class TeamsService {
