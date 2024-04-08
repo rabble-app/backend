@@ -75,16 +75,6 @@ export class TeamsService {
       },
     });
 
-    // get amount paid and add it to accumulator
-    const paymentInfo = await this.prisma.payment.findFirst({
-      where: {
-        paymentIntentId,
-      },
-      select: {
-        amount: true,
-      },
-    });
-
     // add the host as a user to the group
     const memberData = {
       teamId: result.id,
@@ -94,41 +84,55 @@ export class TeamsService {
     };
     await this.addTeamMember(memberData);
 
-    const currentDate = new Date();
-    // add 6 days to the current date, order closes on the 7 day
-    const nextWeekDate = new Date(
-      currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
-    );
+    // normal user's buying team
+    if (paymentIntentId) {
+      // get amount paid and add it to accumulator
+      const paymentInfo = await this.prisma.payment.findFirst({
+        where: {
+          paymentIntentId,
+        },
+        select: {
+          amount: true,
+        },
+      });
 
-    // create order
-    const orderData = {
-      teamId: result.id,
-      minimumTreshold: producerInfo.minimumTreshold,
-      deadline: nextWeekDate,
-      accumulatedAmount: paymentInfo.amount,
-    };
-    const orderResponse = await this.paymentService.createOrder(orderData);
-
-    // update payment record
-    const paymentData = {
-      orderId: orderResponse.id,
-      paymentIntentId,
-    };
-
-    await this.paymentService.updatePayment({
-      where: { paymentIntentId },
-      data: { ...paymentData },
-    });
-    result['orderId'] = orderResponse.id;
-
-    // send notification
-    if (paymentInfo.amount >= producerInfo.minimumTreshold) {
-      await this.paymentService.sendNotificationForThreshold(
-        result.id,
-        orderResponse.id,
-        nextWeekDate,
+      const currentDate = new Date();
+      // add 6 days to the current date, order closes on the 7 day
+      const nextWeekDate = new Date(
+        currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
       );
+
+      // create order
+      const orderData = {
+        teamId: result.id,
+        minimumTreshold: producerInfo.minimumTreshold,
+        deadline: nextWeekDate,
+        accumulatedAmount: paymentInfo.amount,
+      };
+      const orderResponse = await this.paymentService.createOrder(orderData);
+
+      // update payment record
+      const paymentData = {
+        orderId: orderResponse.id,
+        paymentIntentId,
+      };
+
+      await this.paymentService.updatePayment({
+        where: { paymentIntentId },
+        data: { ...paymentData },
+      });
+      result['orderId'] = orderResponse.id;
+
+      // send notification
+      if (paymentInfo.amount >= producerInfo.minimumTreshold) {
+        await this.paymentService.sendNotificationForThreshold(
+          result.id,
+          orderResponse.id,
+          nextWeekDate,
+        );
+      }
     }
+
     return result;
   }
 

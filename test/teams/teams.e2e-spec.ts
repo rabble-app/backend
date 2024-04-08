@@ -3,7 +3,6 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { AuthService } from '../../src/auth/auth.service';
 import { TeamMember } from '@prisma/client';
-import { CreateTeamDto } from '../../src/teams/dto/create-team.dto';
 import { faker } from '@faker-js/faker';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma.service';
@@ -32,7 +31,7 @@ describe('TeamsController (e2e)', () => {
   let stripe: Stripe;
   const testTime = 120000;
 
-  const buyingTeam: CreateTeamDto = {
+  const buyingTeam = {
     name: faker.internet.userName(),
     postalCode: '234-54',
     hostId: '',
