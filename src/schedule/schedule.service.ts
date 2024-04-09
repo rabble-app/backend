@@ -91,9 +91,14 @@ export class ScheduleService {
   async authorizePayments() {
     try {
       const result = await this.scheduleServiceExtended.getPendingPayment();
+      console.log('result');
+      console.log(result);
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
-          if (payment.order.deadline.getTime() > new Date().getTime()) {
+          if (
+            payment.order.deadline &&
+            payment.order.deadline.getTime() > new Date().getTime()
+          ) {
             const otherNotificationConditions = {
               userId: payment.userId,
               orderId: payment.orderId,
@@ -107,7 +112,7 @@ export class ScheduleService {
             ) {
               // authorize payment for this user
               const paymentRecord = await this.handleAuthorizePayments(payment);
-
+              console.log(paymentRecord);
               if (!paymentRecord) {
                 // send notification that payment failed
                 await this.notificationsService.createNotification({
@@ -143,7 +148,6 @@ export class ScheduleService {
       paymentId: payment.id,
     });
   }
-
   async handleNewOrders() {
     const buyingTeams = await this.scheduleServiceExtended.getTeams();
     if (buyingTeams && buyingTeams.length > 0)
