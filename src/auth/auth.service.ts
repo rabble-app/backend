@@ -15,13 +15,10 @@ import { courier } from '../../src/utils/mail';
 import { Role, UserWithProducerAndPartnerInfo } from '../../src/lib/types';
 import { ICourierClient } from '@trycourier/courier';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-});
-
 @Injectable()
 export class AuthService {
   private courierClient: ICourierClient;
+  private readonly stripe: Stripe;
   constructor(
     private readonly userService: UsersService,
     private jwtService: JwtService,
@@ -29,6 +26,9 @@ export class AuthService {
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
   ) {
     this.courierClient = courier(this.parameters.COURIER_API);
+    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
   }
 
   async sendOTP(sendOTPDto: SendOTPDto): Promise<string> {
@@ -317,7 +317,7 @@ export class AuthService {
   }
 
   async stripeOnboard(): Promise<{ url: string; accountId: string }> {
-    const account = await stripe.accounts.create({
+    const account = await this.stripe.accounts.create({
       type: 'express',
       country: 'GB',
       capabilities: {
@@ -351,12 +351,12 @@ export class AuthService {
   }
 
   async generateAccountLink(accountId: string): Promise<string> {
-    return stripe.accountLinks
+    return this.stripe.accountLinks
       .create({
         type: 'account_onboarding',
         account: accountId,
-        refresh_url: `${process.env.STRIPE_REFRESH_URL}`,
-        return_url: `${process.env.STRIPE_RETURN_URL}`,
+        refresh_url: `${this.parameters.STRIPE_REFRESH_URL}`,
+        return_url: `${this.parameters.STRIPE_RETURN_URL}`,
       })
       .then((link) => link.url);
   }

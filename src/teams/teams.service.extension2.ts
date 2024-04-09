@@ -506,4 +506,35 @@ export class TeamsServiceExtension2 {
     ]);
     return result;
   }
+
+  async search(userId: string, keyword: string): Promise<object[] | null> {
+    return await this.prisma.buyingTeam.findMany({
+      where: {
+        hostId: userId,
+        name: {
+          contains: keyword,
+          mode: 'insensitive',
+        },
+      },
+      include: {
+        members: true,
+        producer: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        host: true,
+      },
+    });
+  }
 }
