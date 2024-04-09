@@ -7,6 +7,7 @@ import {
   Query,
   Param,
   Post,
+  Request,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -277,6 +278,47 @@ export class TeamsControllerExtension2 {
       HttpStatus.OK,
       false,
       'Order status counts returned successfully',
+    );
+  }
+
+  /**
+   * search feature for buying team name.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/name/search/:keyword/')
+  @ApiOkResponse({ description: 'Search result returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiParam({
+    name: 'keyword',
+    required: true,
+    description: 'The keyword of the search',
+  })
+  async search(
+    @Param('keyword') keyword: string,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+  ): Promise<IAPIResponse> {
+    if (keyword && keyword.length < 3) {
+      return formatResponse(
+        'Invalid keyword length',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        `Keyword must be greater than 2 characters`,
+      );
+    }
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const result = await this.teamsServiceExtension2.search(userId, keyword);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Search result returned successfully',
     );
   }
 }
