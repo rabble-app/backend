@@ -91,8 +91,6 @@ export class ScheduleService {
   async authorizePayments() {
     try {
       const result = await this.scheduleServiceExtended.getPendingPayment();
-      console.log('result');
-      console.log(result);
       if (result && result.length > 0) {
         result.forEach(async (payment) => {
           if (
@@ -112,7 +110,6 @@ export class ScheduleService {
             ) {
               // authorize payment for this user
               const paymentRecord = await this.handleAuthorizePayments(payment);
-              console.log(paymentRecord);
               if (!paymentRecord) {
                 // send notification that payment failed
                 await this.notificationsService.createNotification({
@@ -134,7 +131,7 @@ export class ScheduleService {
       }
       return true;
     } catch (error) {
-      // console.log(error);
+      console.log(error);
     }
   }
   // fix: remove datatype
