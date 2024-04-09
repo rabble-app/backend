@@ -754,6 +754,21 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+    // search feature for buying team
+    it(
+      '/team/name/search/:keyword(GET) should return 200 on a successful buying team search',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/team/name/search/two')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // return the total count for different order status
     it(
       '/team/orders/status/count(GET) should return 200 on a successful differen order status count',
