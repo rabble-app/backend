@@ -117,7 +117,7 @@ model Partner {
   postalCode      String       @map("postal_code")
   stripeConnectId String?      @unique @map("stripe_connect_id")
   city            String
-  streetAddress    String       @map("street_address")
+  streetAddress   String       @map("street_address")
   direction       String
   storeType       String       @map("store_type")
   shelfSpace      String       @map("shelf_type")
@@ -636,6 +636,31 @@ model UniqueUsers {
 
   @@unique([week, year], name: "unique_record")
   @@map("unique_users")
+}
+
+model PostalCodeRegion {
+  id             String           @id @unique
+  name           String           @unique
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  postalCodeArea PostalCodeArea[]
+
+  @@index([name])
+  @@map("postalCodeRegions")
+}
+
+model PostalCodeArea {
+  id        String   @id  @default(uuid())
+  code      String   @unique
+  name      String   @unique
+  regionId  String   @map("region_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  region PostalCodeRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@index([name])
+  @@map("postalCodeAreas")
 }
 
 enum OrderStatus {
