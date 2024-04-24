@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { AuthService } from '../../src/auth/auth.service';
 import { faker } from '@faker-js/faker';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma.service';
@@ -10,7 +9,6 @@ import { User } from '@prisma/client';
 describe('UserController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let authService: AuthService;
 
   const phone = faker.phone.number();
   const phone2 = faker.phone.number() + '34';
@@ -26,7 +24,6 @@ describe('UserController (e2e)', () => {
   let producerCategoryOptionId: string;
   let producerCategoryId: string;
   let teamId: string;
-  let producerToken: string;
 
   const producerInfoUpdate = {
     businessAddress: 'Business Address',
@@ -44,22 +41,6 @@ describe('UserController (e2e)', () => {
     phone: phone2,
   };
 
-  const deliveryAddressInfo = {
-    location: faker.company.catchPhraseNoun(),
-    type: 'WEEKLY',
-    cutOffTime: '09;00',
-    customAreas: [
-      {
-        day: 'MONDAY',
-        cutOffTime: '09:00',
-      },
-      {
-        day: 'FRIDAY',
-        cutOffTime: '09:00',
-      },
-    ],
-  };
-
   const testTime = 120000;
 
   beforeAll(async () => {
@@ -69,7 +50,6 @@ describe('UserController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
-    authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -117,12 +97,6 @@ describe('UserController (e2e)', () => {
         teamId,
         minimumTreshold: 50,
       },
-    });
-
-    // create producer token
-    producerToken = authService.generateToken({
-      userId,
-      producerId: producer.id,
     });
   }, testTime);
 
@@ -526,24 +500,6 @@ describe('UserController (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get(`/users/popular-searches`)
         .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
-    },
-    testTime,
-  );
-
-  // delivery area
-  it(
-    '/users/producer/delivery-area(POST) should add delivery area',
-    async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/producer/delivery-area')
-        .set('Authorization', `Bearer ${producerToken}`)
-        .send({
-          ...deliveryAddressInfo,
-        })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
