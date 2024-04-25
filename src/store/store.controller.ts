@@ -8,6 +8,9 @@ import {
   HttpStatus,
   Patch,
   Param,
+  Get,
+  HttpException,
+  Query,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -16,8 +19,11 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiHeader,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
+  ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
@@ -161,6 +167,67 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store record updated successfully',
+    );
+  }
+
+  /**
+   * update store record.
+   * @param {Body} updateStoreDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':storeId/deliveries')
+  @ApiBadRequestResponse({
+    description: 'Invalid query parameter (offset | period)',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Pagination offset',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    description: 'Delivery period',
+    enum: ['today', 'upcoming', 'past'],
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  async getStoreDeliveries(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+    @Query('offset') offset?: number,
+    @Query('period') period?: 'today' | 'upcoming' | 'past',
+  ): Promise<IAPIResponse> {
+    const store = await this.storeService.findStore({ id: storeId });
+    const skip = !isNaN(Number(offset)) ? +offset : 0;
+    if (period && !['today', 'upcoming', 'past'].includes(period))
+      throw new HttpException(
+        'Invalid period query, acceptable values are today | upcoming | past',
+        HttpStatus.BAD_REQUEST,
+      );
+
+    if (!store || store.userId !== req.user.userId)
+      throw new HttpException('Store not found', HttpStatus.NOT_FOUND);
+    const result = await this.storeService.getStoreDeliveries(
+      store.userId,
+      skip,
+      period,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store deliveries returned successfully',
     );
   }
 }
