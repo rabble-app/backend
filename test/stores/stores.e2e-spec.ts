@@ -6,7 +6,6 @@ import { PrismaService } from '../../src/prisma.service';
 import { Order, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
-import { truncateDB } from '../truncate-db';
 describe('StoreController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -15,10 +14,10 @@ describe('StoreController (e2e)', () => {
   const phone = faker.phone.number();
   let user: User;
   let userId: string;
-  const testTime = 120000;
   let jwtToken: string;
   let storeId: string;
   let order: Order;
+  let productCategoryId: string;
 
   const store = {
     name: faker.internet.userName(),
@@ -54,8 +53,6 @@ describe('StoreController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
-    // create dummy user for test
     user = await prisma.user.create({
       data: {
         phone,
@@ -95,15 +92,6 @@ describe('StoreController (e2e)', () => {
       },
     });
 
-    // await prisma.shipping.create({
-    //   data: {
-    //     userId: user.id,
-    //     buildingNo: '123',
-    //     address: 'dummy address',
-    //     city: 'dummy city',
-    //   },
-    // });
-
     // create  order for test
     order = await prisma.order.create({
       data: {
@@ -117,6 +105,7 @@ describe('StoreController (e2e)', () => {
         name: faker.lorem.word({ length: 15 }),
       },
     });
+    productCategoryId = productCategory.id;
     const product = await prisma.product.create({
       data: {
         producerId: producer.id,
@@ -138,158 +127,158 @@ describe('StoreController (e2e)', () => {
 
     // create dummy token
     jwtToken = authService.generateToken({ userId });
-  }, testTime);
+  });
 
   afterAll(async () => {
-    await truncateDB(prisma);
+    await prisma.user.delete({ where: { id: userId } });
+    await prisma.productCategory.delete({ where: { id: productCategoryId } });
     await app.close();
   });
 
   describe('StoreController (e2e)', () => {
     // partner store creation
-    it(
-      '/store/create(POST) should not create a new store if incomplete data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/store/create')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            direction: 'From district 1 enter ride to Washinton',
-            storeType: '4Square',
-          })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-    it(
-      '/store/create(POST) should create a new store if all required data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/store/create')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send(store)
-          .expect(201);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-        storeId = response.body.data.id;
-      },
-      testTime,
-    );
-    it(
-      '/store/create(POST) should not create a new store if the suplied name already exist',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/store/create')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send(store)
-          .expect(409);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
+    it('/store/create(POST) should not create a new store if incomplete data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/store/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({
+          direction: 'From district 1 enter ride to Washinton',
+          storeType: '4Square',
+        })
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
+    it('/store/create(POST) should create a new store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/store/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(store)
+        .expect(201);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+      storeId = response.body.data.id;
+    });
+    it('/store/create(POST) should not create a new store if the suplied name already exist', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/store/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(store)
+        .expect(409);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
 
     // store open hours
-    it(
-      '/store/open-hours(PATCH) should not add store open hours if incomplete data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .patch('/store/open-hours')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            customOpenHours: [],
-          })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
+    it('/store/open-hours(PATCH) should not add store open hours if incomplete data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/store/open-hours')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({
+          customOpenHours: [],
+        })
+        .expect(400);
+      expect(response.body).toHaveProperty('error');
+      expect(typeof response.body.error).toBe('string');
+    });
 
-    it(
-      '/store/open-hours(PATCH) should add store open hours if all required data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .patch('/store/open-hours')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ ...openHours, storeId })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
+    it('/store/open-hours(PATCH) should add store open hours if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/store/open-hours')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({ ...openHours, storeId })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
 
     // update store info
-    it(
-      '/store/(PATCH) should update store information successfully',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .patch(`/store/${storeId}`)
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ city: 'London' })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-    it(
-      '/store/(Get) should get store inbound deliveries for today successfully',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .get(`/store/${storeId}/deliveries?period=today`)
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ city: 'London' })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(response.body.data).toHaveLength(1);
-      },
-      testTime,
-    );
-    it(
-      '/store/(Get) should get past store inbound deliveries successfully',
-      async () => {
-        const pastDate = new Date();
-        pastDate.setDate(pastDate.getDate() - 1);
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { deliveryDate: pastDate },
-        });
-        const response = await request(app.getHttpServer())
-          .get(`/store/${storeId}/deliveries?period=past`)
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(response.body.data).toHaveLength(1);
-      },
-      testTime,
-    );
-    it(
-      '/store/(Get) should get upcoming store inbound deliveries successfully',
-      async () => {
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 1);
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { deliveryDate: futureDate },
-        });
-        const response = await request(app.getHttpServer())
-          .get(`/store/${storeId}/deliveries?period=upcoming&search=dummy`)
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(response.body.data).toHaveLength(1);
-      },
-      testTime,
-    );
+    it('/store/(PATCH) should update store information successfully', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/store/${storeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({ city: 'London' })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+    it('/store/(Get) should get store inbound deliveries for today successfully', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/deliveries?period=today`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({ city: 'London' })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(response.body.data).toHaveLength(1);
+    });
+    it('/store/(Get) should get past store inbound deliveries successfully', async () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { deliveryDate: pastDate },
+      });
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/deliveries?period=past`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(response.body.data).toHaveLength(1);
+    });
+    it('/store/(Get) should get upcoming store inbound deliveries successfully', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 1);
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { deliveryDate: futureDate },
+      });
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/deliveries?period=upcoming`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(response.body.data).toHaveLength(1);
+    });
+    it('/store/(Get) should search for upcoming store inbound deliveries successfully by team name', async () => {
+      await prisma.buyingTeam.update({
+        where: { id: order.teamId },
+        data: { name: 'searchable team name' },
+      });
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/deliveries?period=upcoming&search=team`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(response.body.data).toHaveLength(1);
+    });
+    it('/store/(Get) should search for upcoming store inbound deliveries successfully by producer name', async () => {
+      await prisma.producer.update({
+        where: { userId },
+        data: { businessName: 'searchable producer name' },
+      });
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/deliveries?period=upcoming&search=producer`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(response.body.data).toHaveLength(1);
+    });
+    it('/store/(Get) should fail to search for upcoming store inbound deliveries by producer name if name does not match', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/deliveries?period=upcoming&search=goal`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(response.body.data).toHaveLength(0);
+    });
   });
 });

@@ -196,6 +196,12 @@ export class StoreController {
     description: 'Delivery period',
     enum: ['today', 'upcoming', 'past'],
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by team name or producer name',
+    type: 'string',
+  })
   @ApiHeader({
     name: 'Authorization',
     description: 'Bearer <access_token>',
@@ -206,6 +212,7 @@ export class StoreController {
     @Request() req,
     @Query('offset') offset?: number,
     @Query('period') period?: 'today' | 'upcoming' | 'past',
+    @Query('search') search?: string,
   ): Promise<IAPIResponse> {
     const store = await this.storeService.findStore({ id: storeId });
     const skip = !isNaN(Number(offset)) ? +offset : 0;
@@ -221,6 +228,7 @@ export class StoreController {
       store.userId,
       skip,
       period,
+      search,
     );
     return formatResponse(
       result,

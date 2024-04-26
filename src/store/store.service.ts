@@ -71,24 +71,10 @@ export class StoreService {
     partnerId: string,
     skip?: number,
     period?: 'today' | 'upcoming' | 'past',
+    search?: string,
   ) {
-    const periodFilter = this.getPeriodFilter(period);
     const result = await this.prisma.order.findMany({
-      where: {
-        AND: [
-          {
-            team: {
-              hostId: partnerId,
-            },
-          },
-          periodFilter,
-          {
-            deliveryDate: {
-              not: null,
-            },
-          },
-        ],
-      },
+      where: this.getDeliveryFilter(partnerId, period, search),
       ...(skip && { skip }),
       select: {
         id: true,
@@ -130,6 +116,76 @@ export class StoreService {
       },
     });
     return result;
+  }
+
+  getDeliveryFilter(
+    partnerId: string,
+    period?: 'today' | 'upcoming' | 'past',
+    search?: string,
+  ): Prisma.OrderWhereInput {
+    const periodFilter = this.getPeriodFilter(period);
+    if (!search) {
+      return {
+        AND: [
+          {
+            team: {
+              hostId: partnerId,
+            },
+          },
+          periodFilter,
+          {
+            deliveryDate: {
+              not: null,
+            },
+          },
+        ],
+      };
+    } else {
+      return {
+        OR: [
+          {
+            AND: [
+              {
+                team: {
+                  hostId: partnerId,
+                  name: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              periodFilter,
+              {
+                deliveryDate: {
+                  not: null,
+                },
+              },
+            ],
+          },
+          {
+            AND: [
+              {
+                team: {
+                  hostId: partnerId,
+                  producer: {
+                    businessName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+              periodFilter,
+              {
+                deliveryDate: {
+                  not: null,
+                },
+              },
+            ],
+          },
+        ],
+      };
+    }
   }
 
   getPeriodFilter(period = '') {
