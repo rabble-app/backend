@@ -67,15 +67,23 @@ export class StoreService {
     });
   }
 
-  async getStoreDeliveries(
-    partnerId: string,
-    skip?: number,
-    period?: 'today' | 'upcoming' | 'past',
-    search?: string,
-  ) {
+  async getStoreDeliveries({
+    partnerId,
+    skip,
+    period,
+    search,
+    limit,
+  }: {
+    partnerId: string;
+    skip?: number;
+    period?: 'today' | 'upcoming' | 'past';
+    search?: string;
+    limit?: number;
+  }) {
     const result = await this.prisma.order.findMany({
       where: this.getDeliveryFilter(partnerId, period, search),
       ...(skip && { skip }),
+      ...(limit && { take: limit }),
       select: {
         id: true,
         accumulatedAmount: true,

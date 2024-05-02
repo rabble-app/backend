@@ -205,11 +205,17 @@ describe('StoreController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
     });
+    it('/store/(Get) should fail to get inbound deliveries if storeId is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/store/invalid-store-id/deliveries?period=today')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+      expect(response.body.message).toBe('Invalid store id');
+    });
     it('/store/(Get) should get store inbound deliveries for today successfully', async () => {
       const response = await request(app.getHttpServer())
         .get(`/store/${storeId}/deliveries?period=today`)
         .set('Authorization', `Bearer ${jwtToken}`)
-        .send({ city: 'London' })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

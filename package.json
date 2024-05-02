@@ -25,7 +25,7 @@
     "test:clear-cache": "jest --clearCache",
     "deploy": "npm ci && npm run build && npm run start:prod",
     "migration:generate": "npx prisma migrate dev --name",
-    "migration": "npx prisma migrate dev --skip-generate",
+    "migration": "npx prisma migrate dev",
     "schema:generate": "npx prisma generate",
     "postinstall": "prisma migrate deploy && npm run schema:generate",
     "seed": "prisma db seed",
