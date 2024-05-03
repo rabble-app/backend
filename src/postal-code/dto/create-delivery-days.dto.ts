@@ -39,7 +39,7 @@ class DeliveryDayDto {
   cutOffDay: DayOptions;
 }
 
-class DeliveryRegionDto {
+export class DeliveryRegionDto {
   @ApiProperty({
     type: 'string',
     description: 'The id of the region',
@@ -80,7 +80,7 @@ class DeliveryAreaDto {
   areaId: string;
 }
 
-export class CreateDeliveryAreaDto {
+export class CreateDeliveryDayDto {
   @ApiProperty({
     type: 'string',
     description: 'The selected delivery days',
