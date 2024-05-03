@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { CreateDeliveryAreaDto } from './dto/create-delivery-areas.dto';
+import {
+  Prisma,
+  ProducerDeliveryArea,
+  ProducerDeliveryDay,
+  ProducerDeliveryRegion,
+} from '@prisma/client';
+import {
+  CreateDeliveryDayDto,
+  DeliveryRegionDto,
+} from './dto/create-delivery-days.dto';
 import {
   IPostalCodeSearchResponse,
   IProducerDeliveryDaysInfo,
@@ -67,13 +76,13 @@ export class PostalCodeService {
     }
   }
 
-  async createDeliveryAreas(
+  async createDeliveryDays(
     producerId: string,
-    createDeliveryAreaDto: CreateDeliveryAreaDto,
+    createDeliveryDayDto: CreateDeliveryDayDto,
   ): Promise<boolean> {
     try {
-      const deliveryDays = createDeliveryAreaDto.days;
-      const deliveryRegions = createDeliveryAreaDto.regions;
+      const deliveryDays = createDeliveryDayDto.days;
+      const deliveryRegions = createDeliveryDayDto.regions;
 
       if (deliveryDays && deliveryDays.length) {
         deliveryDays.forEach(async (selectedDay) => {
@@ -94,30 +103,8 @@ export class PostalCodeService {
             },
           });
 
-          if (deliveryRegions && deliveryRegions.length > 0) {
-            // add the regions and areas for this producer if it does not exist
-            deliveryRegions.forEach(async (selectedRegion) => {
-              await this.prisma.producerDeliveryRegion.upsert({
-                where: {
-                  deliveryDayId_regionId: {
-                    deliveryDayId: result.id,
-                    regionId: selectedRegion.regionId,
-                  },
-                },
-                update: {},
-                create: {
-                  deliveryDayId: result.id,
-                  regionId: selectedRegion.regionId,
-                  minimumOrder: selectedRegion.minOrder,
-                  producerAreas: {
-                    createMany: {
-                      data: selectedRegion.areas,
-                    },
-                  },
-                },
-              });
-            });
-          }
+          // add the regions and areas for this producer if it does not exist
+          await this.addDeliveryAreas(result.id, deliveryRegions);
         });
       }
 
@@ -174,5 +161,76 @@ export class PostalCodeService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async deleteProducerDeliveryRegion(
+    regionId: string,
+  ): Promise<ProducerDeliveryRegion> {
+    try {
+      return await this.prisma.producerDeliveryRegion.delete({
+        where: {
+          id: regionId,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async deleteProducerDeliveryArea(
+    areaId: string,
+  ): Promise<ProducerDeliveryArea> {
+    try {
+      return await this.prisma.producerDeliveryArea.delete({
+        where: {
+          id: areaId,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async addDeliveryAreas(
+    deliveryDayId: string,
+    deliveryRegions: DeliveryRegionDto[],
+  ): Promise<boolean> {
+    try {
+      deliveryRegions.forEach(async (selectedRegion) => {
+        await this.prisma.producerDeliveryRegion.upsert({
+          where: {
+            deliveryDayId_regionId: {
+              deliveryDayId,
+              regionId: selectedRegion.regionId,
+            },
+          },
+          update: {},
+          create: {
+            deliveryDayId,
+            regionId: selectedRegion.regionId,
+            minimumOrder: selectedRegion.minOrder,
+            producerAreas: {
+              createMany: {
+                data: selectedRegion.areas,
+              },
+            },
+          },
+        });
+      });
+      return true;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async updateDeliveryDayInfo(params: {
+    where: Prisma.ProducerDeliveryDayWhereUniqueInput;
+    data: Prisma.ProducerDeliveryDayUpdateInput;
+  }): Promise<ProducerDeliveryDay> {
+    const { where, data } = params;
+    return await this.prisma.producerDeliveryDay.update({
+      data,
+      where,
+    });
   }
 }
