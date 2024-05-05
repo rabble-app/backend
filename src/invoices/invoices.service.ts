@@ -41,7 +41,22 @@ export class InvoiceService {
       content: [
         this.getHeader(orderDetails.id.slice(0, 6), orderDetails.deliveryDate),
         this.getSection1(orderDetails),
-        horizontalLine,
+        // horizontal line
+        {
+          table: {
+            widths: ['*'],
+            body: [[' '], [' ']],
+          },
+          layout: {
+            hLineWidth: function (i, node) {
+              return i === 0 || i === node.table.body.length ? 0 : 0.4;
+            },
+            vLineWidth: function () {
+              return 0;
+            },
+          },
+        },
+        ,
         this.getSection2(orderDetails),
         this.getItemsTable(orderDetails),
         ...this.getSummaryTable(orderDetails),

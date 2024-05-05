@@ -281,3 +281,32 @@ export interface InsightResponse {
   year: number;
   value: Decimal;
 }
+
+export interface IPostalCodeSearchResponse {
+  id: string;
+  name: string;
+  postalCodeArea: { id: string; code: string; name: string }[];
+}
+
+export interface IProducerDeliveryDaysInfo {
+  id: string;
+  day: string;
+  cutOffDay: string;
+  cutOffTime: string;
+  regions: {
+    id: string;
+    region: {
+      name: string;
+      id: string;
+    };
+    minimumOrder: Decimal;
+    producerAreas: {
+      id: string;
+      area: {
+        id: string;
+        name: string;
+        code: string;
+      };
+    }[];
+  }[];
+}

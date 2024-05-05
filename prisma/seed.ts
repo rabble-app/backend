@@ -2,6 +2,816 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.postalCodeRegion.createMany({
+    data: [
+      {
+        id: '1',
+        name: 'Scotland',
+      },
+      {
+        id: '2',
+        name: 'East of England',
+      },
+      {
+        id: '3',
+        name: 'West Midlands',
+      },
+      {
+        id: '4',
+        name: 'South West',
+      },
+      {
+        id: '5',
+        name: 'North West',
+      },
+      {
+        id: '6',
+        name: 'South East',
+      },
+      {
+        id: '7',
+        name: 'Greater London',
+      },
+      {
+        id: '8',
+        name: 'Northern Ireland',
+      },
+      {
+        id: '9',
+        name: 'Wales',
+      },
+      {
+        id: '10',
+        name: 'North East',
+      },
+      {
+        id: '11',
+        name: 'East Midlands',
+      },
+      {
+        id: '12',
+        name: 'Central London',
+      },
+      {
+        id: '13',
+        name: 'Channel Islands',
+      },
+      {
+        id: '14',
+        name: 'Isle of Man',
+      },
+    ],
+  });
+
+  await prisma.postalCodeArea.createMany({
+    data: [
+      // area 2
+      {
+        regionId: '1',
+        code: 'AB',
+        name: 'Aberdeen',
+      },
+      // area 3
+      {
+        regionId: '2',
+        code: 'AL',
+        name: 'St. Albans',
+      },
+      // area 4
+      {
+        regionId: '3',
+        code: 'B',
+        name: 'Birmingham',
+      },
+      // area 5
+      {
+        regionId: '4',
+        code: 'BA',
+        name: 'Bath',
+      },
+      // area 6
+      {
+        regionId: '5',
+        code: 'BB',
+        name: 'Blackburn',
+      },
+      // area 7
+      {
+        regionId: '5',
+        code: 'BD',
+        name: 'Bradford',
+      },
+      // area 8
+      {
+        regionId: '4',
+        code: 'BH',
+        name: 'Bournemouth',
+      },
+      // area 9
+      {
+        regionId: '5',
+        code: 'BL',
+        name: 'Bolton',
+      },
+      // area 10
+      {
+        regionId: '6',
+        code: 'BN',
+        name: 'Brighton',
+      },
+      // area 11
+      {
+        regionId: '7',
+        code: 'BR',
+        name: 'Bromley',
+      },
+      // area 12
+      {
+        regionId: '4',
+        code: 'BS',
+        name: 'Bristol',
+      },
+      // area 13
+      {
+        regionId: '8',
+        code: 'BT',
+        name: 'Belfast',
+      },
+      // area 14
+      {
+        regionId: '5',
+        code: 'CA',
+        name: 'Carlisle',
+      },
+      // area 15
+      {
+        regionId: '2',
+        code: 'CB',
+        name: 'Cambridge',
+      },
+      // area 16
+      {
+        regionId: '9',
+        code: 'CF',
+        name: 'Cardiff',
+      },
+      // area 17
+      {
+        regionId: '5',
+        code: 'CH',
+        name: 'Chester',
+      },
+      // area 18
+      {
+        regionId: '2',
+        code: 'CM',
+        name: 'Chelmsford',
+      },
+      // area 19
+      {
+        regionId: '2',
+        code: 'CO',
+        name: 'Colchester',
+      },
+      // area 20
+      {
+        regionId: '7',
+        code: 'CR',
+        name: 'Croydon',
+      },
+      // area 21
+      {
+        regionId: '6',
+        code: 'CT',
+        name: 'Canterbury',
+      },
+      // area 22
+      {
+        regionId: '3',
+        code: 'CV',
+        name: 'Coventry',
+      },
+      // area 23
+      {
+        regionId: '5',
+        code: 'CW',
+        name: 'Crewe',
+      },
+      // area 24
+      {
+        regionId: '7',
+        code: 'DA',
+        name: 'Dartford',
+      },
+      // area 25
+      {
+        regionId: '1',
+        code: 'DD',
+        name: 'Dundee',
+      },
+      // area 26
+      {
+        regionId: '11',
+        code: 'DE',
+        name: 'Derby',
+      },
+      // area 27
+      {
+        regionId: '1',
+        code: 'DG',
+        name: 'Dumfries',
+      },
+      // area 28
+      {
+        regionId: '10',
+        code: 'DH',
+        name: 'Durham',
+      },
+      // area 29
+      {
+        regionId: '10',
+        code: 'DL',
+        name: 'Darlington',
+      },
+      // area 30
+      {
+        regionId: '11',
+        code: 'DN',
+        name: 'Doncaster',
+      },
+      // area 31
+      {
+        regionId: '4',
+        code: 'DT',
+        name: 'Dorchester',
+      },
+      // area 32
+      {
+        regionId: '3',
+        code: 'DY',
+        name: 'Dudley',
+      },
+      // area 33
+      {
+        regionId: '12',
+        code: 'E',
+        name: 'London Eastern',
+      },
+      // area 34
+      {
+        regionId: '12',
+        code: 'EC',
+        name: 'London Eastern Central',
+      },
+      // area 35
+      {
+        regionId: '1',
+        code: 'EH',
+        name: 'Edinburgh',
+      },
+      // area 36
+      {
+        regionId: '7',
+        code: 'EN',
+        name: 'Enfield',
+      },
+      // area 37
+      {
+        regionId: '4',
+        code: 'EX',
+        name: 'Exeter',
+      },
+      // area 38
+      {
+        regionId: '1',
+        code: 'FK',
+        name: 'Falkirk',
+      },
+      // area 39
+      {
+        regionId: '5',
+        code: 'FY',
+        name: 'Blackpool',
+      },
+      // area 40
+      {
+        regionId: '1',
+        code: 'G',
+        name: 'Glasgow',
+      },
+      // area 41
+      {
+        regionId: '4',
+        code: 'GL',
+        name: 'Gloucester',
+      },
+      // area 42
+      {
+        regionId: '6',
+        code: 'GU',
+        name: 'Guilford',
+      },
+      // area 43
+      {
+        regionId: '13',
+        code: 'GY',
+        name: 'Guernsey',
+      },
+      // area 44
+      {
+        regionId: '7',
+        code: 'HA',
+        name: 'Harrow',
+      },
+      // area 45
+      {
+        regionId: '5',
+        code: 'HD',
+        name: 'Huddersfield',
+      },
+      // area 46
+      {
+        regionId: '10',
+        code: 'HG',
+        name: 'Harrogate',
+      },
+      // area 47
+      {
+        regionId: '2',
+        code: 'HP',
+        name: 'Hemel',
+      },
+      // area 48
+      {
+        regionId: '3',
+        code: 'HR',
+        name: 'Hereford',
+      },
+      // area 49
+      {
+        regionId: '1',
+        code: 'HS',
+        name: 'Comhairle nan Eilean Siar',
+      },
+      // area 50
+      {
+        regionId: '10',
+        code: 'HU',
+        name: 'Hull',
+      },
+      // area 51
+      {
+        regionId: '5',
+        code: 'HX',
+        name: 'Halifax',
+      },
+      // area 52
+      {
+        regionId: '7',
+        code: 'IG',
+        name: 'Ilford',
+      },
+      // area 53
+      {
+        regionId: '14',
+        code: 'IM',
+        name: 'Isle of Man',
+      },
+      // area 54
+      {
+        regionId: '2',
+        code: 'IP',
+        name: 'Ipswich',
+      },
+      // area 55
+      {
+        regionId: '1',
+        code: 'IV',
+        name: 'Inverness',
+      },
+      // area 56
+      {
+        regionId: '13',
+        code: 'JE',
+        name: 'Jersey',
+      },
+      // area 57
+      {
+        regionId: '1',
+        code: 'KA',
+        name: 'Kilmarnock',
+      },
+      // area 58
+      {
+        regionId: '7',
+        code: 'KT',
+        name: 'Kingston',
+      },
+      // area 59
+      {
+        regionId: '1',
+        code: 'KW',
+        name: 'Kirkwall',
+      },
+      // area 60
+      {
+        regionId: '1',
+        code: 'KY',
+        name: 'Kirkaldy',
+      },
+      // area 61
+      {
+        regionId: '5',
+        code: 'L',
+        name: 'Liverpool',
+      },
+      // area 62
+      {
+        regionId: '5',
+        code: 'LA',
+        name: 'Lancaster',
+      },
+      // area 63
+      {
+        regionId: '9',
+        code: 'LD',
+        name: 'Llandrindod',
+      },
+      // area 64
+      {
+        regionId: '11',
+        code: 'LE',
+        name: 'Leicester',
+      },
+      // area 65
+      {
+        regionId: '9',
+        code: 'LL',
+        name: 'Llandudno',
+      },
+      // area 66
+      {
+        regionId: '11',
+        code: 'LN',
+        name: 'Lincoln',
+      },
+      // area 67
+      {
+        regionId: '10',
+        code: 'LS',
+        name: 'Leeds',
+      },
+      // area 68
+      {
+        regionId: '2',
+        code: 'LU',
+        name: 'Luton',
+      },
+      // area 69
+      {
+        regionId: '5',
+        code: 'M',
+        name: 'Manchester',
+      },
+      // area 70
+      {
+        regionId: '6',
+        code: 'ME',
+        name: 'Medway',
+      },
+      // area 71
+      {
+        regionId: '6',
+        code: 'MK',
+        name: 'Milton Keynes',
+      },
+      // area 72
+      {
+        regionId: '1',
+        code: 'ML',
+        name: 'Motherwell',
+      },
+      // area 73
+      {
+        regionId: '12',
+        code: 'N',
+        name: 'London Northern',
+      },
+      // area 74
+      {
+        regionId: '10',
+        code: 'NE',
+        name: 'Newcastle',
+      },
+      // area 75
+      {
+        regionId: '11',
+        code: 'NG',
+        name: 'Nottingham',
+      },
+      // area 76
+      {
+        regionId: '3',
+        code: 'NN',
+        name: 'Northampton',
+      },
+      // area 77
+      {
+        regionId: '9',
+        code: 'NP',
+        name: 'Newport',
+      },
+      // area 78
+      {
+        regionId: '2',
+        code: 'NR',
+        name: 'Norwich',
+      },
+      // area 79
+      {
+        regionId: '12',
+        code: 'NW',
+        name: 'London North Western',
+      },
+      // area 80
+      {
+        regionId: '5',
+        code: 'OL',
+        name: 'Oldham',
+      },
+      // area 81
+      {
+        regionId: '6',
+        code: 'OX',
+        name: 'Oxford',
+      },
+      // area 82
+      {
+        regionId: '1',
+        code: 'PA',
+        name: 'Paisley',
+      },
+      // area 83
+      {
+        regionId: '2',
+        code: 'PE',
+        name: 'Peterborough',
+      },
+      // area 84
+      {
+        regionId: '1',
+        code: 'PH',
+        name: 'Perth',
+      },
+      // area 85
+      {
+        regionId: '4',
+        code: 'PL',
+        name: 'Plymouth',
+      },
+      // area 86
+      {
+        regionId: '6',
+        code: 'PO',
+        name: 'Portsmouth',
+      },
+      // area 87
+      {
+        regionId: '5',
+        code: 'PR',
+        name: 'Preston',
+      },
+      // area 88
+      {
+        regionId: '6',
+        code: 'RG',
+        name: 'Reading',
+      },
+      // area 89
+      {
+        regionId: '6',
+        code: 'RH',
+        name: 'Redhill',
+      },
+      // area 90
+      {
+        regionId: '7',
+        code: 'RM',
+        name: 'Romford',
+      },
+      // area 91
+      {
+        regionId: '11',
+        code: 'S',
+        name: 'Sheffield',
+      },
+      // area 92
+      {
+        regionId: '9',
+        code: 'SA',
+        name: 'Swansea',
+      },
+      // area 93
+      {
+        regionId: '12',
+        code: 'SE',
+        name: 'London South Eastern',
+      },
+      // area 94
+      {
+        regionId: '2',
+        code: 'SG',
+        name: 'Stevenage',
+      },
+      // area 95
+      {
+        regionId: '5',
+        code: 'SK',
+        name: 'Stockport',
+      },
+      // area 96
+      {
+        regionId: '6',
+        code: 'SL',
+        name: 'Slough',
+      },
+      // area 97
+      {
+        regionId: '7',
+        code: 'SM',
+        name: 'Sutton',
+      },
+      // area 98
+      {
+        regionId: '4',
+        code: 'SN',
+        name: 'Swindon',
+      },
+      // area 99
+      {
+        regionId: '6',
+        code: 'SO',
+        name: 'Southampton',
+      },
+      // area 100
+      {
+        regionId: '4',
+        code: 'SP',
+        name: 'Salisbury',
+      },
+      // area 101
+      {
+        regionId: '10',
+        code: 'SR',
+        name: 'Sunderland',
+      },
+      // area 102
+      {
+        regionId: '2',
+        code: 'SS',
+        name: 'Southend',
+      },
+      // area 103
+      {
+        regionId: '3',
+        code: 'ST',
+        name: 'Stoke on Trent',
+      },
+      // area 104
+      {
+        regionId: '12',
+        code: 'SW',
+        name: 'London South Western',
+      },
+      // area 105
+      {
+        regionId: '9',
+        code: 'SY',
+        name: 'Shrewsbury',
+      },
+      // area 106
+      {
+        regionId: '4',
+        code: 'TA',
+        name: 'Taunton',
+      },
+      // area 107
+      {
+        regionId: '1',
+        code: 'TD',
+        name: 'Galashiels',
+      },
+      // area 108
+      {
+        regionId: '3',
+        code: 'TF',
+        name: 'Telford',
+      },
+      // area 109
+      {
+        regionId: '6',
+        code: 'TN',
+        name: 'Tonbridge',
+      },
+      // area 110
+      {
+        regionId: '4',
+        code: 'TQ',
+        name: 'Torquay',
+      },
+      // area 111
+      {
+        regionId: '4',
+        code: 'TR',
+        name: 'Truro',
+      },
+      // area 112
+      {
+        regionId: '10',
+        code: 'TS',
+        name: 'Cleveland',
+      },
+      // area 113
+      {
+        regionId: '7',
+        code: 'TW',
+        name: 'Twickenham',
+      },
+      // area 114
+      {
+        regionId: '7',
+        code: 'UB',
+        name: 'Southall',
+      },
+      // area 115
+      {
+        regionId: '12',
+        code: 'W',
+        name: 'London Western',
+      },
+      // area 116
+      {
+        regionId: '5',
+        code: 'WA',
+        name: 'Warrington',
+      },
+      // area 117
+      {
+        regionId: '12',
+        code: 'WC',
+        name: 'London Western Central',
+      },
+      // area 118
+      {
+        regionId: '7',
+        code: 'WD',
+        name: 'Watford',
+      },
+      // area 119
+      {
+        regionId: '10',
+        code: 'WF',
+        name: 'Wakefield',
+      },
+      // area 120
+      {
+        regionId: '5',
+        code: 'WN',
+        name: 'Wigan',
+      },
+      // area 121
+      {
+        regionId: '3',
+        code: 'WR',
+        name: 'Worcester',
+      },
+      // area 122
+      {
+        regionId: '3',
+        code: 'WS',
+        name: 'Walsall',
+      },
+      // area 123
+      {
+        regionId: '3',
+        code: 'WV',
+        name: 'Wolverhampton',
+      },
+      // area 124
+      {
+        regionId: '10',
+        code: 'YO',
+        name: 'York',
+      },
+      // area 125
+      {
+        regionId: '1',
+        code: 'ZE',
+        name: 'Shetland',
+      },
+    ],
+  });
+
   // add producer categories
   const producerCategories = [
     'Alcohol',

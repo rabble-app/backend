@@ -1,6 +1,7 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=rabble-app_backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rabble-app_backend)
 ## Description
 
-[Rabble Backend]
+[Rabble App Backend]
 
 ## Installation
 

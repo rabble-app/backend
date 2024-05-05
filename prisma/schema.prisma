@@ -54,32 +54,32 @@ model User {
 }
 
 model Producer {
-  id                String             @id @default(uuid())
-  userId            String             @unique
-  stripeConnectId   String?            @unique @map("stripe_connect_id")
-  isVerified        Boolean            @default(false) @map("is_verified")
-  imageUrl          String?            @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png") @map("image_url")
-  imageKey          String?            @map("image_key")
-  businessName      String             @unique @map("business_name")
-  businessAddress   String?            @map("business_address")
-  accountsEmail     String?            @map("acounts_email")
-  salesEmail        String?            @map("sales_email")
-  minimumTreshold   Decimal            @default(5000.00) @map("minimum_treshold") @db.Decimal(9, 2)
-  website           String?
-  description       String?
-  vat               String?            @unique
-  paymentTerm       Int?               @default(30) @map("payment_term")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
-  buyingteams       BuyingTeam[]
-  deliveryAddresses DeliveryAddress[]
-  likes             Like[]
-  categories        ProducerCategory[]
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products          Product[]
-  recentlyViewed    RecentlyViewed[]
-  reviews           Review[]
-  chats             Chat[]
+  id              String                @id @default(uuid())
+  userId          String                @unique
+  stripeConnectId String?               @unique @map("stripe_connect_id")
+  isVerified      Boolean               @default(false) @map("is_verified")
+  imageUrl        String?               @default("https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Frame+9.png") @map("image_url")
+  imageKey        String?               @map("image_key")
+  businessName    String                @unique @map("business_name")
+  businessAddress String?               @map("business_address")
+  accountsEmail   String?               @map("acounts_email")
+  salesEmail      String?               @map("sales_email")
+  minimumTreshold Decimal               @default(5000.00) @map("minimum_treshold") @db.Decimal(9, 2)
+  website         String?
+  description     String?
+  vat             String?               @unique
+  paymentTerm     Int?                  @default(30) @map("payment_term")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  buyingteams     BuyingTeam[]
+  deliveryDays    ProducerDeliveryDay[]
+  likes           Like[]
+  categories      ProducerCategory[]
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products        Product[]
+  recentlyViewed  RecentlyViewed[]
+  reviews         Review[]
+  chats           Chat[]
 
   @@index([id, userId])
   @@map("producers")
@@ -117,7 +117,7 @@ model Partner {
   postalCode      String       @map("postal_code")
   stripeConnectId String?      @unique @map("stripe_connect_id")
   city            String
-  streetAddress    String       @map("street_address")
+  streetAddress   String       @map("street_address")
   direction       String
   storeType       String       @map("store_type")
   shelfSpace      String       @map("shelf_type")
@@ -567,34 +567,6 @@ model SearchCount {
   @@map("search_count")
 }
 
-model DeliveryAddress {
-  id              String                  @id @default(uuid())
-  location        String
-  type            DeliveryType            @default(WEEKLY)
-  cutOffTime      String?                 @map("cut_off_time")
-  producerId      String
-  createdAt       DateTime                @default(now()) @map("created_at")
-  updatedAt       DateTime                @updatedAt @map("updated_at")
-  customAddresses CustomDeliveryAddress[]
-  producer        Producer                @relation(fields: [producerId], references: [id], onDelete: Cascade)
-
-  @@index([id, producerId])
-  @@map("delivery_addresses")
-}
-
-model CustomDeliveryAddress {
-  id                String          @id @default(uuid())
-  deliveryAddressId String
-  day               DayOptions
-  cutOffTime        String          @map("cut_off_time")
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
-  deliveryAddress   DeliveryAddress @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
-
-  @@index([id])
-  @@map("custom_delivery_address")
-}
-
 model Chat {
   id         String   @id @default(uuid())
   teamId     String   @map("team_id")
@@ -636,6 +608,76 @@ model UniqueUsers {
 
   @@unique([week, year], name: "unique_record")
   @@map("unique_users")
+}
+
+model PostalCodeRegion {
+  id                     String                   @id @unique
+  name                   String                   @unique
+  createdAt              DateTime                 @default(now()) @map("created_at")
+  updatedAt              DateTime                 @updatedAt @map("updated_at")
+  postalCodeArea         PostalCodeArea[]
+  producerDeliveryRegion ProducerDeliveryRegion[]
+
+  @@index([name])
+  @@map("postalCodeRegions")
+}
+
+model PostalCodeArea {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String   @unique
+  regionId  String   @map("region_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  region               PostalCodeRegion       @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  producerDeliveryArea ProducerDeliveryArea[]
+
+  @@index([name])
+  @@map("postalCodeAreas")
+}
+
+model ProducerDeliveryDay {
+  id         String                   @id @default(uuid())
+  day        DayOptions
+  cutOffDay  DayOptions               @map("cut_off_day")
+  cutOffTime String                   @map("cut_off_time")
+  producerId String                   @map("producer_id")
+  createdAt  DateTime                 @default(now()) @map("created_at")
+  updatedAt  DateTime                 @updatedAt @map("updated_at")
+  regions    ProducerDeliveryRegion[]
+  producer   Producer                 @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  @@unique([producerId, day])
+  @@index([id, producerId, day])
+  @@map("producer_delivery_days")
+}
+
+model ProducerDeliveryRegion {
+  id            String                 @id @default(uuid())
+  deliveryDayId String                 @map("delivery_day_id")
+  regionId      String                 @map("region_id")
+  minimumOrder  Decimal                @map("minimum_order")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+  deliveryDay   ProducerDeliveryDay    @relation(fields: [deliveryDayId], references: [id], onDelete: Cascade)
+  region        PostalCodeRegion       @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  producerAreas ProducerDeliveryArea[]
+  @@unique([deliveryDayId, regionId])
+  @@index([id, deliveryDayId, regionId])
+  @@map("producer_delivery_regions")
+}
+
+model ProducerDeliveryArea {
+  id               String                 @id @default(uuid())
+  deliveryRegionId String                 @map("delivery_region_id")
+  areaId           String                 @map("region_id")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  deliveryRegion   ProducerDeliveryRegion @relation(fields: [deliveryRegionId], references: [id], onDelete: Cascade)
+  area             PostalCodeArea         @relation(fields: [areaId], references: [id], onDelete: Cascade)
+ 
+  @@index([id, deliveryRegionId, areaId])
+  @@map("producer_delivery_areas")
 }
 
 enum OrderStatus {
