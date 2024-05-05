@@ -265,6 +265,7 @@ export class ScheduleServiceExtended {
     return await this.prisma.payment.findMany({
       where: {
         status: PaymentStatus.PENDING,
+        paymentIntentId: null,
       },
       include: {
         user: {
