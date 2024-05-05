@@ -178,8 +178,8 @@ export class PaymentService {
       data: { accumulatedAmount: { increment: amount } },
     });
     if (
-      result.accumulatedAmount >= result.minimumTreshold &&
-      lastAccumulatedValue < result.minimumTreshold
+      +result.accumulatedAmount >= +result.minimumTreshold &&
+      +lastAccumulatedValue < +result.minimumTreshold
     ) {
       await this.sendNotificationForThreshold(teamId, orderId, result.deadline);
     }

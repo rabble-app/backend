@@ -92,7 +92,8 @@ export class ScheduleService {
     try {
       const result = await this.scheduleServiceExtended.getPendingPayment();
       if (result && result.length > 0) {
-        result.forEach(async (payment) => {
+        for (let index = 0; index < result.length; index++) {
+          const payment = result[index];
           if (
             payment.order &&
             payment.order.deadline &&
@@ -110,15 +111,19 @@ export class ScheduleService {
               payment.user.stripeCustomerId
             ) {
               // authorize payment for this user
-              const paymentRecord = await this.handleAuthorizePayments(payment);
-              if (!paymentRecord) {
-                // send notification that payment failed
-                await this.notificationsService.createNotification({
-                  title: 'Payment Failure',
-                  text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
-                  ...otherNotificationConditions,
-                });
-              }
+              setTimeout(async () => {
+                const paymentRecord = await this.handleAuthorizePayments(
+                  payment,
+                );
+                if (!paymentRecord) {
+                  // send notification that payment failed
+                  await this.notificationsService.createNotification({
+                    title: 'Payment Failure',
+                    text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
+                    ...otherNotificationConditions,
+                  });
+                }
+              }, 4000 * index);
             } else {
               // send notification that user should add default payment method
               await this.notificationsService.createNotification({
@@ -128,7 +133,7 @@ export class ScheduleService {
               });
             }
           }
-        });
+        }
       }
       return true;
     } catch (error) {
