@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaService } from '../../src/prisma.service';
-import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
+import { faker } from '@faker-js/faker';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { PrismaService } from '../../src/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('PostalCodeController (e2e)', () => {
   let app: INestApplication;
@@ -16,14 +16,30 @@ describe('PostalCodeController (e2e)', () => {
   const phone = faker.phone.number();
   let testAreaId: string;
   let testRegionId: string;
+  let producerRecordRegionId: string;
+  let producerRecordAreaId: string;
+  let testAreaId2: string;
+  let testRegionId2: string;
+  let deliveryDayId: string;
 
   const deliveryAreasInfo = {
     days: [{ name: 'TUESDAY', cutOffTime: '11:00', cutOffDay: 'SUNDAY' }],
     regions: [
       {
-        regionId: testAreaId,
+        regionId: testRegionId,
         minOrder: '23.00',
         areas: [{ areaId: testAreaId }],
+      },
+    ],
+  };
+
+  const newDeliveryRegionInfo = {
+    deliveryDayId: '',
+    regions: [
+      {
+        regionId: testRegionId2,
+        minOrder: '23.00',
+        areas: [{ areaId: testAreaId2 }],
       },
     ],
   };
@@ -44,7 +60,7 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy user for test
     const user = await prisma.user.create({
       data: {
-        phone,
+        phone: `${phone}123`,
       },
     });
     userId = user.id;
@@ -61,8 +77,8 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy region for test
     const { id: regionId } = await prisma.postalCodeRegion.create({
       data: {
-        id: faker.internet.port().toString(),
-        name: faker.internet.domainName(),
+        id: faker.internet.port().toString() + Math.floor(Math.random() * 30),
+        name: faker.internet.domainName() + Math.floor(Math.random() * 30),
       },
     });
     testRegionId = regionId;
@@ -70,12 +86,31 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy area for test
     const { id: areaId } = await prisma.postalCodeArea.create({
       data: {
-        name: faker.internet.domainName(),
-        code: faker.internet.domainName(),
+        name: faker.internet.domainName() + Math.floor(Math.random() * 30),
+        code: faker.internet.domainName() + Math.floor(Math.random() * 30),
         regionId: regionId,
       },
     });
     testAreaId = areaId;
+
+    // create dummy region 2 for test
+    const { id: regionId2 } = await prisma.postalCodeRegion.create({
+      data: {
+        id: `${faker.internet.port().toString()}22`,
+        name: `${faker.internet.domainName()}second`,
+      },
+    });
+    testRegionId2 = regionId2;
+
+    // create dummy area 2 for test
+    const { id: areaId2 } = await prisma.postalCodeArea.create({
+      data: {
+        name: `${faker.internet.domainName()}name`,
+        code: `${faker.internet.domainName()}code`,
+        regionId: regionId2,
+      },
+    });
+    testAreaId2 = areaId2;
 
     // create dummy token
     jwtToken = authService.generateToken({ userId, producerId: producer.id });
@@ -93,7 +128,13 @@ describe('PostalCodeController (e2e)', () => {
         id: testRegionId,
       },
     });
-    // await app.close();
+
+    await prisma.postalCodeRegion.delete({
+      where: {
+        id: testRegionId2,
+      },
+    });
+    await app.close();
   });
 
   describe('PostalCodeController (e2e)', () => {
@@ -112,14 +153,14 @@ describe('PostalCodeController (e2e)', () => {
       testTime,
     );
 
-    // add delivery area
+    // add delivery days with region/areas
     it(
-      '/postal-code/producer/delivery-area(POST) should add delivery day and areas',
+      '/postal-code/producer/delivery-days(POST) should add delivery day and areas',
       async () => {
         deliveryAreasInfo.regions[0].regionId = testRegionId;
         deliveryAreasInfo.regions[0].areas[0].areaId = testAreaId;
         const response = await request(app.getHttpServer())
-          .post('/postal-code/producer/delivery-area')
+          .post('/postal-code/producer/delivery-days')
           .set('Authorization', `Bearer ${jwtToken}`)
           .send({
             ...deliveryAreasInfo,
@@ -136,7 +177,7 @@ describe('PostalCodeController (e2e)', () => {
       '/postal-code/producer/delivery-area(POST) should not add delivery day if uncompleted data is supplied',
       async () => {
         const response = await request(app.getHttpServer())
-          .post('/postal-code/producer/delivery-area')
+          .post('/postal-code/producer/delivery-days')
           .set('Authorization', `Bearer ${jwtToken}`)
           .send({ days: [], regions: [] })
           .expect(400);
@@ -152,6 +193,82 @@ describe('PostalCodeController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/postal-code/producer/delivery-days`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        producerRecordRegionId = response.body.data[0].regions[0].id;
+        producerRecordAreaId =
+          response.body.data[0].regions[0].producerAreas[0].id;
+        deliveryDayId = response.body.data[0].id;
+      },
+      testTime,
+    );
+
+    // add delivery region/areas to existing producer delivery day
+    it(
+      '/postal-code/producer/delivery-area(PUT) should add delivery region/areas to existing delivery day',
+      async () => {
+        newDeliveryRegionInfo.deliveryDayId = deliveryDayId;
+        newDeliveryRegionInfo.regions[0].regionId = testRegionId2;
+        newDeliveryRegionInfo.regions[0].areas[0].areaId = testAreaId2;
+        const response = await request(app.getHttpServer())
+          .put('/postal-code/producer/delivery-area')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            ...newDeliveryRegionInfo,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('boolean');
+      },
+      testTime,
+    );
+
+    // update delivery day cut-off time and day
+    it(
+      '/postal-code/producer/delivery-day-info(patch) should update delivery day cut-off time and day',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/postal-code/producer/delivery-day-info/${deliveryDayId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            cutOffTime: '11:00',
+            cutOffDay: 'SUNDAY',
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // delete producer delivery area
+    it(
+      '/postal-code/producer/delivery-area(DELETE) should delete producer delivery areas',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/postal-code/producer/delivery-area/${producerRecordAreaId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // delete producer delivery region
+    it(
+      '/postal-code/producer/delivery-region(DELETE) should delete producer delivery region/areas',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .delete(
+            `/postal-code/producer/delivery-region/${producerRecordRegionId}`,
+          )
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');

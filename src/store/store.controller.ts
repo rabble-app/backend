@@ -193,6 +193,12 @@ export class StoreController {
     type: 'number',
   })
   @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return per page',
+    type: 'number',
+  })
+  @ApiQuery({
     name: 'period',
     required: false,
     description: 'Delivery period',
@@ -213,11 +219,13 @@ export class StoreController {
     @Res({ passthrough: true }) res: Response,
     @Request() req,
     @Query('offset') offset?: number,
+    @Query('limit') limit?: number,
     @Query('period') period?: 'today' | 'upcoming' | 'past',
     @Query('search') search?: string,
   ): Promise<IAPIResponse> {
     const store = await this.storeService.findStore({ id: storeId });
     const skip = !isNaN(Number(offset)) ? +offset : 0;
+    const take = !isNaN(Number(limit)) ? +limit : 10;
     if (period && !['today', 'upcoming', 'past'].includes(period))
       throw new HttpException(
         'Invalid period query, acceptable values are today | upcoming | past',
@@ -225,12 +233,13 @@ export class StoreController {
       );
     if (!store || store.userId !== req.user.userId)
       throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
-    const result = await this.storeService.getStoreDeliveries(
-      store.userId,
+    const result = await this.storeService.getStoreDeliveries({
+      partnerId: store.userId,
       skip,
       period,
       search,
-    );
+      limit: take,
+    });
     return formatResponse(
       result,
       res,
