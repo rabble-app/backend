@@ -8,6 +8,10 @@ import {
   HttpStatus,
   Patch,
   Param,
+  Get,
+  HttpException,
+  Query,
+  UseFilters,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -16,8 +20,11 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiHeader,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
+  ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
@@ -26,6 +33,7 @@ import { formatResponse } from '../lib/helpers';
 import { Response } from 'express';
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -161,6 +169,83 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store record updated successfully',
+    );
+  }
+
+  /**
+   * Get store inbound deliveries.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':storeId/deliveries')
+  @UseFilters(HttpExceptionFilter)
+  @ApiBadRequestResponse({
+    description: 'Invalid query parameter (offset | period)',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Pagination offset',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return per page',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    description: 'Delivery period',
+    enum: ['today', 'upcoming', 'past'],
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by team name or producer name',
+    type: 'string',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  async getStoreDeliveries(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+    @Query('offset') offset?: number,
+    @Query('limit') limit?: number,
+    @Query('period') period?: 'today' | 'upcoming' | 'past',
+    @Query('search') search?: string,
+  ): Promise<IAPIResponse> {
+    const store = await this.storeService.findStore({ id: storeId });
+    const skip = !isNaN(Number(offset)) ? +offset : 0;
+    const take = !isNaN(Number(limit)) ? +limit : 10;
+    if (period && !['today', 'upcoming', 'past'].includes(period))
+      throw new HttpException(
+        'Invalid period query, acceptable values are today | upcoming | past',
+        HttpStatus.BAD_REQUEST,
+      );
+    if (!store || store.userId !== req.user.userId)
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+    const result = await this.storeService.getStoreDeliveries({
+      partnerId: store.userId,
+      skip,
+      period,
+      search,
+      limit: take,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store deliveries returned successfully',
     );
   }
 }
