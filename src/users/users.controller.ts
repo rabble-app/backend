@@ -159,15 +159,18 @@ export class UsersController {
     description: 'The expected producers postal code',
   })
   async getProducers(
-    @Query('offset') offset: number,
     @Query('postalCode') postalCode: string,
+    @Query('offset') offset: number,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    if (!postalCode) {
+      postalCode = 'E97EF';
+    }
     const { area } = parse(postalCode);
 
     const result = await this.usersService.getProducers(
-      offset ? +offset : undefined,
       area,
+      offset ? +offset : undefined,
     );
     return formatResponse(
       result,

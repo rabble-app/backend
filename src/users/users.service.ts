@@ -82,8 +82,8 @@ export class UsersService {
   }
 
   async getProducers(
-    offset = 0,
     postalCode: string,
+    offset = 0,
   ): Promise<Producer[] | null> {
     return await this.prisma.producer.findMany({
       where: {
