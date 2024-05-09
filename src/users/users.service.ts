@@ -81,12 +81,33 @@ export class UsersService {
     return result;
   }
 
-  async getProducers(offset = 0): Promise<Producer[] | null> {
+  async getProducers(
+    offset = 0,
+    postalCode: string,
+  ): Promise<Producer[] | null> {
     return await this.prisma.producer.findMany({
       where: {
         NOT: {
           businessName: {
             contains: 'Rabble Ltd',
+          },
+        },
+        deliveryDays: {
+          some: {
+            regions: {
+              some: {
+                producerAreas: {
+                  some: {
+                    area: {
+                      code: {
+                        equals: postalCode,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },

@@ -30,6 +30,7 @@ import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { UpdateDeliveryAddressDto } from './dto/update-delivery-address.dto';
 import { UpdateProducerDto } from './dto/update-producer.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { parse } from 'postcode';
 
 @ApiTags('users')
 @Controller('users')
@@ -146,12 +147,27 @@ export class UsersController {
   @Get('producers')
   @ApiOkResponse({ description: 'Producers returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'offset',
+    required: true,
+    description:
+      'This indicates the record from where the result will start populating',
+  })
+  @ApiParam({
+    name: 'postalCode',
+    required: true,
+    description: 'The expected producers postal code',
+  })
   async getProducers(
     @Query('offset') offset: number,
+    @Query('postalCode') postalCode: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const { area } = parse(postalCode);
+
     const result = await this.usersService.getProducers(
       offset ? +offset : undefined,
+      area,
     );
     return formatResponse(
       result,
