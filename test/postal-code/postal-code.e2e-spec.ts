@@ -21,6 +21,7 @@ describe('PostalCodeController (e2e)', () => {
   let testAreaId2: string;
   let testRegionId2: string;
   let deliveryDayId: string;
+  let producerId: string;
 
   const deliveryAreasInfo = {
     days: [{ name: 'TUESDAY', cutOffTime: '11:00', cutOffDay: 'SUNDAY' }],
@@ -73,6 +74,7 @@ describe('PostalCodeController (e2e)', () => {
           faker.internet.userName() + Math.floor(Math.random() * 30),
       },
     });
+    producerId = producer.id;
 
     // create dummy region for test
     const { id: regionId } = await prisma.postalCodeRegion.create({
@@ -202,6 +204,21 @@ describe('PostalCodeController (e2e)', () => {
         producerRecordAreaId =
           response.body.data[0].regions[0].producerAreas[0].id;
         deliveryDayId = response.body.data[0].id;
+      },
+      testTime,
+    );
+
+    // return producer delivery days
+    it(
+      '/postal-code/producer/days-of-delivery/:producerId should return producer delivery days',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/postal-code/producer/days-of-delivery/${producerId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
       },
       testTime,
     );

@@ -305,4 +305,37 @@ export class PostalCodeController {
       'Delivery day info updated successfully',
     );
   }
+
+  /**
+   * Return producer delivery days.
+   * @param {Response} res - The payload.
+   * @memberof PostalCodeController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/producer/days-of-delivery/:producerId')
+  @ApiOkResponse({
+    description: 'Delivery days returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'producerId',
+    required: true,
+    description: 'The producer id',
+  })
+  async returnDeliveryDays(
+    @Param('producerId') producerId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.postalCodeService.getProducerDaysOfDelivery(
+      producerId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Delivery days returned successfully',
+    );
+  }
 }

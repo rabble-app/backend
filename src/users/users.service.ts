@@ -21,6 +21,7 @@ import {
   ProducerWithCategories,
   UserWithProducerAndPartnerInfo,
 } from '../lib/types';
+import { parse } from 'postcode';
 
 @Injectable()
 export class UsersService {
@@ -87,27 +88,10 @@ export class UsersService {
   ): Promise<Producer[] | null> {
     return await this.prisma.producer.findMany({
       where: {
+        ...this.getProducerListConditions(postalCode),
         NOT: {
           businessName: {
             contains: 'Rabble Ltd',
-          },
-        },
-        deliveryDays: {
-          some: {
-            regions: {
-              some: {
-                producerAreas: {
-                  some: {
-                    area: {
-                      code: {
-                        equals: postalCode,
-                        mode: 'insensitive',
-                      },
-                    },
-                  },
-                },
-              },
-            },
           },
         },
       },
@@ -124,6 +108,31 @@ export class UsersService {
         },
       },
     });
+  }
+
+  getProducerListConditions(postalCode: string): Prisma.ProducerWhereInput {
+    if (!postalCode) return null;
+    const { area } = parse(postalCode);
+    return {
+      deliveryDays: {
+        some: {
+          regions: {
+            some: {
+              producerAreas: {
+                some: {
+                  area: {
+                    code: {
+                      equals: area,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
   }
 
   async findProducer(

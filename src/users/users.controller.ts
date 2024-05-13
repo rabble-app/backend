@@ -30,7 +30,6 @@ import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { UpdateDeliveryAddressDto } from './dto/update-delivery-address.dto';
 import { UpdateProducerDto } from './dto/update-producer.dto';
 import { AuthGuard } from '../auth/auth.guard';
-import { parse } from 'postcode';
 
 @ApiTags('users')
 @Controller('users')
@@ -163,13 +162,8 @@ export class UsersController {
     @Query('offset') offset: number,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    if (!postalCode) {
-      postalCode = 'E97EF';
-    }
-    const { area } = parse(postalCode);
-
     const result = await this.usersService.getProducers(
-      area,
+      postalCode,
       offset ? +offset : undefined,
     );
     return formatResponse(
