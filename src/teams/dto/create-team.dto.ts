@@ -98,7 +98,7 @@ export class CreateTeamDto {
     description: 'The next delivery date of the buying team',
     required: false,
   })
-  @ValidateIf((o) => o.nextDeliveryDate)
+  @ValidateIf((o) => o.partnerId)
   @IsISO8601()
   nextDeliveryDate: Date;
 
@@ -107,7 +107,7 @@ export class CreateTeamDto {
     description: 'The product limit of the buying team',
     required: false,
   })
-  @ValidateIf((o) => o.productLimit)
+  @ValidateIf((o) => o.partnerId)
   @IsNumber()
   productLimit: number;
 
@@ -116,7 +116,16 @@ export class CreateTeamDto {
     description: 'The preferred delivery day for the buying team',
     required: false,
   })
-  @ValidateIf((o) => o.deliveryDay)
+  @ValidateIf((o) => o.partnerId)
   @IsEnum(DayOptions)
   deliveryDay: DayOptions;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The preferred delivery day for the buying team',
+    required: false,
+  })
+  @ValidateIf((o) => o.partnerId)
+  @IsISO8601()
+  orderCutOffDate: Date;
 }
