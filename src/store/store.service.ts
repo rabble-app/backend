@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { PrismaService } from '../prisma.service';
-import { OpenHours, Partner, Prisma } from '@prisma/client';
+import {
+  OpenHours,
+  Partner,
+  Prisma,
+  OrderConfirmationStatus,
+} from '@prisma/client';
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { startOfDay, endOfDay } from 'date-fns';
+import { ConfirmOrderDto } from './dto/confirm-order.dto';
 
 @Injectable()
 export class StoreService {
@@ -222,5 +228,103 @@ export class StoreService {
       default:
         return {};
     }
+  }
+
+  async getStoreWithEmployees(storeId: string) {
+    return await this.prisma.partner.findUnique({
+      where: {
+        id: storeId,
+      },
+      select: {
+        id: true,
+        userId: true,
+        Employee: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async isUserAnEmployee(userId: string, storeId: string) {
+    const storeInfo = await this.getStoreWithEmployees(storeId);
+    if (!storeInfo) {
+      return false;
+    }
+
+    if (storeInfo.userId === userId) {
+      return true;
+    }
+    return storeInfo.Employee.some((employee) => employee.userId === userId);
+  }
+
+  async getOrderWithGroupedBaskets(orderId: string) {
+    const result = await this.prisma.$queryRaw<
+      Array<{ productId: string; totalQuantity: number }>
+    >`
+      SELECT
+        o.id AS orderId,
+        b.product_id AS productId,
+        SUM(b.quantity) AS totalQuantity
+      FROM
+        "orders" o
+        JOIN "baskets" b ON o.id = b.order_id
+      WHERE
+        o.id = ${orderId}
+      GROUP BY
+        o.id, b.product_id
+    `;
+
+    if (result.length === 0) {
+      throw new HttpException(
+        `Order with ID ${orderId} not found`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return result;
+  }
+
+  async updateOrderConfirmation(
+    confirmOrderDto: ConfirmOrderDto,
+    confirmedBy: string,
+    imageUrl?: string,
+    imageKey?: string,
+  ) {
+    return await this.prisma.orderConfirmation.upsert({
+      where: {
+        id: confirmOrderDto.orderId,
+      },
+      update: {
+        products: confirmOrderDto.products as unknown as Prisma.InputJsonArray,
+        confirmedBy,
+        ...(imageUrl && { imageUrl }),
+        ...(imageKey && { imageKey }),
+        ...(confirmOrderDto.note && { note: confirmOrderDto.note }),
+      },
+      create: {
+        orderId: confirmOrderDto.orderId,
+        products: confirmOrderDto.products as unknown as Prisma.InputJsonArray,
+        confirmedBy,
+        imageKey,
+        imageUrl,
+        ...(confirmOrderDto.note && { note: confirmOrderDto.note }),
+      },
+    });
+  }
+
+  async updateOrderConfirmationStatus(
+    orderId: string,
+    status: OrderConfirmationStatus,
+  ) {
+    return await this.prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        confirmationStatus: status,
+      },
+    });
   }
 }

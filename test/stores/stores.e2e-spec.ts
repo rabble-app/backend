@@ -6,6 +6,10 @@ import { PrismaService } from '../../src/prisma.service';
 import { Order, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
+import { UploadsService } from '../../src/uploads/uploads.service';
+import { UploadsService as MockedUploadsService } from '../../__mocks__/uploads.service';
+import path from 'path';
+import { truncateDB } from '../truncate-db';
 describe('StoreController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -18,6 +22,8 @@ describe('StoreController (e2e)', () => {
   let storeId: string;
   let order: Order;
   let productCategoryId: string;
+  let mockedUploadsService: jest.Mocked<UploadsService>;
+  let productId: string;
 
   const store = {
     name: faker.internet.userName(),
@@ -45,14 +51,21 @@ describe('StoreController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UploadsService)
+      .useValue(MockedUploadsService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
+    // mockedUploadsService = moduleFixture.get(UploadsService);
+    const filePath = path.join(__dirname, 'test-image.jpg');
+    console.log('mockedUploadsService', mockedUploadsService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
+    await truncateDB(prisma);
     user = await prisma.user.create({
       data: {
         phone,
@@ -114,6 +127,7 @@ describe('StoreController (e2e)', () => {
         categoryId: productCategory.id,
       },
     });
+    productId = product.id;
 
     await prisma.basket.create({
       data: {
@@ -285,6 +299,29 @@ describe('StoreController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(response.body.data).toHaveLength(0);
+    });
+    it('should confirm order products received', async () => {
+      const confirmOrderDto = {
+        orderId: order.id,
+        products: [
+          {
+            productId,
+            quantity: 2,
+          },
+        ],
+      };
+
+      const filePath = path.join(__dirname, 'test-image.jpg');
+
+      const response = await request(app.getHttpServer())
+        .post(`/store/${storeId}/confirm-order-receipt`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .field('orderId', order.id)
+        .field('products', JSON.stringify(confirmOrderDto.products))
+        .attach('file', filePath)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
     });
   });
 });

@@ -12,6 +12,9 @@ import {
   HttpException,
   Query,
   UseFilters,
+  UseInterceptors,
+  ParseFilePipeBuilder,
+  UploadedFile,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -34,12 +37,18 @@ import { Response } from 'express';
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
+import { ConfirmOrderDto } from './dto/confirm-order.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadsService } from '../uploads/uploads.service';
 
 @ApiTags('store')
 @ApiBearerAuth()
 @Controller('store')
 export class StoreController {
-  constructor(private readonly storeService: StoreService) {}
+  constructor(
+    private readonly storeService: StoreService,
+    private readonly uploadsService: UploadsService,
+  ) {}
 
   /**
    * create new store.
@@ -247,5 +256,101 @@ export class StoreController {
       false,
       'Store deliveries returned successfully',
     );
+  }
+
+  /**
+   * Confirm order products received.
+   * @param {Body} createOpenHoursDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('/:storeId/confirm-order-receipt')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async confirmOrderProductsReceived(
+    @UploadedFile(
+      new ParseFilePipeBuilder().build({
+        fileIsRequired: true,
+      }),
+    )
+    @Body()
+    confirmOrderDto: ConfirmOrderDto,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+    @Param('storeId') storeId: string,
+    file: Express.Multer.File,
+  ): Promise<IAPIResponse> {
+    const isValidEmployee = await this.storeService.isUserAnEmployee(
+      req.user.id,
+      storeId,
+    );
+    if (!isValidEmployee) {
+      throw new HttpException(
+        'Invalid store id. User must be a store employee',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const hasValidBasketSummary = await this.validateBasketSummary(
+      confirmOrderDto.orderId,
+      confirmOrderDto.products,
+    );
+    if (!hasValidBasketSummary && !confirmOrderDto.note) {
+      throw new HttpException(
+        'One of the order products has insufficient quantity, please add a note',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const upload = await this.uploadsService.uploadFile(
+      file,
+      'order-confirmation',
+    );
+    const result = await this.storeService.updateOrderConfirmation(
+      confirmOrderDto,
+      req.user.id,
+      upload.Location,
+      upload.Key,
+    );
+    if (!result) {
+      throw new HttpException(
+        'Order confirmation update failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    await this.storeService.updateOrderConfirmationStatus(
+      confirmOrderDto.orderId,
+      hasValidBasketSummary ? 'CONFIRMED' : 'PARTIALLY_CONFIRMED',
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Order confirmation updated successfully',
+    );
+  }
+  async validateBasketSummary(
+    orderId: string,
+    products: ConfirmOrderDto['products'],
+  ) {
+    const orderProducts = await this.storeService.getOrderWithGroupedBaskets(
+      orderId,
+    );
+    let hasQuantityDeficit = false;
+    for (const product of products) {
+      const orderProduct = orderProducts.find(
+        (orderProduct) => orderProduct.productId === product.productId,
+      );
+      if (!orderProduct) {
+        throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
+      }
+
+      if (orderProduct.totalQuantity < product.quantity) {
+        hasQuantityDeficit = true;
+      }
+    }
+    return !hasQuantityDeficit;
   }
 }
