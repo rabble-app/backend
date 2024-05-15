@@ -1,6 +1,6 @@
-export const UploadsService = jest.fn().mockImplementation(() => ({
+export const UploadsService = {
   uploadFile: jest.fn().mockResolvedValue({
     Location: 'https://example.com/mock-image.jpg',
     Key: 'mock-image-key',
   }),
-}));
+};

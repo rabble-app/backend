@@ -1,7 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-
+import {
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 class ProductPayload {
   @ApiProperty({
     type: 'string',
@@ -27,8 +32,8 @@ export class ConfirmOrderDto {
     description: 'The order ID',
     required: true,
   })
-  @IsNotEmpty()
-  @IsString()
+  @IsNotEmpty({ message: 'Order ID is required' })
+  @IsString({ message: 'Order ID must be a string' })
   orderId: string;
 
   @ApiProperty({
@@ -36,19 +41,32 @@ export class ConfirmOrderDto {
     description: 'Confirmation note',
     required: false,
   })
+  @IsOptional()
   @IsString()
-  note: string;
+  note?: string;
 
   @ApiProperty({
     type: [ProductPayload],
     description: 'The list of products and their quantities',
     required: true,
   })
+  @Transform(({ value }) => {
+    if (value) {
+      return JSON.parse(value);
+    }
+  })
   @IsNotEmpty()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductPayload)
   products: ProductPayload[];
+
+  @ApiProperty({
+    type: 'file',
+    description: 'The order confirmation image',
+    required: false,
+  })
+  file: Express.Multer.File;
 }
 
 export enum OrderConfirmationStatus {

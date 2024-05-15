@@ -261,12 +261,12 @@ export class StoreService {
 
   async getOrderWithGroupedBaskets(orderId: string) {
     const result = await this.prisma.$queryRaw<
-      Array<{ productId: string; totalQuantity: number }>
+      Array<{ product_id: string; total_quantity: number }>
     >`
       SELECT
-        o.id AS orderId,
-        b.product_id AS productId,
-        SUM(b.quantity) AS totalQuantity
+        o.id,
+        b.product_id,
+        SUM(b.quantity) AS total_quantity
       FROM
         "orders" o
         JOIN "baskets" b ON o.id = b.order_id
@@ -294,10 +294,11 @@ export class StoreService {
   ) {
     return await this.prisma.orderConfirmation.upsert({
       where: {
-        id: confirmOrderDto.orderId,
+        orderId: confirmOrderDto.orderId,
       },
       update: {
         products: confirmOrderDto.products as unknown as Prisma.InputJsonArray,
+        orderId: confirmOrderDto.orderId,
         confirmedBy,
         ...(imageUrl && { imageUrl }),
         ...(imageKey && { imageKey }),

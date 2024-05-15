@@ -260,7 +260,7 @@ export class StoreController {
 
   /**
    * Confirm order products received.
-   * @param {Body} createOpenHoursDto - Request body object.
+   * @param {Body} ConfirmOrderDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof StoreController
    * @returns {JSON} - A JSON success response.
@@ -272,19 +272,26 @@ export class StoreController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async confirmOrderProductsReceived(
     @UploadedFile(
-      new ParseFilePipeBuilder().build({
-        fileIsRequired: true,
-      }),
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /^image\/(jpeg|png|jpg)$/,
+        })
+        .build({
+          fileIsRequired: true,
+        }),
     )
-    @Body()
-    confirmOrderDto: ConfirmOrderDto,
+    file: Express.Multer.File,
+    @Body() body: ConfirmOrderDto,
     @Res({ passthrough: true }) res: Response,
     @Request() req,
     @Param('storeId') storeId: string,
-    file: Express.Multer.File,
   ): Promise<IAPIResponse> {
+    const confirmOrderDto = {
+      ...body,
+      products: JSON.parse(body.products as any) as ConfirmOrderDto['products'],
+    };
     const isValidEmployee = await this.storeService.isUserAnEmployee(
-      req.user.id,
+      req.user.userId,
       storeId,
     );
     if (!isValidEmployee) {
@@ -305,11 +312,11 @@ export class StoreController {
     }
     const upload = await this.uploadsService.uploadFile(
       file,
-      'order-confirmation',
+      'order-confirmation-',
     );
     const result = await this.storeService.updateOrderConfirmation(
-      confirmOrderDto,
-      req.user.id,
+      confirmOrderDto as any,
+      req.user.userId,
       upload.Location,
       upload.Key,
     );
@@ -319,12 +326,15 @@ export class StoreController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+    const confirmationStatus = hasValidBasketSummary ? 'CONFIRMED' : 'PARTIAL';
     await this.storeService.updateOrderConfirmationStatus(
       confirmOrderDto.orderId,
-      hasValidBasketSummary ? 'CONFIRMED' : 'PARTIALLY_CONFIRMED',
+      confirmationStatus,
     );
     return formatResponse(
-      result,
+      {
+        status: confirmationStatus,
+      },
       res,
       HttpStatus.OK,
       false,
@@ -341,13 +351,12 @@ export class StoreController {
     let hasQuantityDeficit = false;
     for (const product of products) {
       const orderProduct = orderProducts.find(
-        (orderProduct) => orderProduct.productId === product.productId,
+        (orderProduct) => orderProduct.product_id === product.productId,
       );
       if (!orderProduct) {
         throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
       }
-
-      if (orderProduct.totalQuantity < product.quantity) {
+      if (+product.quantity < +orderProduct.total_quantity) {
         hasQuantityDeficit = true;
       }
     }
