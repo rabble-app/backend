@@ -114,6 +114,12 @@ export class PostalCodeService {
     }
   }
 
+  /**
+   * Retrieves the delivery day information for a given producer.
+   *
+   * @param producerId - The ID of the producer to retrieve delivery day information for.
+   * @returns A Promise that resolves to an array of `IProducerDeliveryDaysInfo` objects, containing information about the producer's delivery days.
+   */
   async getProducerDeliveryDays(
     producerId: string,
   ): Promise<IProducerDeliveryDaysInfo[]> {
@@ -232,5 +238,32 @@ export class PostalCodeService {
       data,
       where,
     });
+  }
+
+  async getProducerDaysOfDelivery(
+    producerId: string,
+  ): Promise<
+    { id: string; day: string; cutOffDay: string; cutOffTime: string }[]
+  > {
+    try {
+      return await this.prisma.producerDeliveryDay.findMany({
+        where: {
+          producerId,
+        },
+        select: {
+          id: true,
+          day: true,
+          cutOffDay: true,
+          cutOffTime: true,
+        },
+        orderBy: [
+          {
+            createdAt: 'desc',
+          },
+        ],
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

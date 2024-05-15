@@ -16,6 +16,7 @@ import { teamImages } from '../../src/utils';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../../src/notifications/notifications.service';
 import { TeamsServiceExtension } from './teams.service.extension';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class TeamsService {
@@ -34,6 +35,8 @@ export class TeamsService {
     const teamData = createTeamDto;
     delete teamData.paymentIntentId;
     let imageUrl = '';
+    let orderDeadlineDate = new Date();
+    let accumulatedAmount: Decimal = new Decimal(0);
 
     // get producer's minimum threshold
     const producerInfo = await this.userService.findProducer({
@@ -68,10 +71,34 @@ export class TeamsService {
         ];
     }
 
+    if (createTeamDto.partnerId) {
+      orderDeadlineDate = new Date(createTeamDto.orderCutOffDate);
+      delete teamData.orderCutOffDate;
+    } else if (paymentIntentId) {
+      const currentDate = new Date();
+      // add 6 days to the current date, order closes on the 7 day
+      orderDeadlineDate = new Date(
+        currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
+      );
+
+      const paymentInfo = await this.prisma.payment.findFirst({
+        where: {
+          paymentIntentId,
+        },
+        select: {
+          amount: true,
+        },
+      });
+      accumulatedAmount = paymentInfo.amount;
+    }
+
     const result = await this.prisma.buyingTeam.create({
       data: {
         imageUrl,
         ...teamData,
+        nextDeliveryDate: teamData.nextDeliveryDate
+          ? new Date(teamData.nextDeliveryDate)
+          : null,
       },
     });
 
@@ -84,33 +111,17 @@ export class TeamsService {
     };
     await this.addTeamMember(memberData);
 
+    // create order
+    const orderData = {
+      teamId: result.id,
+      minimumTreshold: producerInfo.minimumTreshold,
+      deadline: orderDeadlineDate,
+      accumulatedAmount: accumulatedAmount,
+    };
+    const orderResponse = await this.paymentService.createOrder(orderData);
+
     // normal user's buying team
     if (paymentIntentId) {
-      // get amount paid and add it to accumulator
-      const paymentInfo = await this.prisma.payment.findFirst({
-        where: {
-          paymentIntentId,
-        },
-        select: {
-          amount: true,
-        },
-      });
-
-      const currentDate = new Date();
-      // add 6 days to the current date, order closes on the 7 day
-      const nextWeekDate = new Date(
-        currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
-      );
-
-      // create order
-      const orderData = {
-        teamId: result.id,
-        minimumTreshold: producerInfo.minimumTreshold,
-        deadline: nextWeekDate,
-        accumulatedAmount: paymentInfo.amount,
-      };
-      const orderResponse = await this.paymentService.createOrder(orderData);
-
       // update payment record
       const paymentData = {
         orderId: orderResponse.id,
@@ -124,11 +135,11 @@ export class TeamsService {
       result['orderId'] = orderResponse.id;
 
       // send notification
-      if (+paymentInfo.amount >= +producerInfo.minimumTreshold) {
+      if (+accumulatedAmount >= +producerInfo.minimumTreshold) {
         await this.paymentService.sendNotificationForThreshold(
           result.id,
           orderResponse.id,
-          nextWeekDate,
+          orderDeadlineDate,
         );
       }
     }

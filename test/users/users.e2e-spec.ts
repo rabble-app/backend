@@ -181,7 +181,7 @@ describe('UserController (e2e)', () => {
       '/users/producers(GET) should return all producers',
       async () => {
         const response = await request(app.getHttpServer())
-          .get('/users/producers')
+          .get(`/users/producers??offset=0&postalCode=SE154NX`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');

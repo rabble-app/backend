@@ -146,11 +146,24 @@ export class UsersController {
   @Get('producers')
   @ApiOkResponse({ description: 'Producers returned successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'offset',
+    required: true,
+    description:
+      'This indicates the record from where the result will start populating',
+  })
+  @ApiParam({
+    name: 'postalCode',
+    required: true,
+    description: 'The expected producers postal code',
+  })
   async getProducers(
+    @Query('postalCode') postalCode: string,
     @Query('offset') offset: number,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.usersService.getProducers(
+      postalCode,
       offset ? +offset : undefined,
     );
     return formatResponse(
