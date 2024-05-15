@@ -43,6 +43,21 @@ describe('TeamsController (e2e)', () => {
     nextDeliveryDate: new Date(),
   };
 
+  const partnerBuyingTeam = {
+    name: `${faker.internet.userName()} partner`,
+    postalCode: '234-54',
+    hostId: '',
+    frequency: 604800,
+    description: 'Dummy description',
+    producerId: '',
+    isPublic: true,
+    nextDeliveryDate: new Date(),
+    partnerId: '',
+    productLimit: 23,
+    deliveryDay: 'MONDAY',
+    orderCutOffDate: new Date(),
+  };
+
   const buyingTeamUpdate = {
     name: faker.internet.userName(),
     postalCode: '234-54',
@@ -94,6 +109,7 @@ describe('TeamsController (e2e)', () => {
     userId = user.id;
     buyingTeam.hostId = user.id;
     teamRequest.userId = user.id;
+    partnerBuyingTeam.hostId = user.id;
 
     // create payment method for the test
     const paymentMethod = await stripe.paymentMethods.create({
@@ -121,6 +137,23 @@ describe('TeamsController (e2e)', () => {
     });
     producerId = producer.id;
     buyingTeam.producerId = producer.id;
+    partnerBuyingTeam.producerId = producer.id;
+
+    // create dummy partner for test
+    const partner = await prisma.partner.create({
+      data: {
+        userId,
+        name: faker.internet.userName(),
+        postalCode: '12345',
+        city: 'san francisco',
+        streetAddress: '22 Brooke Street',
+        direction: 'From the corner',
+        storeType: 'somewhere',
+        shelfSpace: 'somewhere',
+        dryStorageSpace: 'somewhere',
+      },
+    });
+    partnerBuyingTeam.partnerId = partner.id;
 
     // create  team for test
     const team = await prisma.buyingTeam.create({
@@ -213,6 +246,22 @@ describe('TeamsController (e2e)', () => {
         expect(typeof response.body.data).toBe('object');
         buyingTeamId = response.body.data.id;
         orderId = response.body.data.orderId;
+      },
+      testTime,
+    );
+
+    // create partner team
+    it(
+      '/teams/create(POST) should create a new partner buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/create')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ ...partnerBuyingTeam })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
       },
       testTime,
     );
