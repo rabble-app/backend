@@ -45,7 +45,7 @@ model User {
   chats                         Chat[]
   partner                       Partner?
   employee                      Employee[]
-  confirmation                  OrderConfirmation[]
+  orderConfirmation Order[]
   collection                    Collection[]
 
   @@index([id])
@@ -419,7 +419,10 @@ model Order {
   deadline             DateTime                    @default(now())
   lastNudge            DateTime?                   @map("last_nudge")
   deliveryDate         DateTime?                   @map("delivery_date")
-  confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
+  confirmDelivery      Boolean                     @default(false) @map("confirm_delivery")
+  confirmerId          String?                     @map("confirmer_id")
+  confirmationImageUrl String?                     @map("confirmation_image_url")
+  confirmationImageKey String?                     @map("confirmation_image_key")
   createdAt            DateTime                    @default(now()) @map("created_at")
   updatedAt            DateTime                    @updatedAt @map("updated_at")
   basket               Basket[]
@@ -428,27 +431,11 @@ model Order {
   partionedProducts    PartitionedProductsBasket[]
   payments             Payment[]
   collection           Collection[]
-  orderConfirmation  OrderConfirmation[]
+
+  confirmer User? @relation(fields: [confirmerId], references: [id], onDelete: Cascade)
 
   @@index([id, teamId, status])
   @@map("orders")
-}
-
-model OrderConfirmation {
-  id          String   @id @default(uuid())
-  confirmedBy String   @map("confirmed_by")
-  orderId     String   @map("order_id") @unique
-  imageUrl    String   @map("confirmation_image_url")
-  imageKey    String   @map("confirmation_image_key")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  note        String?
-  products    Json
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  confirmer   User?    @relation(fields: [confirmedBy], references: [id], onDelete: Cascade)
-
-  @@index([id, orderId])
-  @@map("order_confirmation")
 }
 
 model Collection {
@@ -784,9 +771,3 @@ enum OrderCollectionStatus {
   COLLECTED
 }
 
-enum OrderConfirmationStatus {
-  PENDING
-  CONFIRMED
-  PARTIAL
-  REJECTED
-}
