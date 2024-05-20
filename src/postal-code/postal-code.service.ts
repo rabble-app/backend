@@ -14,6 +14,7 @@ import {
   IPostalCodeSearchResponse,
   IProducerDeliveryDaysInfo,
 } from '../lib/types';
+import { parse } from 'postcode';
 
 @Injectable()
 export class PostalCodeService {
@@ -242,13 +243,29 @@ export class PostalCodeService {
 
   async getProducerDaysOfDelivery(
     producerId: string,
+    postalCode: string,
   ): Promise<
     { id: string; day: string; cutOffDay: string; cutOffTime: string }[]
   > {
     try {
+      const { area } = parse(postalCode);
       return await this.prisma.producerDeliveryDay.findMany({
         where: {
           producerId,
+          regions: {
+            some: {
+              producerAreas: {
+                some: {
+                  area: {
+                    code: {
+                      equals: area,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         select: {
           id: true,
