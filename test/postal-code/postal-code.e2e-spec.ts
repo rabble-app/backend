@@ -208,12 +208,12 @@ describe('PostalCodeController (e2e)', () => {
       testTime,
     );
 
-    // return producer delivery days
+    // return producer delivery days for a particular postal code
     it(
-      '/postal-code/producer/days-of-delivery/:producerId should return producer delivery days',
+      '/postal-code/producer/days-of-delivery/:producerId/:postalCode should return producer delivery days for a postal code',
       async () => {
         const response = await request(app.getHttpServer())
-          .get(`/postal-code/producer/days-of-delivery/${producerId}`)
+          .get(`/postal-code/producer/days-of-delivery/${producerId}/SE154NX`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');

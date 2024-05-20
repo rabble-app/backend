@@ -45,7 +45,7 @@ model User {
   chats                         Chat[]
   partner                       Partner?
   employee                      Employee[]
-  orderConfirmation             Order[]
+  orderConfirmation Order[]
   collection                    Collection[]
 
   @@index([id])
@@ -428,10 +428,11 @@ model Order {
   basket               Basket[]
   notifications        Notification[]
   team                 BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  confirmer            User?                       @relation(fields: [confirmerId], references: [id], onDelete: Cascade)
   partionedProducts    PartitionedProductsBasket[]
   payments             Payment[]
   collection           Collection[]
+
+  confirmer User? @relation(fields: [confirmerId], references: [id], onDelete: Cascade)
 
   @@index([id, teamId, status])
   @@map("orders")
@@ -769,3 +770,4 @@ enum OrderCollectionStatus {
   PENDING
   COLLECTED
 }
+

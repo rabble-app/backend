@@ -307,13 +307,13 @@ export class PostalCodeController {
   }
 
   /**
-   * Return producer delivery days.
+   * Return producer delivery days for a postal code.
    * @param {Response} res - The payload.
    * @memberof PostalCodeController
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
-  @Get('/producer/days-of-delivery/:producerId')
+  @Get('/producer/days-of-delivery/:producerId/:postalCode')
   @ApiOkResponse({
     description: 'Delivery days returned successfully',
   })
@@ -325,10 +325,12 @@ export class PostalCodeController {
   })
   async returnDeliveryDays(
     @Param('producerId') producerId: string,
+    @Param('postalCode') postalCode: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.postalCodeService.getProducerDaysOfDelivery(
       producerId,
+      postalCode,
     );
     return formatResponse(
       result,
