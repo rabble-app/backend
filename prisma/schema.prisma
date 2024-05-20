@@ -45,7 +45,7 @@ model User {
   chats                         Chat[]
   partner                       Partner?
   employee                      Employee[]
-  orderConfirmation             Order[]
+  confirmation                  OrderConfirmation[]
   collection                    Collection[]
 
   @@index([id])
@@ -419,22 +419,36 @@ model Order {
   deadline             DateTime                    @default(now())
   lastNudge            DateTime?                   @map("last_nudge")
   deliveryDate         DateTime?                   @map("delivery_date")
-  confirmDelivery      Boolean                     @default(false) @map("confirm_delivery")
-  confirmerId          String?                     @map("confirmer_id")
-  confirmationImageUrl String?                     @map("confirmation_image_url")
-  confirmationImageKey String?                     @map("confirmation_image_key")
+  confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
   createdAt            DateTime                    @default(now()) @map("created_at")
   updatedAt            DateTime                    @updatedAt @map("updated_at")
   basket               Basket[]
   notifications        Notification[]
   team                 BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  confirmer            User?                       @relation(fields: [confirmerId], references: [id], onDelete: Cascade)
   partionedProducts    PartitionedProductsBasket[]
   payments             Payment[]
   collection           Collection[]
+  orderConfirmation  OrderConfirmation[]
 
   @@index([id, teamId, status])
   @@map("orders")
+}
+
+model OrderConfirmation {
+  id          String   @id @default(uuid())
+  confirmedBy String   @map("confirmed_by")
+  orderId     String   @map("order_id") @unique
+  imageUrl    String   @map("confirmation_image_url")
+  imageKey    String   @map("confirmation_image_key")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  note        String?
+  products    Json
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  confirmer   User?    @relation(fields: [confirmedBy], references: [id], onDelete: Cascade)
+
+  @@index([id, orderId])
+  @@map("order_confirmation")
 }
 
 model Collection {
@@ -768,4 +782,11 @@ enum PartnerOpenHour {
 enum OrderCollectionStatus {
   PENDING
   COLLECTED
+}
+
+enum OrderConfirmationStatus {
+  PENDING
+  CONFIRMED
+  PARTIAL
+  REJECTED
 }
