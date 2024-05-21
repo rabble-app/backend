@@ -226,6 +226,7 @@ model Product {
   producer          Producer                    @relation(fields: [producerId], references: [id], onDelete: Cascade)
   recentlyViewed    RecentlyViewed[]
   reviews           Review[]
+  collectionItem    CollectionItems[]
 
   @@unique([name, producerId], name: "name_unique_producer")
   @@index([id, producerId, categoryId])
@@ -483,10 +484,26 @@ model Collection {
   updatedAt        DateTime              @updatedAt @map("updated_at")
   order            Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            CollectionItems[]
 
   @@unique([orderId, userId], name: "user_unique_collection")
   @@index([id, orderId, userId])
   @@map("collections")
+}
+
+model CollectionItems {
+  id           String     @id @default(uuid())
+  collectionId String     @map("collection_id")
+  productId    String     @map("product_id")
+  amount       Decimal
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id])
+
+  @@unique([collectionId, productId], name: "collection_unique_product")
+  @@index([id, collectionId])
+  @@map("collection_items")
 }
 
 model Basket {
