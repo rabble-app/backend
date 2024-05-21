@@ -1,6 +1,6 @@
 generator client {
-  provider        = "prisma-client-js"
-  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-1.0.x", "linux-arm64-openssl-1.0.x", "rhel-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-1.0.x", "linux-arm64-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -45,8 +45,8 @@ model User {
   chats                         Chat[]
   partner                       Partner?
   employee                      Employee[]
-  orderConfirmation Order[]
   collection                    Collection[]
+  confirmation                  OrderConfirmation[]
 
   @@index([id])
   @@map("users")
@@ -411,31 +411,66 @@ model Invite {
 }
 
 model Order {
-  id                   String                      @id @default(uuid())
-  teamId               String                      @map("team_id")
-  status               OrderStatus                 @default(PENDING)
-  minimumTreshold      Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
-  accumulatedAmount    Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
-  deadline             DateTime                    @default(now())
-  lastNudge            DateTime?                   @map("last_nudge")
-  deliveryDate         DateTime?                   @map("delivery_date")
-  confirmDelivery      Boolean                     @default(false) @map("confirm_delivery")
-  confirmerId          String?                     @map("confirmer_id")
-  confirmationImageUrl String?                     @map("confirmation_image_url")
-  confirmationImageKey String?                     @map("confirmation_image_key")
-  createdAt            DateTime                    @default(now()) @map("created_at")
-  updatedAt            DateTime                    @updatedAt @map("updated_at")
-  basket               Basket[]
-  notifications        Notification[]
-  team                 BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  partionedProducts    PartitionedProductsBasket[]
-  payments             Payment[]
-  collection           Collection[]
-
-  confirmer User? @relation(fields: [confirmerId], references: [id], onDelete: Cascade)
+  id                 String                      @id @default(uuid())
+  teamId             String                      @map("team_id")
+  status             OrderStatus                 @default(PENDING)
+  minimumTreshold    Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
+  accumulatedAmount  Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
+  deadline           DateTime                    @default(now())
+  lastNudge          DateTime?                   @map("last_nudge")
+  deliveryDate       DateTime?                   @map("delivery_date")
+  confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
+  createdAt          DateTime                    @default(now()) @map("created_at")
+  updatedAt          DateTime                    @updatedAt @map("updated_at")
+  basket             Basket[]
+  notifications      Notification[]
+  team               BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  partionedProducts  PartitionedProductsBasket[]
+  payments           Payment[]
+  collection         Collection[]
+  orderConfirmation  OrderConfirmation?
 
   @@index([id, teamId, status])
   @@map("orders")
+}
+// model Order {
+//   id                   String                      @id @default(uuid())
+//   teamId               String                      @map("team_id")
+//   status               OrderStatus                 @default(PENDING)
+//   minimumTreshold      Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
+//   accumulatedAmount    Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
+//   deadline             DateTime                    @default(now())
+//   lastNudge            DateTime?                   @map("last_nudge")
+//   deliveryDate         DateTime?                   @map("delivery_date")
+//   confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
+//   createdAt            DateTime                    @default(now()) @map("created_at")
+//   updatedAt            DateTime                    @updatedAt @map("updated_at")
+//   basket               Basket[]
+//   notifications        Notification[]
+//   team                 BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+//   partionedProducts    PartitionedProductsBasket[]
+//   payments             Payment[]
+//   collection           Collection[]
+
+//   @@index([id, teamId, status])
+//   @@map("orders")
+// }
+
+model OrderConfirmation {
+  id          String   @id @default(uuid())
+  confirmedBy String   @map("confirmed_by")
+  orderId     String   @unique @map("order_id")
+  imageUrl    String   @map("confirmation_image_url")
+  imageKey    String   @map("confirmation_image_key")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  note        String?
+  products    Json
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  confirmer   User    @relation(fields: [confirmedBy], references: [id], onDelete: Cascade)
+
+  @@index([id, orderId])
+  @@map("order_confirmation")
 }
 
 model Collection {
@@ -647,6 +682,7 @@ model ProducerDeliveryDay {
   updatedAt  DateTime                 @updatedAt @map("updated_at")
   regions    ProducerDeliveryRegion[]
   producer   Producer                 @relation(fields: [producerId], references: [id], onDelete: Cascade)
+
   @@unique([producerId, day])
   @@index([id, producerId, day])
   @@map("producer_delivery_days")
@@ -662,6 +698,7 @@ model ProducerDeliveryRegion {
   deliveryDay   ProducerDeliveryDay    @relation(fields: [deliveryDayId], references: [id], onDelete: Cascade)
   region        PostalCodeRegion       @relation(fields: [regionId], references: [id], onDelete: Cascade)
   producerAreas ProducerDeliveryArea[]
+
   @@unique([deliveryDayId, regionId])
   @@index([id, deliveryDayId, regionId])
   @@map("producer_delivery_regions")
@@ -675,7 +712,7 @@ model ProducerDeliveryArea {
   updatedAt        DateTime               @updatedAt @map("updated_at")
   deliveryRegion   ProducerDeliveryRegion @relation(fields: [deliveryRegionId], references: [id], onDelete: Cascade)
   area             PostalCodeArea         @relation(fields: [areaId], references: [id], onDelete: Cascade)
- 
+
   @@index([id, deliveryRegionId, areaId])
   @@map("producer_delivery_areas")
 }
@@ -771,3 +808,9 @@ enum OrderCollectionStatus {
   COLLECTED
 }
 
+enum OrderConfirmationStatus {
+  PENDING
+  CONFIRMED
+  PARTIAL
+  REJECTED
+}
