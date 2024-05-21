@@ -45,7 +45,6 @@ model User {
   chats                         Chat[]
   partner                       Partner?
   employee                      Employee[]
-  orderConfirmation             Order[]
   collection                    Collection[]
   confirmation                  OrderConfirmation[]
 
@@ -429,13 +428,33 @@ model Order {
   partionedProducts  PartitionedProductsBasket[]
   payments           Payment[]
   collection         Collection[]
-  orderConfirmation  OrderConfirmation[]
-  User               User?                       @relation(fields: [userId], references: [id])
-  userId             String?
+  orderConfirmation  OrderConfirmation?
 
   @@index([id, teamId, status])
   @@map("orders")
 }
+// model Order {
+//   id                   String                      @id @default(uuid())
+//   teamId               String                      @map("team_id")
+//   status               OrderStatus                 @default(PENDING)
+//   minimumTreshold      Decimal                     @default(0) @map("minimum_treshold") @db.Decimal(9, 2)
+//   accumulatedAmount    Decimal                     @default(0) @map("accumulated_amount") @db.Decimal(9, 2)
+//   deadline             DateTime                    @default(now())
+//   lastNudge            DateTime?                   @map("last_nudge")
+//   deliveryDate         DateTime?                   @map("delivery_date")
+//   confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
+//   createdAt            DateTime                    @default(now()) @map("created_at")
+//   updatedAt            DateTime                    @updatedAt @map("updated_at")
+//   basket               Basket[]
+//   notifications        Notification[]
+//   team                 BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+//   partionedProducts    PartitionedProductsBasket[]
+//   payments             Payment[]
+//   collection           Collection[]
+
+//   @@index([id, teamId, status])
+//   @@map("orders")
+// }
 
 model OrderConfirmation {
   id          String   @id @default(uuid())
@@ -447,8 +466,8 @@ model OrderConfirmation {
   updatedAt   DateTime @updatedAt @map("updated_at")
   note        String?
   products    Json
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  confirmer   User?    @relation(fields: [confirmedBy], references: [id], onDelete: Cascade)
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  confirmer   User    @relation(fields: [confirmedBy], references: [id], onDelete: Cascade)
 
   @@index([id, orderId])
   @@map("order_confirmation")
