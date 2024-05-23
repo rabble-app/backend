@@ -247,6 +247,64 @@ export class StoreService {
     });
   }
 
+  async getStoreCustomerCollections({
+    partnerId,
+    skip,
+    period,
+    search,
+    limit,
+  }: {
+    partnerId: string;
+    skip?: number;
+    period?: 'today' | 'upcoming' | 'past';
+    search?: string;
+    limit?: number;
+  }) {
+    const result = await this.prisma.order.findMany({
+      where: this.getDeliveryFilter(partnerId, period, search),
+      ...(skip && { skip }),
+      ...(limit && { take: limit }),
+      select: {
+        id: true,
+        accumulatedAmount: true,
+        deliveryDate: true,
+        createdAt: true,
+        deadline: true,
+        status: true,
+        minimumTreshold: true,
+        basket: {
+          select: {
+            id: true,
+            price: true,
+            quantity: true,
+          },
+        },
+        team: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            producer: {
+              select: {
+                businessName: true,
+                id: true,
+                categories: {
+                  select: {
+                    category: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async isUserAnEmployee(userId: string, storeId: string) {
     const storeInfo = await this.getStoreWithEmployees(storeId);
     if (!storeInfo) {
