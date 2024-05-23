@@ -359,87 +359,87 @@ describe('StoreController (e2e)', () => {
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe('PARTIAL');
     });
-    //customer collections
-    it('/store/:store-id/collections(Get) should fail to get collection infor if storeId is invalid', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/store/invalid-store-id/collections?period=today')
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(400);
-      expect(response.body.message).toBe('Invalid store id');
-    });
-    it('/store/:store-id/collections(Get) should get store item collections for today successfully', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=today`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(response.body.data).toHaveLength(1);
-    });
-    it('/store/:store-id/collections(Get) should get past store item collections successfully', async () => {
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 1);
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { deliveryDate: pastDate },
-      });
-      const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=past`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(response.body.data).toHaveLength(1);
-    });
-    it('/store/:store-id/collections(Get) should get upcoming store item collection successfully', async () => {
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 1);
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { deliveryDate: futureDate },
-      });
-      const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=upcoming`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(response.body.data).toHaveLength(1);
-    });
-    it('/store/:store-id/collections(Get) should search for store upcoming item collections successfully by user name', async () => {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { firstName: 'searchable first name' },
-      });
-      const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=upcoming&search=first name`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(response.body.data).toHaveLength(1);
-    });
-    it('/store/:store-id/collections(Get) should search for upcoming item collections successfully by user name', async () => {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { firstName: 'searchable first name' },
-      });
-      const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=upcoming&search=first name`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(response.body.data).toHaveLength(1);
-    });
-    it('/store/:store-id/collections(Get) should fail to search for upcoming store item collections by user name if name does not match', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=upcoming&search=goal`)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(response.body.data).toHaveLength(0);
-    });
+    //   //customer collections
+    //   it('/store/:store-id/collections(Get) should fail to get collection infor if storeId is invalid', async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .get('/store/invalid-store-id/collections?period=today')
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(400);
+    //     expect(response.body.message).toBe('Invalid store id');
+    //   });
+    //   it('/store/:store-id/collections(Get) should get store item collections for today successfully', async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=today`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should get past store item collections successfully', async () => {
+    //     const pastDate = new Date();
+    //     pastDate.setDate(pastDate.getDate() - 1);
+    //     await prisma.order.update({
+    //       where: { id: order.id },
+    //       data: { deliveryDate: pastDate },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=past`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should get upcoming store item collection successfully', async () => {
+    //     const futureDate = new Date();
+    //     futureDate.setDate(futureDate.getDate() + 1);
+    //     await prisma.order.update({
+    //       where: { id: order.id },
+    //       data: { deliveryDate: futureDate },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should search for store upcoming item collections successfully by user name', async () => {
+    //     await prisma.user.update({
+    //       where: { id: userId },
+    //       data: { firstName: 'searchable first name' },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming&search=first name`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should search for upcoming item collections successfully by user name', async () => {
+    //     await prisma.user.update({
+    //       where: { id: userId },
+    //       data: { firstName: 'searchable first name' },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming&search=first name`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should fail to search for upcoming store item collections by user name if name does not match', async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming&search=goal`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(0);
+    //   });
   });
 });

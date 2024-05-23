@@ -80,7 +80,7 @@ export class AuthService {
           });
           userExist['token'] = token;
         } else {
-          let stripeCustomerId = '';
+          let stripeCustomerId = null;
           let role = Role.USER;
           if (verifyOTPDto.role != Role.PARTNER) {
             // create stripe account for user
