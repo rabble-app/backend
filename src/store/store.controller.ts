@@ -12,6 +12,9 @@ import {
   HttpException,
   Query,
   UseFilters,
+  UseInterceptors,
+  ParseFilePipeBuilder,
+  UploadedFile,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -34,12 +37,18 @@ import { Response } from 'express';
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
+import { ConfirmOrderDto } from './dto/confirm-order.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadsService } from '../uploads/uploads.service';
 
 @ApiTags('store')
 @ApiBearerAuth()
 @Controller('store')
 export class StoreController {
-  constructor(private readonly storeService: StoreService) {}
+  constructor(
+    private readonly storeService: StoreService,
+    private readonly uploadsService: UploadsService,
+  ) {}
 
   /**
    * create new store.
@@ -248,4 +257,186 @@ export class StoreController {
       'Store deliveries returned successfully',
     );
   }
+
+  /**
+   * Confirm order products received.
+   * @param {Body} ConfirmOrderDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('/:storeId/confirm-order-receipt')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async confirmOrderProductsReceived(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /^image\/(jpeg|png|jpg)$/,
+        })
+        .build({
+          fileIsRequired: true,
+        }),
+    )
+    file: Express.Multer.File,
+    @Body() body: ConfirmOrderDto,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+    @Param('storeId') storeId: string,
+  ): Promise<IAPIResponse> {
+    const confirmOrderDto = {
+      ...body,
+      products: JSON.parse(body.products as any) as ConfirmOrderDto['products'],
+    };
+    const isValidEmployee = await this.storeService.isUserAnEmployee(
+      req.user.userId,
+      storeId,
+    );
+    if (!isValidEmployee) {
+      throw new HttpException(
+        'Invalid store id. User must be a store employee',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const hasValidBasketSummary = await this.validateBasketSummary(
+      confirmOrderDto.orderId,
+      confirmOrderDto.products,
+    );
+    if (!hasValidBasketSummary && !confirmOrderDto.note) {
+      throw new HttpException(
+        'One of the order products has insufficient quantity, please add a note',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const upload = await this.uploadsService.uploadFile(
+      file,
+      'order-confirmation-',
+    );
+    const result = await this.storeService.updateOrderConfirmation(
+      confirmOrderDto as any,
+      req.user.userId,
+      upload.Location,
+      upload.Key,
+    );
+    if (!result) {
+      throw new HttpException(
+        'Order confirmation update failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const confirmationStatus = hasValidBasketSummary ? 'CONFIRMED' : 'PARTIAL';
+    await this.storeService.updateOrderConfirmationStatus(
+      confirmOrderDto.orderId,
+      confirmationStatus,
+    );
+    return formatResponse(
+      {
+        status: confirmationStatus,
+      },
+      res,
+      HttpStatus.OK,
+      false,
+      'Order confirmation updated successfully',
+    );
+  }
+  async validateBasketSummary(
+    orderId: string,
+    products: ConfirmOrderDto['products'],
+  ) {
+    const orderProducts = await this.storeService.getOrderWithGroupedBaskets(
+      orderId,
+    );
+    let hasQuantityDeficit = false;
+    for (const product of products) {
+      const orderProduct = orderProducts.find(
+        (orderProduct) => orderProduct.product_id === product.productId,
+      );
+      if (!orderProduct) {
+        throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
+      }
+      if (+product.quantity < +orderProduct.total_quantity) {
+        hasQuantityDeficit = true;
+      }
+    }
+    return !hasQuantityDeficit;
+  }
+
+  // /**
+  //  * Get store customer collections.
+  //  * @param {Response} res - The payload.
+  //  * @memberof StoreController
+  //  * @returns {JSON} - A JSON success response.
+  //  */
+  // @UseGuards(AuthGuard)
+  // @Get(':storeId/collections')
+  // @UseFilters(HttpExceptionFilter)
+  // @ApiBadRequestResponse({
+  //   description: 'Invalid query parameter (offset | period)',
+  // })
+  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  // @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  // @ApiQuery({
+  //   name: 'offset',
+  //   required: false,
+  //   description: 'Pagination offset',
+  //   type: 'number',
+  // })
+  // @ApiQuery({
+  //   name: 'limit',
+  //   required: false,
+  //   description: 'Number of records to return per page',
+  //   type: 'number',
+  // })
+  // @ApiQuery({
+  //   name: 'period',
+  //   required: false,
+  //   description: 'Delivery period',
+  //   enum: ['today', 'upcoming', 'past'],
+  // })
+  // @ApiQuery({
+  //   name: 'search',
+  //   required: false,
+  //   description: 'Search by user first name, last name or team name',
+  //   type: 'string',
+  // })
+  // @ApiHeader({
+  //   name: 'Authorization',
+  //   description: 'Bearer <access_token>',
+  // })
+  // async getStoreCollections(
+  //   @Param('storeId') storeId: string,
+  //   @Res({ passthrough: true }) res: Response,
+  //   @Request() req,
+  //   @Query('offset') offset?: number,
+  //   @Query('limit') limit?: number,
+  //   @Query('period') period?: 'today' | 'upcoming' | 'past',
+  //   @Query('search') search?: string,
+  // ): Promise<IAPIResponse> {
+  //   const store = await this.storeService.findStore({ id: storeId });
+  //   const skip = !isNaN(Number(offset)) ? +offset : 0;
+  //   const take = !isNaN(Number(limit)) ? +limit : 10;
+  //   if (period && !['today', 'upcoming', 'past'].includes(period))
+  //     throw new HttpException(
+  //       'Invalid period query, acceptable values are today | upcoming | past',
+  //       HttpStatus.BAD_REQUEST,
+  //     );
+  //   if (!store || store.userId !== req.user.userId)
+  //     throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+  //   const result = await this.storeService.getStoreCustomerCollections({
+  //     partnerId: store.userId,
+  //     skip,
+  //     period,
+  //     search,
+  //     limit: take,
+  //   });
+  //   return formatResponse(
+  //     result,
+  //     res,
+  //     HttpStatus.OK,
+  //     false,
+  //     'Store customer collections returned successfully',
+  //   );
+  // }
 }

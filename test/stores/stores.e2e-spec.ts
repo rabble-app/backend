@@ -6,6 +6,8 @@ import { PrismaService } from '../../src/prisma.service';
 import { Order, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
+import { UploadsService } from '../../src/uploads/uploads.service';
+import { UploadsService as MockedUploadsService } from '../../__mocks__/uploads.service';
 describe('StoreController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -18,6 +20,7 @@ describe('StoreController (e2e)', () => {
   let storeId: string;
   let order: Order;
   let productCategoryId: string;
+  let productId: string;
 
   const store = {
     name: faker.internet.userName(),
@@ -45,7 +48,10 @@ describe('StoreController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UploadsService)
+      .useValue(MockedUploadsService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
@@ -82,7 +88,7 @@ describe('StoreController (e2e)', () => {
 
     const categoryOption = await prisma.producerCategoryOption.create({
       data: {
-        name: faker.lorem.word({ length: 10 }),
+        name: faker.company.catchPhraseNoun() + Math.floor(Math.random() * 30),
       },
     });
     await prisma.producerCategory.create({
@@ -114,6 +120,7 @@ describe('StoreController (e2e)', () => {
         categoryId: productCategory.id,
       },
     });
+    productId = product.id;
 
     await prisma.basket.create({
       data: {
@@ -205,6 +212,8 @@ describe('StoreController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
     });
+
+    //inbound delivery
     it('/store/(Get) should fail to get inbound deliveries if storeId is invalid', async () => {
       const response = await request(app.getHttpServer())
         .get('/store/invalid-store-id/deliveries?period=today')
@@ -286,5 +295,151 @@ describe('StoreController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(response.body.data).toHaveLength(0);
     });
+    it('should confirm order products received', async () => {
+      const confirmOrderDto = {
+        orderId: order.id,
+        products: [
+          {
+            productId,
+            quantity: 2,
+          },
+        ],
+      };
+      const response = await request(app.getHttpServer())
+        .post(`/store/${storeId}/confirm-order-receipt`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Content-Type', 'multipart/form-data')
+        .field('orderId', order.id)
+        .field('products', JSON.stringify(confirmOrderDto.products))
+        .attach('file', './test/testImage.jpg');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+    });
+
+    it('should fail to confirm order products received if quantity does not match and there is not note attached', async () => {
+      const confirmOrderDto = {
+        orderId: order.id,
+        products: [
+          {
+            productId,
+            quantity: 1,
+          },
+        ],
+      };
+      const response = await request(app.getHttpServer())
+        .post(`/store/${storeId}/confirm-order-receipt`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Content-Type', 'multipart/form-data')
+        .field('orderId', order.id)
+        .field('products', JSON.stringify(confirmOrderDto.products))
+        .attach('file', './test/testImage.jpg');
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe(
+        'One of the order products has insufficient quantity, please add a note',
+      );
+    });
+    it('should update the order status as PARTIAL if product quantity is less than expected', async () => {
+      const confirmOrderDto = {
+        orderId: order.id,
+        products: [
+          {
+            productId,
+            quantity: 1,
+          },
+        ],
+      };
+      const response = await request(app.getHttpServer())
+        .post(`/store/${storeId}/confirm-order-receipt`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Content-Type', 'multipart/form-data')
+        .field('orderId', order.id)
+        .field('note', 'test note')
+        .field('products', JSON.stringify(confirmOrderDto.products))
+        .attach('file', './test/testImage.jpg');
+      expect(response.status).toBe(200);
+      expect(response.body.data.status).toBe('PARTIAL');
+    });
+    //   //customer collections
+    //   it('/store/:store-id/collections(Get) should fail to get collection infor if storeId is invalid', async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .get('/store/invalid-store-id/collections?period=today')
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(400);
+    //     expect(response.body.message).toBe('Invalid store id');
+    //   });
+    //   it('/store/:store-id/collections(Get) should get store item collections for today successfully', async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=today`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should get past store item collections successfully', async () => {
+    //     const pastDate = new Date();
+    //     pastDate.setDate(pastDate.getDate() - 1);
+    //     await prisma.order.update({
+    //       where: { id: order.id },
+    //       data: { deliveryDate: pastDate },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=past`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should get upcoming store item collection successfully', async () => {
+    //     const futureDate = new Date();
+    //     futureDate.setDate(futureDate.getDate() + 1);
+    //     await prisma.order.update({
+    //       where: { id: order.id },
+    //       data: { deliveryDate: futureDate },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should search for store upcoming item collections successfully by user name', async () => {
+    //     await prisma.user.update({
+    //       where: { id: userId },
+    //       data: { firstName: 'searchable first name' },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming&search=first name`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should search for upcoming item collections successfully by user name', async () => {
+    //     await prisma.user.update({
+    //       where: { id: userId },
+    //       data: { firstName: 'searchable first name' },
+    //     });
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming&search=first name`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(1);
+    //   });
+    //   it('/store/:store-id/collections(Get) should fail to search for upcoming store item collections by user name if name does not match', async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .get(`/store/${storeId}/collections?period=upcoming&search=goal`)
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(response.body.data).toHaveLength(0);
+    //   });
   });
 });
