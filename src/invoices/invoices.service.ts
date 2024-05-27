@@ -13,7 +13,6 @@ import { EmailService } from '../emails/email.service';
 import generateEmailTemplate from '../utils/invoice-email.template';
 import {
   getPDFPrinter,
-  horizontalLine,
   invoiceHeaderLayout,
   itemsTableLayout,
   summaryTableLayout,
@@ -420,6 +419,7 @@ export class InvoiceService {
       layout: 'noBorders',
     };
   }
+
   getItemsTable(orderDetails: OrderDetailsDto): Content {
     return {
       style: 'itemsTable',
