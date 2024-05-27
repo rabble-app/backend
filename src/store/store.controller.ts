@@ -232,16 +232,14 @@ export class StoreController {
     @Query('period') period?: 'today' | 'upcoming' | 'past',
     @Query('search') search?: string,
   ): Promise<IAPIResponse> {
-    const store = await this.storeService.findStore({ id: storeId });
-    const skip = !isNaN(Number(offset)) ? +offset : 0;
-    const take = !isNaN(Number(limit)) ? +limit : 10;
-    if (period && !['today', 'upcoming', 'past'].includes(period))
-      throw new HttpException(
-        'Invalid period query, acceptable values are today | upcoming | past',
-        HttpStatus.BAD_REQUEST,
+    const { store, skip, take } =
+      await this.storeService.storeDeliveryAndCollectionValidation(
+        storeId,
+        offset,
+        limit,
+        period,
+        req.user.userId,
       );
-    if (!store || store.userId !== req.user.userId)
-      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
     const result = await this.storeService.getStoreDeliveries({
       partnerId: store.userId,
       skip,
@@ -363,80 +361,79 @@ export class StoreController {
     return !hasQuantityDeficit;
   }
 
-  // /**
-  //  * Get store customer collections.
-  //  * @param {Response} res - The payload.
-  //  * @memberof StoreController
-  //  * @returns {JSON} - A JSON success response.
-  //  */
-  // @UseGuards(AuthGuard)
-  // @Get(':storeId/collections')
-  // @UseFilters(HttpExceptionFilter)
-  // @ApiBadRequestResponse({
-  //   description: 'Invalid query parameter (offset | period)',
-  // })
-  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  // @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
-  // @ApiQuery({
-  //   name: 'offset',
-  //   required: false,
-  //   description: 'Pagination offset',
-  //   type: 'number',
-  // })
-  // @ApiQuery({
-  //   name: 'limit',
-  //   required: false,
-  //   description: 'Number of records to return per page',
-  //   type: 'number',
-  // })
-  // @ApiQuery({
-  //   name: 'period',
-  //   required: false,
-  //   description: 'Delivery period',
-  //   enum: ['today', 'upcoming', 'past'],
-  // })
-  // @ApiQuery({
-  //   name: 'search',
-  //   required: false,
-  //   description: 'Search by user first name, last name or team name',
-  //   type: 'string',
-  // })
-  // @ApiHeader({
-  //   name: 'Authorization',
-  //   description: 'Bearer <access_token>',
-  // })
-  // async getStoreCollections(
-  //   @Param('storeId') storeId: string,
-  //   @Res({ passthrough: true }) res: Response,
-  //   @Request() req,
-  //   @Query('offset') offset?: number,
-  //   @Query('limit') limit?: number,
-  //   @Query('period') period?: 'today' | 'upcoming' | 'past',
-  //   @Query('search') search?: string,
-  // ): Promise<IAPIResponse> {
-  //   const store = await this.storeService.findStore({ id: storeId });
-  //   const skip = !isNaN(Number(offset)) ? +offset : 0;
-  //   const take = !isNaN(Number(limit)) ? +limit : 10;
-  //   if (period && !['today', 'upcoming', 'past'].includes(period))
-  //     throw new HttpException(
-  //       'Invalid period query, acceptable values are today | upcoming | past',
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   if (!store || store.userId !== req.user.userId)
-  //     throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
-  //   const result = await this.storeService.getStoreCustomerCollections({
-  //     partnerId: store.userId,
-  //     skip,
-  //     period,
-  //     search,
-  //     limit: take,
-  //   });
-  //   return formatResponse(
-  //     result,
-  //     res,
-  //     HttpStatus.OK,
-  //     false,
-  //     'Store customer collections returned successfully',
-  //   );
-  // }
+  /**
+   * Get store customer collections.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':storeId/collections')
+  @UseFilters(HttpExceptionFilter)
+  @ApiBadRequestResponse({
+    description: 'Invalid query parameter (offset | period)',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Pagination offset',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return per page',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    description: 'Delivery period',
+    enum: ['today', 'upcoming', 'past'],
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by user first name, last name or team name',
+    type: 'string',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  async getStoreCollections(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+    @Query('offset') offset?: number,
+    @Query('limit') limit?: number,
+    @Query('period') period?: 'today' | 'upcoming' | 'past',
+    @Query('search') search?: string,
+  ): Promise<IAPIResponse> {
+    const { store, skip, take } =
+      await this.storeService.storeDeliveryAndCollectionValidation(
+        storeId,
+        offset,
+        limit,
+        period,
+        req.user.userId,
+      );
+
+    const result = await this.storeService.getStoreCustomerCollections({
+      partnerId: store.userId,
+      skip,
+      period,
+      search,
+      limit: take,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store customer collections returned successfully',
+    );
+  }
 }

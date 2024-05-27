@@ -247,64 +247,6 @@ export class StoreService {
     });
   }
 
-  // async getStoreCustomerCollections({
-  //   partnerId,
-  //   skip,
-  //   period,
-  //   search,
-  //   limit,
-  // }: {
-  //   partnerId: string;
-  //   skip?: number;
-  //   period?: 'today' | 'upcoming' | 'past';
-  //   search?: string;
-  //   limit?: number;
-  // }) {
-  //   const result = await this.prisma.order.findMany({
-  //     where: this.getDeliveryFilter(partnerId, period, search),
-  //     ...(skip && { skip }),
-  //     ...(limit && { take: limit }),
-  //     select: {
-  //       id: true,
-  //       accumulatedAmount: true,
-  //       deliveryDate: true,
-  //       createdAt: true,
-  //       deadline: true,
-  //       status: true,
-  //       minimumTreshold: true,
-  //       basket: {
-  //         select: {
-  //           id: true,
-  //           price: true,
-  //           quantity: true,
-  //         },
-  //       },
-  //       team: {
-  //         select: {
-  //           id: true,
-  //           name: true,
-  //           description: true,
-  //           producer: {
-  //             select: {
-  //               businessName: true,
-  //               id: true,
-  //               categories: {
-  //                 select: {
-  //                   category: {
-  //                     select: {
-  //                       name: true,
-  //                     },
-  //                   },
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //   });
-  // }
-
   async isUserAnEmployee(userId: string, storeId: string) {
     const storeInfo = await this.getStoreWithEmployees(storeId);
     if (!storeInfo) {
@@ -385,5 +327,212 @@ export class StoreService {
         confirmationStatus: status,
       },
     });
+  }
+
+  async getStoreCustomerCollections({
+    partnerId,
+    skip,
+    period,
+    search,
+    limit,
+  }: {
+    partnerId: string;
+    skip?: number;
+    period?: 'today' | 'upcoming' | 'past';
+    search?: string;
+    limit?: number;
+  }) {
+    return await this.prisma.collection.findMany({
+      where: this.getCollectionFilter(partnerId, period, search),
+      ...(skip && { skip }),
+      ...(limit && { take: limit }),
+      select: {
+        id: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        order: {
+          select: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+                producer: {
+                  select: {
+                    categories: {
+                      select: {
+                        category: {
+                          select: {
+                            name: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        dateOfCollection: true,
+        status: true,
+        items: {
+          select: {
+            id: true,
+            amount: true,
+            product: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        createdAt: true,
+      },
+    });
+  }
+
+  getCollectionFilter(
+    partnerId: string,
+    period?: 'today' | 'upcoming' | 'past',
+    search?: string,
+  ): Prisma.CollectionWhereInput {
+    const periodFilter = this.getCollectionPeriodFilter(period);
+    if (!search) {
+      return {
+        AND: [
+          {
+            order: {
+              team: {
+                hostId: partnerId,
+              },
+            },
+          },
+          periodFilter,
+        ],
+      };
+    } else {
+      return {
+        OR: [
+          {
+            AND: [
+              {
+                order: {
+                  team: {
+                    hostId: partnerId,
+                    name: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+              periodFilter,
+            ],
+          },
+          {
+            AND: [
+              {
+                user: {
+                  firstName: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                order: {
+                  team: {
+                    hostId: partnerId,
+                  },
+                },
+              },
+              periodFilter,
+            ],
+          },
+          {
+            AND: [
+              {
+                user: {
+                  lastName: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                order: {
+                  team: {
+                    hostId: partnerId,
+                  },
+                },
+              },
+              periodFilter,
+            ],
+          },
+        ],
+      };
+    }
+  }
+
+  getCollectionPeriodFilter(period = '') {
+    const startOfToday = startOfDay(new Date());
+    const endOfToday = endOfDay(new Date());
+    switch (period) {
+      case 'today':
+        return {
+          dateOfCollection: {
+            gte: startOfToday,
+            lte: endOfToday,
+          },
+        };
+      case 'upcoming':
+        return {
+          dateOfCollection: {
+            gte: endOfToday,
+          },
+        };
+      case 'past':
+        return {
+          dateOfCollection: {
+            lt: startOfToday,
+          },
+        };
+      default:
+        return {};
+    }
+  }
+
+  async storeDeliveryAndCollectionValidation(
+    storeId: string,
+    offset: number,
+    limit: number,
+    period: string,
+    userId: string,
+  ): Promise<{
+    store: Partner;
+    skip: number;
+    take: number;
+  }> {
+    const store = await this.findStore({ id: storeId });
+    const skip = !isNaN(Number(offset)) ? +offset : 0;
+    const take = !isNaN(Number(limit)) ? +limit : 10;
+    if (period && !['today', 'upcoming', 'past'].includes(period))
+      throw new HttpException(
+        'Invalid period query, acceptable values are today | upcoming | past',
+        HttpStatus.BAD_REQUEST,
+      );
+    if (!store || store.userId !== userId)
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+
+    return {
+      store,
+      skip,
+      take,
+    };
   }
 }
