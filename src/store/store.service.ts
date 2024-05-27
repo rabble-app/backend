@@ -506,4 +506,33 @@ export class StoreService {
         return {};
     }
   }
+
+  async storeDeliveryAndCollectionValidation(
+    storeId: string,
+    offset: number,
+    limit: number,
+    period: string,
+    userId: string,
+  ): Promise<{
+    store: Partner;
+    skip: number;
+    take: number;
+  }> {
+    const store = await this.findStore({ id: storeId });
+    const skip = !isNaN(Number(offset)) ? +offset : 0;
+    const take = !isNaN(Number(limit)) ? +limit : 10;
+    if (period && !['today', 'upcoming', 'past'].includes(period))
+      throw new HttpException(
+        'Invalid period query, acceptable values are today | upcoming | past',
+        HttpStatus.BAD_REQUEST,
+      );
+    if (!store || store.userId !== userId)
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+
+    return {
+      store,
+      skip,
+      take,
+    };
+  }
 }
