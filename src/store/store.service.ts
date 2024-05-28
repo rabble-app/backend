@@ -10,7 +10,7 @@ import {
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { startOfDay, endOfDay } from 'date-fns';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
-import { UsersService } from 'users/users.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StoreService {
