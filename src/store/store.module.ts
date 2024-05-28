@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { UploadsService } from '../uploads/uploads.service';
 import { UploadsModule } from '../uploads/uploads.module';
-import { UsersModule } from 'users/users.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   controllers: [StoreController],
