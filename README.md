@@ -30,7 +30,7 @@ $ npm run test
 
 # e2e tests
 $ npm run test:e2e
-$ npm run test:e2e:github --> for pipeline
+$ npm run test:e2e:github
 
 # test coverage
 $ npm run test:cov
