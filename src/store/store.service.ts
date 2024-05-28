@@ -10,21 +10,33 @@ import {
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { startOfDay, endOfDay } from 'date-fns';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StoreService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async createStore(
     userId: string,
     createStoreDto: CreateStoreDto,
   ): Promise<Partner> {
-    return await this.prisma.partner.create({
+    const result = await this.prisma.partner.create({
       data: {
         userId,
         ...createStoreDto,
       },
     });
+
+    // update the onboarding stage
+    await this.usersService.updateUser({
+      where: { id: userId },
+      data: { onboardingStage: 1 },
+    });
+
+    return result;
   }
 
   async findStore(
@@ -45,8 +57,9 @@ export class StoreService {
 
   async createStoreOpenHours(
     createOpenHoursDto: CreateOpenHoursDto,
+    userId: string,
   ): Promise<OpenHours> {
-    return await this.prisma.openHours.create({
+    const result = await this.prisma.openHours.create({
       data: {
         partnerId: createOpenHoursDto.storeId,
         type: createOpenHoursDto.type,
@@ -60,6 +73,12 @@ export class StoreService {
             : undefined,
       },
     });
+    // update the onboarding stage
+    await this.usersService.updateUser({
+      where: { id: userId },
+      data: { onboardingStage: 3 },
+    });
+    return result;
   }
 
   async updateStore(params: {

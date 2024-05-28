@@ -25,6 +25,7 @@ model User {
   createdAt                     DateTime                        @default(now()) @map("created_at")
   updatedAt                     DateTime                        @updatedAt @map("updated_at")
   notificationToken             String?                         @map("notification_token")
+  onboardingStage               Int                             @default(0) @map("onboarding_stage")
   basketsC                      BasketC[]
   baskets                       Basket[]
   hosts                         BuyingTeam[]
