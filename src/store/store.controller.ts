@@ -68,7 +68,7 @@ export class StoreController {
     @Res({ passthrough: true }) res: Response,
     @Request() req,
   ): Promise<IAPIResponse> {
-    const userId = req.user.id ? req.user.id : req.user.userId;
+    const userId = req.user.userId;
     const isExisting = await this.storeService.findStore({
       name: createStoreDto.name,
     });
@@ -107,6 +107,7 @@ export class StoreController {
   async addOpenHours(
     @Body() createOpenHoursDto: CreateOpenHoursDto,
     @Res({ passthrough: true }) res: Response,
+    @Request() req,
   ): Promise<IAPIResponse> {
     const isExisting = await this.storeService.getStoreOpenHours({
       partnerId: createOpenHoursDto.storeId,
@@ -120,8 +121,10 @@ export class StoreController {
         'Store open hours already exist',
       );
     }
+    const userId = req.user.userId;
     const result = await this.storeService.createStoreOpenHours(
       createOpenHoursDto,
+      userId,
     );
     return formatResponse(
       result,
@@ -370,39 +373,39 @@ export class StoreController {
   @UseGuards(AuthGuard)
   @Get(':storeId/collections')
   @UseFilters(HttpExceptionFilter)
-  @ApiBadRequestResponse({
-    description: 'Invalid query parameter (offset | period)',
-  })
-  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
-  @ApiQuery({
-    name: 'offset',
-    required: false,
-    description: 'Pagination offset',
-    type: 'number',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Number of records to return per page',
-    type: 'number',
-  })
-  @ApiQuery({
-    name: 'period',
-    required: false,
-    description: 'Delivery period',
-    enum: ['today', 'upcoming', 'past'],
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    description: 'Search by user first name, last name or team name',
-    type: 'string',
-  })
-  @ApiHeader({
-    name: 'Authorization',
-    description: 'Bearer <access_token>',
-  })
+  // @ApiBadRequestResponse({
+  //   description: 'Invalid query parameter (offset | period)',
+  // })
+  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  // @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  // @ApiQuery({
+  //   name: 'offset',
+  //   required: false,
+  //   description: 'Pagination offset',
+  //   type: 'number',
+  // })
+  // @ApiQuery({
+  //   name: 'limit',
+  //   required: false,
+  //   description: 'Number of records to return per page',
+  //   type: 'number',
+  // })
+  // @ApiQuery({
+  //   name: 'period',
+  //   required: false,
+  //   description: 'Delivery period',
+  //   enum: ['today', 'upcoming', 'past'],
+  // })
+  // @ApiQuery({
+  //   name: 'search',
+  //   required: false,
+  //   description: 'Search by user first name, last name or team name',
+  //   type: 'string',
+  // })
+  // @ApiHeader({
+  //   name: 'Authorization',
+  //   description: 'Bearer <access_token>',
+  // })
   async getStoreCollections(
     @Param('storeId') storeId: string,
     @Res({ passthrough: true }) res: Response,

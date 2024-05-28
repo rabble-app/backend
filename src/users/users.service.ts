@@ -79,6 +79,13 @@ export class UsersService {
         lastName: result.lastName,
       });
     }
+
+    if (result.role == 'PARTNER' && result.onboardingStage == 1) {
+      await this.prisma.user.update({
+        where: { id: result.id },
+        data: { onboardingStage: 2 },
+      });
+    }
     return result;
   }
 

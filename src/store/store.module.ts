@@ -5,10 +5,11 @@ import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { UploadsService } from '../uploads/uploads.service';
 import { UploadsModule } from '../uploads/uploads.module';
+import { UsersModule } from 'users/users.module';
 
 @Module({
   controllers: [StoreController],
   providers: [StoreService, PrismaService, JwtService, UploadsService],
-  imports: [UploadsModule],
+  imports: [UploadsModule, UsersModule],
 })
 export class StoreModule {}
