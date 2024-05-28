@@ -80,7 +80,11 @@ export class UsersService {
       });
     }
 
-    if (result.role == 'PARTNER' && result.onboardingStage == 1) {
+    if (
+      result.role == 'PARTNER' &&
+      result.firstName != null &&
+      !data.onboardingStage
+    ) {
       await this.prisma.user.update({
         where: { id: result.id },
         data: { onboardingStage: 2 },
