@@ -5,6 +5,18 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 
+const commonSuccessResponse = (response: any) => {
+  expect(response.body).toBeDefined();
+  expect(response.body.success).toBe(true);
+  expect(response.body.message).toBeDefined();
+  expect(response.body.data).toBeDefined();
+};
+
+const commonFailureResponse = (response: any) => {
+  expect(response.body).toHaveProperty('error');
+  expect(typeof response.body.error).toBe('string');
+};
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -76,8 +88,7 @@ describe('AppController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/auth/send-otp')
           .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
+        commonFailureResponse(response);
       },
       testTime,
     );
@@ -89,8 +100,7 @@ describe('AppController (e2e)', () => {
           .post('/auth/send-otp')
           .send({ phone })
           .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
+        commonFailureResponse(response);
       },
       testTime,
     );
@@ -103,8 +113,7 @@ describe('AppController (e2e)', () => {
           .post('/auth/verify-otp')
           .send({ phone })
           .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
+        commonFailureResponse(response);
       },
       testTime,
     );
@@ -116,8 +125,7 @@ describe('AppController (e2e)', () => {
           .post('/auth/verify-otp')
           .send({ phone, code: '22334', sid: 'rtreyt' })
           .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
+        commonFailureResponse(response);
       },
       testTime,
     );
@@ -146,8 +154,7 @@ describe('AppController (e2e)', () => {
           .post('/auth/register')
           .send({ phone })
           .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
+        commonFailureResponse(response);
       },
       testTime,
     );
@@ -158,8 +165,7 @@ describe('AppController (e2e)', () => {
         .post('/auth/email-verification')
         .send({ token: 'invalidToken' })
         .expect(401);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it('/auth/email-verification (POST) should verify email if email verification token is valid', async () => {
@@ -178,16 +184,14 @@ describe('AppController (e2e)', () => {
         .post('/auth/resend-email-verification')
         .send({ email: 'ok54nb32@gmail.com' })
         .expect(404);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it('/auth/resend-email-verification (POST) should not resend email verification if email is not supplied', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/resend-email-verification')
         .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
 
       return response;
     });
@@ -224,8 +228,7 @@ describe('AppController (e2e)', () => {
           .post('/auth/login')
           .send({ email })
           .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
+        commonFailureResponse(response);
       },
       testTime,
     );
@@ -236,16 +239,14 @@ describe('AppController (e2e)', () => {
         .post('/auth/send-reset-password-link')
         .send({ email: 'ok54nb32@gmail.com' })
         .expect(404);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it('/auth/send-reset-password-link (POST) should not send password reset link if email is not supplied', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/send-reset-password-link')
         .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it('/auth/send-reset-password-link (POST) should send password reset link if email is valid', async () => {
@@ -265,8 +266,7 @@ describe('AppController (e2e)', () => {
         .post('/auth/change-password')
         .send(changePasswordData)
         .expect(401);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it('/auth/change-password (POST) should not change password if invalid/expired token is supplied', async () => {
@@ -275,8 +275,7 @@ describe('AppController (e2e)', () => {
         .set('Authorization', `Bearer ${jwtToken}invalid`)
         .send(changePasswordData)
         .expect(401);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it('/auth/change-password (POST) should not change password if incomplete data is supplied', async () => {
@@ -285,8 +284,7 @@ describe('AppController (e2e)', () => {
         .set('Authorization', `Bearer ${jwtToken}`)
         .send(incompleteChangePasswordData)
         .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
 
       return response;
     });
@@ -297,8 +295,7 @@ describe('AppController (e2e)', () => {
         .post('/auth/pusher-user')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     // pusher channel authorization
@@ -307,8 +304,7 @@ describe('AppController (e2e)', () => {
         .post('/auth/pusher-channel')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
-      expect(response.body).toHaveProperty('error');
-      expect(typeof response.body.error).toBe('string');
+      commonFailureResponse(response);
     });
 
     it(
