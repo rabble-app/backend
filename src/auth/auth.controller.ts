@@ -78,6 +78,15 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const sid = await this.authService.sendOTP(sendOTPDto);
+    if (!sid) {
+      return formatResponse(
+        'Error Occurred',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Invalid phone number',
+      );
+    }
     return formatResponse(
       { sid },
       res,
