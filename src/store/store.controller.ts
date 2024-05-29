@@ -69,10 +69,22 @@ export class StoreController {
     @Request() req,
   ): Promise<IAPIResponse> {
     const userId = req.user.userId;
-    const isExisting = await this.storeService.findStore({
+    const isOwnerExisting = await this.storeService.findStore({
+      userId,
+    });
+    if (isOwnerExisting) {
+      return formatResponse(
+        'Duplicate owner',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'You already have a store',
+      );
+    }
+    const storeNameExisting = await this.storeService.findStore({
       name: createStoreDto.name,
     });
-    if (isExisting) {
+    if (storeNameExisting) {
       return formatResponse(
         'Duplicate name',
         res,
