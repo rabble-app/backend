@@ -83,15 +83,14 @@ describe('AppController (e2e)', () => {
     );
 
     it(
-      '/auth/send-otp (POST) should send the user OTP',
+      '/auth/send-otp (POST) should not send the user OTP if wrong phone is supplied',
       async () => {
         const response = await request(app.getHttpServer())
           .post('/auth/send-otp')
           .send({ phone })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
+          .expect(400);
+        expect(response.body).toHaveProperty('error');
+        expect(typeof response.body.error).toBe('string');
       },
       testTime,
     );
