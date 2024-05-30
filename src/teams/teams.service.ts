@@ -227,6 +227,7 @@ export class TeamsService {
     postalCode: string,
     userId: string,
     offset = 0,
+    getPartnerTeams = false,
   ): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
       skip: offset,
