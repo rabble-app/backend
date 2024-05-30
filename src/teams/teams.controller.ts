@@ -21,6 +21,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { IAPIResponse } from '../lib/types';
@@ -152,17 +153,31 @@ export class TeamsController {
     required: true,
     description: 'The postal code',
   })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Where to start the result set',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'getPartnerTeams',
+    required: false,
+    description: 'Specifies whether to return rabble hub teams',
+    type: 'string',
+  })
   async getPostalCodeTeams(
     @Request() req,
     @Param('id') postalCode: string,
     @Res({ passthrough: true }) res: Response,
     @Query('offset') offset: number,
+    @Query('getPartnerTeams') getPartnerTeams: string,
   ): Promise<IAPIResponse> {
     const userId = req.user.id ? req.user.id : req.user.userId;
     const result = await this.teamsService.getPostalCodeTeams(
       postalCode,
       userId,
       offset ? +offset : undefined,
+      getPartnerTeams,
     );
     return formatResponse(
       result,
