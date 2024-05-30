@@ -177,7 +177,7 @@ export class TeamsController {
       postalCode,
       userId,
       offset ? +offset : undefined,
-      getPartnerTeams ? getPartnerTeams : undefined,
+      getPartnerTeams,
     );
     return formatResponse(
       result,
