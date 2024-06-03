@@ -286,6 +286,7 @@ export class TeamsServiceExtension {
   async getTeamCurrentOrderStatus(
     teamId: string,
     trim = 'false',
+    userId: string,
   ): Promise<Order | IOrderDeadline> {
     let result: IOrderDeadline | PromiseLike<Order>;
     if (trim && trim == 'true') {
@@ -352,6 +353,17 @@ export class TeamsServiceExtension {
                   },
                 },
               },
+            },
+          },
+          collection: {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+              userId: true,
+              dateOfCollection: true,
+              status: true,
             },
           },
         },

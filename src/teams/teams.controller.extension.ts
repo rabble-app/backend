@@ -149,7 +149,7 @@ export class TeamsControllerExtension {
    * @memberof TeamsController
    * @returns {JSON} - A JSON success response.
    */
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   @Get('current-order/:id')
   @ApiOkResponse({
     description: 'Buying team order status returned successfully',
@@ -170,10 +170,13 @@ export class TeamsControllerExtension {
     @Param('id') id: string,
     @Query('trim') trim: string,
     @Res({ passthrough: true }) res: Response,
+    @Request() req,
   ): Promise<IAPIResponse> {
+    const userId = req.user?.userId ?? '123';
     const result = await this.teamsServiceExtension.getTeamCurrentOrderStatus(
       id,
       trim,
+      userId,
     );
     return formatResponse(
       result,

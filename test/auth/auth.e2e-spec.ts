@@ -5,12 +5,12 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 
-const commonSuccessResponse = (response: any) => {
-  expect(response.body).toBeDefined();
-  expect(response.body.success).toBe(true);
-  expect(response.body.message).toBeDefined();
-  expect(response.body.data).toBeDefined();
-};
+// const commonSuccessResponse = (response: any) => {
+//   expect(response.body).toBeDefined();
+//   expect(response.body.success).toBe(true);
+//   expect(response.body.message).toBeDefined();
+//   expect(response.body.data).toBeDefined();
+// };
 
 const commonFailureResponse = (response: any) => {
   expect(response.body).toHaveProperty('error');
