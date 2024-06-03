@@ -313,7 +313,7 @@ export class StoreController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const hasValidBasketSummary = await this.validateBasketSummary(
+    const hasValidBasketSummary = await this.storeService.validateBasketSummary(
       confirmOrderDto.orderId,
       confirmOrderDto.products,
     );
@@ -353,27 +353,6 @@ export class StoreController {
       false,
       'Order confirmation updated successfully',
     );
-  }
-  async validateBasketSummary(
-    orderId: string,
-    products: ConfirmOrderDto['products'],
-  ) {
-    const orderProducts = await this.storeService.getOrderWithGroupedBaskets(
-      orderId,
-    );
-    let hasQuantityDeficit = false;
-    for (const product of products) {
-      const orderProduct = orderProducts.find(
-        (orderProduct) => orderProduct.product_id === product.productId,
-      );
-      if (!orderProduct) {
-        throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
-      }
-      if (+product.quantity < +orderProduct.total_quantity) {
-        hasQuantityDeficit = true;
-      }
-    }
-    return !hasQuantityDeficit;
   }
 
   /**
