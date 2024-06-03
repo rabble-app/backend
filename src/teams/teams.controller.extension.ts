@@ -175,8 +175,8 @@ export class TeamsControllerExtension {
     const userId = req.user?.userId ?? '123';
     const result = await this.teamsServiceExtension.getTeamCurrentOrderStatus(
       id,
-      trim,
       userId,
+      trim,
     );
     return formatResponse(
       result,
