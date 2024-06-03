@@ -294,7 +294,6 @@ export class StoreService {
       GROUP BY
         o.id, b.product_id
     `;
-
     if (result.length === 0) {
       throw new HttpException(
         `Order with ID ${orderId} not found`,
@@ -555,5 +554,25 @@ export class StoreService {
       skip,
       take,
     };
+  }
+
+  async validateBasketSummary(
+    orderId: string,
+    products: ConfirmOrderDto['products'],
+  ) {
+    const orderProducts = await this.getOrderWithGroupedBaskets(orderId);
+    let hasQuantityDeficit = false;
+    for (const product of products) {
+      const orderProduct = orderProducts.find(
+        (orderProduct) => orderProduct.product_id === product.productId,
+      );
+      if (!orderProduct) {
+        throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
+      }
+      if (+product.quantity < +orderProduct.total_quantity) {
+        hasQuantityDeficit = true;
+      }
+    }
+    return !hasQuantityDeficit;
   }
 }
