@@ -160,7 +160,7 @@ export class TeamsController {
     type: 'string',
   })
   @ApiQuery({
-    name: 'getPartnerTeams',
+    name: 'getRabbleHubTeams',
     required: false,
     description: 'Specifies whether to return rabble hub teams',
     type: 'string',
@@ -170,14 +170,14 @@ export class TeamsController {
     @Param('id') postalCode: string,
     @Res({ passthrough: true }) res: Response,
     @Query('offset') offset: number,
-    @Query('getPartnerTeams') getPartnerTeams: string,
+    @Query('getRabbleHubTeams') getRabbleHubTeams: string,
   ): Promise<IAPIResponse> {
     const userId = req.user.id ? req.user.id : req.user.userId;
     const result = await this.teamsService.getPostalCodeTeams(
       postalCode,
       userId,
       offset ? +offset : undefined,
-      getPartnerTeams,
+      getRabbleHubTeams,
     );
     return formatResponse(
       result,

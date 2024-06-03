@@ -227,7 +227,7 @@ export class TeamsService {
     postalCode: string,
     userId: string,
     offset = 0,
-    getPartnerTeams = 'false',
+    getRabbleHubTeams = 'false',
   ): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
       skip: offset,
@@ -235,7 +235,7 @@ export class TeamsService {
       where: {
         postalCode,
         isPublic: true,
-        ...this.getBuyingTeamCondition(getPartnerTeams),
+        ...this.getBuyingTeamCondition(getRabbleHubTeams),
       },
       include: {
         basket: {
@@ -266,11 +266,20 @@ export class TeamsService {
           },
         },
         requests: true,
+        Partner: {
+          select: {
+            name: true,
+            postalCode: true,
+          },
+        },
       },
     });
   }
-  getBuyingTeamCondition(getPartnerTeams: string): Prisma.BuyingTeamWhereInput {
-    if (getPartnerTeams == 'false') {
+
+  getBuyingTeamCondition(
+    getRabbleHubTeams: string,
+  ): Prisma.BuyingTeamWhereInput {
+    if (getRabbleHubTeams == 'false') {
       return {
         partnerId: {
           equals: null,

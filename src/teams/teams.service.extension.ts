@@ -265,6 +265,15 @@ export class TeamsServiceExtension {
             },
             take: 1,
           },
+          Partner: {
+            select: {
+              name: true,
+              postalCode: true,
+              city: true,
+              streetAddress: true,
+              direction: true,
+            },
+          },
           _count: {
             select: { orders: true },
           },
