@@ -285,8 +285,8 @@ export class TeamsServiceExtension {
 
   async getTeamCurrentOrderStatus(
     teamId: string,
-    trim = 'false',
     userId: string,
+    trim = 'false',
   ): Promise<Order | IOrderDeadline> {
     let result: IOrderDeadline | PromiseLike<Order>;
     if (trim && trim == 'true') {
