@@ -373,6 +373,9 @@ export class StoreController {
         hasQuantityDeficit = true;
       }
     }
+    if (products.length < orderProducts.length) {
+      hasQuantityDeficit = true;
+    }
     return !hasQuantityDeficit;
   }
 
