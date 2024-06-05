@@ -125,6 +125,8 @@ export class StoreService {
             product: {
               select: {
                 name: true,
+                measuresPerSubUnit: true,
+                unitsOfMeasurePerSubUnit: true,
               },
             },
           },
