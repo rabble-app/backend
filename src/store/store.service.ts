@@ -580,6 +580,9 @@ export class StoreService {
         hasQuantityDeficit = true;
       }
     }
+    if (products.length < orderProducts.length) {
+      hasQuantityDeficit = true;
+    }
     return !hasQuantityDeficit;
   }
 }
