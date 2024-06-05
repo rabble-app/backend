@@ -117,20 +117,6 @@ export class StoreService {
         deadline: true,
         status: true,
         minimumTreshold: true,
-        basket: {
-          select: {
-            id: true,
-            price: true,
-            quantity: true,
-            product: {
-              select: {
-                name: true,
-                measuresPerSubUnit: true,
-                unitsOfMeasurePerSubUnit: true,
-              },
-            },
-          },
-        },
         team: {
           select: {
             id: true,
