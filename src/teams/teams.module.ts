@@ -33,6 +33,6 @@ import { ProductsModule } from '../../src/products/products.module';
     TeamsServiceExtension,
     TeamsServiceExtension2,
   ],
-  exports: [TeamsService, TeamsServiceExtension],
+  exports: [TeamsService, TeamsServiceExtension, TeamsServiceExtension2],
 })
 export class TeamsModule {}

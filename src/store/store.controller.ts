@@ -40,6 +40,7 @@ import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '../uploads/uploads.service';
+import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -48,6 +49,7 @@ export class StoreController {
   constructor(
     private readonly storeService: StoreService,
     private readonly uploadsService: UploadsService,
+    private readonly teamsServiceExtension2: TeamsServiceExtension2,
   ) {}
 
   /**
@@ -428,6 +430,55 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store customer collections returned successfully',
+    );
+  }
+
+  /**
+   * Get order details.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':teamId/order-details')
+  @ApiBadRequestResponse({
+    description: 'Invalid query parameter (offset | period)',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'teamId', required: true, description: 'The team id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiQuery({
+    name: 'orderId',
+    required: false,
+    description: 'The id of the order',
+    type: 'string',
+  })
+  async getOrderDetails(
+    @Param('teamId') teamId: string,
+    @Query('orderId') orderId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    let teamOrderId: string;
+    if (orderId) {
+      teamOrderId = orderId;
+    } else {
+      const order = await this.teamsServiceExtension2.returnCurrentOrder(
+        teamId,
+      );
+      teamOrderId = order.id;
+    }
+    const result = await this.storeService.getOrderWithGroupedBaskets(
+      teamOrderId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Order details returned successfully',
     );
   }
 }

@@ -18,6 +18,7 @@ describe('StoreController (e2e)', () => {
   let userId: string;
   let jwtToken: string;
   let storeId: string;
+  let teamId: string;
   let order: Order;
   let productCategoryId: string;
   let productId: string;
@@ -86,6 +87,7 @@ describe('StoreController (e2e)', () => {
         producerId: producer.id,
       },
     });
+    teamId = team.id;
 
     const categoryOption = await prisma.producerCategoryOption.create({
       data: {
@@ -217,6 +219,17 @@ describe('StoreController (e2e)', () => {
         .patch(`/store/${storeId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({ city: 'London' })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // return team order details
+    it('/store/:teamId/order-details(GET) should return order details', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${teamId}/order-details`)
+        .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

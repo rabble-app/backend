@@ -7,6 +7,9 @@ import { ParametersModule } from '../config/config.module';
 import { UploadsService } from '../uploads/uploads.service';
 import { UsersModule } from '../users/users.module';
 import { UsersService } from '../users/users.service';
+import { TeamsModule } from '../teams/teams.module';
+import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
+import { PaymentModule } from '../payment/payment.module';
 
 describe('StoreController', () => {
   let controller: StoreController;
@@ -20,8 +23,9 @@ describe('StoreController', () => {
         JwtService,
         UploadsService,
         UsersService,
+        TeamsServiceExtension2,
       ],
-      imports: [ParametersModule, UsersModule],
+      imports: [ParametersModule, UsersModule, TeamsModule, PaymentModule],
     }).compile();
 
     controller = module.get<StoreController>(StoreController);
