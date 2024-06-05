@@ -122,6 +122,11 @@ export class StoreService {
             id: true,
             price: true,
             quantity: true,
+            product: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
         team: {
