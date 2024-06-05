@@ -1,16 +1,16 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfirmOrderDto } from './dto/confirm-order.dto';
+import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { CreateStoreDto } from './dto/create-store.dto';
+import { endOfDay, startOfDay } from 'date-fns';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { UsersService } from '../users/users.service';
 import {
   OpenHours,
   Partner,
   Prisma,
   OrderConfirmationStatus,
 } from '@prisma/client';
-import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
-import { startOfDay, endOfDay } from 'date-fns';
-import { ConfirmOrderDto } from './dto/confirm-order.dto';
-import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StoreService {
@@ -287,19 +287,23 @@ export class StoreService {
 
   async getOrderWithGroupedBaskets(orderId: string) {
     const result = await this.prisma.$queryRaw<
-      Array<{ product_id: string; total_quantity: number }>
+      Array<{ product_id: string; total_quantity: number; name: string }>
     >`
       SELECT
         o.id,
         b.product_id,
-        SUM(b.quantity) AS total_quantity
+        SUM(b.quantity) AS total_quantity,
+        p.name,
+        p.measures_per_subunit,
+        p.units_of_measure_per_subunit
       FROM
         "orders" o
         JOIN "baskets" b ON o.id = b.order_id
+        LEFT JOIN "products" p ON b.product_id = p.id
       WHERE
         o.id = ${orderId}
       GROUP BY
-        o.id, b.product_id
+        o.id, b.product_id, p.name, p.measures_per_subunit, p.units_of_measure_per_subunit;
     `;
     if (result.length === 0) {
       throw new HttpException(
