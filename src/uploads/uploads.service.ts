@@ -46,6 +46,26 @@ export class UploadsService {
     }
   }
 
+  async uploadQRCode(buffer: Buffer, filename: string) {
+    try {
+      const parallelUploads3 = new Upload({
+        client: this.s3,
+        params: {
+          Bucket: this.AWS_S3_BUCKET,
+          Key: `qrcodes/${filename}.png`,
+          Body: buffer,
+          ACL: 'public-read',
+          ContentType: 'image/png',
+          ContentDisposition: 'inline',
+        },
+      });
+
+      return await parallelUploads3.done();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async s3Delete(key: string) {
     const command = new DeleteObjectCommand({
       Bucket: this.AWS_S3_BUCKET,

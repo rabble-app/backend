@@ -17,6 +17,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { InsightsModule } from './insights/insights.module';
 import { StoreModule } from './store/store.module';
 import { PostalCodeModule } from './postal-code/postal-code.module';
+import { QRCodeModule } from './qrcode/qrcode.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { PostalCodeModule } from './postal-code/postal-code.module';
     InsightsModule,
     StoreModule,
     PostalCodeModule,
+    QRCodeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
