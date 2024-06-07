@@ -139,6 +139,9 @@ export class StoreService {
             },
           },
         },
+        _count: {
+          select: { basket: true },
+        },
       },
     });
     return result;
