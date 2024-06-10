@@ -104,5 +104,15 @@ describe('ScheduleController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/schedule/create-collection(GET) should create customer order collection',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/create-collection')
+          .expect(200);
+      },
+      testTime,
+    );
   });
 });
