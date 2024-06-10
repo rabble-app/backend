@@ -224,4 +224,28 @@ export class ScheduleController {
       'Insights updated successfully',
     );
   }
+
+  /**
+   * Create customer order collections.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('create-collection')
+  @ApiOkResponse({
+    description: 'Customer collection created successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async createCollection(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result =
+      await this.scheduleServiceExtended.handleCustomerCollection();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Customer collection created successfully',
+    );
+  }
 }

@@ -357,4 +357,20 @@ export class ScheduleServiceExtended {
     await this.insightsService.calculateUniqueUsers(currentWeek, currentYear);
     return true;
   }
+
+  async handleCustomerCollection(): Promise<boolean> {
+    const fulfilledOrders = await this.prisma.order.findMany({
+      where: {
+        deliveryDate: {
+          lte: new Date(),
+          not: null,
+        },
+        collection: { none: {} },
+      },
+    });
+
+    console.log(fulfilledOrders);
+
+    return true;
+  }
 }

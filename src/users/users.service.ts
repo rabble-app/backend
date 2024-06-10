@@ -310,7 +310,17 @@ export class UsersService {
         hostId: userId,
       },
       include: {
-        members: true,
+        members: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
         producer: {
           include: {
             user: {
