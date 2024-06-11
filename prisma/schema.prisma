@@ -456,7 +456,8 @@ model Collection {
   id               String                @id @default(uuid())
   orderId          String                @map("order_id")
   userId           String                @map("user_id")
-  dateOfCollection DateTime              @map("date_of_collection")
+  qrCode           String                @map("qr_code") @default("")
+  dateOfCollection DateTime              @map("date_of_collection") 
   status           OrderCollectionStatus @default(PENDING)
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime              @updatedAt @map("updated_at")
@@ -473,7 +474,7 @@ model CollectionItems {
   id           String     @id @default(uuid())
   collectionId String     @map("collection_id")
   productId    String     @map("product_id")
-  amount       Decimal
+  quantity     Decimal    @default(0) @db.Decimal(9, 2)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)

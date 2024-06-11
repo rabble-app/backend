@@ -14,6 +14,8 @@ import { AuthService } from '../../src/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
 import { InsightsService } from '../insights/insights.service';
+import { QRCodeService } from '../qrcode/qrcode.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 describe('ScheduleController', () => {
   let controller: ScheduleController;
@@ -38,6 +40,8 @@ describe('ScheduleController', () => {
         AuthService,
         JwtService,
         InsightsService,
+        QRCodeService,
+        UploadsService,
       ],
       imports: [ParametersModule],
     }).compile();
