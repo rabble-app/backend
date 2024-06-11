@@ -401,7 +401,7 @@ export class StoreService {
         items: {
           select: {
             id: true,
-            amount: true,
+            quantity: true,
             product: {
               select: {
                 name: true,

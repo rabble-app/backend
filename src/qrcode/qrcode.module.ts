@@ -9,5 +9,6 @@ import { JwtService } from '@nestjs/jwt';
   controllers: [QRCodeController],
   providers: [UploadsService, QRCodeService, JwtService],
   imports: [UploadsModule],
+  exports: [QRCodeService],
 })
 export class QRCodeModule {}
