@@ -364,6 +364,7 @@ export class TeamsServiceExtension {
               userId: true,
               dateOfCollection: true,
               status: true,
+              qrCode: true,
             },
           },
         },
