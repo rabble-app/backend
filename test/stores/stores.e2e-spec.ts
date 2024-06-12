@@ -91,7 +91,7 @@ describe('StoreController (e2e)', () => {
 
     const categoryOption = await prisma.producerCategoryOption.create({
       data: {
-        name: faker.company.catchPhraseNoun() + Math.floor(Math.random() * 30),
+        name: faker.company.catchPhraseNoun() + Math.floor(Math.random() * 50),
       },
     });
     await prisma.producerCategory.create({
