@@ -33,7 +33,7 @@ export class StoreService {
     // update the onboarding stage
     await this.usersService.updateUser({
       where: { id: userId },
-      data: { onboardingStage: 1 },
+      data: { onboardingStage: 1, postalCode: createStoreDto.postalCode },
     });
 
     return result;
