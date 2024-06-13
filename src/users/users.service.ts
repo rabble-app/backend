@@ -49,6 +49,7 @@ export class UsersService {
         partner: {
           select: {
             id: true,
+            name: true,
           },
         },
       },
