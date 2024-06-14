@@ -50,6 +50,17 @@ export class UsersService {
           select: {
             id: true,
             name: true,
+            postalCode: true,
+            openhour: {
+              select: {
+                type: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            employee: true,
           },
         },
       },
