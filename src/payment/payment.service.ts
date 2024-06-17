@@ -240,7 +240,7 @@ export class PaymentService {
   ): Promise<any | null> {
     try {
       const parameters = {
-        amount: createIntentData.amount * 100,
+        amount: Math.round(createIntentData.amount * 100),
         currency: createIntentData.currency,
         customer: createIntentData.customerId,
       };
