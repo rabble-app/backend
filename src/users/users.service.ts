@@ -49,6 +49,18 @@ export class UsersService {
         partner: {
           select: {
             id: true,
+            name: true,
+            postalCode: true,
+            openhour: {
+              select: {
+                type: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            employee: true,
           },
         },
       },
@@ -310,7 +322,17 @@ export class UsersService {
         hostId: userId,
       },
       include: {
-        members: true,
+        members: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
         producer: {
           include: {
             user: {

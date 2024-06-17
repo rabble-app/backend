@@ -265,6 +265,15 @@ export class TeamsServiceExtension {
             },
             take: 1,
           },
+          Partner: {
+            select: {
+              name: true,
+              postalCode: true,
+              city: true,
+              streetAddress: true,
+              direction: true,
+            },
+          },
           _count: {
             select: { orders: true },
           },
@@ -276,6 +285,7 @@ export class TeamsServiceExtension {
 
   async getTeamCurrentOrderStatus(
     teamId: string,
+    userId: string,
     trim = 'false',
   ): Promise<Order | IOrderDeadline> {
     let result: IOrderDeadline | PromiseLike<Order>;
@@ -343,6 +353,18 @@ export class TeamsServiceExtension {
                   },
                 },
               },
+            },
+          },
+          collection: {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+              userId: true,
+              dateOfCollection: true,
+              status: true,
+              qrCode: true,
             },
           },
         },

@@ -40,6 +40,7 @@ import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '../uploads/uploads.service';
+import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -48,6 +49,7 @@ export class StoreController {
   constructor(
     private readonly storeService: StoreService,
     private readonly uploadsService: UploadsService,
+    private readonly teamsServiceExtension2: TeamsServiceExtension2,
   ) {}
 
   /**
@@ -313,7 +315,7 @@ export class StoreController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const hasValidBasketSummary = await this.validateBasketSummary(
+    const hasValidBasketSummary = await this.storeService.validateBasketSummary(
       confirmOrderDto.orderId,
       confirmOrderDto.products,
     );
@@ -353,27 +355,6 @@ export class StoreController {
       false,
       'Order confirmation updated successfully',
     );
-  }
-  async validateBasketSummary(
-    orderId: string,
-    products: ConfirmOrderDto['products'],
-  ) {
-    const orderProducts = await this.storeService.getOrderWithGroupedBaskets(
-      orderId,
-    );
-    let hasQuantityDeficit = false;
-    for (const product of products) {
-      const orderProduct = orderProducts.find(
-        (orderProduct) => orderProduct.product_id === product.productId,
-      );
-      if (!orderProduct) {
-        throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
-      }
-      if (+product.quantity < +orderProduct.total_quantity) {
-        hasQuantityDeficit = true;
-      }
-    }
-    return !hasQuantityDeficit;
   }
 
   /**
@@ -449,6 +430,119 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store customer collections returned successfully',
+    );
+  }
+
+  /**
+   * Get order details.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':teamId/order-details')
+  @ApiBadRequestResponse({
+    description: 'Invalid query parameter (offset | period)',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'teamId', required: true, description: 'The team id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiQuery({
+    name: 'orderId',
+    required: false,
+    description: 'The id of the order',
+    type: 'string',
+  })
+  async getOrderDetails(
+    @Param('teamId') teamId: string,
+    @Query('orderId') orderId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    let teamOrderId: string;
+    if (orderId) {
+      teamOrderId = orderId;
+    } else {
+      const order = await this.teamsServiceExtension2.returnCurrentOrder(
+        teamId,
+      );
+      teamOrderId = order.id;
+    }
+    const result = await this.storeService.getOrderWithGroupedBaskets(
+      teamOrderId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Order details returned successfully',
+    );
+  }
+
+  /**
+   * Get store information.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('profile/:storeId')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'stoereId', required: true, description: 'The store id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store information returned successfully',
+  })
+  async getStoreInformation(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.findStore({ id: storeId });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store information returned successfully',
+    );
+  }
+
+  /**
+   * Get store open hours information.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('open-hours/:storeId')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'stoereId', required: true, description: 'The store id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store open hour information returned successfully',
+  })
+  async getStoreOpenHoursInformation(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.getStoreOpenHours({
+      partnerId: storeId,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store open hour information returned successfully',
     );
   }
 }

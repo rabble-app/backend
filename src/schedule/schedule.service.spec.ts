@@ -13,6 +13,8 @@ import { AuthService } from '../../src/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
 import { InsightsService } from '../insights/insights.service';
+import { QRCodeService } from '../qrcode/qrcode.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 describe('ScheduleService', () => {
   let service: ScheduleService;
@@ -36,6 +38,8 @@ describe('ScheduleService', () => {
         AuthService,
         JwtService,
         InsightsService,
+        QRCodeService,
+        UploadsService,
       ],
       imports: [ParametersModule],
     }).compile();

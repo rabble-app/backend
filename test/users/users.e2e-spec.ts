@@ -66,7 +66,7 @@ describe('UserController (e2e)', () => {
     // get producer category option id to work with
     const result = await prisma.producerCategoryOption.create({
       data: {
-        name: faker.company.catchPhraseNoun() + Math.floor(Math.random() * 30),
+        name: faker.company.catchPhraseNoun() + Math.floor(Math.random() * 10),
       },
     });
     producerCategoryOptionId = result.id;

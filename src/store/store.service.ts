@@ -1,16 +1,16 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfirmOrderDto } from './dto/confirm-order.dto';
+import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { CreateStoreDto } from './dto/create-store.dto';
+import { endOfDay, startOfDay } from 'date-fns';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { UsersService } from '../users/users.service';
 import {
   OpenHours,
   Partner,
   Prisma,
   OrderConfirmationStatus,
 } from '@prisma/client';
-import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
-import { startOfDay, endOfDay } from 'date-fns';
-import { ConfirmOrderDto } from './dto/confirm-order.dto';
-import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StoreService {
@@ -33,7 +33,7 @@ export class StoreService {
     // update the onboarding stage
     await this.usersService.updateUser({
       where: { id: userId },
-      data: { onboardingStage: 1 },
+      data: { onboardingStage: 1, postalCode: createStoreDto.postalCode },
     });
 
     return result;
@@ -52,6 +52,9 @@ export class StoreService {
   ): Promise<OpenHours | null> {
     return await this.prisma.openHours.findUnique({
       where: openHoursWhereUniqueInput,
+      include: {
+        CustomOpenHours: true,
+      },
     });
   }
 
@@ -117,13 +120,6 @@ export class StoreService {
         deadline: true,
         status: true,
         minimumTreshold: true,
-        basket: {
-          select: {
-            id: true,
-            price: true,
-            quantity: true,
-          },
-        },
         team: {
           select: {
             id: true,
@@ -145,6 +141,9 @@ export class StoreService {
               },
             },
           },
+        },
+        _count: {
+          select: { basket: true },
         },
       },
     });
@@ -280,21 +279,24 @@ export class StoreService {
 
   async getOrderWithGroupedBaskets(orderId: string) {
     const result = await this.prisma.$queryRaw<
-      Array<{ product_id: string; total_quantity: number }>
+      Array<{ product_id: string; total_quantity: number; name: string }>
     >`
       SELECT
         o.id,
         b.product_id,
-        SUM(b.quantity) AS total_quantity
+        SUM(b.quantity) AS total_quantity,
+        p.name,
+        p.measures_per_subunit,
+        p.units_of_measure_per_subunit
       FROM
         "orders" o
         JOIN "baskets" b ON o.id = b.order_id
+        LEFT JOIN "products" p ON b.product_id = p.id
       WHERE
         o.id = ${orderId}
       GROUP BY
-        o.id, b.product_id
+        o.id, b.product_id, p.name, p.measures_per_subunit, p.units_of_measure_per_subunit;
     `;
-
     if (result.length === 0) {
       throw new HttpException(
         `Order with ID ${orderId} not found`,
@@ -402,10 +404,12 @@ export class StoreService {
         items: {
           select: {
             id: true,
-            amount: true,
+            quantity: true,
             product: {
               select: {
                 name: true,
+                measuresPerSubUnit: true,
+                unitsOfMeasurePerSubUnit: true,
               },
             },
           },
@@ -553,5 +557,28 @@ export class StoreService {
       skip,
       take,
     };
+  }
+
+  async validateBasketSummary(
+    orderId: string,
+    products: ConfirmOrderDto['products'],
+  ) {
+    const orderProducts = await this.getOrderWithGroupedBaskets(orderId);
+    let hasQuantityDeficit = false;
+    for (const product of products) {
+      const orderProduct = orderProducts.find(
+        (orderProduct) => orderProduct.product_id === product.productId,
+      );
+      if (!orderProduct) {
+        throw new HttpException('Invalid product id', HttpStatus.BAD_REQUEST);
+      }
+      if (+product.quantity < +orderProduct.total_quantity) {
+        hasQuantityDeficit = true;
+      }
+    }
+    if (products.length < orderProducts.length) {
+      hasQuantityDeficit = true;
+    }
+    return !hasQuantityDeficit;
   }
 }

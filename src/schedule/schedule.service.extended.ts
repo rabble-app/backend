@@ -9,6 +9,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { InsightsService } from '../insights/insights.service';
 import { getWeek } from 'date-fns';
+import { QRCodeService } from '../qrcode/qrcode.service';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -19,6 +20,7 @@ export class ScheduleServiceExtended {
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
     private insightsService: InsightsService,
+    private qRCodeService: QRCodeService,
   ) {}
 
   async processCompleteOrders(
@@ -355,6 +357,73 @@ export class ScheduleServiceExtended {
     const currentYear = currentDate.getFullYear();
     await this.insightsService.calculateNWRO(currentWeek, currentYear);
     await this.insightsService.calculateUniqueUsers(currentWeek, currentYear);
+    return true;
+  }
+
+  async handleCustomerCollection(): Promise<boolean> {
+    const fulfilledOrders = await this.prisma.order.findMany({
+      where: {
+        deliveryDate: {
+          lte: new Date(),
+          not: null,
+        },
+        collection: { none: {} },
+      },
+      select: {
+        id: true,
+        payments: {
+          where: {
+            status: 'CAPTURED',
+          },
+        },
+      },
+    });
+
+    // create a collection for each team member and add their products
+    for (const order of fulfilledOrders) {
+      if (order.payments.length > 0) {
+        for (const payment of order.payments) {
+          // for each user that made payment, get there products
+          const userProducts = await this.prisma.basket.findMany({
+            where: {
+              orderId: payment.orderId,
+              userId: payment.userId,
+            },
+          });
+
+          // for each user, create a collection for the user and add there products
+          const collection = await this.prisma.collection.create({
+            data: {
+              orderId: payment.orderId,
+              userId: payment.userId,
+              dateOfCollection: new Date(),
+              items: {
+                createMany: {
+                  data: userProducts.map((product) => ({
+                    productId: product.productId,
+                    quantity: product.quantity,
+                  })),
+                },
+              },
+            },
+          });
+
+          // generate qr code for the collection
+          const qrCode = await this.qRCodeService.generateQRCode(collection.id);
+
+          // update the collection to include the qr code
+          await this.prisma.collection.update({
+            where: {
+              id: collection.id,
+            },
+            data: {
+              qrCode: qrCode.qrCodeUrl,
+            },
+          });
+        }
+      }
+    }
+
     return true;
   }
 }

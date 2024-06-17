@@ -9,6 +9,7 @@ import { UsersModule } from '../users/users.module';
 import { ScheduleServiceExtended } from './schedule.service.extended';
 import { TeamsModule } from '../teams/teams.module';
 import { InsightsModule } from '../insights/insights.module';
+import { QRCodeModule } from '../qrcode/qrcode.module';
 
 @Module({
   controllers: [ScheduleController],
@@ -20,6 +21,7 @@ import { InsightsModule } from '../insights/insights.module';
     UsersModule,
     TeamsModule,
     InsightsModule,
+    QRCodeModule,
   ],
 })
 export class ScheduleModule {}
