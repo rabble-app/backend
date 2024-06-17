@@ -8,6 +8,13 @@ import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 import { UploadsService } from '../../src/uploads/uploads.service';
 import { UploadsService as MockedUploadsService } from '../../__mocks__/uploads.service';
+
+const commonSuccessResponse = (response: any) => {
+  expect(response.body).toHaveProperty('data');
+  expect(response.body.error).toBeUndefined();
+  expect(typeof response.body.data).toBe('object');
+};
+
 describe('StoreController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -225,15 +232,31 @@ describe('StoreController (e2e)', () => {
       expect(typeof response.body.data).toBe('object');
     });
 
+    // return store infomation
+    it('/store/profile/:storeId(GET) should return store information', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/profile/${storeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      commonSuccessResponse(response);
+    });
+
+    // return store open hours information
+    it('/store/open-hours/:storeId(GET) should return store information', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/open-hours/${storeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      commonSuccessResponse(response);
+    });
+
     // return team order details
     it('/store/:teamId/order-details(GET) should return order details', async () => {
       const response = await request(app.getHttpServer())
         .get(`/store/${teamId}/order-details`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
+      commonSuccessResponse(response);
     });
 
     //inbound delivery
