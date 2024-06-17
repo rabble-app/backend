@@ -52,6 +52,9 @@ export class StoreService {
   ): Promise<OpenHours | null> {
     return await this.prisma.openHours.findUnique({
       where: openHoursWhereUniqueInput,
+      include: {
+        CustomOpenHours: true,
+      },
     });
   }
 

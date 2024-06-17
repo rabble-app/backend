@@ -225,6 +225,28 @@ describe('StoreController (e2e)', () => {
       expect(typeof response.body.data).toBe('object');
     });
 
+    // return store infomation
+    it('/store/profile/:storeId(GET) should return store information', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/profile/${storeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // return store open hours information
+    it('/store/open-hours/:storeId(GET) should return store information', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/open-hours/${storeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
     // return team order details
     it('/store/:teamId/order-details(GET) should return order details', async () => {
       const response = await request(app.getHttpServer())

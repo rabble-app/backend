@@ -481,4 +481,68 @@ export class StoreController {
       'Order details returned successfully',
     );
   }
+
+  /**
+   * Get store information.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('profile/:storeId')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'stoereId', required: true, description: 'The store id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store information returned successfully',
+  })
+  async getStoreInformation(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.findStore({ id: storeId });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store information returned successfully',
+    );
+  }
+
+  /**
+   * Get store open hours information.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('open-hours/:storeId')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'stoereId', required: true, description: 'The store id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store open hour information returned successfully',
+  })
+  async getStoreOpenHoursInformation(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.getStoreOpenHours({
+      partnerId: storeId,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store open hour information returned successfully',
+    );
+  }
 }
