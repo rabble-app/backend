@@ -8,6 +8,13 @@ import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 import { UploadsService } from '../../src/uploads/uploads.service';
 import { UploadsService as MockedUploadsService } from '../../__mocks__/uploads.service';
+
+const commonSuccessResponse = (response: any) => {
+  expect(response.body).toHaveProperty('data');
+  expect(response.body.error).toBeUndefined();
+  expect(typeof response.body.data).toBe('object');
+};
+
 describe('StoreController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -231,9 +238,7 @@ describe('StoreController (e2e)', () => {
         .get(`/store/profile/${storeId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
+      commonSuccessResponse(response);
     });
 
     // return store open hours information
@@ -242,9 +247,7 @@ describe('StoreController (e2e)', () => {
         .get(`/store/open-hours/${storeId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
+      commonSuccessResponse(response);
     });
 
     // return team order details
@@ -253,9 +256,7 @@ describe('StoreController (e2e)', () => {
         .get(`/store/${teamId}/order-details`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.error).toBeUndefined();
-      expect(typeof response.body.data).toBe('object');
+      commonSuccessResponse(response);
     });
 
     //inbound delivery
