@@ -2314,6 +2314,166 @@ async function main() {
       rrp: '27.00',
     },
   });
+
+  // producer E
+  // save user record
+  const userRecordE = await prisma.user.upsert({
+    where: { email: 'info@herbfed.co.uk' },
+    update: {},
+    create: {
+      email: 'info@herbfed.co.uk',
+      phone: '234',
+      password: 'rabble-www.info@herbfed.co.uk',
+      role: 'PRODUCER',
+    },
+  });
+
+  // save producer record
+  const producerRecordE = await prisma.producer.upsert({
+    where: { userId: userRecordE.id },
+    update: {},
+    create: {
+      isVerified: true,
+      userId: userRecordE.id,
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Herb+Fed+-+Producer+-+Dark.png',
+      businessName: 'Herb Fed',
+      businessAddress: 'Herb Fed Ltd, Shires Farm, North Yorkshire, YO61 3EH',
+      accountsEmail: 'info@herbfed.co.uk',
+      salesEmail: 'info@herbfed.co.uk',
+      minimumTreshold: 110,
+      website: 'www.herbfedpoultry.co.uk',
+      description:
+        'Herb Fed proudly farm free range award winning Chickens fed a unique diet which includes over 10 varieties of fresh herbs, and happily living out in the field as birds should. By maintaining the highest possible animal welfare standards and enhancing their free range diet with fresh herbs, our birds have a flavour that is difficult to beat.',
+    },
+  });
+
+  // get producer category id
+  const producerCategoryOptionE = await prisma.producerCategoryOption.findFirst(
+    {
+      where: {
+        name: 'Meat',
+      },
+      select: {
+        id: true,
+      },
+    },
+  );
+
+  // add category id to the producer
+  await prisma.producerCategory.upsert({
+    where: {
+      producer_unique_category_option: {
+        producerId: producerRecordE.id,
+        producerCategoryOptionId: producerCategoryOptionE.id,
+      },
+    },
+    update: {},
+    create: {
+      producerId: producerRecordE.id,
+      producerCategoryOptionId: producerCategoryOptionE.id,
+    },
+  });
+
+  // get producer product id
+  const productCategoryEE = await prisma.productCategory.findFirst({
+    where: {
+      name: 'Meat & Poultry',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  // add product 1
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Whole Herb Fed Chicken',
+        producerId: producerRecordE.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Whole Herb Fed Chicken',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+1.png',
+      description:
+        'A truly range free chicken that has foraged in the fields here on the farm in Yorkshire. Their unique diet and thoughtful husbandry result in a large healthy and succulent bird with a delicious depth of flavour.',
+      producerId: producerRecordE.id,
+      categoryId: productCategoryEE.id,
+      type: 'SINGLE',
+      orderUnit: 'Chicken',
+      subUnit: 'Chicken',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 2,
+      price: 12.705,
+      wholesalePrice: 12.1,
+      approvalStatus: 'APPROVED',
+      rrp: 16.15,
+    },
+  });
+
+  // add product 2
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Chicken Breast Fillets',
+        producerId: producerRecordE.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Chicken Breast Fillets',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+2.png',
+      description:
+        '2 x 4 pack of sustainably reared, herb fed, large skinless chicken fillets. Approximately 2.4kg total.',
+      producerId: producerRecordE.id,
+      categoryId: productCategoryEE.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Box',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 2.4,
+      price: 33.264,
+      wholesalePrice: 31.68,
+      approvalStatus: 'APPROVED',
+      rrp: 42,
+    },
+  });
+
+  // add product 3
+  await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
+        name: 'Skinned and Boned Chicken Thighs',
+        producerId: producerRecordE.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'Skinned and Boned Chicken Thighs',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+3.png',
+      description:
+        '2 X 8 pack of sustainably reared, herb fed, bonless and skinned chicken thighs, 800g each, 1.6kg total',
+      producerId: producerRecordE.id,
+      categoryId: productCategoryEE.id,
+      type: 'SINGLE',
+      orderUnit: 'Box',
+      subUnit: 'Box',
+      quantityOfSubUnitPerOrder: 1,
+      unitsOfMeasurePerSubUnit: 'Kg',
+      measuresPerSubUnit: 1.6,
+      price: 23.52,
+      wholesalePrice: 22.4,
+      approvalStatus: 'APPROVED',
+      rrp: 28.4,
+    },
+  });
 }
 main()
   .then(async () => {

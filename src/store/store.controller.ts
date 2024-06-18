@@ -15,6 +15,7 @@ import {
   UseInterceptors,
   ParseFilePipeBuilder,
   UploadedFile,
+  Put,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -41,6 +42,7 @@ import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '../uploads/uploads.service';
 import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
+import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -543,6 +545,52 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store open hour information returned successfully',
+    );
+  }
+
+  /**
+   * Update Store open hour.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Put('/:openHourId/open-hour')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'openHourId',
+    required: true,
+    description: 'The store open hour Id',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store open hour updated successfully',
+  })
+  async updateStoreOpenHour(
+    @Param('openHourId') openHourId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Body() updateOpenHoursDto: UpdateOpenHoursDto,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.updateStoreOpenHours({
+      where: {
+        id: openHourId,
+      },
+      data: {
+        ...this.storeService.UpdateStoreOpenHoursData(
+          openHourId,
+          updateOpenHoursDto,
+        ),
+      },
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store open hour updated successfully',
     );
   }
 }
