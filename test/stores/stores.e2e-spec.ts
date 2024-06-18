@@ -501,5 +501,13 @@ describe('StoreController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(response.body).toHaveProperty('data');
     });
+    it('/store/:store-id/collections/:collection-id(Patch) should update collection status', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/store/${storeId}/collections/${orderCollection.id}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body.error).toBeUndefined();
+      expect(response.body).toHaveProperty('data');
+    });
   });
 });

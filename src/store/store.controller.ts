@@ -22,6 +22,7 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiHeader,
@@ -43,6 +44,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '../uploads/uploads.service';
 import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
+import { OrderCollectionStatus } from '@prisma/client';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -621,6 +623,53 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Collection details returned successfully',
+    );
+  }
+
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiParam({
+    name: 'collectionId',
+    required: true,
+    description: 'The collection id',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          example: 'COLLECTED',
+        },
+      },
+    },
+    required: false,
+  })
+  @UseGuards(AuthGuard)
+  @Patch(':storeId/collections/:collectionId')
+  @UseFilters(HttpExceptionFilter)
+  async markCollectionAsCollected(
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Body('status') status?: OrderCollectionStatus,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.updateCollectionStatus(
+      storeId,
+      collectionId,
+      status,
+    );
+
+    if (!result)
+      throw new HttpException(
+        'Failed to update collection',
+        HttpStatus.BAD_REQUEST,
+      );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Collection marked as collected successfully',
     );
   }
 }
