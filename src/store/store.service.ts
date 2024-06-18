@@ -11,6 +11,7 @@ import {
   Prisma,
   OrderConfirmationStatus,
 } from '@prisma/client';
+import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 
 @Injectable()
 export class StoreService {
@@ -90,6 +91,17 @@ export class StoreService {
   }): Promise<Partner> {
     const { where, data } = params;
     return await this.prisma.partner.update({
+      data,
+      where,
+    });
+  }
+
+  async updateStoreOpenHours(params: {
+    where: Prisma.OpenHoursWhereUniqueInput;
+    data: Prisma.OpenHoursUpdateInput;
+  }): Promise<OpenHours> {
+    const { where, data } = params;
+    return await this.prisma.openHours.update({
       data,
       where,
     });
@@ -580,5 +592,28 @@ export class StoreService {
       hasQuantityDeficit = true;
     }
     return !hasQuantityDeficit;
+  }
+
+  UpdateStoreOpenHoursData(
+    openHourId: string,
+    updateOpenHoursDto: UpdateOpenHoursDto,
+  ): Prisma.OpenHoursUpdateInput {
+    if (updateOpenHoursDto.type == 'ALL_THE_TIME') {
+      return {
+        type: updateOpenHoursDto.type,
+      };
+    } else {
+      return {
+        type: updateOpenHoursDto.type,
+        CustomOpenHours: {
+          deleteMany: {
+            openHourId,
+          },
+          createMany: {
+            data: [...updateOpenHoursDto.customOpenHours],
+          },
+        },
+      };
+    }
   }
 }

@@ -30,6 +30,7 @@ describe('StoreController (e2e)', () => {
   let productCategoryId: string;
   let productId: string;
   let orderCollection: Collection;
+  let openHourId: string;
 
   const store = {
     name: faker.internet.userName(),
@@ -43,7 +44,6 @@ describe('StoreController (e2e)', () => {
   };
 
   const openHours = {
-    storeId: '',
     type: 'MON_TO_FRI',
     customOpenHours: [
       {
@@ -208,7 +208,6 @@ describe('StoreController (e2e)', () => {
       expect(response.body).toHaveProperty('error');
       expect(typeof response.body.error).toBe('string');
     });
-
     it('/store/open-hours(PATCH) should add store open hours if all required data is supplied', async () => {
       const response = await request(app.getHttpServer())
         .patch('/store/open-hours')
@@ -218,6 +217,7 @@ describe('StoreController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
+      openHourId = response.body.data.id;
     });
 
     // update store info
@@ -226,6 +226,18 @@ describe('StoreController (e2e)', () => {
         .patch(`/store/${storeId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({ city: 'London' })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // update store open hours
+    it('/store/:storeOpenHourId/open-hour(PUT) should update store open hours if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .put(`/store/${openHourId}/open-hour`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({ ...openHours })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
