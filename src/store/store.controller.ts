@@ -593,4 +593,34 @@ export class StoreController {
       'Store open hour updated successfully',
     );
   }
+
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiParam({
+    name: 'collectionId',
+    required: true,
+    description: 'The collection id',
+  })
+  @UseGuards(AuthGuard)
+  @Get(':storeId/collections/:collectionId')
+  @UseFilters(HttpExceptionFilter)
+  async getCollectionDetails(
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.getCollectionDetails(
+      storeId,
+      collectionId,
+    );
+    if (!result) {
+      throw new HttpException('Invalid Collection Id', HttpStatus.BAD_REQUEST);
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Collection details returned successfully',
+    );
+  }
 }

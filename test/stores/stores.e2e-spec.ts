@@ -486,5 +486,20 @@ describe('StoreController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(response.body.data).toHaveLength(0);
     });
+    it('/store/:store-id/collections/:collection-id(Get) should fail to get collection details if the id is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/collections/invalid-collection-id`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+      expect(response.body.errors).toBe('Invalid Collection Id');
+    });
+    it('/store/:store-id/collections/:collection-id(Get) should get a collection details', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/collections/${orderCollection.id}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body.error).toBeUndefined();
+      expect(response.body).toHaveProperty('data');
+    });
   });
 });
