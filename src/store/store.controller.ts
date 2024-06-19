@@ -16,6 +16,7 @@ import {
   ParseFilePipeBuilder,
   UploadedFile,
   Put,
+  Delete,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -46,7 +47,7 @@ import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 import { OrderCollectionStatus } from '@prisma/client';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UsersService } from 'users/users.service';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -733,9 +734,84 @@ export class StoreController {
     return formatResponse(
       result,
       res,
-      HttpStatus.OK,
+      HttpStatus.CREATED,
       false,
       'Store employee added successfully',
+    );
+  }
+
+  /**
+   * Remove store employee.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Delete('/:storeId/remove-employee/:employeeId')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'storeId',
+    required: true,
+    description: 'The store id',
+  })
+  @ApiParam({
+    name: 'employeeId',
+    required: true,
+    description: 'The employee id',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiOkResponse({
+    description: 'Store employee removed successfully',
+  })
+  async removeEmployee(
+    @Param('storeId') storeId: string,
+    @Param('employeeId') employeeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.removeEmployeeFromStore(
+      storeId,
+      employeeId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store employee removed successfully',
+    );
+  }
+
+  /**
+   * Get store employees.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':storeId/employees')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'stoereId', required: true, description: 'The store id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store employees returned successfully',
+  })
+  async getStoreEmployees(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.getStoreEmployees(storeId);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store employees returned successfully',
     );
   }
 }

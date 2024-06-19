@@ -11,9 +11,12 @@ import {
   Prisma,
   OrderConfirmationStatus,
   OrderCollectionStatus,
+  User,
+  Employee,
 } from '@prisma/client';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { IStoreEmployee } from 'lib/types';
 
 @Injectable()
 export class StoreService {
@@ -680,7 +683,7 @@ export class StoreService {
   async addEmployeeToStore(
     storeId: string,
     createEmployeeDto: CreateEmployeeDto,
-  ) {
+  ): Promise<{ user: User; employee: Employee }> {
     // create user account for the employee
     const user = await this.usersService.createUser({
       ...createEmployeeDto,
@@ -694,5 +697,35 @@ export class StoreService {
       user,
       employee,
     };
+  }
+
+  async removeEmployeeFromStore(
+    storeId: string,
+    employeeId: string,
+  ): Promise<Employee> {
+    return await this.prisma.employee.delete({
+      where: {
+        id: employeeId,
+        partnerId: storeId,
+      },
+    });
+  }
+
+  async getStoreEmployees(storeId: string): Promise<IStoreEmployee[]> {
+    return await this.prisma.employee.findMany({
+      where: {
+        partnerId: storeId,
+      },
+      select: {
+        id: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+      },
+    });
   }
 }

@@ -214,6 +214,24 @@ describe('StoreController (e2e)', () => {
       employeeId = response.body.data.employee.id;
     });
 
+    // return store employees
+    it('/store/:storeId/employees(GET) should add new employee to the store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/employees`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      commonSuccessResponse(response);
+    });
+
+    // remove employee
+    it('/store/:storeId/remove-employee/:employeeId(DELETE) should remove employee from the store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/store/${storeId}/remove-employee/${employeeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      commonSuccessResponse(response);
+    });
+
     // store open hours
     it('/store/open-hours(PATCH) should not add store open hours if incomplete data is supplied', async () => {
       const response = await request(app.getHttpServer())
