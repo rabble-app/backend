@@ -573,13 +573,6 @@ export class StoreService {
   getCollectionSelectAttributes() {
     return {
       id: true,
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
       order: {
         select: {
           team: {
@@ -588,6 +581,7 @@ export class StoreService {
               name: true,
               producer: {
                 select: {
+                  businessName: true,
                   categories: {
                     select: {
                       category: {

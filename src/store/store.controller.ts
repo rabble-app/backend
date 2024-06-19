@@ -596,6 +596,12 @@ export class StoreController {
     );
   }
 
+  /**
+   * Get single collection details.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
   @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
   @ApiParam({
     name: 'collectionId',
@@ -626,6 +632,12 @@ export class StoreController {
     );
   }
 
+  /**
+   * Mark collection as collected.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
   @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
   @ApiParam({
     name: 'collectionId',
