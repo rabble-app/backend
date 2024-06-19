@@ -31,6 +31,7 @@ describe('StoreController (e2e)', () => {
   let productId: string;
   let orderCollection: Collection;
   let openHourId: string;
+  let employeeId: string;
 
   const store = {
     name: faker.internet.userName(),
@@ -52,6 +53,12 @@ describe('StoreController (e2e)', () => {
         endTime: '10:00pm',
       },
     ],
+  };
+
+  const employeeInfo = {
+    phone: faker.phone.number('+48 91 ### ## ##'),
+    firstName: 'Dummy First name',
+    lastName: 'Dummy Last name',
   };
 
   beforeAll(async () => {
@@ -194,6 +201,17 @@ describe('StoreController (e2e)', () => {
         .expect(409);
       expect(response.body).toHaveProperty('error');
       expect(typeof response.body.error).toBe('string');
+    });
+
+    // add store employee
+    it('/store/:storeId/add-employee(POST) should add new employee to the store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post(`/store/${storeId}/add-employee`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(employeeInfo)
+        .expect(201);
+      commonSuccessResponse(response);
+      employeeId = response.body.data.employee.id;
     });
 
     // store open hours

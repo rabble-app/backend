@@ -13,6 +13,7 @@ import {
   OrderCollectionStatus,
 } from '@prisma/client';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
 
 @Injectable()
 export class StoreService {
@@ -547,7 +548,7 @@ export class StoreService {
     return !hasQuantityDeficit;
   }
 
-  UpdateStoreOpenHoursData(
+  updateStoreOpenHoursData(
     openHourId: string,
     updateOpenHoursDto: UpdateOpenHoursDto,
   ): Prisma.OpenHoursUpdateInput {
@@ -667,11 +668,31 @@ export class StoreService {
     });
     return updated.status === 'COLLECTED';
   }
+
   async validateStore(storeId: string) {
     const store = await this.findStore({ id: storeId });
     if (!store) {
       throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
     }
     return store;
+  }
+
+  async addEmployeeToStore(
+    storeId: string,
+    createEmployeeDto: CreateEmployeeDto,
+  ) {
+    // create user account for the employee
+    const user = await this.usersService.createUser({
+      ...createEmployeeDto,
+      onboardingStage: 4,
+    });
+    // add the employee to the store
+    const employee = await this.prisma.employee.create({
+      data: { userId: user.id, partnerId: storeId },
+    });
+    return {
+      user,
+      employee,
+    };
   }
 }
