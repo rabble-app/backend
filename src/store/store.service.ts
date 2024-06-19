@@ -10,6 +10,7 @@ import {
   Partner,
   Prisma,
   OrderConfirmationStatus,
+  OrderCollectionStatus,
 } from '@prisma/client';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 
@@ -379,55 +380,7 @@ export class StoreService {
       where: this.getCollectionFilter(partnerId, period, search),
       ...(skip && { skip }),
       ...(limit && { take: limit }),
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        order: {
-          select: {
-            team: {
-              select: {
-                id: true,
-                name: true,
-                producer: {
-                  select: {
-                    categories: {
-                      select: {
-                        category: {
-                          select: {
-                            name: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        dateOfCollection: true,
-        status: true,
-        items: {
-          select: {
-            id: true,
-            quantity: true,
-            product: {
-              select: {
-                name: true,
-                measuresPerSubUnit: true,
-                unitsOfMeasurePerSubUnit: true,
-              },
-            },
-          },
-        },
-        createdAt: true,
-      },
+      select: this.getCollectionSelectAttributes(),
     });
   }
 
@@ -615,5 +568,110 @@ export class StoreService {
         },
       };
     }
+  }
+
+  getCollectionSelectAttributes() {
+    return {
+      id: true,
+      order: {
+        select: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              producer: {
+                select: {
+                  businessName: true,
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      dateOfCollection: true,
+      status: true,
+      items: {
+        select: {
+          id: true,
+          quantity: true,
+          product: {
+            select: {
+              name: true,
+              measuresPerSubUnit: true,
+              unitsOfMeasurePerSubUnit: true,
+            },
+          },
+        },
+      },
+      createdAt: true,
+    };
+  }
+
+  async getCollectionDetails(storeId: string, collectionId: string) {
+    const store = await this.findStore({ id: storeId });
+    if (!store) {
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+    }
+    return this.prisma.collection.findUnique({
+      where: {
+        id: collectionId,
+        order: {
+          team: {
+            hostId: store.userId,
+          },
+        },
+      },
+      select: this.getCollectionSelectAttributes(),
+    });
+  }
+
+  async updateCollectionStatus(
+    storeId: string,
+    collectionId: string,
+    status: OrderCollectionStatus = 'COLLECTED',
+  ) {
+    const store = await this.validateStore(storeId);
+    const collection = await this.prisma.collection.findUnique({
+      where: {
+        id: collectionId,
+        order: {
+          team: {
+            hostId: store.userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+    if (!collection) {
+      throw new HttpException('Invalid collection id', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.prisma.collection.update({
+      where: {
+        id: collectionId,
+      },
+      data: {
+        status,
+      },
+    });
+    return updated.status === 'COLLECTED';
+  }
+  async validateStore(storeId: string) {
+    const store = await this.findStore({ id: storeId });
+    if (!store) {
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+    }
+    return store;
   }
 }
