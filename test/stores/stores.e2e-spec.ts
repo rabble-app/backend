@@ -313,7 +313,9 @@ describe('StoreController (e2e)', () => {
         .get('/store/invalid-store-id/deliveries?period=today')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
-      expect(response.body.message).toBe('Invalid store id');
+      expect(response.body.message).toBe(
+        'Invalid store id. User must be a store employee',
+      );
     });
     it('/store/(Get) should get store inbound deliveries for today successfully', async () => {
       const response = await request(app.getHttpServer())
@@ -459,7 +461,9 @@ describe('StoreController (e2e)', () => {
         .get('/store/invalid-store-id/collections?period=today')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
-      expect(response.body.message).toBe('Invalid store id');
+      expect(response.body.message).toBe(
+        'Invalid store id. User must be a store employee',
+      );
     });
     it('/store/:store-id/collections(Get) should get store item collections for today successfully', async () => {
       const response = await request(app.getHttpServer())
