@@ -294,6 +294,16 @@ export class StoreService {
     return storeInfo.Employee.some((employee) => employee.userId === userId);
   }
 
+  async checkStoreAuthorization(userId: string, storeId: string) {
+    const isValidEmployee = await this.isUserAnEmployee(userId, storeId);
+    if (!isValidEmployee) {
+      throw new HttpException(
+        'Invalid store id. User must be a store employee',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async getOrderWithGroupedBaskets(orderId: string) {
     const result = await this.prisma.$queryRaw<
       Array<{ product_id: string; total_quantity: number; name: string }>
@@ -518,9 +528,7 @@ export class StoreService {
         'Invalid period query, acceptable values are today | upcoming | past',
         HttpStatus.BAD_REQUEST,
       );
-    if (!store || store.userId !== userId)
-      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
-
+    await this.checkStoreAuthorization(userId, storeId);
     return {
       store,
       skip,
@@ -688,6 +696,7 @@ export class StoreService {
     const user = await this.usersService.createUser({
       ...createEmployeeDto,
       onboardingStage: 4,
+      role: 'EMPLOYEE',
     });
     // add the employee to the store
     const employee = await this.prisma.employee.create({

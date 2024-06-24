@@ -826,8 +826,7 @@ async function main() {
     'Farm and Dairy',
     'Wine',
   ];
-  for (let index = 0; index < producerCategories.length; index++) {
-    const element = producerCategories[index];
+  for (const element of producerCategories) {
     await prisma.producerCategoryOption.upsert({
       where: { name: element },
       update: {},
@@ -848,8 +847,8 @@ async function main() {
     'White',
     'Pet Nat',
   ];
-  for (let index = 0; index < productCategories.length; index++) {
-    const element = productCategories[index];
+
+  for (const element of productCategories) {
     await prisma.productCategory.upsert({
       where: { name: element },
       update: {},
@@ -2427,7 +2426,7 @@ async function main() {
     create: {
       name: 'Chicken Breast Fillets',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+2.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+3.png',
       description:
         '2 x 4 pack of sustainably reared, herb fed, large skinless chicken fillets. Approximately 2.4kg total.',
       producerId: producerRecordE.id,
@@ -2457,7 +2456,7 @@ async function main() {
     create: {
       name: 'Skinned and Boned Chicken Thighs',
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+3.png',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/Product+2.png',
       description:
         '2 X 8 pack of sustainably reared, herb fed, bonless and skinned chicken thighs, 800g each, 1.6kg total',
       producerId: producerRecordE.id,

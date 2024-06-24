@@ -58,6 +58,27 @@ export class UsersService {
             },
           },
         },
+        employee: {
+          select: {
+            partner: {
+              select: {
+                id: true,
+                name: true,
+                postalCode: true,
+                openhour: {
+                  select: {
+                    type: true,
+                  },
+                },
+                user: {
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             employee: true,

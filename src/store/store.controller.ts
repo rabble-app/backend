@@ -313,16 +313,9 @@ export class StoreController {
       ...body,
       products: JSON.parse(body.products as any) as ConfirmOrderDto['products'],
     };
-    const isValidEmployee = await this.storeService.isUserAnEmployee(
-      req.user.userId,
-      storeId,
-    );
-    if (!isValidEmployee) {
-      throw new HttpException(
-        'Invalid store id. User must be a store employee',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+
+    await this.storeService.checkStoreAuthorization(req.user.userId, storeId);
+
     const hasValidBasketSummary = await this.storeService.validateBasketSummary(
       confirmOrderDto.orderId,
       confirmOrderDto.products,
@@ -667,8 +660,10 @@ export class StoreController {
     @Param('storeId') storeId: string,
     @Param('collectionId') collectionId: string,
     @Res({ passthrough: true }) res: Response,
+    @Request() req,
     @Body('status') status?: OrderCollectionStatus,
   ): Promise<IAPIResponse> {
+    await this.storeService.checkStoreAuthorization(req.user.userId, storeId);
     const result = await this.storeService.updateCollectionStatus(
       storeId,
       collectionId,
