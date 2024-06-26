@@ -146,6 +146,7 @@ describe('StoreController (e2e)', () => {
         quantity: 2,
         userId,
         productId: product.id,
+        paymentStatus: 'CAPTURED',
       },
     });
 
