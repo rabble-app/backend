@@ -388,6 +388,7 @@ export class ScheduleServiceExtended {
             where: {
               orderId: payment.orderId,
               userId: payment.userId,
+              paymentStatus: 'CAPTURED',
             },
           });
 
