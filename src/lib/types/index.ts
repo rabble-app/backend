@@ -310,3 +310,8 @@ export interface IProducerDeliveryDaysInfo {
     }[];
   }[];
 }
+
+export interface IStoreEmployee {
+  user: { phone: string; firstName: string; lastName: string };
+  id: string;
+}

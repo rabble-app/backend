@@ -15,12 +15,15 @@ import {
   UseInterceptors,
   ParseFilePipeBuilder,
   UploadedFile,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiHeader,
@@ -41,6 +44,10 @@ import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '../uploads/uploads.service';
 import { TeamsServiceExtension2 } from '../teams/teams.service.extension2';
+import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
+import { OrderCollectionStatus } from '@prisma/client';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('store')
 @ApiBearerAuth()
@@ -50,6 +57,7 @@ export class StoreController {
     private readonly storeService: StoreService,
     private readonly uploadsService: UploadsService,
     private readonly teamsServiceExtension2: TeamsServiceExtension2,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -305,16 +313,9 @@ export class StoreController {
       ...body,
       products: JSON.parse(body.products as any) as ConfirmOrderDto['products'],
     };
-    const isValidEmployee = await this.storeService.isUserAnEmployee(
-      req.user.userId,
-      storeId,
-    );
-    if (!isValidEmployee) {
-      throw new HttpException(
-        'Invalid store id. User must be a store employee',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+
+    await this.storeService.checkStoreAuthorization(req.user.userId, storeId);
+
     const hasValidBasketSummary = await this.storeService.validateBasketSummary(
       confirmOrderDto.orderId,
       confirmOrderDto.products,
@@ -543,6 +544,269 @@ export class StoreController {
       HttpStatus.OK,
       false,
       'Store open hour information returned successfully',
+    );
+  }
+
+  /**
+   * Update Store open hour.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Put('/:openHourId/open-hour')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'openHourId',
+    required: true,
+    description: 'The store open hour Id',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store open hour updated successfully',
+  })
+  async updateStoreOpenHour(
+    @Param('openHourId') openHourId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Body() updateOpenHoursDto: UpdateOpenHoursDto,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.updateStoreOpenHours({
+      where: {
+        id: openHourId,
+      },
+      data: {
+        ...this.storeService.updateStoreOpenHoursData(
+          openHourId,
+          updateOpenHoursDto,
+        ),
+      },
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store open hour updated successfully',
+    );
+  }
+
+  /**
+   * Get single collection details.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiParam({
+    name: 'collectionId',
+    required: true,
+    description: 'The collection id',
+  })
+  @UseGuards(AuthGuard)
+  @Get(':storeId/collections/:collectionId')
+  @UseFilters(HttpExceptionFilter)
+  async getCollectionDetails(
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.getCollectionDetails(
+      storeId,
+      collectionId,
+    );
+    if (!result) {
+      throw new HttpException('Invalid Collection Id', HttpStatus.BAD_REQUEST);
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Collection details returned successfully',
+    );
+  }
+
+  /**
+   * Mark collection as collected.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @ApiParam({ name: 'storeId', required: true, description: 'The store id' })
+  @ApiParam({
+    name: 'collectionId',
+    required: true,
+    description: 'The collection id',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          example: 'COLLECTED',
+        },
+      },
+    },
+    required: false,
+  })
+  @UseGuards(AuthGuard)
+  @Patch(':storeId/collections/:collectionId')
+  @UseFilters(HttpExceptionFilter)
+  async markCollectionAsCollected(
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Request() req,
+    @Body('status') status?: OrderCollectionStatus,
+  ): Promise<IAPIResponse> {
+    await this.storeService.checkStoreAuthorization(req.user.userId, storeId);
+    const result = await this.storeService.updateCollectionStatus(
+      storeId,
+      collectionId,
+      status,
+    );
+
+    if (!result)
+      throw new HttpException(
+        'Failed to update collection',
+        HttpStatus.BAD_REQUEST,
+      );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Collection marked as collected successfully',
+    );
+  }
+
+  /**
+   * Add store employee.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('/:storeId/add-employee')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'storeId',
+    required: true,
+    description: 'The store Id',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store employee added successfully',
+  })
+  async addEmployee(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+    @Body() createEmployeeDto: CreateEmployeeDto,
+  ): Promise<IAPIResponse> {
+    const isExisting = await this.usersService.findUser({
+      phone: createEmployeeDto.phone,
+    });
+    if (isExisting) {
+      return formatResponse(
+        'Duplicate Phone',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'Phone number already exists',
+      );
+    }
+    const result = await this.storeService.addEmployeeToStore(
+      storeId,
+      createEmployeeDto,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.CREATED,
+      false,
+      'Store employee added successfully',
+    );
+  }
+
+  /**
+   * Remove store employee.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Delete('/:storeId/remove-employee/:employeeId')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'storeId',
+    required: true,
+    description: 'The store id',
+  })
+  @ApiParam({
+    name: 'employeeId',
+    required: true,
+    description: 'The employee id',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiOkResponse({
+    description: 'Store employee removed successfully',
+  })
+  async removeEmployee(
+    @Param('storeId') storeId: string,
+    @Param('employeeId') employeeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.removeEmployeeFromStore(
+      storeId,
+      employeeId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store employee removed successfully',
+    );
+  }
+
+  /**
+   * Get store employees.
+   * @param {Response} res - The payload.
+   * @memberof StoreController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get(':storeId/employees')
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({ name: 'stoereId', required: true, description: 'The store id' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer <access_token>',
+  })
+  @ApiCreatedResponse({
+    description: 'Store employees returned successfully',
+  })
+  async getStoreEmployees(
+    @Param('storeId') storeId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.storeService.getStoreEmployees(storeId);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Store employees returned successfully',
     );
   }
 }

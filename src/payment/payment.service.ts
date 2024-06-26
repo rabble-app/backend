@@ -1,7 +1,14 @@
 import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
-import { BasketC, Order, Payment, Prisma } from '@prisma/client';
+import {
+  Basket,
+  BasketC,
+  Order,
+  Payment,
+  Prisma,
+  ProductPaymentStatus,
+} from '@prisma/client';
 import { CreateIntentDto } from './dto/create-intent.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
@@ -316,6 +323,12 @@ export class PaymentService {
 
   async saveBulkBasket(addBulkBasketDto: AddBulkBasketDto) {
     try {
+      // check if team is from partner's hub
+      const { partnerId } = await this.prisma.buyingTeam.findUnique({
+        where: {
+          id: addBulkBasketDto.teamId,
+        },
+      });
       const basketRecord = addBulkBasketDto.basket.map((item: AddToBasket) => {
         return {
           teamId: addBulkBasketDto.teamId,
@@ -358,6 +371,9 @@ export class PaymentService {
               productId: item.productId,
               quantity: item.quantity,
               price: item.price,
+              paymentStatus: partnerId
+                ? ProductPaymentStatus.PENDING
+                : ProductPaymentStatus.AUTHORIZED,
             };
           },
         );
@@ -506,5 +522,43 @@ export class PaymentService {
 
   async returnPaymentIntent(paymentIntentId: string): Promise<any | null> {
     return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+  }
+
+  /**
+   * Updates a single basket in the database based on the provided where and data parameters.
+   *
+   * @param params - An object containing the where and data parameters for the update operation.
+   * @param params.where - A Prisma.BasketWhereUniqueInput object that specifies the unique identifier of the basket to update.
+   * @param params.data - A Prisma.BasketUpdateInput object that specifies the data to update for the matching basket.
+   * @returns A Promise that resolves to the updated Basket object.
+   */
+  async updateBasket(params: {
+    where: Prisma.BasketWhereUniqueInput;
+    data: Prisma.BasketUpdateInput;
+  }): Promise<Basket> {
+    const { where, data } = params;
+    return await this.prisma.basket.update({
+      data,
+      where,
+    });
+  }
+
+  /**
+   * Updates multiple baskets in the database based on the provided where and data parameters.
+   *
+   * @param params - An object containing the where and data parameters for the update operation.
+   * @param params.where - A Prisma.BasketWhereInput object that specifies the conditions for the update operation.
+   * @param params.data - A Prisma.BasketUpdateInput object that specifies the data to update for the matching baskets.
+   * @returns A Promise that resolves to an object containing the result of the update operation.
+   */
+  async updateBasketBulk(params: {
+    where: Prisma.BasketWhereInput;
+    data: Prisma.BasketUpdateInput;
+  }): Promise<object> {
+    const { where, data } = params;
+    return await this.prisma.basket.updateMany({
+      data,
+      where,
+    });
   }
 }

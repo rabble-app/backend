@@ -30,6 +30,8 @@ describe('StoreController (e2e)', () => {
   let productCategoryId: string;
   let productId: string;
   let orderCollection: Collection;
+  let openHourId: string;
+  let employeeId: string;
 
   const store = {
     name: faker.internet.userName(),
@@ -43,7 +45,6 @@ describe('StoreController (e2e)', () => {
   };
 
   const openHours = {
-    storeId: '',
     type: 'MON_TO_FRI',
     customOpenHours: [
       {
@@ -52,6 +53,12 @@ describe('StoreController (e2e)', () => {
         endTime: '10:00pm',
       },
     ],
+  };
+
+  const employeeInfo = {
+    phone: faker.phone.number('+48 91 ### ## ##'),
+    firstName: 'Dummy First name',
+    lastName: 'Dummy Last name',
   };
 
   beforeAll(async () => {
@@ -139,6 +146,7 @@ describe('StoreController (e2e)', () => {
         quantity: 2,
         userId,
         productId: product.id,
+        paymentStatus: 'CAPTURED',
       },
     });
 
@@ -196,6 +204,35 @@ describe('StoreController (e2e)', () => {
       expect(typeof response.body.error).toBe('string');
     });
 
+    // add store employee
+    it('/store/:storeId/add-employee(POST) should add new employee to the store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .post(`/store/${storeId}/add-employee`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(employeeInfo)
+        .expect(201);
+      commonSuccessResponse(response);
+      employeeId = response.body.data.employee.id;
+    });
+
+    // return store employees
+    it('/store/:storeId/employees(GET) should add new employee to the store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/employees`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      commonSuccessResponse(response);
+    });
+
+    // remove employee
+    it('/store/:storeId/remove-employee/:employeeId(DELETE) should remove employee from the store if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/store/${storeId}/remove-employee/${employeeId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      commonSuccessResponse(response);
+    });
+
     // store open hours
     it('/store/open-hours(PATCH) should not add store open hours if incomplete data is supplied', async () => {
       const response = await request(app.getHttpServer())
@@ -208,7 +245,6 @@ describe('StoreController (e2e)', () => {
       expect(response.body).toHaveProperty('error');
       expect(typeof response.body.error).toBe('string');
     });
-
     it('/store/open-hours(PATCH) should add store open hours if all required data is supplied', async () => {
       const response = await request(app.getHttpServer())
         .patch('/store/open-hours')
@@ -218,6 +254,7 @@ describe('StoreController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(typeof response.body.data).toBe('object');
+      openHourId = response.body.data.id;
     });
 
     // update store info
@@ -226,6 +263,18 @@ describe('StoreController (e2e)', () => {
         .patch(`/store/${storeId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({ city: 'London' })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    // update store open hours
+    it('/store/:storeOpenHourId/open-hour(PUT) should update store open hours if all required data is supplied', async () => {
+      const response = await request(app.getHttpServer())
+        .put(`/store/${openHourId}/open-hour`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({ ...openHours })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
@@ -265,7 +314,9 @@ describe('StoreController (e2e)', () => {
         .get('/store/invalid-store-id/deliveries?period=today')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
-      expect(response.body.message).toBe('Invalid store id');
+      expect(response.body.message).toBe(
+        'Invalid store id. User must be a store employee',
+      );
     });
     it('/store/(Get) should get store inbound deliveries for today successfully', async () => {
       const response = await request(app.getHttpServer())
@@ -411,7 +462,9 @@ describe('StoreController (e2e)', () => {
         .get('/store/invalid-store-id/collections?period=today')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(400);
-      expect(response.body.message).toBe('Invalid store id');
+      expect(response.body.message).toBe(
+        'Invalid store id. User must be a store employee',
+      );
     });
     it('/store/:store-id/collections(Get) should get store item collections for today successfully', async () => {
       const response = await request(app.getHttpServer())
@@ -473,6 +526,29 @@ describe('StoreController (e2e)', () => {
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
       expect(response.body.data).toHaveLength(0);
+    });
+    it('/store/:store-id/collections/:collection-id(Get) should fail to get collection details if the id is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/collections/invalid-collection-id`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+      expect(response.body.errors).toBe('Invalid Collection Id');
+    });
+    it('/store/:store-id/collections/:collection-id(Get) should get a collection details', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/store/${storeId}/collections/${orderCollection.id}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body.error).toBeUndefined();
+      expect(response.body).toHaveProperty('data');
+    });
+    it('/store/:store-id/collections/:collection-id(Patch) should update collection status', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/store/${storeId}/collections/${orderCollection.id}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body.error).toBeUndefined();
+      expect(response.body).toHaveProperty('data');
     });
   });
 });

@@ -14,6 +14,7 @@ import { UsersService } from '../../src/users/users.service';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
 import { Decimal } from '@prisma/client/runtime/library';
+import { ProductPaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class ScheduleService {
@@ -184,7 +185,7 @@ export class ScheduleService {
               },
             });
           if (portionedProducts && portionedProducts.length > 0) {
-            portionedProducts.forEach((portionedProduct) => {
+            portionedProducts.forEach(async (portionedProduct) => {
               if (
                 portionedProduct &&
                 portionedProduct.PartitionedProductUsersRecord.length > 0
@@ -193,6 +194,20 @@ export class ScheduleService {
                   +amountToCapture -
                     +portionedProduct.PartitionedProductUsersRecord[0].amount,
                 );
+
+                // mark the product as refunded here
+                await this.paymentService.updateBasket({
+                  where: {
+                    user_unique_product: {
+                      userId: payment.userId,
+                      productId: portionedProduct.productId,
+                      orderId: payment.orderId,
+                    },
+                  },
+                  data: {
+                    paymentStatus: ProductPaymentStatus.REFUNDED,
+                  },
+                });
               }
             });
           }
@@ -217,6 +232,21 @@ export class ScheduleService {
                   status: PaymentStatus.CAPTURED,
                 },
               });
+
+              // mark the product as captured
+              await this.paymentService.updateBasketBulk({
+                where: {
+                  userId: payment.userId,
+                  orderId: payment.orderId,
+                  paymentStatus: {
+                    not: ProductPaymentStatus.REFUNDED,
+                  },
+                },
+                data: {
+                  paymentStatus: ProductPaymentStatus.CAPTURED,
+                },
+              });
+
               // send notification
               await this.notificationsService.createNotification({
                 title: 'Rabble Payment Capture Success',

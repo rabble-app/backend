@@ -77,6 +77,7 @@ export class AuthService {
           const token = this.generateToken({
             phone: verifyOTPDto.phone,
             userId: userExist.id,
+            role: userExist.role,
           });
           userExist['token'] = token;
         } else {
@@ -99,6 +100,7 @@ export class AuthService {
           const token = this.generateToken({
             phone: verifyOTPDto.phone,
             userId: userExist.id,
+            role,
           });
 
           userExist['token'] = token;

@@ -20,10 +20,6 @@ describe('ScheduleController (e2e)', () => {
     await app.listen(process.env.PORT);
   }, testTime);
 
-  // afterAll(async () => {
-  //   await app.close();
-  // }, testTime);
-
   describe('ScheduleController (e2e)', () => {
     it(
       '/schedule/cancel-orders(GET) should cancel orders if deadline has reached and threshold was not reached',

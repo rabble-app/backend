@@ -58,6 +58,27 @@ export class UsersService {
             },
           },
         },
+        employee: {
+          select: {
+            partner: {
+              select: {
+                id: true,
+                name: true,
+                postalCode: true,
+                openhour: {
+                  select: {
+                    type: true,
+                  },
+                },
+                user: {
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             employee: true,
@@ -89,17 +110,6 @@ export class UsersService {
       await this.updateStripeCustomerInfo(result.stripeCustomerId, {
         firstName: result.firstName,
         lastName: result.lastName,
-      });
-    }
-
-    if (
-      result.role == 'PARTNER' &&
-      result.firstName != null &&
-      !data.onboardingStage
-    ) {
-      await this.prisma.user.update({
-        where: { id: result.id },
-        data: { onboardingStage: 2 },
       });
     }
     return result;

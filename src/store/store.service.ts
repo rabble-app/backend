@@ -10,7 +10,13 @@ import {
   Partner,
   Prisma,
   OrderConfirmationStatus,
+  OrderCollectionStatus,
+  User,
+  Employee,
 } from '@prisma/client';
+import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { IStoreEmployee } from 'lib/types';
 
 @Injectable()
 export class StoreService {
@@ -90,6 +96,17 @@ export class StoreService {
   }): Promise<Partner> {
     const { where, data } = params;
     return await this.prisma.partner.update({
+      data,
+      where,
+    });
+  }
+
+  async updateStoreOpenHours(params: {
+    where: Prisma.OpenHoursWhereUniqueInput;
+    data: Prisma.OpenHoursUpdateInput;
+  }): Promise<OpenHours> {
+    const { where, data } = params;
+    return await this.prisma.openHours.update({
       data,
       where,
     });
@@ -277,6 +294,16 @@ export class StoreService {
     return storeInfo.Employee.some((employee) => employee.userId === userId);
   }
 
+  async checkStoreAuthorization(userId: string, storeId: string) {
+    const isValidEmployee = await this.isUserAnEmployee(userId, storeId);
+    if (!isValidEmployee) {
+      throw new HttpException(
+        'Invalid store id. User must be a store employee',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async getOrderWithGroupedBaskets(orderId: string) {
     const result = await this.prisma.$queryRaw<
       Array<{ product_id: string; total_quantity: number; name: string }>
@@ -293,7 +320,8 @@ export class StoreService {
         JOIN "baskets" b ON o.id = b.order_id
         LEFT JOIN "products" p ON b.product_id = p.id
       WHERE
-        o.id = ${orderId}
+        o.id = ${orderId} AND
+        b.payment_status = 'CAPTURED'
       GROUP BY
         o.id, b.product_id, p.name, p.measures_per_subunit, p.units_of_measure_per_subunit;
     `;
@@ -367,55 +395,7 @@ export class StoreService {
       where: this.getCollectionFilter(partnerId, period, search),
       ...(skip && { skip }),
       ...(limit && { take: limit }),
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        order: {
-          select: {
-            team: {
-              select: {
-                id: true,
-                name: true,
-                producer: {
-                  select: {
-                    categories: {
-                      select: {
-                        category: {
-                          select: {
-                            name: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        dateOfCollection: true,
-        status: true,
-        items: {
-          select: {
-            id: true,
-            quantity: true,
-            product: {
-              select: {
-                name: true,
-                measuresPerSubUnit: true,
-                unitsOfMeasurePerSubUnit: true,
-              },
-            },
-          },
-        },
-        createdAt: true,
-      },
+      select: this.getCollectionSelectAttributes(),
     });
   }
 
@@ -549,9 +529,7 @@ export class StoreService {
         'Invalid period query, acceptable values are today | upcoming | past',
         HttpStatus.BAD_REQUEST,
       );
-    if (!store || store.userId !== userId)
-      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
-
+    await this.checkStoreAuthorization(userId, storeId);
     return {
       store,
       skip,
@@ -580,5 +558,184 @@ export class StoreService {
       hasQuantityDeficit = true;
     }
     return !hasQuantityDeficit;
+  }
+
+  updateStoreOpenHoursData(
+    openHourId: string,
+    updateOpenHoursDto: UpdateOpenHoursDto,
+  ): Prisma.OpenHoursUpdateInput {
+    if (updateOpenHoursDto.type == 'ALL_THE_TIME') {
+      return {
+        type: updateOpenHoursDto.type,
+      };
+    } else {
+      return {
+        type: updateOpenHoursDto.type,
+        CustomOpenHours: {
+          deleteMany: {
+            openHourId,
+          },
+          createMany: {
+            data: [...updateOpenHoursDto.customOpenHours],
+          },
+        },
+      };
+    }
+  }
+
+  getCollectionSelectAttributes() {
+    return {
+      id: true,
+      order: {
+        select: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              producer: {
+                select: {
+                  businessName: true,
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      dateOfCollection: true,
+      status: true,
+      items: {
+        select: {
+          id: true,
+          quantity: true,
+          product: {
+            select: {
+              name: true,
+              measuresPerSubUnit: true,
+              unitsOfMeasurePerSubUnit: true,
+            },
+          },
+        },
+      },
+      createdAt: true,
+    };
+  }
+
+  async getCollectionDetails(storeId: string, collectionId: string) {
+    const store = await this.findStore({ id: storeId });
+    if (!store) {
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+    }
+    return this.prisma.collection.findUnique({
+      where: {
+        id: collectionId,
+        order: {
+          team: {
+            hostId: store.userId,
+          },
+        },
+      },
+      select: this.getCollectionSelectAttributes(),
+    });
+  }
+
+  async updateCollectionStatus(
+    storeId: string,
+    collectionId: string,
+    status: OrderCollectionStatus = 'COLLECTED',
+  ) {
+    const store = await this.validateStore(storeId);
+    const collection = await this.prisma.collection.findUnique({
+      where: {
+        id: collectionId,
+        order: {
+          team: {
+            hostId: store.userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+    if (!collection) {
+      throw new HttpException('Invalid collection id', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.prisma.collection.update({
+      where: {
+        id: collectionId,
+      },
+      data: {
+        status,
+      },
+    });
+    return updated.status === 'COLLECTED';
+  }
+
+  async validateStore(storeId: string) {
+    const store = await this.findStore({ id: storeId });
+    if (!store) {
+      throw new HttpException('Invalid store id', HttpStatus.BAD_REQUEST);
+    }
+    return store;
+  }
+
+  async addEmployeeToStore(
+    storeId: string,
+    createEmployeeDto: CreateEmployeeDto,
+  ): Promise<{ user: User; employee: Employee }> {
+    // create user account for the employee
+    const user = await this.usersService.createUser({
+      ...createEmployeeDto,
+      onboardingStage: 4,
+      role: 'EMPLOYEE',
+    });
+    // add the employee to the store
+    const employee = await this.prisma.employee.create({
+      data: { userId: user.id, partnerId: storeId },
+    });
+    return {
+      user,
+      employee,
+    };
+  }
+
+  async removeEmployeeFromStore(
+    storeId: string,
+    employeeId: string,
+  ): Promise<Employee> {
+    return await this.prisma.employee.delete({
+      where: {
+        id: employeeId,
+        partnerId: storeId,
+      },
+    });
+  }
+
+  async getStoreEmployees(storeId: string): Promise<IStoreEmployee[]> {
+    return await this.prisma.employee.findMany({
+      where: {
+        partnerId: storeId,
+      },
+      select: {
+        id: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+      },
+    });
   }
 }

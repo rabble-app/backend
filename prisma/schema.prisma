@@ -492,6 +492,7 @@ model Basket {
   productId String   @map("product_id")
   quantity  Int
   price     Decimal  @default(0) @db.Decimal(9, 2)
+  paymentStatus ProductPaymentStatus @map("payment_status") @default(PENDING)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -809,4 +810,11 @@ enum OrderConfirmationStatus {
   CONFIRMED
   PARTIAL
   REJECTED
+}
+
+enum ProductPaymentStatus {
+  PENDING
+  AUTHORIZED
+  REFUNDED
+  CAPTURED
 }
