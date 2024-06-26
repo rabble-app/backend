@@ -182,6 +182,15 @@ export class PaymentController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.paymentService.saveBulkBasket(addBulkBasketDto);
+    if (!result) {
+      return formatResponse(
+        'Error occurred',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Items not added to basket successfully',
+      );
+    }
     return formatResponse(
       result,
       res,
