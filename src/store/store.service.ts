@@ -13,6 +13,7 @@ import {
   OrderCollectionStatus,
   User,
   Employee,
+  ProductPaymentStatus,
 } from '@prisma/client';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -320,7 +321,8 @@ export class StoreService {
         JOIN "baskets" b ON o.id = b.order_id
         LEFT JOIN "products" p ON b.product_id = p.id
       WHERE
-        o.id = ${orderId}
+        o.id = ${orderId} AND
+        b.payment_status = ${ProductPaymentStatus.CAPTURED}
       GROUP BY
         o.id, b.product_id, p.name, p.measures_per_subunit, p.units_of_measure_per_subunit;
     `;
