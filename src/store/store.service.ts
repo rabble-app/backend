@@ -13,7 +13,6 @@ import {
   OrderCollectionStatus,
   User,
   Employee,
-  ProductPaymentStatus,
 } from '@prisma/client';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
