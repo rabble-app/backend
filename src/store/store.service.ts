@@ -609,6 +609,12 @@ export class StoreService {
           },
         },
       },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
       dateOfCollection: true,
       status: true,
       items: {
