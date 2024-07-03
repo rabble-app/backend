@@ -378,6 +378,26 @@ export class PaymentService {
           },
         );
 
+        // calculate the payment for partner teams member
+        if (partnerId) {
+          const totalAmount = addBulkBasketDto.basket.reduce(
+            (accumulator, item) => {
+              return (accumulator += item.price);
+            },
+            0,
+          );
+
+          // create payment record
+          await this.prisma.payment.create({
+            data: {
+              orderId: addBulkBasketDto.basket[0].orderId,
+              userId: addBulkBasketDto.basket[0].userId,
+              amount: totalAmount,
+              status: 'PENDING',
+            },
+          });
+        }
+
         return await this.prisma.basket.createMany({
           data: basketRecord2,
         });
