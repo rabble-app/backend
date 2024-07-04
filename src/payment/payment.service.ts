@@ -382,7 +382,7 @@ export class PaymentService {
         if (partnerId) {
           const totalAmount = addBulkBasketDto.basket.reduce(
             (accumulator, item) => {
-              return (accumulator += item.price);
+              return accumulator + item.price;
             },
             0,
           );
