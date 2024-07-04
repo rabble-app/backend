@@ -117,6 +117,55 @@ export class ScheduleService {
                   payment,
                 );
                 if (!paymentRecord) {
+                  // if the team belongs to a partner
+                  if (payment.order.team.partnerId) {
+                    // search for portion product for this payment
+                    const portionedProducts =
+                      await this.prisma.partitionedProductsBasket.findMany({
+                        where: {
+                          orderId: payment.orderId,
+                        },
+                        include: {
+                          PartitionedProductUsersRecord: {
+                            where: {
+                              userId: payment.userId,
+                            },
+                          },
+                        },
+                      });
+                    if (portionedProducts && portionedProducts.length > 0) {
+                      portionedProducts.forEach(async (portionedProduct) => {
+                        if (
+                          portionedProduct &&
+                          portionedProduct.PartitionedProductUsersRecord
+                            .length > 0
+                        ) {
+                          // reduce the portion product basket accumulation to signal that there is still space
+                          await this.prisma.partitionedProductsBasket.update({
+                            where: {
+                              id: portionedProduct.id,
+                            },
+                            data: {
+                              accumulator: {
+                                decrement:
+                                  portionedProduct
+                                    .PartitionedProductUsersRecord[0].quantity,
+                              },
+                            },
+                          });
+                          // remove user record from portion product basket
+                          await this.prisma.partitionedProductUsersRecord.delete(
+                            {
+                              where: {
+                                id: portionedProduct
+                                  .PartitionedProductUsersRecord[0].id,
+                              },
+                            },
+                          );
+                        }
+                      });
+                    }
+                  }
                   // send notification that payment failed
                   await this.notificationsService.createNotification({
                     title: 'Payment Failure',
@@ -152,6 +201,7 @@ export class ScheduleService {
       paymentId: payment.id,
     });
   }
+
   async handleNewOrders() {
     const buyingTeams = await this.scheduleServiceExtended.getTeams();
     if (buyingTeams && buyingTeams.length > 0)
