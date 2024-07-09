@@ -305,6 +305,16 @@ export class ScheduleServiceExtended {
         status: 'PENDING_DELIVERY',
         deliveryDate: null,
       },
+      select: {
+        id: true,
+        teamId: true,
+        deliveryDate: true,
+        team: {
+          select: {
+            deliveryDay: true,
+          },
+        },
+      },
     });
   }
 

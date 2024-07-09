@@ -190,7 +190,7 @@ export class ScheduleService {
       console.log(error);
     }
   }
-  // fix: remove datatype
+  // fix: remove 'any' datatype
   async handleAuthorizePayments(payment: any) {
     return await this.paymentServiceExtension.schedulePaymentAuthorization({
       stripeDefaultPaymentMethodId: payment.user.stripeDefaultPaymentMethodId,
@@ -426,15 +426,40 @@ export class ScheduleService {
       fullOrders.forEach(async (order) => {
         let multipler = 2;
         const currentDate = new Date();
-        const currentDay = currentDate.getDay();
+        const currentDayIndex = currentDate.getDay();
+        let deliveryDate = null;
 
-        // check for friday, saturday and sunday
-        if (currentDay == 0) {
-          multipler = 1;
-        } else if (currentDay == 5) {
-          multipler = 3;
+        if (!order.team.deliveryDay) {
+          // check for friday, saturday and sunday
+          if (currentDayIndex == 0) {
+            multipler = 1;
+          } else if (currentDayIndex == 5) {
+            multipler = 3;
+          }
+        } else {
+          // for rabble hub teams
+          const days = [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ];
+          const selectedDay = order.team.deliveryDay;
+          const selectedDayIndex = days.indexOf(selectedDay.toLowerCase());
+
+          if (selectedDayIndex > currentDayIndex) {
+            multipler = selectedDayIndex - currentDayIndex;
+          } else if (selectedDayIndex < currentDayIndex) {
+            multipler = 6 - currentDayIndex + (selectedDayIndex + 1);
+          } else {
+            multipler = 0;
+          }
         }
-        const deliveryDate = new Date().getTime() + multipler * 86400000;
+        // set delivery date
+        deliveryDate = new Date().getTime() + multipler * 86400000;
         // update order
         await this.paymentService.updateOrder({
           where: {
@@ -453,7 +478,8 @@ export class ScheduleService {
             nextDeliveryDate: new Date(deliveryDate),
           },
         });
-        //send notification to team members if threshold was not reached
+
+        //send notification to team members
         const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
           order.teamId,
         );
