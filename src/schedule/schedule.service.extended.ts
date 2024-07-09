@@ -268,6 +268,12 @@ export class ScheduleServiceExtended {
       where: {
         status: PaymentStatus.PENDING,
         paymentIntentId: null,
+        order: {
+          deadline: {
+            gt: new Date(),
+          },
+          status: 'PENDING',
+        },
       },
       include: {
         user: {
@@ -284,6 +290,7 @@ export class ScheduleServiceExtended {
               select: {
                 id: true,
                 name: true,
+                partnerId: true,
               },
             },
           },
@@ -297,6 +304,16 @@ export class ScheduleServiceExtended {
       where: {
         status: 'PENDING_DELIVERY',
         deliveryDate: null,
+      },
+      select: {
+        id: true,
+        teamId: true,
+        deliveryDate: true,
+        team: {
+          select: {
+            deliveryDay: true,
+          },
+        },
       },
     });
   }

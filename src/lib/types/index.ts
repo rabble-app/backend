@@ -94,6 +94,8 @@ export interface IPaymentAuth {
   stripeCustomerId: string;
   teamId: string;
   paymentId: string;
+  partnerId?: string;
+  userId?: string;
 }
 export interface ICreateIntent {
   amount: number;

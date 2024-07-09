@@ -117,6 +117,55 @@ export class ScheduleService {
                   payment,
                 );
                 if (!paymentRecord) {
+                  // if the team belongs to a partner
+                  if (payment.order.team.partnerId) {
+                    // search for portion product for this payment
+                    const portionedProducts =
+                      await this.prisma.partitionedProductsBasket.findMany({
+                        where: {
+                          orderId: payment.orderId,
+                        },
+                        include: {
+                          PartitionedProductUsersRecord: {
+                            where: {
+                              userId: payment.userId,
+                            },
+                          },
+                        },
+                      });
+                    if (portionedProducts && portionedProducts.length > 0) {
+                      portionedProducts.forEach(async (portionedProduct) => {
+                        if (
+                          portionedProduct &&
+                          portionedProduct.PartitionedProductUsersRecord
+                            .length > 0
+                        ) {
+                          // reduce the portion product basket accumulation to signal that there is still space
+                          await this.prisma.partitionedProductsBasket.update({
+                            where: {
+                              id: portionedProduct.id,
+                            },
+                            data: {
+                              accumulator: {
+                                decrement:
+                                  portionedProduct
+                                    .PartitionedProductUsersRecord[0].quantity,
+                              },
+                            },
+                          });
+                          // remove user record from portion product basket
+                          await this.prisma.partitionedProductUsersRecord.delete(
+                            {
+                              where: {
+                                id: portionedProduct
+                                  .PartitionedProductUsersRecord[0].id,
+                              },
+                            },
+                          );
+                        }
+                      });
+                    }
+                  }
                   // send notification that payment failed
                   await this.notificationsService.createNotification({
                     title: 'Payment Failure',
@@ -141,7 +190,7 @@ export class ScheduleService {
       console.log(error);
     }
   }
-  // fix: remove datatype
+  // fix: remove 'any' datatype
   async handleAuthorizePayments(payment: any) {
     return await this.paymentServiceExtension.schedulePaymentAuthorization({
       stripeDefaultPaymentMethodId: payment.user.stripeDefaultPaymentMethodId,
@@ -152,6 +201,7 @@ export class ScheduleService {
       paymentId: payment.id,
     });
   }
+
   async handleNewOrders() {
     const buyingTeams = await this.scheduleServiceExtended.getTeams();
     if (buyingTeams && buyingTeams.length > 0)
@@ -376,15 +426,40 @@ export class ScheduleService {
       fullOrders.forEach(async (order) => {
         let multipler = 2;
         const currentDate = new Date();
-        const currentDay = currentDate.getDay();
+        const currentDayIndex = currentDate.getDay();
+        let deliveryDate = null;
 
-        // check for friday, saturday and sunday
-        if (currentDay == 0) {
-          multipler = 1;
-        } else if (currentDay == 5) {
-          multipler = 3;
+        if (!order.team.deliveryDay) {
+          // check for friday, saturday and sunday
+          if (currentDayIndex == 0) {
+            multipler = 1;
+          } else if (currentDayIndex == 5) {
+            multipler = 3;
+          }
+        } else {
+          // for rabble hub teams
+          const days = [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ];
+          const selectedDay = order.team.deliveryDay;
+          const selectedDayIndex = days.indexOf(selectedDay.toLowerCase());
+
+          if (selectedDayIndex > currentDayIndex) {
+            multipler = selectedDayIndex - currentDayIndex;
+          } else if (selectedDayIndex < currentDayIndex) {
+            multipler = 6 - currentDayIndex + (selectedDayIndex + 1);
+          } else {
+            multipler = 0;
+          }
         }
-        const deliveryDate = new Date().getTime() + multipler * 86400000;
+        // set delivery date
+        deliveryDate = new Date().getTime() + multipler * 86400000;
         // update order
         await this.paymentService.updateOrder({
           where: {
@@ -403,7 +478,8 @@ export class ScheduleService {
             nextDeliveryDate: new Date(deliveryDate),
           },
         });
-        //send notification to team members if threshold was not reached
+
+        //send notification to team members
         const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
           order.teamId,
         );
