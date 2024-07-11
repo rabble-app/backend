@@ -11,10 +11,10 @@ export class UploadsService {
   AWS_S3_BUCKET = this.parameters.RABBLE_AWS_BUCKET_NAME;
   s3 = new S3Client({
     credentials: {
-      accessKeyId: this.parameters.RABBLE_AWS_ACCESS_KEY_ID,
-      secretAccessKey: this.parameters.RABBLE_AWS_SECRET_ACCESS_KEY,
+      accessKeyId: this.parameters.RABBLE_AWS_BUCKET_ACCESS_KEY_ID,
+      secretAccessKey: this.parameters.RABBLE_AWS_BUCKET_SECRET_ACCESS_KEY,
     },
-    region: 'us-east-2',
+    region: this.parameters.RABBLE_AWS_BUCKET_REGION,
   });
 
   async uploadFile(
