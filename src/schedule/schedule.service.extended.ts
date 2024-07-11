@@ -380,10 +380,12 @@ export class ScheduleServiceExtended {
   async handleCustomerCollection(): Promise<boolean> {
     const fulfilledOrders = await this.prisma.order.findMany({
       where: {
-        deliveryDate: {
-          lte: new Date(),
-          not: null,
+        team: {
+          partnerId: {
+            not: null,
+          },
         },
+        status: 'PENDING_DELIVERY',
         collection: { none: {} },
       },
       select: {
