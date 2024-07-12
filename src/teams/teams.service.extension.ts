@@ -272,6 +272,18 @@ export class TeamsServiceExtension {
               city: true,
               streetAddress: true,
               direction: true,
+              openhour: {
+                select: {
+                  type: true,
+                  CustomOpenHours: {
+                    select: {
+                      startTime: true,
+                      endTime: true,
+                      day: true,
+                    },
+                  },
+                },
+              },
             },
           },
           _count: {
