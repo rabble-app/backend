@@ -144,6 +144,11 @@ export class StoreService {
             description: true,
             producer: {
               select: {
+                user: {
+                  select: {
+                    phone: true,
+                  },
+                },
                 businessName: true,
                 id: true,
                 categories: {
