@@ -302,19 +302,7 @@ export class TeamsServiceExtension {
   ): Promise<Order | IOrderDeadline> {
     let result: IOrderDeadline | PromiseLike<Order>;
     if (trim && trim == 'true') {
-      result = await this.prisma.order.findFirst({
-        where: {
-          teamId,
-        },
-        select: {
-          deadline: true,
-          id: true,
-          createdAt: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      result = await this.getTeamRecentOrder(teamId);
     } else {
       result = await this.prisma.order.findFirst({
         where: {
@@ -519,6 +507,24 @@ export class TeamsServiceExtension {
       },
       orderBy: {
         createdAt: 'asc',
+      },
+    });
+  }
+
+  async getTeamRecentOrder(
+    teamId: string,
+  ): Promise<{ deadline: Date; id: string; createdAt: Date } | null> {
+    return await this.prisma.order.findFirst({
+      where: {
+        teamId,
+      },
+      select: {
+        deadline: true,
+        id: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }

@@ -117,6 +117,7 @@ export class TeamsService {
       minimumTreshold: producerInfo.minimumTreshold,
       deadline: orderDeadlineDate,
       accumulatedAmount: accumulatedAmount,
+      status: createTeamDto.partnerId ? 'INACTIVE' : 'PENDING',
     };
     const orderResponse = await this.paymentService.createOrder(orderData);
 
