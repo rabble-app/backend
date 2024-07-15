@@ -269,9 +269,6 @@ export class ScheduleServiceExtended {
         status: PaymentStatus.PENDING,
         paymentIntentId: null,
         order: {
-          deadline: {
-            gt: new Date(),
-          },
           status: 'PENDING',
         },
       },
