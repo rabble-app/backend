@@ -443,4 +443,36 @@ export class ScheduleServiceExtended {
 
     return true;
   }
+
+  async activateOrders(): Promise<boolean> {
+    // get current week and year
+    const ripeOrders = await this.prisma.order.findMany({
+      select: {
+        id: true,
+        deadline: true,
+      },
+      where: {
+        status: 'INACTIVE',
+        deadline: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    for (const order of ripeOrders) {
+      // if the deadline is less than 3 days, activate the order
+      if (order.deadline.getTime() - new Date().getTime() < 3 * 86400 * 1000) {
+        await this.prisma.order.update({
+          where: {
+            id: order.id,
+          },
+          data: {
+            status: 'PENDING',
+          },
+        });
+      }
+    }
+
+    return true;
+  }
 }
