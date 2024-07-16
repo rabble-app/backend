@@ -110,5 +110,15 @@ describe('ScheduleController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/schedule/activate-first-order(GET) should activate partner team first order',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/activate-first-order')
+          .expect(200);
+      },
+      testTime,
+    );
   });
 });

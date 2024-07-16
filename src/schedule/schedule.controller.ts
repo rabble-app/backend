@@ -248,4 +248,27 @@ export class ScheduleController {
       'Customer collection created successfully',
     );
   }
+
+  /**
+   * Activate partner team first order.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('activate-first-order')
+  @ApiOkResponse({
+    description: 'Orders activated successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async activateOrder(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleServiceExtended.activateOrders();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Orders activated successfully',
+    );
+  }
 }
