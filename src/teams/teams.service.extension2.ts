@@ -108,7 +108,7 @@ export class TeamsServiceExtension2 {
       this.prisma.buyingTeam.count(),
       this.prisma.buyingTeam.findMany({
         skip: offset,
-        take: 7,
+        // take: 11,
         select: {
           id: true,
           host: {
@@ -122,16 +122,23 @@ export class TeamsServiceExtension2 {
           frequency: true,
           createdAt: true,
           nextDeliveryDate: true,
+          partnerId: true,
           producer: {
             select: {
               businessName: true,
             },
           },
           orders: {
+            where: {
+              status: {
+                not: OrderStatus.INACTIVE,
+              },
+            },
             select: {
               status: true,
               accumulatedAmount: true,
               createdAt: true,
+              confirmationStatus: true,
             },
           },
           _count: {
@@ -154,7 +161,7 @@ export class TeamsServiceExtension2 {
       this.prisma.order.count({ where: { status } }),
       this.prisma.order.findMany({
         skip: offset,
-        take: 7,
+        // take: 7,
         where: {
           status,
         },

@@ -379,6 +379,7 @@ export class StoreService {
       },
       data: {
         confirmationStatus: status,
+        status: 'SUCCESSFUL',
       },
     });
   }
