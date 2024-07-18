@@ -1,7 +1,7 @@
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { CreateOpenHoursDto } from './dto/create-open-hours.dto';
 import { CreateStoreDto } from './dto/create-store.dto';
-import { endOfDay, startOfDay } from 'date-fns';
+import { endOfDay } from 'date-fns';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
@@ -13,6 +13,7 @@ import {
   OrderCollectionStatus,
   User,
   Employee,
+  OrderStatus,
 } from '@prisma/client';
 import { UpdateOpenHoursDto } from './dto/update-open-hours.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -121,7 +122,7 @@ export class StoreService {
   }: {
     partnerId: string;
     skip?: number;
-    period?: 'today' | 'upcoming' | 'past';
+    period?: 'today' | 'upcoming' | 'completed';
     search?: string;
     limit?: number;
   }) {
@@ -136,6 +137,7 @@ export class StoreService {
         createdAt: true,
         deadline: true,
         status: true,
+        confirmationStatus: true,
         minimumTreshold: true,
         team: {
           select: {
@@ -174,7 +176,7 @@ export class StoreService {
 
   getDeliveryFilter(
     partnerId: string,
-    period?: 'today' | 'upcoming' | 'past',
+    period?: 'today' | 'upcoming' | 'completed',
     search?: string,
   ): Prisma.OrderWhereInput {
     const periodFilter = this.getPeriodFilter(period);
@@ -190,6 +192,9 @@ export class StoreService {
           {
             deliveryDate: {
               not: null,
+            },
+            status: {
+              notIn: [OrderStatus.FAILED],
             },
           },
         ],
@@ -243,26 +248,26 @@ export class StoreService {
   }
 
   getPeriodFilter(period = '') {
-    const startOfToday = startOfDay(new Date());
     const endOfToday = endOfDay(new Date());
     switch (period) {
       case 'today':
         return {
           deliveryDate: {
-            gte: startOfToday,
             lte: endOfToday,
           },
+          confirmationStatus: OrderConfirmationStatus.PENDING,
         };
       case 'upcoming':
         return {
           deliveryDate: {
-            gte: endOfToday,
+            gt: endOfToday,
           },
+          confirmationStatus: OrderConfirmationStatus.PENDING,
         };
-      case 'past':
+      case 'completed':
         return {
-          deliveryDate: {
-            lt: startOfToday,
+          confirmationStatus: {
+            not: OrderConfirmationStatus.PENDING,
           },
         };
       default:
@@ -330,12 +335,6 @@ export class StoreService {
       GROUP BY
         o.id, b.product_id, p.name, p.measures_per_subunit, p.units_of_measure_per_subunit;
     `;
-    if (result.length === 0) {
-      throw new HttpException(
-        `Order with ID ${orderId} not found`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
 
     return result;
   }
@@ -393,7 +392,7 @@ export class StoreService {
   }: {
     partnerId: string;
     skip?: number;
-    period?: 'today' | 'upcoming' | 'past';
+    period?: 'today' | 'upcoming' | 'completed';
     search?: string;
     limit?: number;
   }) {
@@ -407,7 +406,7 @@ export class StoreService {
 
   getCollectionFilter(
     partnerId: string,
-    period?: 'today' | 'upcoming' | 'past',
+    period?: 'today' | 'upcoming' | 'completed',
     search?: string,
   ): Prisma.CollectionWhereInput {
     const periodFilter = this.getCollectionPeriodFilter(period);
@@ -489,27 +488,25 @@ export class StoreService {
   }
 
   getCollectionPeriodFilter(period = '') {
-    const startOfToday = startOfDay(new Date());
     const endOfToday = endOfDay(new Date());
     switch (period) {
       case 'today':
         return {
           dateOfCollection: {
-            gte: startOfToday,
             lte: endOfToday,
           },
+          status: OrderCollectionStatus.PENDING,
         };
       case 'upcoming':
         return {
           dateOfCollection: {
-            gte: endOfToday,
+            gt: endOfToday,
           },
+          status: OrderCollectionStatus.PENDING,
         };
-      case 'past':
+      case 'completed':
         return {
-          dateOfCollection: {
-            lt: startOfToday,
-          },
+          status: OrderCollectionStatus.COLLECTED,
         };
       default:
         return {};
@@ -530,9 +527,9 @@ export class StoreService {
     const store = await this.findStore({ id: storeId });
     const skip = !isNaN(Number(offset)) ? +offset : 0;
     const take = !isNaN(Number(limit)) ? +limit : 10;
-    if (period && !['today', 'upcoming', 'past'].includes(period))
+    if (period && !['today', 'upcoming', 'completed'].includes(period))
       throw new HttpException(
-        'Invalid period query, acceptable values are today | upcoming | past',
+        'Invalid period query, acceptable values are today | upcoming | completed',
         HttpStatus.BAD_REQUEST,
       );
     await this.checkStoreAuthorization(userId, storeId);
