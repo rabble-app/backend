@@ -404,10 +404,10 @@ export class StoreController {
     @Param('storeId') storeId: string,
     @Res({ passthrough: true }) res: Response,
     @Request() req,
-    @Query('offset') offset?: number,
-    @Query('limit') limit?: number,
-    @Query('period') period?: 'today' | 'upcoming' | 'completed',
     @Query('search') search?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+    @Query('period') period?: 'today' | 'upcoming' | 'completed',
   ): Promise<IAPIResponse> {
     const { store, skip, take } =
       await this.storeService.storeDeliveryAndCollectionValidation(
