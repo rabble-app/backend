@@ -335,12 +335,6 @@ export class StoreService {
       GROUP BY
         o.id, b.product_id, p.name, p.measures_per_subunit, p.units_of_measure_per_subunit;
     `;
-    if (result.length === 0) {
-      throw new HttpException(
-        `Order with ID ${orderId} not found`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
 
     return result;
   }
