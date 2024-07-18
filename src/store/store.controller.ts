@@ -236,7 +236,7 @@ export class StoreController {
     name: 'period',
     required: false,
     description: 'Delivery period',
-    enum: ['today', 'upcoming', 'past'],
+    enum: ['today', 'upcoming', 'completed'],
   })
   @ApiQuery({
     name: 'search',
@@ -254,7 +254,7 @@ export class StoreController {
     @Request() req,
     @Query('offset') offset?: number,
     @Query('limit') limit?: number,
-    @Query('period') period?: 'today' | 'upcoming' | 'past',
+    @Query('period') period?: 'today' | 'upcoming' | 'completed',
     @Query('search') search?: string,
   ): Promise<IAPIResponse> {
     const { store, skip, take } =
@@ -388,7 +388,7 @@ export class StoreController {
   //   name: 'period',
   //   required: false,
   //   description: 'Delivery period',
-  //   enum: ['today', 'upcoming', 'past'],
+  //   enum: ['today', 'upcoming', 'completed'],
   // })
   // @ApiQuery({
   //   name: 'search',
@@ -406,7 +406,7 @@ export class StoreController {
     @Request() req,
     @Query('offset') offset?: number,
     @Query('limit') limit?: number,
-    @Query('period') period?: 'today' | 'upcoming' | 'past',
+    @Query('period') period?: 'today' | 'upcoming' | 'completed',
     @Query('search') search?: string,
   ): Promise<IAPIResponse> {
     const { store, skip, take } =
