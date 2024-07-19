@@ -51,6 +51,7 @@ export class UsersService {
             id: true,
             name: true,
             postalCode: true,
+            stripeConnectId: true,
             openhour: {
               select: {
                 type: true,

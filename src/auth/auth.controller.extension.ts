@@ -6,6 +6,7 @@ import { Controller, Post, Res, HttpStatus, Get, Query } from '@nestjs/common';
 import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -23,10 +24,17 @@ export class AuthControllerExtension {
   @Post('stripe-onboarding')
   @ApiOkResponse({ description: 'Stripe onboarding link sent successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiQuery({
+    name: 'isPartner',
+    required: false,
+    description: 'Specifies if the user is a partner',
+    type: 'string',
+  })
   async stripeOnboarding(
     @Res({ passthrough: true }) res: Response,
+    @Query('isPartner') isPartner: boolean,
   ): Promise<IAPIResponse> {
-    const result = await this.authService.stripeOnboard();
+    const result = await this.authService.stripeOnboard(isPartner as boolean);
     return formatResponse(
       result,
       res,
@@ -47,11 +55,27 @@ export class AuthControllerExtension {
     description: 'Stripe onboarding link refreshed successfully',
   })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiQuery({
+    name: 'accountId',
+    required: true,
+    description: 'The account id to refresh',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'isPartner',
+    required: false,
+    description: 'Specifies if the user is a partner',
+    type: 'string',
+  })
   async stripeOnboardingRefresh(
+    @Query('isPartner') isPartner: boolean,
     @Query('accountId') accountId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.authService.stripeOnboardRefresh(accountId);
+    const result = await this.authService.stripeOnboardRefresh(
+      accountId,
+      isPartner as boolean,
+    );
     return formatResponse(
       result,
       res,
