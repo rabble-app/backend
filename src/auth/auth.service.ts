@@ -318,7 +318,9 @@ export class AuthService {
     return await bcrypt.hash(pass, salt);
   }
 
-  async stripeOnboard(): Promise<{ url: string; accountId: string }> {
+  async stripeOnboard(
+    isPartner = false,
+  ): Promise<{ url: string; accountId: string }> {
     const account = await this.stripe.accounts.create({
       type: 'express',
       country: 'GB',
@@ -335,7 +337,10 @@ export class AuthService {
       },
     });
 
-    const accountLinkURL = await this.generateAccountLink(account.id);
+    const accountLinkURL = await this.generateAccountLink(
+      account.id,
+      isPartner,
+    );
     return {
       url: accountLinkURL,
       accountId: account.id,
@@ -344,21 +349,33 @@ export class AuthService {
 
   async stripeOnboardRefresh(
     accountId: string,
+    isPartner = false,
   ): Promise<{ url: string; accountId: string }> {
-    const accountLinkURL = await this.generateAccountLink(accountId);
+    const accountLinkURL = await this.generateAccountLink(accountId, isPartner);
     return {
       url: accountLinkURL,
       accountId: accountId,
     };
   }
 
-  async generateAccountLink(accountId: string): Promise<string> {
+  async generateAccountLink(
+    accountId: string,
+    isPartner: boolean,
+  ): Promise<string> {
     return this.stripe.accountLinks
       .create({
         type: 'account_onboarding',
         account: accountId,
-        refresh_url: `${this.parameters.STRIPE_REFRESH_URL}`,
-        return_url: `${this.parameters.STRIPE_RETURN_URL}`,
+        refresh_url: `${
+          isPartner
+            ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
+            : this.parameters.STRIPE_REFRESH_URL
+        }`,
+        return_url: `${
+          isPartner
+            ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
+            : this.parameters.STRIPE_RETURN_URL
+        }`,
       })
       .then((link) => link.url);
   }
