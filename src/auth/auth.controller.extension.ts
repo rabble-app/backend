@@ -34,7 +34,7 @@ export class AuthControllerExtension {
     @Res({ passthrough: true }) res: Response,
     @Query('isPartner') isPartner: boolean,
   ): Promise<IAPIResponse> {
-    const result = await this.authService.stripeOnboard(isPartner as boolean);
+    const result = await this.authService.stripeOnboard(isPartner);
     return formatResponse(
       result,
       res,
@@ -74,7 +74,7 @@ export class AuthControllerExtension {
   ): Promise<IAPIResponse> {
     const result = await this.authService.stripeOnboardRefresh(
       accountId,
-      isPartner as boolean,
+      isPartner,
     );
     return formatResponse(
       result,

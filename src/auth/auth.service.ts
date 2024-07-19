@@ -368,12 +368,12 @@ export class AuthService {
         account: accountId,
         refresh_url: `${
           isPartner
-            ? this.parameters.STRIPE_REFRESH_URL
+            ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
             : this.parameters.STRIPE_REFRESH_URL
         }`,
         return_url: `${
           isPartner
-            ? this.parameters.STRIPE_RETURN_URL
+            ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
             : this.parameters.STRIPE_RETURN_URL
         }`,
       })
