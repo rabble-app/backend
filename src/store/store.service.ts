@@ -591,6 +591,7 @@ export class StoreService {
       id: true,
       order: {
         select: {
+          status: true,
           team: {
             select: {
               id: true,
