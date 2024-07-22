@@ -166,6 +166,11 @@ export class StoreService {
             },
           },
         },
+        orderConfirmation: {
+          select: {
+            imageUrl: true,
+          },
+        },
         _count: {
           select: { basket: true },
         },
