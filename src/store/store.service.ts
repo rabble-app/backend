@@ -172,7 +172,13 @@ export class StoreService {
           },
         },
         _count: {
-          select: { basket: true },
+          select: {
+            basket: {
+              where: {
+                paymentStatus: 'CAPTURED',
+              },
+            },
+          },
         },
       },
     });
