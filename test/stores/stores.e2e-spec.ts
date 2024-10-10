@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
-import { Collection, Order, User } from '@prisma/client';
+import { Collection, Order, OrderCollectionStatus, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 import { UploadsService } from '../../src/uploads/uploads.service';
@@ -327,15 +327,15 @@ describe('StoreController (e2e)', () => {
       expect(response.body.error).toBeUndefined();
       expect(response.body.data).toHaveLength(1);
     });
-    it('/store/(Get) should get past store inbound deliveries successfully', async () => {
+    it('/store/(Get) should get completed store inbound deliveries successfully', async () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 1);
       await prisma.order.update({
         where: { id: order.id },
-        data: { deliveryDate: pastDate },
+        data: { deliveryDate: pastDate, confirmationStatus: 'CONFIRMED' },
       });
       const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/deliveries?period=past`)
+        .get(`/store/${storeId}/deliveries?period=completed`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');
@@ -344,10 +344,10 @@ describe('StoreController (e2e)', () => {
     });
     it('/store/(Get) should get upcoming store inbound deliveries successfully', async () => {
       const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 1);
+      futureDate.setDate(futureDate.getDate() + 2);
       await prisma.order.update({
         where: { id: order.id },
-        data: { deliveryDate: futureDate },
+        data: { deliveryDate: futureDate, confirmationStatus: 'PENDING' },
       });
       const response = await request(app.getHttpServer())
         .get(`/store/${storeId}/deliveries?period=upcoming`)
@@ -480,10 +480,13 @@ describe('StoreController (e2e)', () => {
       pastDate.setDate(pastDate.getDate() - 1);
       await prisma.collection.update({
         where: { id: orderCollection.id },
-        data: { dateOfCollection: pastDate },
+        data: {
+          dateOfCollection: pastDate,
+          status: OrderCollectionStatus.COLLECTED,
+        },
       });
       const response = await request(app.getHttpServer())
-        .get(`/store/${storeId}/collections?period=past`)
+        .get(`/store/${storeId}/collections?period=completed`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');
@@ -495,7 +498,10 @@ describe('StoreController (e2e)', () => {
       futureDate.setDate(futureDate.getDate() + 1);
       await prisma.collection.update({
         where: { id: orderCollection.id },
-        data: { dateOfCollection: futureDate },
+        data: {
+          dateOfCollection: futureDate,
+          status: OrderCollectionStatus.PENDING,
+        },
       });
       const response = await request(app.getHttpServer())
         .get(`/store/${storeId}/collections?period=upcoming`)

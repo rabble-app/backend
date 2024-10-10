@@ -9,19 +9,28 @@ const client = new SSMClient({
 });
 
 const getEnv = () => {
-  const dev = process.env.APP_ENV ?? 'dev';
-  switch (dev) {
+  const env = process.env.APP_ENV ?? 'dev';
+  switch (env) {
     case 'production':
     case 'prod':
       return 'prod';
     case 'staging':
       return 'staging';
+    case 'development':
+    case 'dev':
+      return 'dev';
+    case 'local':
+      return 'local';
     default:
       return 'dev';
   }
 };
+
 export const loadParameters = async () => {
-  const env = getEnv();
+  let env = getEnv();
+  if (env === 'local') {
+    env = 'dev';
+  }
 
   const inputParams = {
     Path: `/api/${env}`,
