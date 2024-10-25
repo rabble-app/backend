@@ -10,12 +10,13 @@ datasource db {
 
 model User {
   id                            String                          @id @default(uuid())
-  phone                         String                          @unique
+  phone                         String?                         @unique
   email                         String?                         @unique
   password                      String?
   firstName                     String?                         @map("first_name")
   lastName                      String?                         @map("last_name")
   postalCode                    String?                         @map("postal_code")
+  isVerified                    Boolean                         @default(false) @map("is_verified")
   stripeCustomerId              String?                         @unique @map("stripe_customer_id")
   stripeDefaultPaymentMethodId  String?                         @map("stripe_default_payment_method_id")
   cardLastFourDigits            String?                         @map("card_last_four_digits")
