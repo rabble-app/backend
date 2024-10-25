@@ -14,7 +14,6 @@ import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { courier } from '../../src/utils/mail';
 import { Role, UserWithProducerAndPartnerInfo } from '../../src/lib/types';
 import { ICourierClient } from '@trycourier/courier';
-import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class AuthService {
