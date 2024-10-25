@@ -15,6 +15,7 @@ describe('AppController (e2e)', () => {
   let prisma: PrismaService;
   let userId: string;
   let jwtToken: string;
+  let userJwtToken: string;
   let accountId: string;
   let producerId: string;
   const testTime = 120000;
@@ -22,6 +23,7 @@ describe('AppController (e2e)', () => {
   const phone = faker.phone.number('501-###-###');
   const producerPhone = faker.phone.number('201-###-###');
   const email = faker.internet.email();
+  const email2 = faker.internet.email() + `144`;
   const password = 'passwordd';
 
   const producerInfo = {
@@ -30,6 +32,13 @@ describe('AppController (e2e)', () => {
     phone: producerPhone,
     businessName: faker.internet.domainName(),
     businessAddress: 'Business Address',
+  };
+
+  const supplementUserInfo = {
+    password,
+    role: 'USER',
+    email: email2,
+    phone: email2,
   };
 
   const incompleteChangePasswordData = {
@@ -152,6 +161,22 @@ describe('AppController (e2e)', () => {
       testTime,
     );
 
+    // register supplement user
+    it(
+      '/auth/register (POST) should register a supplement user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/register')
+          .send(supplementUserInfo)
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        userJwtToken = response.body.data.token;
+      },
+      testTime,
+    );
+
     // Email Verification
     it('/auth/email-verification (POST) should not verify email if email verification token is invalid/expired', async () => {
       const response = await request(app.getHttpServer())
@@ -161,10 +186,20 @@ describe('AppController (e2e)', () => {
       commonFailureResponse(response);
     });
 
-    it('/auth/email-verification (POST) should verify email if email verification token is valid', async () => {
+    it('/auth/email-verification (POST) should verify producer email if email verification token is valid', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/email-verification')
         .send({ token: jwtToken })
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    });
+
+    it('/auth/email-verification (POST) should verify supplement user email if email verification token is valid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/email-verification')
+        .send({ token: userJwtToken, role: 'USER' })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
@@ -206,6 +241,21 @@ describe('AppController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/auth/login')
           .send({ email, password })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // login supplement user
+    it(
+      '/auth/login (POST) should login a supplement user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ email: email2, password, role: 'USER' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

@@ -2,10 +2,10 @@ import * as bcrypt from 'bcrypt';
 import twilio from 'twilio';
 import Stripe from 'stripe';
 import ChangePasswordDto from './dto/change-password.dto';
-import { CreateProducerDto } from './dto/create-producer.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { LoginProducerDto } from './dto/login-producer.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { PrismaService } from '../prisma.service';
 import { Producer, User } from '@prisma/client';
 import { SendOTPDto } from './dto/send-otp.dto';
@@ -14,6 +14,7 @@ import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { courier } from '../../src/utils/mail';
 import { Role, UserWithProducerAndPartnerInfo } from '../../src/lib/types';
 import { ICourierClient } from '@trycourier/courier';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class AuthService {
@@ -85,9 +86,9 @@ export class AuthService {
           let role = Role.USER;
           if (verifyOTPDto.role != Role.PARTNER) {
             // create stripe account for user
-            const stripeResponse = await this.userService.createCustomer(
-              verifyOTPDto.phone,
-            );
+            const stripeResponse = await this.userService.createStripeCustomer({
+              phone: verifyOTPDto.phone,
+            });
             stripeCustomerId = stripeResponse.id;
           } else {
             role = verifyOTPDto.role;
@@ -153,36 +154,54 @@ export class AuthService {
     }
   }
 
-  async registerProducer(
-    createProducerDto: CreateProducerDto,
-  ): Promise<Producer> {
+  async registerUser(createUserDto: CreateUserDto): Promise<Producer | User> {
+    let producerRecord: Producer = undefined;
+    let stripeCustomerId: string = undefined;
+
     // encrypt password
-    const password = await this.encryptPassword(createProducerDto.password);
+    const password = await this.encryptPassword(createUserDto.password);
+
+    if (createUserDto.role && createUserDto.role == Role.USER) {
+      // create user stripe account
+      const stripeResponse = await this.userService.createStripeCustomer({
+        email: createUserDto.email,
+      });
+      stripeCustomerId = stripeResponse.id;
+    }
 
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
         password,
-        email: createProducerDto.email,
-        phone: createProducerDto.phone,
-        role: 'PRODUCER',
+        stripeCustomerId,
+        email: createUserDto.email,
+        phone: createUserDto.phone ? createUserDto.phone : createUserDto.email,
+        role: createUserDto.role ? createUserDto.role : 'PRODUCER',
       },
     });
 
-    // save producer record
-    const producerRecord = await this.prisma.producer.create({
-      data: {
-        userId: userRecord.id,
-        businessName: createProducerDto.businessName,
-        businessAddress: createProducerDto.businessAddress,
-      },
-    });
+    if (!createUserDto.role) {
+      // save producer record
+      producerRecord = await this.prisma.producer.create({
+        data: {
+          userId: userRecord.id,
+          businessName: createUserDto.businessName,
+          businessAddress: createUserDto.businessAddress,
+        },
+      });
+    }
+
     const token = this.generateToken({
       userId: userRecord.id,
-      producerId: producerRecord.id,
+      producerId: producerRecord?.id,
     });
-    producerRecord['businessEmail'] = createProducerDto.email;
-    producerRecord['token'] = token;
+
+    if (!createUserDto.role) {
+      producerRecord['businessEmail'] = createUserDto.email;
+      producerRecord['token'] = token;
+    } else {
+      userRecord['token'] = token;
+    }
 
     // send mail
     await this.courierClient.send({
@@ -192,82 +211,114 @@ export class AuthService {
         },
         template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`,
+          url: `${this.parameters.EMAIL_URL}${
+            !createUserDto.role
+              ? this.parameters.CONFIRM_ACCOUNT_URL
+              : this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL
+          }?token=${token}`,
         },
       },
     });
 
-    return producerRecord;
+    if (!createUserDto.role) return producerRecord;
+    else return userRecord;
   }
 
-  async loginProducer(
-    loginProducerDto: LoginProducerDto,
-  ): Promise<object | null | string> {
+  async loginUser(loginUserDto: LoginUserDto): Promise<object | null | string> {
+    let producerRecord: Producer = undefined;
     // get the user record
     const user = await this.userService.findUser({
-      email: loginProducerDto.email,
+      email: loginUserDto.email,
     });
     if (!user) return null;
 
     // confirm password
-    const isMatch = await bcrypt.compare(
-      loginProducerDto.password,
-      user.password,
-    );
+    const isMatch = await bcrypt.compare(loginUserDto.password, user.password);
     if (
       !isMatch &&
-      loginProducerDto.password != 'rabble-info@flyinghorsecoffee.com' // Todo: remove the test password here
+      loginUserDto.password != 'rabble-info@flyinghorsecoffee.com' // Todo: remove the test password here
     )
       return null;
 
-    // get producer record
-    const producerRecord = await this.userService.findProducer({
-      userId: user.id,
-    });
+    if (!loginUserDto.role) {
+      // get producer record
+      producerRecord = await this.userService.findProducer({
+        userId: user.id,
+      });
 
-    if (!producerRecord) return null;
-
-    // check whether the user have verified their email
-    if (!producerRecord.isVerified) {
-      return 'not verified';
+      if (!producerRecord) return null;
+      // check whether the user have verified their email
+      if (!producerRecord.isVerified) {
+        return 'not verified';
+      }
+    } else {
+      if (!user.isVerified) {
+        return 'not verified';
+      }
     }
 
     const token = this.generateToken({
       userId: user.id,
-      producerId: producerRecord.id,
+      producerId: producerRecord?.id,
       role: user.role,
     });
-    producerRecord['token'] = token;
-    producerRecord['businessEmail'] = user.email;
-    return producerRecord;
+
+    if (!loginUserDto.role) {
+      producerRecord['token'] = token;
+      producerRecord['businessEmail'] = user.email;
+      return producerRecord;
+    }
+    user['token'] = token;
+    return user;
   }
 
-  async emailVerification(token: string): Promise<Producer | null> {
+  async emailVerification(token: string, role: Role): Promise<Producer | null> {
     const validToken = this.decodeToken(token);
+    let userInfo: Producer | User;
+    let result;
+
     if (!validToken) {
       return null;
     }
+    if (!role) {
+      userInfo = await this.userService.findProducer({
+        id: validToken.producerId,
+      });
+      if (!userInfo) {
+        return null;
+      }
+      userInfo.isVerified = true;
 
-    const userInfo = await this.userService.findProducer({
-      id: validToken.producerId,
-    });
-    if (!userInfo) {
-      return null;
+      result = await this.userService.updateProducer({
+        where: {
+          id: validToken.producerId,
+        },
+        data: {
+          isVerified: true,
+        },
+      });
+    } else {
+      userInfo = await this.userService.findUser({
+        id: validToken.userId,
+      });
+      if (!userInfo) {
+        return null;
+      }
+      userInfo.isVerified = true;
+
+      result = await this.userService.updateUser({
+        where: {
+          id: validToken.userId,
+        },
+        data: {
+          isVerified: true,
+        },
+      });
     }
 
-    userInfo.isVerified = true;
-
-    const result = await this.userService.updateProducer({
-      where: {
-        id: validToken.producerId,
-      },
-      data: {
-        isVerified: true,
-      },
-    });
     const userToken = this.generateToken({
-      userId: result.userId,
-      producerId: result.id,
+      userId: role ? result.id : result.userId,
+      producerId: role ? '' : result.id,
     });
     result['token'] = userToken;
     return result;

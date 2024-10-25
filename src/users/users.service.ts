@@ -660,11 +660,17 @@ export class UsersService {
     });
   }
 
-  async createCustomer(phone: string): Promise<{ id: string } | null> {
+  async createStripeCustomer({
+    phone,
+    email,
+  }: {
+    phone?: string;
+    email?: string;
+  }): Promise<{ id: string } | null> {
     try {
-      const params: Stripe.CustomerCreateParams = {
-        phone,
-      };
+      const params: Stripe.CustomerCreateParams = {};
+      if (email) params['email'] = email;
+      if (phone) params['phone'] = phone;
       const response = await this.stripe.customers.create(params);
       return {
         id: response.id,

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { Role } from '../../lib/types';
 
 export default class EmailVerificationDto {
   @ApiProperty({
@@ -11,4 +12,13 @@ export default class EmailVerificationDto {
   @IsNotEmpty()
   @IsString()
   token: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The role of the user',
+    required: true,
+    default: Role.PRODUCER,
+  })
+  @IsEnum(Role)
+  role: Role = Role.PRODUCER;
 }

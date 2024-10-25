@@ -4,10 +4,10 @@ import ResendEmailVerificationDto from './dto/resend-email-verification.dto';
 import ResetPasswordDto from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
 import { courier } from '../../src/utils/mail';
-import { CreateProducerDto } from './dto/create-producer.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
-import { LoginProducerDto } from './dto/login-producer.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { Response } from 'express';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
@@ -163,7 +163,7 @@ export class AuthController {
 
   /**
    * Register Producer.
-   * @param {Body} createProducerDto - Request body object.
+   * @param {Body} createUserDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof AuthController
    * @returns {JSON} - A JSON success response.
@@ -173,21 +173,26 @@ export class AuthController {
   @ApiCreatedResponse({ description: 'Producer account created successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async register(
-    @Body() createProducerDto: CreateProducerDto,
+    @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     // check whether email, phone or business name already exist
+    let phoneExist = undefined;
+    let businessNameExist = undefined;
+
     const emailExist = await this.usersService.findUser({
-      email: createProducerDto.email,
+      email: createUserDto.email,
     });
 
-    const phoneExist = await this.usersService.findUser({
-      phone: createProducerDto.phone,
-    });
+    if (!createUserDto.role) {
+      phoneExist = await this.usersService.findUser({
+        phone: createUserDto.phone,
+      });
 
-    const businessNameExist = await this.usersService.findProducer({
-      businessName: createProducerDto.businessName,
-    });
+      businessNameExist = await this.usersService.findProducer({
+        businessName: createUserDto.businessName,
+      });
+    }
 
     if (emailExist || phoneExist || businessNameExist) {
       return formatResponse(
@@ -200,7 +205,7 @@ export class AuthController {
     }
 
     // save data
-    const result = await this.authService.registerProducer(createProducerDto);
+    const result = await this.authService.registerUser(createUserDto);
     return formatResponse(
       result,
       res,
@@ -212,7 +217,7 @@ export class AuthController {
 
   /**
    * Login Producer.
-   * @param {Body} loginProducerDto - Request body object.
+   * @param {Body} loginUserDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof AuthController
    * @returns {JSON} - A JSON success response.
@@ -223,10 +228,10 @@ export class AuthController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiUnauthorizedResponse({ description: 'Unverified email' })
   async login(
-    @Body() loginProducerDto: LoginProducerDto,
+    @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.authService.loginProducer(loginProducerDto);
+    const result = await this.authService.loginUser(loginUserDto);
     if (!result) {
       return formatResponse(
         'Invalid credentials supplied',
@@ -249,7 +254,7 @@ export class AuthController {
       res,
       HttpStatus.OK,
       false,
-      'Producer login successfully',
+      'User login successful',
     );
   }
 
@@ -270,6 +275,7 @@ export class AuthController {
   ): Promise<IAPIResponse> {
     const result = await this.authService.emailVerification(
       emailVerificationDto.token,
+      emailVerificationDto.role,
     );
     if (!result) {
       return formatResponse(

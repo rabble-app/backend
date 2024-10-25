@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, ValidateIf } from 'class-validator';
+import { Role } from '../../lib/types';
 
-export class CreateProducerDto {
+export class CreateUserDto {
   @ApiProperty({
     type: 'string',
     description: 'The email of the user',
@@ -22,9 +23,19 @@ export class CreateProducerDto {
 
   @ApiProperty({
     type: 'string',
+    description: 'The role of the user',
+    required: true,
+    default: Role.PRODUCER,
+  })
+  @IsEnum(Role)
+  role: Role = Role.PRODUCER;
+
+  @ApiProperty({
+    type: 'string',
     description: 'The business name of the producer',
     required: true,
   })
+  @ValidateIf((o) => o.role == Role.PRODUCER)
   @IsNotEmpty()
   @IsString()
   businessName: string;
@@ -34,6 +45,7 @@ export class CreateProducerDto {
     description: 'The business address of the producer',
     required: true,
   })
+  @ValidateIf((o) => o.role == Role.PRODUCER)
   @IsNotEmpty()
   @IsString()
   businessAddress: string;
@@ -43,6 +55,7 @@ export class CreateProducerDto {
     description: 'The phone number of the producer',
     required: true,
   })
+  @ValidateIf((o) => o.role == Role.PRODUCER)
   @IsNotEmpty()
   @IsString()
   phone: string;
