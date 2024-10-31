@@ -52,6 +52,12 @@ export enum Role {
   PARTNER = 'PARTNER',
   EMPLOYEE = 'EMPLOYEE',
 }
+
+export enum Channel {
+  CUSTOMER = 'CUSTOMER',
+  HUB = 'HUB',
+  SUPPLEMENT = 'SUPPLEMENT',
+}
 export interface IOrder {
   teamId: string;
   minimumTreshold: Decimal;

@@ -220,6 +220,36 @@ export class UsersController {
     @Body() deliveryAddressDto: DeliveryAddressDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const deliveryAddressExist = await this.usersService.getDeliveryAddress({
+      userId: deliveryAddressDto.userId,
+    });
+
+    if (deliveryAddressExist) {
+      return formatResponse(
+        'Delivery address already exist for this user',
+        res,
+        HttpStatus.CONFLICT,
+        true,
+        'Duplicate Entry',
+      );
+    }
+
+    if (deliveryAddressDto.phone) {
+      const phoneNumberExist = await this.usersService.findUser({
+        phone: deliveryAddressDto.phone,
+      });
+
+      if (phoneNumberExist) {
+        return formatResponse(
+          'Phone number already exist',
+          res,
+          HttpStatus.CONFLICT,
+          true,
+          'Duplicate Entry',
+        );
+      }
+    }
+
     const result = await this.usersService.createDeliveryAddress(
       deliveryAddressDto,
     );
