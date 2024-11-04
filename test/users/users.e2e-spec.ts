@@ -12,6 +12,7 @@ describe('UserController (e2e)', () => {
 
   const phone = faker.phone.number();
   const phone2 = faker.phone.number() + '34';
+  const supplementUserPhone = faker.phone.number() + '39';
   const businessName =
     faker.company.catchPhraseNoun() + Math.floor(Math.random() * 30);
   const email = Math.floor(Math.random() * 30) + faker.internet.email();
@@ -19,6 +20,7 @@ describe('UserController (e2e)', () => {
 
   let user: User;
   let userId: string;
+  let supplementUserId: string;
   let producerId: string;
   let jwtToken: string;
   let producerCategoryOptionId: string;
@@ -39,6 +41,17 @@ describe('UserController (e2e)', () => {
     businessName,
     businessAddress: 'Business Address',
     phone: phone2,
+  };
+
+  const supplementUserDeliveryAddressInfo = {
+    firstName: 'John',
+    lastName: 'Doe',
+    address: '123 Main St',
+    city: 'New York',
+    country: 'USA',
+    postalCode: '10001',
+    channel: 'SUPPLEMENT',
+    phone: supplementUserPhone + '433',
   };
 
   const testTime = 120000;
@@ -62,6 +75,14 @@ describe('UserController (e2e)', () => {
       },
     });
     userId = user.id;
+
+    // create supplement user for test
+    user = await prisma.user.create({
+      data: {
+        phone: supplementUserPhone,
+      },
+    });
+    supplementUserId = user.id;
 
     // get producer category option id to work with
     const result = await prisma.producerCategoryOption.create({
@@ -232,6 +253,24 @@ describe('UserController (e2e)', () => {
             buildingNo: 'Rabble21',
             address: '22 Kate Road',
             city: 'Dummy City',
+          })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    it(
+      '/users/delivery-address should add user delivery address for a supplement user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/users/delivery-address')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            userId: supplementUserId,
+            ...supplementUserDeliveryAddressInfo,
           })
           .expect(201);
         expect(response.body).toHaveProperty('data');

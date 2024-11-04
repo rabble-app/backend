@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateIf, IsEnum } from 'class-validator';
+import { Channel } from '../../lib/types';
 
 export class DeliveryAddressDto {
   @ApiProperty({
@@ -33,7 +34,7 @@ export class DeliveryAddressDto {
     description: 'The city of the user',
     required: false,
   })
-  @ValidateIf((o) => o.city)
+  @ValidateIf((o) => o.city || o.channel == Channel.SUPPLEMENT)
   @IsString()
   city: string;
 
@@ -42,7 +43,55 @@ export class DeliveryAddressDto {
     description: 'The postal code of the user',
     required: false,
   })
-  @ValidateIf((o) => o.postalCode)
+  @ValidateIf((o) => o.postalCode || o.channel == Channel.SUPPLEMENT)
   @IsString()
   postalCode: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The app from which the user is making the request',
+    required: true,
+    default: Channel.CUSTOMER,
+  })
+  @IsEnum(Channel)
+  channel: Channel = Channel.CUSTOMER;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users first name',
+    required: false,
+  })
+  @ValidateIf((o) => o.channel == Channel.SUPPLEMENT)
+  @IsNotEmpty()
+  @IsString()
+  firstName: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The users last name',
+    required: false,
+  })
+  @ValidateIf((o) => o.channel == Channel.SUPPLEMENT)
+  @IsNotEmpty()
+  @IsString()
+  lastName: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The city of the user',
+    required: false,
+  })
+  @ValidateIf((o) => o.channel == Channel.SUPPLEMENT)
+  @IsString()
+  country: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The phone number of the user',
+    required: true,
+  })
+  @ValidateIf((o) => o.channel == Channel.SUPPLEMENT)
+  @IsNotEmpty()
+  @IsString()
+  phone: string;
 }

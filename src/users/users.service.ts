@@ -195,16 +195,34 @@ export class UsersService {
   async createDeliveryAddress(
     deliveryAddressDto: DeliveryAddressDto,
   ): Promise<Shipping> {
+    const userUpdateconditions: Prisma.UserUpdateInput = {};
+    if (deliveryAddressDto.firstName) {
+      userUpdateconditions.firstName = deliveryAddressDto.firstName;
+    }
+    if (deliveryAddressDto.lastName) {
+      userUpdateconditions.lastName = deliveryAddressDto.lastName;
+    }
+    if (deliveryAddressDto.phone) {
+      userUpdateconditions.phone = deliveryAddressDto.phone;
+    }
     if (deliveryAddressDto.postalCode) {
+      userUpdateconditions.postalCode = deliveryAddressDto.postalCode;
+    }
+
+    if (Object.keys(userUpdateconditions).length !== 0) {
       await this.updateUser({
         where: {
           id: deliveryAddressDto.userId,
         },
         data: {
-          postalCode: deliveryAddressDto.postalCode,
+          ...userUpdateconditions,
         },
       });
+      delete deliveryAddressDto.firstName;
+      delete deliveryAddressDto.lastName;
+      delete deliveryAddressDto.phone;
       delete deliveryAddressDto.postalCode;
+      delete deliveryAddressDto.channel;
     }
     return await this.prisma.shipping.create({
       data: deliveryAddressDto,
@@ -660,11 +678,17 @@ export class UsersService {
     });
   }
 
-  async createCustomer(phone: string): Promise<{ id: string } | null> {
+  async createStripeCustomer({
+    phone,
+    email,
+  }: {
+    phone?: string;
+    email?: string;
+  }): Promise<{ id: string } | null> {
     try {
-      const params: Stripe.CustomerCreateParams = {
-        phone,
-      };
+      const params: Stripe.CustomerCreateParams = {};
+      if (email) params['email'] = email;
+      if (phone) params['phone'] = phone;
       const response = await this.stripe.customers.create(params);
       return {
         id: response.id,
