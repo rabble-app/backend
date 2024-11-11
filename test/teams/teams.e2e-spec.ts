@@ -58,6 +58,18 @@ describe('TeamsController (e2e)', () => {
     orderCutOffDate: new Date(),
   };
 
+  const supplementBuyingTeam = {
+    name: `${faker.internet.userName()} supplement`,
+    postalCode: '234-54',
+    hostId: '',
+    frequency: 604800,
+    description: 'Dummy description',
+    producerId: '',
+    isPublic: true,
+    nextDeliveryDate: new Date(),
+    productId: '',
+  };
+
   const buyingTeamUpdate = {
     name: faker.internet.userName(),
     postalCode: '234-54',
@@ -110,6 +122,7 @@ describe('TeamsController (e2e)', () => {
     buyingTeam.hostId = user.id;
     teamRequest.userId = user.id;
     partnerBuyingTeam.hostId = user.id;
+    supplementBuyingTeam.hostId = user.id;
 
     // create payment method for the test
     const paymentMethod = await stripe.paymentMethods.create({
@@ -138,6 +151,7 @@ describe('TeamsController (e2e)', () => {
     producerId = producer.id;
     buyingTeam.producerId = producer.id;
     partnerBuyingTeam.producerId = producer.id;
+    supplementBuyingTeam.producerId = producer.id;
 
     // create dummy partner for test
     const partner = await prisma.partner.create({
@@ -154,6 +168,15 @@ describe('TeamsController (e2e)', () => {
       },
     });
     partnerBuyingTeam.partnerId = partner.id;
+
+    // create dummy product for test
+    const product = await prisma.product.create({
+      data: {
+        producerId,
+        name: faker.internet.userName(),
+      },
+    });
+    supplementBuyingTeam.productId = product.id;
 
     // create  team for test
     const team = await prisma.buyingTeam.create({
@@ -258,6 +281,22 @@ describe('TeamsController (e2e)', () => {
           .post('/teams/create')
           .set('Authorization', `Bearer ${jwtToken}`)
           .send({ ...partnerBuyingTeam })
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // create supplement team
+    it(
+      '/teams/create(POST) should create a new supplement buying team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/teams/create')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ ...supplementBuyingTeam })
           .expect(201);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
