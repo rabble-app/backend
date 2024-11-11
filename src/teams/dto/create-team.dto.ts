@@ -128,4 +128,13 @@ export class CreateTeamDto {
   @ValidateIf((o) => o.partnerId)
   @IsISO8601()
   orderCutOffDate: Date;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The product to be attached for supplement teams',
+    required: true,
+  })
+  @ValidateIf((o) => o.productId)
+  @IsString()
+  productId: string;
 }

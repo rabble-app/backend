@@ -230,6 +230,7 @@ model Product {
   recentlyViewed    RecentlyViewed[]
   reviews           Review[]
   collectionItem    CollectionItems[]
+  supplementTeamProducts SupplementTeamProducts?
 
   @@unique([name, producerId], name: "name_unique_producer")
   @@index([id, producerId, categoryId])
@@ -310,10 +311,24 @@ model BuyingTeam {
   requests          TeamRequest[]
   chats             Chat[]
   Partner           Partner?                    @relation(fields: [partnerId], references: [id])
-  partnerId         String?
+  partnerId         String?  
+  supplementTeamProducts SupplementTeamProducts?
 
   @@index([id, hostId, producerId])
   @@map("buying_teams")
+
+}
+
+model SupplementTeamProducts {
+  id                String                      @id @default(uuid())
+  teamId            String                      @map("team_id") @unique
+  productId         String                      @map("product_id") @unique
+  createdAt         DateTime                    @default(now()) @map("created_at")
+  updatedAt         DateTime                    @updatedAt @map("updated_at")
+  team              BuyingTeam                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  product           Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@index([id, teamId, productId])
+  @@map("supplement_team_products")
 }
 
 model Review {
