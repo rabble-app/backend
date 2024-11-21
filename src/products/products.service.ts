@@ -354,6 +354,7 @@ export class ProductsService {
             rabbleMarkUp: true,
             status: true,
             rrp: true,
+            tags: true
           }
         },
         team: {
