@@ -596,6 +596,22 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
+     // cancel or reactivate user's buying team subscription
+     it(
+      '/teams/members/:id/subscription(PATCH) user should skip next delivery',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch(`/teams/members/${teamMemberId}/subscription`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ status: 'ACTIVE' })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     // return buying team of a user
     it(
       '/teams/user/:id(GET) should return the buying teams of a user',

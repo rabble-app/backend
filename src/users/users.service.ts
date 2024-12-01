@@ -320,6 +320,7 @@ export class UsersService {
                 },
               },
             },
+            basket: true,
           },
         },
       },
