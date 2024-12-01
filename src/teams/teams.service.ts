@@ -31,9 +31,12 @@ export class TeamsService {
   ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
+    const currentDate = new Date();
     const paymentIntentId = createTeamDto.paymentIntentId;
+    const productId = createTeamDto.productId;
     const teamData = createTeamDto;
     delete teamData.paymentIntentId;
+    delete teamData.productId;
     let imageUrl = '';
     let orderDeadlineDate = new Date();
     let accumulatedAmount: Decimal = new Decimal(0);
@@ -75,7 +78,6 @@ export class TeamsService {
       orderDeadlineDate = new Date(createTeamDto.orderCutOffDate);
       delete teamData.orderCutOffDate;
     } else if (paymentIntentId) {
-      const currentDate = new Date();
       // add 6 days to the current date, order closes on the 7 day
       orderDeadlineDate = new Date(
         currentDate.getTime() + 1 * 6 * 24 * 60 * 60 * 1000,
@@ -110,6 +112,22 @@ export class TeamsService {
       role: TeamMemberShip.ADMIN,
     };
     await this.addTeamMember(memberData);
+
+    if (productId) {
+      // add 11 weeks to the current date(deadline is 5weeks b4 each quarter which is 77 days
+      //  from now(assuming today is the begining of a quarter)
+      orderDeadlineDate = new Date(
+        currentDate.getTime() + 1 * 77 * 24 * 60 * 60 * 1000,
+      );
+
+      // create the supplement team/products record
+      await this.prisma.supplementTeamProducts.create({
+        data: {
+          productId,
+          teamId: result.id,
+        },
+      });
+    }
 
     // create order
     const orderData = {

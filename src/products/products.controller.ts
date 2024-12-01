@@ -24,6 +24,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { UpdateProductStatusDto } from './dto/update-product-status';
@@ -343,4 +344,36 @@ export class ProductsController {
       'Products updated successfully',
     );
   }
+
+  /**
+   * return supplement team products
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/supplement/list')
+  @ApiOkResponse({
+    description: 'Supplement products returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'The limit of the records to be returned',
+  })
+  async supplementProducts(
+    @Query('limit') limit: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getSupplementProducts(limit);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Supplement products returned successfully',
+    );
+  }
+
 }

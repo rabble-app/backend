@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
-import { Order, OrderStatus, Prisma } from '@prisma/client';
+import { Order, OrderStatus, Prisma, SubscriptionStatus, TeamMember } from '@prisma/client';
 import { ProductsService } from '../../src/products/products.service';
 
 @Injectable()
@@ -98,10 +98,22 @@ export class TeamsServiceExtension2 {
         id,
       },
       data: {
-        skipNextDelivery: true,
+        skipNextDelivery: false
       },
     });
   }
+
+  async updateSubscriptionStatus(id: string, subscriptionStatus: SubscriptionStatus): Promise<TeamMember> {
+    return await this.prisma.teamMember.update({
+      where: {
+        id,
+      },
+      data: {
+        subscriptionStatus,
+      },
+    });
+  }
+
 
   async getAllBuyingTeamSubscription(offset = 0): Promise<object> {
     const result = await this.prisma.$transaction([
