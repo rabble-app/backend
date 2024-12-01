@@ -14,6 +14,11 @@ export enum Status {
   REMOVED = 'REMOVED',
 }
 
+export enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  CANCELED = 'CANCELED',
+}
+
 export enum PartnerOpenHour {
   ALL_THE_TIME = 'ALL_THE_TIME',
   MON_TO_FRI = 'MON_TO_FRI',

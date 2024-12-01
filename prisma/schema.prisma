@@ -351,16 +351,17 @@ model Review {
 }
 
 model TeamMember {
-  id               String           @id @default(uuid())
-  teamId           String           @map("team_id")
-  userId           String           @map("user_id")
-  status           TeamStatus
-  role             MembershipStatus @default(MEMBER)
-  skipNextDelivery Boolean          @default(false)
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  team             BuyingTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String             @id @default(uuid())
+  teamId             String             @map("team_id")
+  userId             String             @map("user_id")
+  status             TeamStatus
+  role               MembershipStatus   @default(MEMBER)
+  skipNextDelivery   Boolean            @default(false)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE) @map("subscription_status")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  team               BuyingTeam         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId], name: "team_unique_user")
   @@index([id, teamId, userId, status])
@@ -513,6 +514,7 @@ model Basket {
   productId     String               @map("product_id")
   quantity      Int
   price         Decimal              @default(0) @db.Decimal(9, 2)
+  capsulePerDay Decimal              @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
   paymentStatus ProductPaymentStatus @default(PENDING) @map("payment_status")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
@@ -526,17 +528,18 @@ model Basket {
 }
 
 model BasketC {
-  id        String     @id @default(uuid())
-  teamId    String     @map("team_id")
-  userId    String     @map("user_id")
-  productId String     @map("product_id")
-  quantity  Int
-  price     Decimal    @default(0) @db.Decimal(9, 2)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String     @id @default(uuid())
+  teamId        String     @map("team_id")
+  userId        String     @map("user_id")
+  productId     String     @map("product_id")
+  capsulePerDay Decimal    @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  quantity      Int
+  price         Decimal    @default(0) @db.Decimal(9, 2)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  team          BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId, productId], name: "team_unique_product")
   @@index([id, userId, teamId])
@@ -839,4 +842,9 @@ enum ProductPaymentStatus {
   AUTHORIZED
   REFUNDED
   CAPTURED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
 }

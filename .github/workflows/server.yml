@@ -50,7 +50,7 @@ jobs:
   rabble-backend:
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
         cockroachdb-docker-version: ["cockroachdb/cockroach:v21.2.4"]
       fail-fast: false 
     runs-on: ubuntu-latest  

@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   Request,
+  Patch,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import {
@@ -32,6 +33,7 @@ import { AddMemberDto } from './dto/add-member.dto';
 import { TeamsServiceExtension } from './teams.service.extension';
 import { TeamsServiceExtension2 } from './teams.service.extension2';
 import { AuthGuard } from '../../src/auth/auth.guard';
+import { SubscriptionStatusUpdateDto } from './dto/subscription-status.dto';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -340,7 +342,7 @@ export class TeamsControllerExtension {
   @UseGuards(AuthGuard)
   @Get('/members/skip-delivery/:id')
   @ApiOkResponse({
-    description: 'Next delivery skipped successfully',
+    description: 'Next delivery updated successfully',
   })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiParam({
@@ -358,7 +360,39 @@ export class TeamsControllerExtension {
       res,
       HttpStatus.OK,
       false,
-      'Next delivery skipped successfully',
+      'Next delivery updated successfully',
+    );
+  }
+
+  /**
+   * return a particular buying team current order status.
+   * @param {Response} res - The payload.
+   * @memberof TeamsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch('/members/:id/subscription')
+  @ApiOkResponse({
+    description: 'Subscription status updated successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the team membership',
+  })
+  async updateSubscriptionStatus(
+    @Param('id') id: string,
+    @Body() subscriptionStatusUpdateDto: SubscriptionStatusUpdateDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.teamsServiceExtension2.updateSubscriptionStatus(id, subscriptionStatusUpdateDto.status);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription status updated successfully',
     );
   }
 
