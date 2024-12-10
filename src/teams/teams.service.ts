@@ -1,7 +1,8 @@
-import { BuyingTeam, Prisma, TeamMember, TeamRequest } from '@prisma/client';
+import { BuyingTeam, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
+  BuyingTeamsWithSupplementProduct,
   ITeamMember,
   Status,
   TeamMemberShip,
@@ -28,15 +29,17 @@ export class TeamsService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => TeamsServiceExtension))
     private teamsServiceExtension: TeamsServiceExtension,
-  ) {}
+  ) { }
 
   async createTeam(createTeamDto: CreateTeamDto) {
     const currentDate = new Date();
     const paymentIntentId = createTeamDto.paymentIntentId;
     const productId = createTeamDto.productId;
+    const preOrderThreshold = createTeamDto.preOrderThreshold;
     const teamData = createTeamDto;
     delete teamData.paymentIntentId;
     delete teamData.productId;
+    delete teamData.preOrderThreshold;
     let imageUrl = '';
     let orderDeadlineDate = new Date();
     let accumulatedAmount: Decimal = new Decimal(0);
@@ -53,16 +56,16 @@ export class TeamsService {
         if (typeof teamImages[category] == 'function') {
           imageUrl =
             teamImages[category]()[
-              Math.floor(
-                Math.floor(Math.random() * 10) * teamImages[category]().length,
-              )
+            Math.floor(
+              Math.floor(Math.random() * 10) * teamImages[category]().length,
+            )
             ];
         } else {
           imageUrl =
             teamImages[category][
-              Math.floor(
-                Math.floor(Math.random() * 10) * teamImages[category].length,
-              )
+            Math.floor(
+              Math.floor(Math.random() * 10) * teamImages[category].length,
+            )
             ];
         }
       }
@@ -70,7 +73,7 @@ export class TeamsService {
     if (!imageUrl) {
       imageUrl =
         teamImages.General[
-          Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
+        Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
         ];
     }
 
@@ -104,62 +107,57 @@ export class TeamsService {
       },
     });
 
-    // add the host as a user to the group
-    const memberData = {
-      teamId: result.id,
-      userId: createTeamDto.hostId,
-      status: Status.APPROVED,
-      role: TeamMemberShip.ADMIN,
-    };
-    await this.addTeamMember(memberData);
-
     if (productId) {
-      // add 11 weeks to the current date(deadline is 5weeks b4 each quarter which is 77 days
-      //  from now(assuming today is the begining of a quarter)
-      orderDeadlineDate = new Date(
-        currentDate.getTime() + 1 * 77 * 24 * 60 * 60 * 1000,
-      );
-
       // create the supplement team/products record
       await this.prisma.supplementTeamProducts.create({
         data: {
           productId,
           teamId: result.id,
+          orderTreashold: preOrderThreshold
         },
       });
-    }
-
-    // create order
-    const orderData = {
-      teamId: result.id,
-      minimumTreshold: producerInfo.minimumTreshold,
-      deadline: orderDeadlineDate,
-      accumulatedAmount: accumulatedAmount,
-      status: createTeamDto.partnerId ? 'INACTIVE' : 'PENDING',
-    };
-    const orderResponse = await this.paymentService.createOrder(orderData);
-
-    // normal user's buying team
-    if (paymentIntentId) {
-      // update payment record
-      const paymentData = {
-        orderId: orderResponse.id,
-        paymentIntentId,
+    } else {
+      // add the host as a user to the group
+      const memberData = {
+        teamId: result.id,
+        userId: createTeamDto.hostId,
+        status: Status.APPROVED,
+        role: TeamMemberShip.ADMIN,
       };
+      await this.addTeamMember(memberData);
 
-      await this.paymentService.updatePayment({
-        where: { paymentIntentId },
-        data: { ...paymentData },
-      });
-      result['orderId'] = orderResponse.id;
+      // create order
+      const orderData = {
+        teamId: result.id,
+        minimumTreshold: producerInfo.minimumTreshold,
+        deadline: orderDeadlineDate,
+        accumulatedAmount: accumulatedAmount,
+        status: createTeamDto.partnerId ? 'INACTIVE' : 'PENDING',
+      };
+      const orderResponse = await this.paymentService.createOrder(orderData);
 
-      // send notification
-      if (+accumulatedAmount >= +producerInfo.minimumTreshold) {
-        await this.paymentService.sendNotificationForThreshold(
-          result.id,
-          orderResponse.id,
-          orderDeadlineDate,
-        );
+      // normal user's buying team
+      if (paymentIntentId) {
+        // update payment record
+        const paymentData = {
+          orderId: orderResponse.id,
+          paymentIntentId,
+        };
+
+        await this.paymentService.updatePayment({
+          where: { paymentIntentId },
+          data: { ...paymentData },
+        });
+        result['orderId'] = orderResponse.id;
+
+        // send notification
+        if (+accumulatedAmount >= +producerInfo.minimumTreshold) {
+          await this.paymentService.sendNotificationForThreshold(
+            result.id,
+            orderResponse.id,
+            orderDeadlineDate,
+          );
+        }
       }
     }
 
@@ -184,13 +182,13 @@ export class TeamsService {
     // get the team info
     const team = await this.findBuyingTeam({ id: teamData.teamId });
 
-    // get team members
-    const teamAdmins = await this.teamsServiceExtension.getAllTeamUsers(
+    // get team members 
+    const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
       teamData.teamId,
     );
 
-    if (teamAdmins.length > 0) {
-      teamAdmins.forEach(async (admin) => {
+    if (teamMembers.length > 0) {
+      teamMembers.forEach(async (admin) => {
         // don't send notification to your self
         if (teamData.userId != admin.userId) {
           // send notification
@@ -204,6 +202,17 @@ export class TeamsService {
           });
         }
       });
+    }
+
+    // check if team is for supplement and status is not active
+    if (team.supplementTeamProducts?.status == 'PREORDER') {
+      if (team.supplementTeamProducts.orderTreashold <= teamMembers.length) {
+        // update the team status to active
+        await this.updateSupplementProductTeam({
+          where: { id: team.supplementTeamProducts.id },
+          data: { status: 'ACTIVE' },
+        });
+      }
     }
 
     return result;
@@ -359,6 +368,17 @@ export class TeamsService {
     });
   }
 
+  async updateSupplementProductTeam(params: {
+    where: Prisma.SupplementTeamProductsWhereUniqueInput;
+    data: Prisma.SupplementTeamProductsUpdateInput;
+  }): Promise<SupplementTeamProducts> {
+    const { where, data } = params;
+    return await this.prisma.supplementTeamProducts.update({
+      data,
+      where,
+    });
+  }
+
   async deleteTeam(
     where: Prisma.BuyingTeamWhereUniqueInput,
   ): Promise<BuyingTeam> {
@@ -435,9 +455,12 @@ export class TeamsService {
 
   async findBuyingTeam(
     buyingTeamWhereUniqueInput: Prisma.BuyingTeamWhereUniqueInput,
-  ): Promise<BuyingTeam | null> {
+  ): Promise<BuyingTeamsWithSupplementProduct | null> {
     return await this.prisma.buyingTeam.findUnique({
       where: buyingTeamWhereUniqueInput,
+      include: {
+        supplementTeamProducts: true
+      }
     });
   }
 
@@ -446,12 +469,12 @@ export class TeamsService {
     userId: string,
   ): Promise<
     | {
-        id: string;
-        name: string;
-        imageUrl: string;
-        producerId: string;
-        hostId: string;
-      }[]
+      id: string;
+      name: string;
+      imageUrl: string;
+      producerId: string;
+      hostId: string;
+    }[]
     | null
   > {
     return await this.prisma.buyingTeam.findMany({

@@ -328,3 +328,9 @@ export interface IStoreEmployee {
   user: { phone: string; firstName: string; lastName: string };
   id: string;
 }
+
+export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
+  include: {
+    supplementTeamProducts: true
+  };
+}>;
