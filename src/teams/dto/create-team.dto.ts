@@ -137,4 +137,12 @@ export class CreateTeamDto {
   @ValidateIf((o) => o.productId)
   @IsString()
   productId: string;
+  @ApiProperty({
+    type: 'number',
+    description: 'The pre order threshold for the buying team',
+    required: true,
+  })
+  @ValidateIf((o) => o.productId)
+  @IsNumber()
+  preOrderThreshold: number;
 }
