@@ -68,6 +68,7 @@ describe('TeamsController (e2e)', () => {
     isPublic: true,
     nextDeliveryDate: new Date(),
     productId: '',
+    preOrderThreshold: 10,
   };
 
   const buyingTeamUpdate = {

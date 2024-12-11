@@ -325,6 +325,8 @@ model SupplementTeamProducts {
   id        String     @id @default(uuid())
   teamId    String     @unique @map("team_id")
   productId String     @unique @map("product_id")
+  orderTreashold Int   @default(10) @map("order_treashold")
+  status    SupplementTeamStatus     @default(PREORDER) @map("status")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
   team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -847,4 +849,9 @@ enum ProductPaymentStatus {
 enum SubscriptionStatus {
   ACTIVE
   CANCELED
+}
+
+enum SupplementTeamStatus {
+  ACTIVE
+  PREORDER
 }
