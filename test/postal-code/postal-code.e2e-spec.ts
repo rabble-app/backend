@@ -71,7 +71,7 @@ describe('PostalCodeController (e2e)', () => {
       data: {
         userId,
         businessName:
-          faker.internet.userName() + Math.floor(Math.random() * 30),
+          faker.internet.userName() + Math.floor(Math.random() * 90),
       },
     });
     producerId = producer.id;
@@ -79,8 +79,8 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy region for test
     const { id: regionId } = await prisma.postalCodeRegion.create({
       data: {
-        id: faker.internet.port().toString() + Math.floor(Math.random() * 30),
-        name: faker.internet.domainName() + Math.floor(Math.random() * 30),
+        id: faker.internet.port().toString() + Math.floor(Math.random() * 32),
+        name: faker.internet.domainName() + Math.floor(Math.random() * 10),
       },
     });
     testRegionId = regionId;
@@ -88,8 +88,8 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy area for test
     const { id: areaId } = await prisma.postalCodeArea.create({
       data: {
-        name: faker.internet.domainName() + Math.floor(Math.random() * 30),
-        code: faker.internet.domainName() + Math.floor(Math.random() * 30),
+        name: faker.internet.domainName() + Math.floor(Math.random() * 20),
+        code: faker.internet.domainName() + Math.floor(Math.random() * 10),
         regionId: regionId,
       },
     });
@@ -98,8 +98,8 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy region 2 for test
     const { id: regionId2 } = await prisma.postalCodeRegion.create({
       data: {
-        id: `${faker.internet.port().toString()}22`,
-        name: `${faker.internet.domainName()}second`,
+        id: `${faker.internet.port().toString()}2572`,
+        name: `${faker.internet.domainName()}secondFifty`,
       },
     });
     testRegionId2 = regionId2;
@@ -107,8 +107,8 @@ describe('PostalCodeController (e2e)', () => {
     // create dummy area 2 for test
     const { id: areaId2 } = await prisma.postalCodeArea.create({
       data: {
-        name: `${faker.internet.domainName()}name`,
-        code: `${faker.internet.domainName()}code`,
+        name: `${faker.internet.domainName()}name123`,
+        code: `${faker.internet.domainName()}code456`,
         regionId: regionId2,
       },
     });
