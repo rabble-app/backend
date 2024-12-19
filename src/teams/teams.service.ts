@@ -1,4 +1,4 @@
-import { BuyingTeam, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
+import { BuyingTeam, MembershipStatus, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
@@ -165,6 +165,11 @@ export class TeamsService {
   }
 
   async addTeamMember(teamData: ITeamMember): Promise<TeamMember | null> {
+    // get the team info
+    const team = await this.findBuyingTeam({ id: teamData.teamId });
+
+    const memberStatus = teamData.role? teamData.role :team.supplementTeamProducts?.status == 'PREORDER'? MembershipStatus.FOUNDING_MEMBER: MembershipStatus.MEMBER;
+
     const result = await this.prisma.teamMember.upsert({
       where: {
         team_unique_user: {
@@ -173,19 +178,27 @@ export class TeamsService {
         },
       },
       update: {},
-      create: { ...teamData },
+      create: { ...teamData, role: memberStatus },
     });
 
     // get the sender info
     const sender = await this.userService.findUser({ id: teamData.userId });
 
-    // get the team info
-    const team = await this.findBuyingTeam({ id: teamData.teamId });
-
     // get team members 
     const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
       teamData.teamId,
     );
+
+    // check if team is for supplement and status is not active
+    if (team.supplementTeamProducts?.status == 'PREORDER') {
+      if (team.supplementTeamProducts.orderTreashold <= teamMembers.length) {
+        // update the team status to active
+        await this.updateSupplementProductTeam({
+          where: { id: team.supplementTeamProducts.id },
+          data: { status: 'ACTIVE' },
+        });
+      }
+    }
 
     if (teamMembers.length > 0) {
       teamMembers.forEach(async (admin) => {
@@ -202,17 +215,6 @@ export class TeamsService {
           });
         }
       });
-    }
-
-    // check if team is for supplement and status is not active
-    if (team.supplementTeamProducts?.status == 'PREORDER') {
-      if (team.supplementTeamProducts.orderTreashold <= teamMembers.length) {
-        // update the team status to active
-        await this.updateSupplementProductTeam({
-          where: { id: team.supplementTeamProducts.id },
-          data: { status: 'ACTIVE' },
-        });
-      }
     }
 
     return result;
