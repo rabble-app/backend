@@ -3,8 +3,6 @@ import {
   IsString,
   IsNotEmpty,
   IsNumber,
-  IsBoolean,
-  ValidateIf,
 } from 'class-validator';
 
 export class AddSingleBasketDto {
@@ -55,20 +53,10 @@ export class AddSingleBasketDto {
 
   @ApiProperty({
     type: 'string',
-    description: 'The order id',
-    required: true,
-  })
-  @ValidateIf((o) => o.deadlineReached != true)
-  @IsNotEmpty()
-  @IsString()
-  orderId: string;
-
-  @ApiProperty({
-    type: 'boolean',
-    description: 'indicates whether order deadline has been reached',
+    description: 'The capsule to be taken per day',
     required: true,
   })
   @IsNotEmpty()
-  @IsBoolean()
-  deadlineReached: boolean;
+  @IsNumber()
+  capsulePerDay: number; 
 }
