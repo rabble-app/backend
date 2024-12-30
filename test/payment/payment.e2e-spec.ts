@@ -375,13 +375,12 @@ describe('PaymentController (e2e)', () => {
         '/payments/basket(POST) should add a single item to basket',
         async () => {
           const basket = {
-            orderId,
             userId,
             productId: productId2,
             quantity: 2,
             price: 2000,
             teamId,
-            deadlineReached: false,
+            capsulePerDay: 3
           };
           const response = await request(app.getHttpServer())
             .post('/payments/basket')
@@ -400,7 +399,7 @@ describe('PaymentController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/payments/basket')
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ orderId })
+          .send({ userId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
