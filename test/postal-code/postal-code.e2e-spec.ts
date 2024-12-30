@@ -71,7 +71,7 @@ describe('PostalCodeController (e2e)', () => {
       data: {
         userId,
         businessName:
-          faker.internet.userName() + Math.floor(Math.random() * 90),
+          faker.internet.userName() +'Postal code producer',
       },
     });
     producerId = producer.id;

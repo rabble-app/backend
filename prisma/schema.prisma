@@ -337,6 +337,16 @@ model SupplementTeamProducts {
   @@map("supplement_team_products")
 }
 
+model SupplementTags {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  type  SupplementTagTypes  @default(CATEGORY)  @map("type")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("supplement_tags")
+}
+
 model Review {
   id         String    @id @default(uuid())
   text       String
@@ -856,4 +866,12 @@ enum SubscriptionStatus {
 enum SupplementTeamStatus {
   ACTIVE
   PREORDER
+}
+
+enum SupplementTagTypes  {
+  GOALS
+  CATEGORY
+  FUNCTION
+  AUDIENCE
+  SORT
 }

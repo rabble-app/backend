@@ -376,4 +376,28 @@ export class ProductsController {
     );
   }
 
+  /**
+   * return supplement team products tags
+   * @param {Response} res - The payload.
+   * @memberof ProductsController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/supplement/tags')
+  @ApiOkResponse({
+    description: 'Supplement products tags returned successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async supplementProductsTags(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.productsService.getSupplementProductsTags();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Supplement products tags returned successfully',
+    );
+  }
 }

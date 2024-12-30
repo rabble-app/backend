@@ -1,6 +1,6 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { Product, ProductCategory, RecentlyViewed, SupplementTeamProducts } from '@prisma/client';
+import { Product, ProductCategory, RecentlyViewed, SupplementTags, SupplementTeamProducts } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { ITeamWithOtherInfo, ProductApprovalStatus } from '../../src/lib/types';
@@ -370,6 +370,15 @@ export class ProductsService {
         },  
       },
       ...(limit && { take: +limit }),
+    });
+  }
+
+  async getSupplementProductsTags(): Promise<Partial<SupplementTags>[] | null> {
+    return await this.prisma.supplementTags.findMany({
+      select: {
+        name: true,
+        type: true
+      },
     });
   }
 }
