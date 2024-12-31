@@ -61,6 +61,21 @@ export class ProductsService {
             createdAt: 'desc',
           },
         },
+        supplementTeamProducts:{
+          select:{
+            orderTreashold: true,
+            foundingMembersDiscount: true,
+            team:{
+              select: {
+                _count: {
+                 select: {
+                    members: true,
+                  },
+                },
+              },
+            }
+          }
+        }
       },
     });
   }
@@ -342,6 +357,9 @@ export class ProductsService {
       select:{
         teamId: true,
         productId: true,
+        status: true,
+        orderTreashold: true,
+        foundingMembersDiscount: true,
         product: {
           select: {
             id: true,
@@ -354,7 +372,12 @@ export class ProductsService {
             rabbleMarkUp: true,
             status: true,
             rrp: true,
-            tags: true
+            tags: true,
+            producer:{
+              select:{
+                businessName: true
+              }
+            }
           }
         },
         team: {
