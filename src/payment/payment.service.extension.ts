@@ -218,4 +218,7 @@ export class PaymentServiceExtension {
     });
     return tax;
   }
+
+  // capture supplement payment
+  // create the payment record
 }
