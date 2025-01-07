@@ -375,7 +375,8 @@ export class ProductsService {
             tags: true,
             producer:{
               select:{
-                businessName: true
+                businessName: true,
+                imageUrl: true,
               }
             },
             formulationSummary: true
