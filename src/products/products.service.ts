@@ -377,7 +377,8 @@ export class ProductsService {
               select:{
                 businessName: true
               }
-            }
+            },
+            formulationSummary: true
           }
         },
         team: {

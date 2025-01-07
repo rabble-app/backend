@@ -316,6 +316,22 @@ describe('PaymentController (e2e)', () => {
       testTime,
     );
 
+    // capture payment intent
+    it(
+      '/payments/intent(POST) should capture payment intent for supplement customers',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/intent/capture')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ ...chargeInfo, customerId })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     describe('Basket', () => {
       // add user bulk basket successfully
       it(

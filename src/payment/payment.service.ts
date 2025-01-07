@@ -227,20 +227,6 @@ export class PaymentService {
     }
   }
 
-  async createIntentForApplePay(
-    createIntentDto: CreateIntentDto,
-  ): Promise<object | null> {
-    const paymentIntent = await this.createIntent({
-      amount: createIntentDto.amount,
-      currency: createIntentDto.currency,
-      customerId: createIntentDto.customerId,
-    });
-    return {
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret,
-    };
-  }
-
   async createIntent(
     createIntentData: ICreateIntent,
     offline = false,

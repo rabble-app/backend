@@ -217,9 +217,10 @@ model Product {
   measuresPerSubUnit        Int                   @default(1) @map("measures_per_subunit")
   approvalStatus            ProductApprovalStatus @default(PENDING) @map("approval_status")
   stock                     Int?                  @default(0)
-  tags                      String[]
+  tags                      String[]              @default([])
   priceInfo                 Json?                 @map("price_info")
   capsuleInfo               Json?                 @map("capsule_info")
+  formulationSummary        String[]               @map("formulation_summary") @default([])
 
   createdAt              DateTime                    @default(now()) @map("created_at")
   updatedAt              DateTime                    @updatedAt @map("updated_at")
