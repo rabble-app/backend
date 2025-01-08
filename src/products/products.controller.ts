@@ -351,7 +351,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('/supplement/list')
   @ApiOkResponse({
     description: 'Supplement products returned successfully',
@@ -382,7 +382,7 @@ export class ProductsController {
    * @memberof ProductsController
    * @returns {JSON} - A JSON success response.
    */
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get('/supplement/tags')
   @ApiOkResponse({
     description: 'Supplement products tags returned successfully',
