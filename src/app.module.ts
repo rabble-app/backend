@@ -18,7 +18,9 @@ import { InsightsModule } from './insights/insights.module';
 import { StoreModule } from './store/store.module';
 import { PostalCodeModule } from './postal-code/postal-code.module';
 import { QRCodeModule } from './qrcode/qrcode.module';
-
+import { ReferralsModule } from './referrals/referrals.module';
+import { RollbarModule } from './utils/rollbar.module';
+import { LoggerModule } from './utils/logger.module';
 @Module({
   imports: [
     AuthModule,
@@ -31,6 +33,8 @@ import { QRCodeModule } from './qrcode/qrcode.module';
     ScheduleModule,
     ChatsModule,
     ParametersModule,
+    RollbarModule,
+    LoggerModule,
     InvoicesModule,
     JwtModule.registerAsync({
       useFactory: async (parameters: Record<string, any>) => ({
@@ -43,6 +47,7 @@ import { QRCodeModule } from './qrcode/qrcode.module';
     StoreModule,
     PostalCodeModule,
     QRCodeModule,
+    ReferralsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

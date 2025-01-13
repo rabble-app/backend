@@ -1,0 +1,3 @@
+export const MINIMUM_CLAIM_AMOUNT = 50000;
+export const CC_TO_POUNDS_RATE = 10000;
+export const REFERRAL_BONUS_PERCENTAGE = 0.1;

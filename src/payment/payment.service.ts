@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
-import { AddPaymentCardDto } from './dto/add-payment-card.dto';
+import { AddPaymentCardDto, IPaymentMethod } from './dto/add-payment-card.dto';
 import {
   Basket,
   BasketC,
@@ -9,7 +9,14 @@ import {
   Prisma,
   ProductPaymentStatus,
 } from '@prisma/client';
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
+import { Logger } from 'winston';
 import {
   ICreateIntent,
   IOrder,
@@ -26,6 +33,7 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
+import { ReferralsService } from '../referrals/referrals.service';
 
 @Injectable()
 export class PaymentService {
@@ -33,14 +41,16 @@ export class PaymentService {
   constructor(
     @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
-    private prisma: PrismaService,
+    private readonly prisma: PrismaService,
     private readonly notificationService: NotificationsService,
     @Inject(forwardRef(() => TeamsServiceExtension))
     private readonly teamsServiceExtension: TeamsServiceExtension,
     @Inject(forwardRef(() => TeamsService))
     private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
+    private readonly referralsService: ReferralsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+    @Inject('LOGGER') private readonly logger: Logger,
   ) {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
@@ -49,10 +59,36 @@ export class PaymentService {
 
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
+    userId: string,
   ): Promise<{ paymentMethodId: string } | null> {
     // attach payment method to user
-    await this.stripe.paymentMethods.attach(addPaymentCardDto.paymentMethodId, {
-      customer: addPaymentCardDto.stripeCustomerId,
+    this.logger.log('info', 'Attaching payment method to user %o', {
+      userId,
+      paymentMethodId: addPaymentCardDto.paymentMethodId,
+      stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+    });
+    let result: Stripe.Response<Stripe.PaymentMethod>;
+    try {
+      result = await this.stripe.paymentMethods.attach(
+        addPaymentCardDto.paymentMethodId,
+        {
+          customer: addPaymentCardDto.stripeCustomerId,
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        'error',
+        'Error attaching payment method to user %o',
+        error,
+      );
+    }
+
+    await this.SavePaymentMethod({
+      cardLastFourDigits: result.card.last4,
+      paymentMethodId: addPaymentCardDto.paymentMethodId,
+      userId,
+      stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+      fingerprint: result.card.fingerprint,
     });
 
     // make it user default payment method
@@ -118,7 +154,6 @@ export class PaymentService {
         chargeUserDto.teamId,
       );
     }
-
     // record intent
     const result = await this.handleRecordPayment(
       orderId,
@@ -241,8 +276,12 @@ export class PaymentService {
     offline = false,
   ): Promise<any | null> {
     try {
+      const { amount, couponIds, amountOff } = await this.amountWithCoupon(
+        createIntentData.customerId,
+        Math.round(createIntentData.amount * 100),
+      );
       const parameters = {
-        amount: Math.round(createIntentData.amount * 100),
+        amount,
         currency: createIntentData.currency,
         customer: createIntentData.customerId,
       };
@@ -257,12 +296,21 @@ export class PaymentService {
       } else {
         parameters['setup_future_usage'] = 'off_session';
       }
-
-      return await this.stripe.paymentIntents.create({
+      const paymentIntent = await this.stripe.paymentIntents.create({
         ...parameters,
         capture_method: 'manual',
         use_stripe_sdk: true,
+        metadata: {
+          ...(couponIds && { coupons: couponIds.join(',') }),
+          ...(amountOff && { amount_off: amountOff }),
+        },
       });
+      if (paymentIntent.metadata.coupons) {
+        await this.referralsService.markClaimsAsUsed(
+          paymentIntent.metadata.coupons.split(','),
+        );
+      }
+      return paymentIntent;
     } catch (e) {
       console.log(e);
       // const charge = await this.stripe.charges.retrieve(
@@ -280,6 +328,49 @@ export class PaymentService {
       //   }
       // }
     }
+  }
+
+  async amountWithCoupon(customerId: string, nextPurchaseAmount: number) {
+    const paymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: {
+        stripeCustomerId: customerId,
+      },
+    });
+    if (!paymentMethod) {
+      return {
+        amount: nextPurchaseAmount,
+        couponIds: null,
+        amountOff: 0,
+      };
+    }
+    const unusedCoupons = await this.referralsService.getUnusedCoupons(
+      paymentMethod.userId,
+    );
+    if (!unusedCoupons) {
+      return {
+        amount: nextPurchaseAmount,
+        couponIds: null,
+        amountOff: 0,
+      };
+    }
+    const { couponIds, couponValue } = unusedCoupons;
+    const amountOff = couponValue * 100;
+    const chargeableAmount = nextPurchaseAmount - amountOff;
+    if (chargeableAmount < 100) {
+      this.logger.info(
+        'Chargeable amount is less than 100 if coupon is used, skipping coupon',
+      );
+      return {
+        amount: nextPurchaseAmount,
+        couponIds: null,
+        amountOff: 0,
+      };
+    }
+    return {
+      amount: chargeableAmount,
+      couponIds,
+      amountOff,
+    };
   }
 
   async createOrder(orderData: IOrder): Promise<Order> {
@@ -506,14 +597,18 @@ export class PaymentService {
           productId: addSingleBasketDto.productId,
           userId: addSingleBasketDto.userId,
           orderId: addSingleBasketDto.orderId,
-          quantity: addSingleBasketDto.quantity - addSingleBasketDto.topupQuantity,
+          quantity:
+            addSingleBasketDto.quantity - addSingleBasketDto.topupQuantity,
           price: addSingleBasketDto.price,
           capsulePerDay: addSingleBasketDto.capsulePerDay,
           paymentStatus: ProductPaymentStatus.CAPTURED,
         },
       });
 
-      if(addSingleBasketDto.topupQuantity && addSingleBasketDto.topupQuantity > 0) {
+      if (
+        addSingleBasketDto.topupQuantity &&
+        addSingleBasketDto.topupQuantity > 0
+      ) {
         await this.prisma.topUpBasket.create({
           data: {
             productId: addSingleBasketDto.productId,
@@ -537,7 +632,8 @@ export class PaymentService {
         capsulePerDay: addSingleBasketDto.capsulePerDay,
       },
     });
-    return result
+
+    return result;
   }
 
   async deleteFromBasket(
@@ -588,5 +684,53 @@ export class PaymentService {
       data,
       where,
     });
+  }
+
+  async SavePaymentMethod(params: IPaymentMethod) {
+    const paymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: {
+        fingerprint: params.fingerprint,
+      },
+    });
+    if (paymentMethod) {
+      this.logger.info('Payment method already exists %o', {
+        fingerprint: params.fingerprint,
+        userId: params.userId,
+        last4: params.cardLastFourDigits,
+      });
+      throw new HttpException(
+        'Payment method already exists',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return await this.prisma.paymentMethod.create({
+      data: params,
+    });
+  }
+
+  async seedPaymentMethod() {
+    this.logger.info('Seeding payment methods');
+    const users = await this.prisma.user.findMany({
+      where: {
+        stripeDefaultPaymentMethodId: {
+          not: null,
+        },
+      },
+      distinct: ['stripeDefaultPaymentMethodId'],
+    });
+    for (const user of users) {
+      const paymentMethod = await this.stripe.paymentMethods.retrieve(
+        user.stripeDefaultPaymentMethodId,
+      );
+      this.logger.info(`Seeding payment method for user ${user.id}`);
+      await this.SavePaymentMethod({
+        cardLastFourDigits: paymentMethod.card.last4,
+        paymentMethodId: user.stripeDefaultPaymentMethodId,
+        userId: user.id,
+        stripeCustomerId: user.stripeCustomerId,
+        isDefault: true,
+        fingerprint: paymentMethod.card.fingerprint,
+      });
+    }
   }
 }

@@ -11,6 +11,9 @@ import { PaymentService } from '../../src/payment/payment.service';
 import { ProductsService } from '../../src/products/products.service';
 import { JwtService } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
+import { LoggerModule } from '../utils/logger.module';
+import { RollbarModule } from '../utils/rollbar.module';
+import { ReferralsService } from '../referrals/referrals.service';
 
 describe('ChatsController', () => {
   let controller: ChatsController;
@@ -29,8 +32,9 @@ describe('ChatsController', () => {
         PaymentService,
         ProductsService,
         JwtService,
+        ReferralsService,
       ],
-      imports: [ParametersModule],
+      imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();
 
     controller = module.get<ChatsController>(ChatsController);

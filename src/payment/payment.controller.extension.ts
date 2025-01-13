@@ -121,9 +121,7 @@ export class PaymentControllerExtension {
     @Body() createIntentDto: CreateIntentDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntent(
-      createIntentDto,
-    );
+    const result = await this.paymentService.createIntent(createIntentDto);
     return formatResponse(
       {
         paymentIntentId: result?.id,
@@ -209,7 +207,10 @@ export class PaymentControllerExtension {
     @Body() captureIntentDto: CaptureIntentDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.handleSupplementPaymentCapture(captureIntentDto)
+    const result =
+      await this.paymentServiceExtension.handleSupplementPaymentCapture(
+        captureIntentDto,
+      );
     if (!result) {
       return formatResponse(
         'Payment capture failed',
@@ -244,7 +245,9 @@ export class PaymentControllerExtension {
     @Body() topUpDto: TopUpDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.handleTopUpPayment(topUpDto)
+    const result = await this.paymentServiceExtension.handleTopUpPayment(
+      topUpDto,
+    );
     if (!result) {
       return formatResponse(
         'Subscription top up failed',

@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ReferralsService } from '../referrals/referrals.service';
 import Stripe from 'stripe';
+import { Logger } from 'winston';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class WebhookService {
@@ -7,6 +10,9 @@ export class WebhookService {
 
   constructor(
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+    @Inject('LOGGER') private readonly logger: Logger,
+    private readonly referralsService: ReferralsService,
+    private readonly prisma: PrismaService,
   ) {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
@@ -23,15 +29,44 @@ export class WebhookService {
         webhookSecret,
       );
 
-      // Handle the event
-      switch (event.type) {
-        case 'payment_intent.succeeded':
-          const chargeCaptured = event.data.object;
-          console.log(event);
-          break;
+      if (event.type === 'payment_intent.succeeded') {
+        const paymentIntentSucceeded = event.data
+          .object as Stripe.PaymentIntent;
+        this.logger.info(
+          'Payment intent succeeded: %o',
+          paymentIntentSucceeded,
+        );
+        await this.updatePayment(paymentIntentSucceeded);
+        await this.referralsService.handleReferral(
+          paymentIntentSucceeded.metadata,
+        );
       }
     } catch (error) {
       return;
+    }
+  }
+
+  async updatePayment(paymentIntent: Stripe.PaymentIntent) {
+    if (
+      paymentIntent?.metadata.coupons &&
+      +paymentIntent?.metadata.amount_off
+    ) {
+      this.logger.info('Updating payment with coupons: %o', {
+        coupons: paymentIntent.metadata.coupons,
+        amount_off: paymentIntent.metadata.amount_off,
+        paymentIntentId: paymentIntent.id,
+      });
+      const payment = await this.prisma.payment.findUnique({
+        where: { paymentIntentId: paymentIntent.id },
+      });
+      const result = await this.prisma.payment.update({
+        where: { id: payment?.id },
+        data: {
+          coupons: paymentIntent.metadata.coupons,
+          discount: +paymentIntent.metadata.amount_off / 100,
+        },
+      });
+      this.logger.info('Payment updated: %o', result);
     }
   }
 }

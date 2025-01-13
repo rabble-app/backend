@@ -5,6 +5,7 @@ import { UsersService } from './users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
 import { UsersServiceExtension } from './users.service.extension';
+import { LoggerModule } from '../utils/logger.module';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -18,6 +19,7 @@ describe('UsersController', () => {
           secret: 'test-secretxx',
         }),
         ParametersModule,
+        LoggerModule,
       ],
     }).compile();
 

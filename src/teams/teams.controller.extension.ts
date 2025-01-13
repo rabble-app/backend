@@ -393,7 +393,10 @@ export class TeamsControllerExtension {
     @Body() subscriptionStatusUpdateDto: SubscriptionStatusUpdateDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension2.updateSubscriptionStatus(id, subscriptionStatusUpdateDto.status);
+    const result = await this.teamsServiceExtension2.updateSubscriptionStatus(
+      id,
+      subscriptionStatusUpdateDto.status,
+    );
     return formatResponse(
       result,
       res,

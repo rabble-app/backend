@@ -7,7 +7,10 @@ import {
   Post,
   Res,
   UseGuards,
+  Request,
+  Inject,
 } from '@nestjs/common';
+import { Logger } from 'winston';
 import { PaymentService } from './payment.service';
 import {
   ApiBadRequestResponse,
@@ -38,6 +41,7 @@ export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly usersService: UsersService,
+    @Inject('LOGGER') private readonly logger: Logger,
   ) {}
 
   /**
@@ -55,8 +59,16 @@ export class PaymentController {
   async addPaymentCard(
     @Body() addPaymentCardDto: AddPaymentCardDto,
     @Res({ passthrough: true }) res: Response,
+    @Request() req,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.addCustomerCard(addPaymentCardDto);
+    this.logger.info('Adding payment card for user %o', {
+      userId: req.user?.id ?? req.user?.userId,
+      addPaymentCardDto,
+    });
+    const result = await this.paymentService.addCustomerCard(
+      addPaymentCardDto,
+      req.user?.id ?? req.user?.userId,
+    );
     return formatResponse(
       result,
       res,
@@ -268,6 +280,18 @@ export class PaymentController {
       HttpStatus.OK,
       false,
       'Item deleted successfully',
+    );
+  }
+
+  @Post('seed-payment-methods')
+  async seedPaymentMethods(@Res({ passthrough: true }) res: Response) {
+    await this.paymentService.seedPaymentMethod();
+    return formatResponse(
+      'Payment methods seeded successfully',
+      res,
+      HttpStatus.OK,
+      false,
+      'Payment methods seeded successfully',
     );
   }
 }
