@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { OrderType, Prisma, OrderStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Request } from 'express';
 
@@ -23,13 +23,6 @@ export enum PartnerOpenHour {
   ALL_THE_TIME = 'ALL_THE_TIME',
   MON_TO_FRI = 'MON_TO_FRI',
   CUSTOM = 'CUSTOM',
-}
-
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  PENDING_DELIVERY = 'PENDING_DELIVERY',
-  SUCCESSFUL = 'SUCCESSFUL',
-  FAILED = 'FAILED',
 }
 
 export enum PasswordChangeRoute {
@@ -65,8 +58,10 @@ export enum Channel {
 }
 export interface IOrder {
   teamId: string;
-  minimumTreshold: Decimal;
-  deadline: Date;
+  minimumTreshold?: Decimal;
+  deadline?: Date;
+  type?: OrderType;
+  status?: OrderStatus;
 }
 export interface IPayment {
   orderId?: string;

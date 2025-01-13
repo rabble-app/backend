@@ -3,6 +3,7 @@ import {
   IsString,
   IsNotEmpty,
   IsNumber,
+  ValidateIf,
 } from 'class-validator';
 
 export class AddSingleBasketDto {
@@ -59,4 +60,24 @@ export class AddSingleBasketDto {
   @IsNotEmpty()
   @IsNumber()
   capsulePerDay: number; 
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The order id',
+    required: true,
+  })
+  @ValidateIf((o) => o.orderId)
+  @IsNotEmpty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The top up quantity',
+    required: true,
+  })
+  @ValidateIf((o) => o.topupQuantity)
+  @IsNotEmpty()
+  @IsString()
+  topupQuantity: string;
 }

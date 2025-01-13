@@ -1,8 +1,9 @@
-import { BuyingTeam, MembershipStatus, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
+import { BuyingTeam, MembershipStatus, OrderStatus, OrderType, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   BuyingTeamsWithSupplementProduct,
+  IOrder,
   ITeamMember,
   Status,
   TeamMemberShip,
@@ -132,7 +133,7 @@ export class TeamsService {
         minimumTreshold: producerInfo.minimumTreshold,
         deadline: orderDeadlineDate,
         accumulatedAmount: accumulatedAmount,
-        status: createTeamDto.partnerId ? 'INACTIVE' : 'PENDING',
+        status: createTeamDto.partnerId ? OrderStatus.INACTIVE : OrderStatus.PENDING,
       };
       const orderResponse = await this.paymentService.createOrder(orderData);
 
@@ -197,6 +198,14 @@ export class TeamsService {
           where: { id: team.supplementTeamProducts.id },
           data: { status: 'ACTIVE' },
         });
+
+      // create inactive order
+      const orderData: IOrder = {
+        teamId: teamData.teamId,
+        status: OrderStatus.INACTIVE,
+        type: OrderType.SUPPLEMENT,
+      };     
+      await this.paymentService.createOrder(orderData);
       }
     }
 
@@ -219,7 +228,6 @@ export class TeamsService {
 
     return result;
   }
-
   async getProducerTeams(id: string): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
       where: {
