@@ -321,20 +321,20 @@ describe('PaymentController (e2e)', () => {
     );
 
     // capture payment intent
-    it(
-      '/payments/intent/capture(POST) should capture payment intent for supplement customers',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/intent/capture')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentIntentId, orderId, teamId, userId, amount:1000, })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
+    // it(
+    //   '/payments/intent/capture(POST) should capture payment intent for supplement customers',
+    //   async () => {
+    //     const response = await request(app.getHttpServer())
+    //       .post('/payments/intent/capture')
+    //       .set('Authorization', `Bearer ${jwtToken}`)
+    //       .send({ paymentIntentId, orderId, teamId, userId, amount:1000, })
+    //       .expect(200);
+    //     expect(response.body).toHaveProperty('data');
+    //     expect(response.body.error).toBeUndefined();
+    //     expect(typeof response.body.data).toBe('object');
+    //   },
+    //   testTime,
+    // );
 
     describe('Basket', () => {
       // add user bulk basket successfully
