@@ -444,7 +444,7 @@ export class ScheduleServiceExtended {
     return true;
   }
 
-  async activateOrders(): Promise<boolean> {
+  async activateRabbleOrders(): Promise<boolean> {
     // get current week and year
     const ripeOrders = await this.prisma.order.findMany({
       select: {
@@ -453,6 +453,7 @@ export class ScheduleServiceExtended {
       },
       where: {
         status: 'INACTIVE',
+        type:'RABBLE',
         deadline: {
           gte: new Date(),
         },

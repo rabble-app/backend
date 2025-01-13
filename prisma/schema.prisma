@@ -27,6 +27,8 @@ model User {
   updatedAt                     DateTime                        @updatedAt @map("updated_at")
   notificationToken             String?                         @map("notification_token")
   onboardingStage               Int                             @default(0) @map("onboarding_stage")
+  refCode                       String?                         @unique @map("ref_code")
+  referrerId                    String?                         @map("referrer_id")
   basketsC                      BasketC[]
   baskets                       Basket[]
   hosts                         BuyingTeam[]
@@ -49,9 +51,14 @@ model User {
   employee                      Employee[]
   collection                    Collection[]
   confirmation                  OrderConfirmation[]
+  topUpBasket TopUpBasket[]
+  paymentMethod PaymentMethod[]
+  bonus Bonus[]
+  wallet Wallet[]
 
   @@index([id])
   @@map("users")
+
 }
 
 model Producer {
@@ -221,6 +228,7 @@ model Product {
   priceInfo                 Json?                 @map("price_info")
   capsuleInfo               Json?                 @map("capsule_info")
   formulationSummary        String[]               @map("formulation_summary") @default([])
+  leadTime                  Int?                  @default(0) @map("lead_time")
 
   createdAt              DateTime                    @default(now()) @map("created_at")
   updatedAt              DateTime                    @updatedAt @map("updated_at")
@@ -235,6 +243,7 @@ model Product {
   reviews                Review[]
   collectionItem         CollectionItems[]
   supplementTeamProducts SupplementTeamProducts?
+  topUpBasket TopUpBasket[]
 
   @@unique([name, producerId], name: "name_unique_producer")
   @@index([id, producerId, categoryId])
@@ -457,6 +466,7 @@ model Order {
   lastNudge          DateTime?                   @map("last_nudge")
   deliveryDate       DateTime?                   @map("delivery_date")
   confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
+  type               OrderType                   @default(RABBLE) 
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
   basket             Basket[]
@@ -466,9 +476,11 @@ model Order {
   payments           Payment[]
   collection         Collection[]
   orderConfirmation  OrderConfirmation?
+  topUpBasket TopUpBasket[]
 
   @@index([id, teamId, status])
   @@map("orders")
+
 }
 
 model OrderConfirmation {
@@ -558,6 +570,24 @@ model BasketC {
   @@unique([teamId, userId, productId], name: "team_unique_product")
   @@index([id, userId, teamId])
   @@map("basket_c")
+}
+model TopUpBasket {
+  id            String               @id @default(uuid())
+  orderId       String               @map("order_id")
+  userId        String               @map("user_id")
+  productId     String               @map("product_id")
+  quantity      Int
+  price         Decimal              @default(0) @db.Decimal(9, 2)
+  deliveryStatus TopUpDeliveryStatus @default(PENDING) @map("delivery_status")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+  order         Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId, productId], name: "user_unique_topup_product")
+  @@index([id, orderId, userId])
+  @@map("top_up_baskets")
 }
 
 model Payment {
@@ -752,6 +782,73 @@ model ProducerDeliveryArea {
   @@map("producer_delivery_areas")
 }
 
+model PaymentMethod {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  stripeCustomerId   String   @unique @map("stripe_customer_id")
+  paymentMethodId    String   @map("payment_method_id")
+  isDefault          Boolean  @default(true) @map("is_default")
+  cardLastFourDigits String   @map("card_last_four_digits")
+  fingerprint        String   @unique
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  active             Boolean  @default(true)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([id, userId])
+  @@map("payment_methods")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  balance   Decimal 
+  claimed   Decimal  
+  allTime   Decimal  @map("all_time")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletTransaction WalletTransaction[]
+  @@index([id,userId])
+  @@map("wallets")
+
+}
+
+model WalletTransaction {
+  id        String   @id @default(uuid())
+  walletId  String   @map("wallet_id")
+  amount    Decimal 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  type      WalletTransactionType
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  @@index([id, walletId])
+  @@map("wallet_transactions")
+}
+
+model Bonus {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  amount    Decimal
+  type      BonusType
+  referralId    String?  @map("referral_id")
+  orderId   String?  @map("order_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([id, userId])
+  @@map("bonuses")
+}
+
+enum BonusType {
+  REFERRAL
+  SIGNUP
+}
+
+enum WalletTransactionType {
+  CLAIM
+  SPEND
+}
+
 enum OrderStatus {
   PENDING
   PENDING_DELIVERY
@@ -875,4 +972,14 @@ enum SupplementTagTypes  {
   FUNCTION
   AUDIENCE
   SORT
+}
+
+enum OrderType {
+  RABBLE
+  SUPPLEMENT
+}
+
+enum TopUpDeliveryStatus {
+  PENDING
+  DELIVERED
 }

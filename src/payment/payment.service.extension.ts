@@ -5,6 +5,7 @@ import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
+import { CaptureIntentDto } from './dto/capture-intent.dto';
 
 @Injectable()
 export class PaymentServiceExtension {
@@ -189,36 +190,23 @@ export class PaymentServiceExtension {
     });
   }
 
-  async recordTax() {
-    const calculation = await this.stripe.tax.calculations.create({
-      currency: 'gbp',
-      line_items: [
-        {
-          amount: 3000,
-          reference: 'L1',
-          tax_behavior: 'exclusive',
-          tax_code: 'txcd_41020003',
-        },
-      ],
-      customer_details: {
-        address: {
-          country: 'GB',
-        },
-        address_source: 'billing',
-      },
-    });
-    const tax = await this.stripe.tax.transactions.createFromCalculation({
-      calculation: calculation.id,
-      reference: `${Math.floor(Math.random() * 100)}`, // put payment intent
-      expand: ['line_items'],
-    });
-    // update payment intent
-    await this.updatePaymentIntent('paymentIntent', {
-      tax_transaction: '{{TAX_TRANSACTION}}',
-    });
-    return tax;
+  async handleSupplementPaymentCapture(captureIntentDto: CaptureIntentDto) {
+    const captureResult = await this.captureFund(
+      captureIntentDto.paymentIntentId,
+      captureIntentDto.amount * 100,
+    );
+    if (captureResult) {
+      // record payment
+      const paymentData = {
+        orderId: captureIntentDto.orderId,
+        paymentIntentId: captureIntentDto.paymentIntentId,
+        amount: captureIntentDto.amount,
+        status: PaymentStatus.CAPTURED,
+        userId: captureIntentDto.userId,
+      };
+     return await this.paymentService.recordPayment(paymentData);
+    }else{
+      return null;
+    }
   }
-
-  // capture supplement payment
-  // create the payment record
 }

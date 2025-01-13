@@ -262,7 +262,7 @@ export class ScheduleController {
   async activateOrder(
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.scheduleServiceExtended.activateOrders();
+    const result = await this.scheduleServiceExtended.activateRabbleOrders();
     return formatResponse(
       result,
       res,

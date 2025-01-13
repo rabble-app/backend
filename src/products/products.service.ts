@@ -28,7 +28,7 @@ export class ProductsService {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
     }
-    return await this.prisma.product.findFirst({
+    const result = await this.prisma.product.findFirst({
       where: {
         id,
       },
@@ -65,8 +65,10 @@ export class ProductsService {
           select:{
             orderTreashold: true,
             foundingMembersDiscount: true,
+            status: true,
             team:{
               select: {
+                id: true,
                 _count: {
                  select: {
                     members: true,
@@ -78,6 +80,8 @@ export class ProductsService {
         }
       },
     });
+    result['orderId'] = orderId;
+    return result
   }
 
   async getProducerProducts(

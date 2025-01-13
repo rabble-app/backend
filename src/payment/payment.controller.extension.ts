@@ -27,6 +27,7 @@ import { PaymentServiceExtension } from './payment.service.extension';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 import { ReturnIntentDto } from './dto/return-intent.dto';
 import { AuthGuard } from '../../src/auth/auth.guard';
+import { CaptureIntentDto } from './dto/capture-intent.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -191,20 +192,37 @@ export class PaymentControllerExtension {
   }
 
   /**
-   * This is for test
+   * Capture Payment intent
    * @param {Body} returnIntentDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
-  @Get('test')
+  @UseGuards(AuthGuard)
+  @Post('intent/capture')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Payment intent created successfully' })
+  @ApiOkResponse({ description: 'Payment intent captured successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async testTax(
+  async captureIntent(
+    @Body() captureIntentDto: CaptureIntentDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.recordTax();
-    return formatResponse(result, res, HttpStatus.OK, false, 'Test completed');
+    const result = await this.paymentServiceExtension.handleSupplementPaymentCapture(captureIntentDto)
+    if (!result) {
+      return formatResponse(
+        'Payment capture failed',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Payment intent capture failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Payment intent captured successfully',
+    );
   }
 }

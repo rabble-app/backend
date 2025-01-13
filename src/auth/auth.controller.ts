@@ -238,7 +238,7 @@ export class AuthController {
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Incorrect email/password',
+        'Incorrect Email Password Combination',
       );
     } else if (result && typeof result === 'string') {
       return formatResponse(
