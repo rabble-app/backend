@@ -191,10 +191,21 @@ export class PaymentServiceExtension {
   }
 
   async handleSupplementPaymentCapture(captureIntentDto: CaptureIntentDto) {
+    // update payment intent
+    await this.updatePaymentIntent(
+      captureIntentDto.paymentIntentId,
+      {
+        order_id: captureIntentDto.orderId,
+        user_id: captureIntentDto.userId,
+        sponsor_code: captureIntentDto.sponsorCode,
+      })
+
+     // capture payment
     const captureResult = await this.captureFund(
       captureIntentDto.paymentIntentId,
       captureIntentDto.amount * 100,
     );
+    // check if payment was successful
     if (captureResult) {
       // record payment
       const paymentData = {
@@ -204,9 +215,17 @@ export class PaymentServiceExtension {
         status: PaymentStatus.CAPTURED,
         userId: captureIntentDto.userId,
       };
-     return await this.paymentService.recordPayment(paymentData);
-    }else{
+      return await this.paymentService.recordPayment(paymentData);
+    } else {
       return null;
     }
+  }
+
+  async findPayments(
+    paymentWhereInput: Prisma.PaymentWhereInput,
+  ): Promise<Payment[] | null> {
+    return await this.prisma.payment.findMany({
+      where: paymentWhereInput,
+    });
   }
 }
