@@ -25,7 +25,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
-import { TeamsService } from 'teams/teams.service';
+import { TeamsService } from '../teams/teams.service';
 
 @Injectable()
 export class PaymentService {
