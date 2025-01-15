@@ -72,12 +72,12 @@ export class AddSingleBasketDto {
   orderId: string;
 
   @ApiProperty({
-    type: 'string',
+    type: 'number',
     description: 'The top up quantity',
     required: true,
   })
   @ValidateIf((o) => o.topupQuantity)
   @IsNotEmpty()
-  @IsString()
-  topupQuantity: string;
+  @IsNumber()
+  topupQuantity: number = 0;
 }

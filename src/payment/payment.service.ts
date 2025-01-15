@@ -9,7 +9,6 @@ import {
   Prisma,
   ProductPaymentStatus,
 } from '@prisma/client';
-import { CreateIntentDto } from './dto/create-intent.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   ICreateIntent,
@@ -26,6 +25,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
+import { TeamsService } from '../teams/teams.service';
 
 @Injectable()
 export class PaymentService {
@@ -37,6 +37,8 @@ export class PaymentService {
     private readonly notificationService: NotificationsService,
     @Inject(forwardRef(() => TeamsServiceExtension))
     private readonly teamsServiceExtension: TeamsServiceExtension,
+    @Inject(forwardRef(() => TeamsService))
+    private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
   ) {
@@ -487,6 +489,36 @@ export class PaymentService {
   }
 
   async addToBasket(addSingleBasketDto: AddSingleBasketDto): Promise<BasketC> {
+    // get team info
+    const team = await this.teamsService.findBuyingTeam({
+      id: addSingleBasketDto.teamId,
+    });
+    if (team?.supplementTeamProducts?.status == 'ACTIVE') {
+      await this.prisma.basket.create({
+        data: {
+          productId: addSingleBasketDto.productId,
+          userId: addSingleBasketDto.userId,
+          orderId: addSingleBasketDto.orderId,
+          quantity: addSingleBasketDto.quantity - addSingleBasketDto.topupQuantity,
+          price: addSingleBasketDto.price,
+          capsulePerDay: addSingleBasketDto.capsulePerDay,
+          paymentStatus: ProductPaymentStatus.CAPTURED,
+        },
+      });
+
+      if(addSingleBasketDto.topupQuantity && addSingleBasketDto.topupQuantity > 0) {
+        await this.prisma.topUpBasket.create({
+          data: {
+            productId: addSingleBasketDto.productId,
+            userId: addSingleBasketDto.userId,
+            orderId: addSingleBasketDto.orderId,
+            quantity: addSingleBasketDto.topupQuantity,
+            price: addSingleBasketDto.price,
+          },
+        });
+      }
+    }
+
     const result = await this.prisma.basketC.create({
       data: {
         productId: addSingleBasketDto.productId,
@@ -497,8 +529,6 @@ export class PaymentService {
         capsulePerDay: addSingleBasketDto.capsulePerDay,
       },
     });
-    
-
     return result
   }
 
