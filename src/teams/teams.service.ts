@@ -228,6 +228,7 @@ export class TeamsService {
 
     return result;
   }
+  
   async getProducerTeams(id: string): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
       where: {

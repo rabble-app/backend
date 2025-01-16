@@ -87,7 +87,9 @@ export class TeamsServiceExtension {
       where: {
         teamId: id,
         status: 'APPROVED',
-        role: 'MEMBER',
+        role: {
+          not: 'ADMIN',
+        },
       },
       include: {
         user: true,

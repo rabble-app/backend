@@ -592,4 +592,19 @@ describe('UserController (e2e)', () => {
     },
     testTime,
   );
+
+  // // return supplement user upcoming deliveries
+  // it(
+  //   '/users/$userId/supplement/upcoming-deliveries(GET) should return supplement user upcoming deliveries',
+  //   async () => {
+  //     const response = await request(app.getHttpServer())
+  //       .get(`/users/${supplementUserId}/supplement/upcoming-deliveries`)
+  //       .set('Authorization', `Bearer ${jwtToken}`)
+  //       .expect(200);
+  //     expect(response.body).toHaveProperty('data');
+  //     expect(response.body.error).toBeUndefined();
+  //     expect(typeof response.body.data).toBe('object');
+  //   },
+  //   testTime,
+  // );
 });

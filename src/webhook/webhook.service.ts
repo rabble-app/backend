@@ -25,9 +25,9 @@ export class WebhookService {
 
       // Handle the event
       switch (event.type) {
-        case 'charge.captured':
+        case 'payment_intent.succeeded':
           const chargeCaptured = event.data.object;
-          console.log(chargeCaptured);
+          console.log(event);
           break;
       }
     } catch (error) {
