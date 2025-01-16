@@ -327,4 +327,35 @@ export class UsersControllerExtension {
       'Recent orders returned successfully',
     );
   }
+
+  /**
+   * return supplement user upcoming deliveries.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/:userId/supplement/upcoming-deliveries')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'Users upcoming deliveries returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async supplementUserUpcomingDeliveries(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersServiceExtension.getSupplementUserUpcomingDeliveries(
+      userId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Users upcoming deliveries returned successfully',
+    );
+  }
 }
