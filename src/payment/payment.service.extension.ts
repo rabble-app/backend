@@ -40,7 +40,7 @@ export class PaymentServiceExtension {
       let options = null;
       if (amountToCapture) {
         options = {
-          amount_to_capture: amountToCapture,
+          amount_to_capture: amountToCapture
         };
         const result = await this.stripe.paymentIntents.capture(
           paymentIntentId,
@@ -197,7 +197,6 @@ export class PaymentServiceExtension {
       {
         order_id: captureIntentDto.orderId,
         user_id: captureIntentDto.userId,
-        sponsor_code: captureIntentDto.sponsorCode,
       })
 
      // capture payment

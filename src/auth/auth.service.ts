@@ -156,6 +156,7 @@ export class AuthService {
   async registerUser(createUserDto: CreateUserDto): Promise<Producer | User> {
     let producerRecord: Producer = undefined;
     let stripeCustomerId: string = undefined;
+    let referrerId: string = undefined;
 
     // encrypt password
     const password = await this.encryptPassword(createUserDto.password);
@@ -168,9 +169,18 @@ export class AuthService {
       stripeCustomerId = stripeResponse.id;
     }
 
+    // verify referrer
+    if (createUserDto.referralCode) {
+      const referrer = await this.userService.findUser({
+        refCode: createUserDto.referralCode,
+      });
+      referrerId = referrer?.id;
+    }
+    
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
+        referrerId,
         password,
         stripeCustomerId,
         email: createUserDto.email,
@@ -210,11 +220,10 @@ export class AuthService {
         },
         template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${this.parameters.EMAIL_URL}${
-            !createUserDto.role
+          url: `${this.parameters.EMAIL_URL}${!createUserDto.role
               ? this.parameters.CONFIRM_ACCOUNT_URL
               : this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL
-          }?token=${token}`,
+            }?token=${token}`,
         },
       },
     });
@@ -416,16 +425,14 @@ export class AuthService {
       .create({
         type: 'account_onboarding',
         account: accountId,
-        refresh_url: `${
-          isPartner
+        refresh_url: `${isPartner
             ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
             : this.parameters.STRIPE_REFRESH_URL
-        }`,
-        return_url: `${
-          isPartner
+          }`,
+        return_url: `${isPartner
             ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
             : this.parameters.STRIPE_RETURN_URL
-        }`,
+          }`,
       })
       .then((link) => link.url);
   }

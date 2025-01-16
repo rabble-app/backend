@@ -59,4 +59,14 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   phone: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The referral code of the user',
+    required: true,
+  })
+  @ValidateIf((o) => o.referralCode)
+  @IsNotEmpty()
+  @IsString()
+  referralCode: string;
 }
