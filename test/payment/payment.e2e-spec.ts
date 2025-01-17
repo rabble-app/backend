@@ -18,6 +18,7 @@ describe('PaymentController (e2e)', () => {
   let paymentIntentId2: string;
   let paymentMethodId: string;
   let userId: string;
+  let userId2: string;
   let producerId: string;
   let productId: string;
   let productId2: string;
@@ -67,6 +68,14 @@ describe('PaymentController (e2e)', () => {
       },
     });
     userId = user.id;
+
+    // create dummy user for test
+    const user2 = await prisma.user.create({
+      data: {
+        phone: `${phone}2`,
+      },
+    });
+    userId2 = user2.id;
 
     // create dummy producer for test
     const producer = await prisma.producer.create({
@@ -406,7 +415,7 @@ describe('PaymentController (e2e)', () => {
             basket: [
               {
                 orderId,
-                userId,
+                userId:userId2,
                 productId,
                 quantity: 2,
                 price: 2000,
