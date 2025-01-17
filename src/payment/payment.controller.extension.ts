@@ -285,7 +285,7 @@ export class PaymentControllerExtension {
     @Body() updateBasketItemDto: UpdateBasketItemDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.updateSubscriptionPlan({
+    const result = await this.paymentServiceExtension.updateBasketItem({
       where: { id },
       data: updateBasketItemDto,
     });

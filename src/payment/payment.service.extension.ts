@@ -278,16 +278,4 @@ export class PaymentServiceExtension {
       return null;
     }
   }
-
-  async updateSubscriptionPlan(params: {
-    where: Prisma.BasketCWhereUniqueInput;
-    data: Prisma.BasketCUpdateInput;
-  }): Promise<BasketC> {
-    const { where, data } = params;
-    return await this.prisma.basketC.update({
-      data,
-      where,
-    });
-  }
-
 }
