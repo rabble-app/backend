@@ -102,6 +102,7 @@ export class UsersServiceExtension {
             quantity: true,
             product:{
               select:{
+                id: true,
                 name: true,
                 price: true,
                 unitsOfMeasurePerSubUnit: true,
@@ -141,12 +142,19 @@ export class UsersServiceExtension {
                 quantity: true,
                 product:{
                   select:{
+                    id: true,
                     name: true,
                     price: true,
                     unitsOfMeasurePerSubUnit: true,
                     rrp: true,
                     priceInfo: true,
+                    capsuleInfo: true,
                     imageUrl: true,
+                    producer: {
+                      select: {
+                        businessName: true,
+                      },
+                    }
                   }
                 },
                 capsulePerDay: true,   
@@ -155,6 +163,7 @@ export class UsersServiceExtension {
             supplementTeamProducts:{
               select:{
                foundingMembersDiscount: true,
+               status: true
               }
             },
             _count: {

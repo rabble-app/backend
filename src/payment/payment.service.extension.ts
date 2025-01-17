@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 import { CaptureIntentDto } from './dto/capture-intent.dto';
+import { TopUpDto } from './dto/topup.dto';
 
 @Injectable()
 export class PaymentServiceExtension {
@@ -38,16 +39,16 @@ export class PaymentServiceExtension {
   ): Promise<object | null> {
     try {
       let options = null;
-      if (amountToCapture) {
+      if (amountToCapture){
         options = {
           amount_to_capture: amountToCapture
         };
-        const result = await this.stripe.paymentIntents.capture(
-          paymentIntentId,
-          options,
-        );
-        return result;
-      }
+      } 
+      const result = await this.stripe.paymentIntents.capture(
+        paymentIntentId,
+        options,
+      );
+      return result;
     } catch (error) {
       console.log(error);
     }
@@ -190,30 +191,42 @@ export class PaymentServiceExtension {
     });
   }
 
-  async handleSupplementPaymentCapture(captureIntentDto: CaptureIntentDto) {
+  async handleSupplementPaymentCapture(captureIntentDto: CaptureIntentDto): Promise<Payment | null> {
+    // get team latestOrder
+    const latestOrder = await this.paymentService.getTeamLatestOrder(
+      captureIntentDto.teamId,
+    );
+    const orderId = latestOrder?.id;
+
     // update payment intent
     await this.updatePaymentIntent(
       captureIntentDto.paymentIntentId,
       {
-        order_id: captureIntentDto.orderId,
+        order_id: orderId,
         user_id: captureIntentDto.userId,
       })
 
      // capture payment
     const captureResult = await this.captureFund(
-      captureIntentDto.paymentIntentId,
-      captureIntentDto.amount * 100,
+      captureIntentDto.paymentIntentId
     );
     // check if payment was successful
     if (captureResult) {
       // record payment
       const paymentData = {
-        orderId: captureIntentDto.orderId,
+        orderId,
         paymentIntentId: captureIntentDto.paymentIntentId,
         amount: captureIntentDto.amount,
         status: PaymentStatus.CAPTURED,
         userId: captureIntentDto.userId,
       };
+
+      // accumulate amount paid
+      await this.paymentService.accumulateAmount(
+        orderId,
+        captureIntentDto.amount,
+        captureIntentDto.teamId,
+      );
       return await this.paymentService.recordPayment(paymentData);
     } else {
       return null;
@@ -226,5 +239,43 @@ export class PaymentServiceExtension {
     return await this.prisma.payment.findMany({
       where: paymentWhereInput,
     });
+  }
+
+  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | null> {
+    // get team latestOrder
+    const latestOrder = await this.paymentService.getTeamLatestOrder(
+      topUpDto.teamId,
+    );
+   
+     // capture payment
+    const captureResult = await this.captureFund(
+      topUpDto.paymentIntentId,
+    );
+
+    // check if payment was successful
+    if (captureResult) {
+      // save the top up basket
+      await this.prisma.topUpBasket.create({
+        data: {
+          productId: topUpDto.productId,
+          userId: topUpDto.userId,
+          orderId: latestOrder?.id,
+          quantity: topUpDto.quantity,
+          price: topUpDto.price,
+          // capsulePerDay: addSingleBasketDto.capsulePerDay,
+        },
+      });
+      // record payment
+      const paymentData = {
+        orderId: latestOrder?.id,
+        paymentIntentId: topUpDto.paymentIntentId,
+        amount: topUpDto.amount,
+        status: PaymentStatus.CAPTURED,
+        userId: topUpDto.userId,
+      };
+      return await this.paymentService.recordPayment(paymentData);
+    } else {
+      return null;
+    }
   }
 }
