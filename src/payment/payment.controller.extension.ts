@@ -104,6 +104,7 @@ export class PaymentControllerExtension {
       'Item updated successfully',
     );
   }
+
   /**
    * Create Payment intent
    * @param {Body} createIntentDto - Request body object.
@@ -259,6 +260,41 @@ export class PaymentControllerExtension {
       HttpStatus.OK,
       false,
       'Subscription top up processed successfully',
+    );
+  }
+
+  /**
+   * Update item in basketC
+   * @param {Body} updateBasketItemDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch('basketC/:itemId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Subscription updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'itemId',
+    required: true,
+    description: 'The id of the item you want to update',
+  })
+  async updateItemInBasketC(
+    @Param('itemId') id: string,
+    @Body() updateBasketItemDto: UpdateBasketItemDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.updateSubscriptionPlan({
+      where: { id },
+      data: updateBasketItemDto,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription updated successfully',
     );
   }
 }

@@ -139,6 +139,7 @@ export class UsersServiceExtension {
                 userId,
               },
               select:{
+                id: true,
                 quantity: true,
                 product:{
                   select:{
