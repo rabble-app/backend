@@ -18,6 +18,7 @@ describe('PaymentController (e2e)', () => {
   let paymentIntentId2: string;
   let paymentMethodId: string;
   let userId: string;
+  let userId2: string;
   let producerId: string;
   let productId: string;
   let productId2: string;
@@ -26,6 +27,7 @@ describe('PaymentController (e2e)', () => {
   let itemId: string;
   let jwtToken: string;
   let stripe: Stripe;
+  let basketCId: string;
   const testTime = 120000;
 
   const chargeInfo = {
@@ -66,6 +68,14 @@ describe('PaymentController (e2e)', () => {
       },
     });
     userId = user.id;
+
+    // create dummy user for test
+    const user2 = await prisma.user.create({
+      data: {
+        phone: `${phone}2`,
+      },
+    });
+    userId2 = user2.id;
 
     // create dummy producer for test
     const producer = await prisma.producer.create({
@@ -129,6 +139,17 @@ describe('PaymentController (e2e)', () => {
       },
     });
     orderId = order.id;
+
+     // create  copy basket record for test
+     const basketC = await prisma.basketC.create({
+      data: {
+        teamId,
+        userId,
+        productId,
+        quantity: 1,
+      },
+    });
+    basketCId = basketC.id;
 
     // create dummy token
     jwtToken = authService.generateToken({ userId });
@@ -394,7 +415,7 @@ describe('PaymentController (e2e)', () => {
             basket: [
               {
                 orderId,
-                userId,
+                userId:userId2,
                 productId,
                 quantity: 2,
                 price: 2000,
@@ -484,6 +505,26 @@ describe('PaymentController (e2e)', () => {
           };
           const response = await request(app.getHttpServer())
             .patch(`/payments/basket/${itemId}`)
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send(basket)
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+
+      // update item in basketC
+      it(
+        '/payments/basketC/:itemId (PATCH) should update item in basketC',
+        async () => {
+          const basket = {
+            quantity: 6,
+            capsulePerDay: 2,
+          };
+          const response = await request(app.getHttpServer())
+            .patch(`/payments/basketC/${basketCId}`)
             .set('Authorization', `Bearer ${jwtToken}`)
             .send(basket)
             .expect(200);
