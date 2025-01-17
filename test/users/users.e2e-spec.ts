@@ -607,4 +607,19 @@ describe('UserController (e2e)', () => {
     },
     testTime,
   );
+
+  // return supplement user pending plans
+  it(
+    '/users/$userId/supplement/plans(GET) should return supplement user upcoming deliveries',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${supplementUserId}/supplement/plans`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
 });

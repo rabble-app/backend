@@ -358,4 +358,35 @@ export class UsersControllerExtension {
       'Users upcoming deliveries returned successfully',
     );
   }
+
+  /**
+   * return user supplement plans.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/:userId/supplement/plans')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'Users supplement plans returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async userSupplementPlans(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersServiceExtension.getUserSupplementPlans(
+      userId,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Users supplement plans returned successfully',
+    );
+  }
 }

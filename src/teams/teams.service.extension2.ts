@@ -92,13 +92,13 @@ export class TeamsServiceExtension2 {
     });
   }
 
-  async skipDelivery(id: string): Promise<object> {
+  async skipDelivery(id: string, status: boolean): Promise<object> {
     return await this.prisma.teamMember.update({
       where: {
         id,
       },
       data: {
-        skipNextDelivery: false
+        skipNextDelivery: status,
       },
     });
   }
