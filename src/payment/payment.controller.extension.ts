@@ -28,6 +28,7 @@ import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 import { ReturnIntentDto } from './dto/return-intent.dto';
 import { AuthGuard } from '../../src/auth/auth.guard';
 import { CaptureIntentDto } from './dto/capture-intent.dto';
+import { TopUpDto } from './dto/topup.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -193,7 +194,7 @@ export class PaymentControllerExtension {
 
   /**
    * Capture Payment intent
-   * @param {Body} returnIntentDto - Request body object.
+   * @param {Body} captureIntentDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
@@ -223,6 +224,41 @@ export class PaymentControllerExtension {
       HttpStatus.OK,
       false,
       'Payment intent captured successfully',
+    );
+  }
+
+  /**
+   * Top up subscription
+   * @param {Body} topUpDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('/supplement/topup')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Subscription top up processed successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async topUpSubscription(
+    @Body() topUpDto: TopUpDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.handleTopUpPayment(topUpDto)
+    if (!result) {
+      return formatResponse(
+        'Subscription top up failed',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Payment intent capture failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription top up processed successfully',
     );
   }
 }

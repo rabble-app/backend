@@ -15,6 +15,7 @@ describe('PaymentController (e2e)', () => {
   const phone = faker.phone.number('501-###-###');
   let customerId: string;
   let paymentIntentId: string;
+  let paymentIntentId2: string;
   let paymentMethodId: string;
   let userId: string;
   let producerId: string;
@@ -263,6 +264,28 @@ describe('PaymentController (e2e)', () => {
       testTime,
     );
 
+    // create payment intent 2
+    it(
+      '/payments/intent(POST) should create payment intent',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/intent')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            "amount":1000,
+            "currency":"gbp",
+             customerId,
+             paymentMethodId
+        })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        paymentIntentId2 = response.body.data.paymentIntentId;
+      },
+      testTime,
+    );
+
     it(
       '/payments/charge(POST) should not create payment intent if uncompleted data is supplied',
       async () => {
@@ -328,7 +351,32 @@ describe('PaymentController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/payments/intent/capture')
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentIntentId, orderId, teamId, userId, amount:1000, })
+          .send({ paymentIntentId, teamId, userId, amount:1000, })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // top up payment
+    it(
+      '/payments/supplement/topup(POST) should process payment for supplement topup',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/supplement/topup')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ 
+            paymentIntentId:paymentIntentId2, 
+            teamId, 
+            userId, 
+            amount:1000,  
+            productId: productId2,
+            quantity: 2,
+            price: 2, 
+            capsulePerDay:1
+          })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

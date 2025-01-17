@@ -514,6 +514,7 @@ export class PaymentService {
             orderId: addSingleBasketDto.orderId,
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.price,
+            // capsulePerDay: addSingleBasketDto.capsulePerDay,
           },
         });
       }

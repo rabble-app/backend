@@ -3,7 +3,6 @@ import {
   IsNotEmpty,
   IsNumber,
   IsString,
-  ValidateIf,
 } from 'class-validator';
 
 export class CaptureIntentDto {
@@ -15,15 +14,6 @@ export class CaptureIntentDto {
   @IsNotEmpty()
   @IsString()
   paymentIntentId: string;
-
-  @ApiProperty({
-    type: 'string',
-    description: 'The order id',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsString()
-  orderId: string;
 
   @ApiProperty({
     type: 'string',
@@ -51,14 +41,4 @@ export class CaptureIntentDto {
   @IsNotEmpty()
   @IsNumber()
   amount: number;
-
-  @ApiProperty({
-    type: 'string',
-    description: 'The sponsor of the referral',
-    required: true,
-  })
-  @ValidateIf((o) => o.sponsorCode)
-  @IsNotEmpty()
-  @IsString()
-  sponsorCode: string;
 }
