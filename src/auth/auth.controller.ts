@@ -325,10 +325,11 @@ export class AuthController {
 
     const token = this.authService.generateToken({
       userId: user.id,
-      producerId: user.producer.id,
+      producerId: user?.producer?.id,
     });
 
     // send mail
+    const url = !resendEmailVerificationDto.role ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}` : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`
     await this.courierClient.send({
       message: {
         to: {
@@ -336,7 +337,7 @@ export class AuthController {
         },
         template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`,
+          url,
         },
       },
     });
@@ -379,9 +380,10 @@ export class AuthController {
 
     const token = this.authService.generateToken({
       userId: user.id,
-      producerId: user.producer.id,
+      producerId: user?.producer?.id,
     });
     // send mail
+    const url = !resetPasswordDto.role ? `${this.parameters.EMAIL_URL}${this.parameters.RESET_PASSWORD_URL}?token=${token}` : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_RESET_PASSWORD_URL}?token=${token}`
     await this.courierClient.send({
       message: {
         to: {
@@ -389,7 +391,7 @@ export class AuthController {
         },
         template: `${this.parameters.RESET_PASSWORD_TEMPLATE}`,
         data: {
-          url: `${this.parameters.EMAIL_URL}${this.parameters.RESET_PASSWORD_URL}?token=${token}`,
+          url,
         },
       },
     });

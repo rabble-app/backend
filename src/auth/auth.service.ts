@@ -176,7 +176,7 @@ export class AuthService {
       });
       referrerId = referrer?.id;
     }
-    
+
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
@@ -213,6 +213,7 @@ export class AuthService {
     }
 
     // send mail
+    const url = !createUserDto.role ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}` : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`
     await this.courierClient.send({
       message: {
         to: {
@@ -220,10 +221,7 @@ export class AuthService {
         },
         template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${this.parameters.EMAIL_URL}${!createUserDto.role
-              ? this.parameters.CONFIRM_ACCOUNT_URL
-              : this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL
-            }?token=${token}`,
+          url,
         },
       },
     });
@@ -426,12 +424,12 @@ export class AuthService {
         type: 'account_onboarding',
         account: accountId,
         refresh_url: `${isPartner
-            ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
-            : this.parameters.STRIPE_REFRESH_URL
+          ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
+          : this.parameters.STRIPE_REFRESH_URL
           }`,
         return_url: `${isPartner
-            ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
-            : this.parameters.STRIPE_RETURN_URL
+          ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
+          : this.parameters.STRIPE_RETURN_URL
           }`,
       })
       .then((link) => link.url);
