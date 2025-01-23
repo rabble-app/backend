@@ -164,7 +164,8 @@ export class UsersServiceExtension {
             supplementTeamProducts:{
               select:{
                foundingMembersDiscount: true,
-               status: true
+               status: true,
+               orderTreashold: true,
               }
             },
             _count: {

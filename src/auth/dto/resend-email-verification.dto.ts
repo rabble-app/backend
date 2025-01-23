@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { Role } from '@prisma/client';
+import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 
 export default class ResendEmailVerificationDto {
   @ApiProperty({
@@ -10,4 +11,13 @@ export default class ResendEmailVerificationDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The role of the user',
+    required: true,
+    default: Role.PRODUCER,
+  })
+  @IsEnum(Role)
+  role: Role = Role.PRODUCER;
 }
