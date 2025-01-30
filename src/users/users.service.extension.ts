@@ -149,6 +149,67 @@ export class UsersServiceExtension {
                     unitsOfMeasurePerSubUnit: true,
                     rrp: true,
                     priceInfo: true,
+                    imageUrl: true,
+                    producer: {
+                      select: {
+                        businessName: true,
+                      },
+                    }
+                  }
+                },
+                capsulePerDay: true,   
+              }
+            },
+            supplementTeamProducts:{
+              select:{
+               foundingMembersDiscount: true,
+               status: true,
+               orderTreashold: true,
+              }
+            },
+            _count: {
+              select: {
+                 members: true,
+               },
+             },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async getSingleSupplementPlans(
+    id: string,
+  ) {
+    return await this.prisma.teamMember.findFirst({
+      where: {
+        id,
+        status: TeamStatus.APPROVED, 
+      },
+      select: {
+        id: true,
+        subscriptionStatus: true,
+        skipNextDelivery: true,
+        role: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+            basket:{
+              select:{
+                id: true,
+                quantity: true,
+                product:{
+                  select:{
+                    id: true,
+                    name: true,
+                    price: true,
+                    unitsOfMeasurePerSubUnit: true,
+                    rrp: true,
+                    priceInfo: true,
                     capsuleInfo: true,
                     imageUrl: true,
                     producer: {

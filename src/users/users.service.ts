@@ -41,6 +41,11 @@ export class UsersService {
     return await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
       include: {
+        paymentMethod: {
+          where:{
+            isDefault: true
+          }
+        },
         producer: {
           select: {
             id: true,
@@ -80,6 +85,7 @@ export class UsersService {
             },
           },
         },
+        shipping:true,
         _count: {
           select: {
             employee: true,
@@ -229,6 +235,25 @@ export class UsersService {
     });
   }
 
+  async getDeliveryAddress(
+    shippingWhereUniqueInput: Prisma.ShippingWhereUniqueInput,
+  ): Promise<Shipping | null> {
+    return await this.prisma.shipping.findUnique({
+      where: shippingWhereUniqueInput,
+    });
+  }
+
+  async updateDeliveryAddress(params: {
+    where: Prisma.ShippingWhereUniqueInput;
+    data: Prisma.ShippingUpdateInput;
+  }): Promise<Shipping> {
+    const { where, data } = params;
+    return await this.prisma.shipping.update({
+      data,
+      where,
+    });
+  }
+
   async getOrderHistories(userId: string): Promise<Payment[]> {
     return await this.prisma.payment.findMany({
       where: {
@@ -245,6 +270,7 @@ export class UsersService {
                 product: {
                   select: {
                     name: true,
+                    imageUrl: true,
                   },
                 },
               },
@@ -255,6 +281,7 @@ export class UsersService {
                   select: {
                     businessName: true,
                     businessAddress: true,
+                    imageUrl: true,
                   },
                 },
                 _count: {
@@ -324,25 +351,6 @@ export class UsersService {
           },
         },
       },
-    });
-  }
-
-  async getDeliveryAddress(
-    shippingWhereUniqueInput: Prisma.ShippingWhereUniqueInput,
-  ): Promise<Shipping | null> {
-    return await this.prisma.shipping.findUnique({
-      where: shippingWhereUniqueInput,
-    });
-  }
-
-  async updateDeliveryAddress(params: {
-    where: Prisma.ShippingWhereUniqueInput;
-    data: Prisma.ShippingUpdateInput;
-  }): Promise<Shipping> {
-    const { where, data } = params;
-    return await this.prisma.shipping.update({
-      data,
-      where,
     });
   }
 

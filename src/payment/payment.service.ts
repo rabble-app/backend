@@ -77,6 +77,13 @@ export class PaymentService {
       removePaymentCardDto.paymentMethodId,
     );
 
+    // Todo remove it from our record
+    // await this.prisma.paymentMethod.delete({
+    //   where:{
+    //     id:removePaymentCardDto.paymentMethodId
+    //   }
+    // })
+
     return {
       paymentMethodId: removePaymentCardDto.paymentMethodId,
     };
