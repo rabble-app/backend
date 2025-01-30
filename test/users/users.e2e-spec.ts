@@ -26,6 +26,7 @@ describe('UserController (e2e)', () => {
   let producerCategoryOptionId: string;
   let producerCategoryId: string;
   let teamId: string;
+  let teamMemberId: string;
 
   const producerInfoUpdate = {
     businessAddress: 'Business Address',
@@ -119,6 +120,17 @@ describe('UserController (e2e)', () => {
         minimumTreshold: 50,
       },
     });
+
+    // create  user dummy subscription plan 
+    const teamMember = await prisma.teamMember.create({
+      data: {
+        teamId,
+        userId,
+        status:'APPROVED'
+      },
+    });
+    teamMemberId = teamMember.id
+
   }, testTime);
 
   afterAll(async () => {
@@ -203,6 +215,21 @@ describe('UserController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .get(`/users/producers??offset=0&postalCode=SE154NX`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+     // return single user
+     it(
+      '/users/:id(GET) should return single user',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/producer/${userId}`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
         expect(response.body).toHaveProperty('data');
@@ -608,12 +635,27 @@ describe('UserController (e2e)', () => {
     testTime,
   );
 
-  // return supplement user pending plans
+  // return all supplement user subscription plans
   it(
     '/users/$userId/supplement/plans(GET) should return supplement user upcoming deliveries',
     async () => {
       const response = await request(app.getHttpServer())
         .get(`/users/${supplementUserId}/supplement/plans`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.error).toBeUndefined();
+      expect(typeof response.body.data).toBe('object');
+    },
+    testTime,
+  );
+
+  // return a single  subscription plans
+  it(
+    '/users/supplement/plans/:id(GET) should return supplement user upcoming deliveries',
+    async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/supplement/plans/${teamMemberId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
       expect(response.body).toHaveProperty('data');

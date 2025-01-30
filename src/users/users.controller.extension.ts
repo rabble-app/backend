@@ -389,4 +389,66 @@ export class UsersControllerExtension {
       'Users supplement plans returned successfully',
     );
   }
+
+  /**
+   * return a single subscription plan.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/supplement/plans/:id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the plan',
+  })
+  @ApiOkResponse({ description: 'Supplement plan returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async userSingleSupplementPlan(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersServiceExtension.getSingleSupplementPlans(
+      id,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Supplement plan returned successfully',
+    );
+  }
+
+  /**
+   * return user profile.
+   * @param {Response} res - The payload.
+   * @memberof UsersControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('/:userId')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'Users profile returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async userProfile(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.findUser(
+      {id: userId},
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Users profile returned successfully',
+    );
+  }
 }
