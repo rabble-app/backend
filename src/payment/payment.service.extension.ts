@@ -39,11 +39,11 @@ export class PaymentServiceExtension {
   ): Promise<object | null> {
     try {
       let options = null;
-      if (amountToCapture){
+      if (amountToCapture) {
         options = {
-          amount_to_capture: amountToCapture
+          amount_to_capture: amountToCapture,
         };
-      } 
+      }
       const result = await this.stripe.paymentIntents.capture(
         paymentIntentId,
         options,
@@ -191,7 +191,9 @@ export class PaymentServiceExtension {
     });
   }
 
-  async handleSupplementPaymentCapture(captureIntentDto: CaptureIntentDto): Promise<Payment | null> {
+  async handleSupplementPaymentCapture(
+    captureIntentDto: CaptureIntentDto,
+  ): Promise<Payment | null> {
     // get team latestOrder
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       captureIntentDto.teamId,
@@ -199,16 +201,14 @@ export class PaymentServiceExtension {
     const orderId = latestOrder?.id;
 
     // update payment intent
-    await this.updatePaymentIntent(
-      captureIntentDto.paymentIntentId,
-      {
-        order_id: orderId,
-        user_id: captureIntentDto.userId,
-      })
+    await this.updatePaymentIntent(captureIntentDto.paymentIntentId, {
+      order_id: orderId,
+      user_id: captureIntentDto.userId,
+    });
 
-     // capture payment
+    // capture payment
     const captureResult = await this.captureFund(
-      captureIntentDto.paymentIntentId
+      captureIntentDto.paymentIntentId,
     );
     // check if payment was successful
     if (captureResult) {
@@ -246,11 +246,9 @@ export class PaymentServiceExtension {
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       topUpDto.teamId,
     );
-   
-     // capture payment
-    const captureResult = await this.captureFund(
-      topUpDto.paymentIntentId,
-    );
+
+    // capture payment
+    const captureResult = await this.captureFund(topUpDto.paymentIntentId);
 
     // check if payment was successful
     if (captureResult) {

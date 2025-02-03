@@ -15,7 +15,9 @@ import { ParametersModule } from '../config/config.module';
 import { InsightsService } from '../insights/insights.service';
 import { QRCodeService } from '../qrcode/qrcode.service';
 import { UploadsService } from '../uploads/uploads.service';
-
+import { LoggerModule } from '../utils/logger.module';
+import { RollbarModule } from '../utils/rollbar.module';
+import { ReferralsService } from '../referrals/referrals.service';
 describe('ScheduleService', () => {
   let service: ScheduleService;
 
@@ -40,8 +42,9 @@ describe('ScheduleService', () => {
         InsightsService,
         QRCodeService,
         UploadsService,
+        ReferralsService,
       ],
-      imports: [ParametersModule],
+      imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();
 
     service = module.get<ScheduleService>(ScheduleService);

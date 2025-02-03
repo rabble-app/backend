@@ -309,7 +309,7 @@ export class StoreService {
       return false;
     }
 
-    if (storeInfo.userId === userId) {
+    if (storeInfo.userId == userId) {
       return true;
     }
     return storeInfo.Employee.some((employee) => employee.userId === userId);

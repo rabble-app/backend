@@ -9,6 +9,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { TeamsModule } from '../teams/teams.module';
 import { ProductsModule } from '../../src/products/products.module';
 import { JwtService } from '@nestjs/jwt';
+import { ReferralsService } from '../referrals/referrals.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { JwtService } from '@nestjs/jwt';
     PrismaService,
     PaymentServiceExtension,
     JwtService,
+    ReferralsService,
   ],
   exports: [PaymentService, PaymentServiceExtension],
 })

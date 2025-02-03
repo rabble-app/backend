@@ -10,6 +10,9 @@ import { ProductsService } from '../../src/products/products.service';
 import { AuthService } from '../../src/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
+import { LoggerModule } from '../utils/logger.module';
+import { RollbarModule } from '../utils/rollbar.module';
+import { ReferralsService } from '../referrals/referrals.service';
 
 describe('PaymentController', () => {
   let controller: PaymentController;
@@ -27,8 +30,9 @@ describe('PaymentController', () => {
         ProductsService,
         AuthService,
         JwtService,
+        ReferralsService,
       ],
-      imports: [ParametersModule],
+      imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();
 
     controller = module.get<PaymentController>(PaymentController);

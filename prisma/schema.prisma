@@ -27,7 +27,7 @@ model User {
   updatedAt                     DateTime                        @updatedAt @map("updated_at")
   notificationToken             String?                         @map("notification_token")
   onboardingStage               Int                             @default(0) @map("onboarding_stage")
-  refCode                       String?                         @unique @map("ref_code")
+  refCode                  String?                         @unique @map("ref_code")
   referrerId                    String?                         @map("referrer_id")
   basketsC                      BasketC[]
   baskets                       Basket[]
@@ -52,13 +52,31 @@ model User {
   collection                    Collection[]
   confirmation                  OrderConfirmation[]
   topUpBasket TopUpBasket[]
-  paymentMethod PaymentMethod[]
-  bonus Bonus[]
   wallet Wallet[]
+  paymentMethods PaymentMethod[]
+  bonuses Bonus[]
+  claims Claim[]
 
   @@index([id])
   @@map("users")
 
+}
+
+model PaymentMethod {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  stripeCustomerId   String   @unique @map("stripe_customer_id")
+  paymentMethodId    String   @map("payment_method_id")
+  isDefault          Boolean  @default(true) @map("is_default")
+  cardLastFourDigits String   @map("card_last_four_digits")
+  fingerprint        String   @unique
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  active             Boolean  @default(true)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id, userId, fingerprint])
+  @@map("payment_methods")
 }
 
 model Producer {
@@ -332,27 +350,27 @@ model BuyingTeam {
 }
 
 model SupplementTeamProducts {
-  id        String     @id @default(uuid())
-  teamId    String     @unique @map("team_id")
-  productId String     @unique @map("product_id")
-  orderTreashold Int   @default(10) @map("order_treashold")
-  status    SupplementTeamStatus     @default(PREORDER) @map("status")
-  foundingMembersDiscount    Decimal  @default(10) @map("founding_members_discount") @db.Decimal(9, 2)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  team      BuyingTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id                      String               @id @default(uuid())
+  teamId                  String               @unique @map("team_id")
+  productId               String               @unique @map("product_id")
+  orderTreashold          Int                  @default(10) @map("order_treashold")
+  status                  SupplementTeamStatus @default(PREORDER) @map("status")
+  foundingMembersDiscount Decimal              @default(10) @map("founding_members_discount") @db.Decimal(9, 2)
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+  team                    BuyingTeam           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  product                 Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([id, teamId, productId])
   @@map("supplement_team_products")
 }
 
 model SupplementTags {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  type  SupplementTagTypes  @default(CATEGORY)  @map("type")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id        String             @id @default(uuid())
+  name      String             @unique
+  type      SupplementTagTypes @default(CATEGORY) @map("type")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
 
   @@map("supplement_tags")
 }
@@ -597,6 +615,8 @@ model Payment {
   amount          Decimal       @default(0) @db.Decimal(9, 2)
   paymentIntentId String?       @unique
   status          PaymentStatus @default(PENDING)
+  discount        Decimal       @default(0) @db.Decimal(9, 2)
+  coupons         String?       @map("coupons")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   order           Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -782,47 +802,41 @@ model ProducerDeliveryArea {
   @@map("producer_delivery_areas")
 }
 
-model PaymentMethod {
-  id                 String   @id @default(uuid())
-  userId             String   @unique @map("user_id")
-  stripeCustomerId   String   @unique @map("stripe_customer_id")
-  paymentMethodId    String   @map("payment_method_id")
-  isDefault          Boolean  @default(true) @map("is_default")
-  cardLastFourDigits String   @map("card_last_four_digits")
-  fingerprint        String   @unique
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-  active             Boolean  @default(true)
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([id, userId])
-  @@map("payment_methods")
-}
-
 model Wallet {
   id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  userId    String   @unique@map("user_id")
   balance   Decimal 
   claimed   Decimal  
-  allTime   Decimal  @map("all_time")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  walletTransaction WalletTransaction[]
   @@index([id,userId])
   @@map("wallets")
 
 }
 
-model WalletTransaction {
+model Claim {
   id        String   @id @default(uuid())
-  walletId  String   @map("wallet_id")
-  amount    Decimal 
+  amount    Decimal
+  userId    String   @map("user_id")
+  couponId  String  @map("coupon_id")
+  couponValue  Decimal @map("coupon_value")
+  used      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  type      WalletTransactionType
-  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  @@index([id, walletId])
-  @@map("wallet_transactions")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([id, userId])
+  @@map("claims")
+}
+
+model Reward {
+  id        String   @id @default(uuid())
+  amount    Int
+  rate  Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@index([id])
+  @@map("rewards")
 }
 
 model Bonus {
@@ -844,10 +858,6 @@ enum BonusType {
   SIGNUP
 }
 
-enum WalletTransactionType {
-  CLAIM
-  SPEND
-}
 
 enum OrderStatus {
   PENDING
@@ -966,7 +976,7 @@ enum SupplementTeamStatus {
   PREORDER
 }
 
-enum SupplementTagTypes  {
+enum SupplementTagTypes {
   GOALS
   CATEGORY
   FUNCTION

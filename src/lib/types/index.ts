@@ -3,6 +3,8 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { Request } from 'express';
 
 export interface IAPIResponse {
+  statusCode: number;
+  message?: string;
   data?: object | string;
   error?: object | string;
 }
@@ -326,6 +328,6 @@ export interface IStoreEmployee {
 
 export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
   include: {
-    supplementTeamProducts: true
+    supplementTeamProducts: true;
   };
 }>;

@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
   User,
@@ -29,6 +29,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+    @Inject('LOGGER') private readonly logger: Logger,
   ) {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
@@ -41,7 +42,7 @@ export class UsersService {
     return await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
       include: {
-        paymentMethod: {
+        paymentMethods: {
           where:{
             isDefault: true
           }

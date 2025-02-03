@@ -213,7 +213,9 @@ export class AuthService {
     }
 
     // send mail
-    const url = !createUserDto.role ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}` : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`
+    const url = !createUserDto.role
+      ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`
+      : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`;
     await this.courierClient.send({
       message: {
         to: {
@@ -423,14 +425,16 @@ export class AuthService {
       .create({
         type: 'account_onboarding',
         account: accountId,
-        refresh_url: `${isPartner
-          ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
-          : this.parameters.STRIPE_REFRESH_URL
-          }`,
-        return_url: `${isPartner
-          ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
-          : this.parameters.STRIPE_RETURN_URL
-          }`,
+        refresh_url: `${
+          isPartner
+            ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
+            : this.parameters.STRIPE_REFRESH_URL
+        }`,
+        return_url: `${
+          isPartner
+            ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
+            : this.parameters.STRIPE_RETURN_URL
+        }`,
       })
       .then((link) => link.url);
   }

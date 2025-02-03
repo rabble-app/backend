@@ -9,6 +9,9 @@ import { ProductsService } from '../../src/products/products.service';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
 import { ParametersModule } from '../config/config.module';
+import { LoggerModule } from '../utils/logger.module';
+import { RollbarModule } from '../utils/rollbar.module';
+import { ReferralsService } from '../referrals/referrals.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
@@ -25,8 +28,9 @@ describe('PaymentService', () => {
         ProductsService,
         AuthService,
         JwtService,
+        ReferralsService,
       ],
-      imports: [ParametersModule],
+      imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);

@@ -213,7 +213,7 @@ async function main() {
       },
     ],
   });
-  
+
   // create postal code areas
   await prisma.postalCodeArea.createMany({
     data: [
@@ -2624,6 +2624,31 @@ async function main() {
       approvalStatus: 'APPROVED',
       rrp: 28.4,
     },
+  });
+  await prisma.reward.deleteMany();
+  await prisma.reward.createMany({
+    data: [
+      {
+        amount: 50000,
+        rate: 10000,
+      },
+      {
+        amount: 98000,
+        rate: 9800,
+      },
+      {
+        amount: 192000,
+        rate: 9600,
+      },
+      {
+        amount: 475000,
+        rate: 9500,
+      },
+      {
+        amount: 900000,
+        rate: 9000,
+      },
+    ],
   });
 }
 main()

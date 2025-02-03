@@ -66,12 +66,14 @@
     "pusher": "^5.2.0",
     "qrcode": "^1.5.3",
     "reflect-metadata": "^0.1.13",
+    "rollbar": "^2.26.4",
     "rxjs": "^7.2.0",
     "serverless-dotenv-plugin": "^6.0.0",
     "stripe": "^12.3.0",
     "tslint": "^6.1.3",
     "tslint-loader": "^3.5.4",
     "twilio": "^4.9.0",
+    "winston": "^3.17.0",
     "yarn": "^1.22.19"
   },
   "devDependencies": {
@@ -90,6 +92,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/supertest": "^2.0.11",
     "@types/uuid": "^9.0.1",
+    "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.1",
