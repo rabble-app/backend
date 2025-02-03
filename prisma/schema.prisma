@@ -210,6 +210,7 @@ model Shipping {
   userId     String   @unique
   buildingNo String?  @map("building_no")
   address    String
+  address2   String?
   city       String?
   country    String?
   createdAt  DateTime @default(now()) @map("created_at")

@@ -28,6 +28,15 @@ export class DeliveryAddressDto {
   })
   @IsString()
   address: string;
+ 
+  @ApiProperty({
+    type: 'string',
+    description: 'The address of the user',
+    required: true,
+  })
+  @ValidateIf((o) => o.address2)
+  @IsString()
+  address2: string;
 
   @ApiProperty({
     type: 'string',

@@ -162,16 +162,51 @@ export type ProducerWithCategories = Prisma.ProducerGetPayload<{
 
 export type UserWithProducerAndPartnerInfo = Prisma.UserGetPayload<{
   include: {
+    paymentMethods: {
+      where:{
+        isDefault: true
+      }
+    },
     producer: {
       select: {
-        id: true;
-      };
-    };
+        id: true,
+      },
+    },
     partner: {
       select: {
-        id: true;
-      };
-    };
+        id: true,
+        name: true,
+        postalCode: true,
+        stripeConnectId: true,
+        openhour: {
+          select: {
+            type: true,
+          },
+        },
+      },
+    },
+    employee: {
+      select: {
+        partner: {
+          select: {
+            id: true,
+            name: true,
+            postalCode: true,
+            openhour: {
+              select: {
+                type: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    },
+    shipping:true,
   };
 }>;
 

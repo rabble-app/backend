@@ -581,7 +581,7 @@ describe('UserController (e2e)', () => {
       const response = await request(app.getHttpServer())
         .post(`/users/basket/`)
         .set('Authorization', `Bearer ${jwtToken}`)
-        .send({ teamId }) //Todo: get buying team id
+        .send({ teamId })
         .expect(200);
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();

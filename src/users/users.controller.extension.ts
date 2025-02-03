@@ -443,6 +443,7 @@ export class UsersControllerExtension {
     const result = await this.usersService.findUser(
       {id: userId},
     );
+    result.shipping['postalCode'] = result?.postalCode;
     return formatResponse(
       result,
       res,
