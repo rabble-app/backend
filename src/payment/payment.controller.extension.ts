@@ -27,6 +27,8 @@ import { PaymentServiceExtension } from './payment.service.extension';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 import { ReturnIntentDto } from './dto/return-intent.dto';
 import { AuthGuard } from '../../src/auth/auth.guard';
+import { CaptureIntentDto } from './dto/capture-intent.dto';
+import { TopUpDto } from './dto/topup.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -102,6 +104,7 @@ export class PaymentControllerExtension {
       'Item updated successfully',
     );
   }
+
   /**
    * Create Payment intent
    * @param {Body} createIntentDto - Request body object.
@@ -118,11 +121,13 @@ export class PaymentControllerExtension {
     @Body() createIntentDto: CreateIntentDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntentForApplePay(
-      createIntentDto,
-    );
+    const result = await this.paymentService.createIntent(createIntentDto);
     return formatResponse(
-      result,
+      {
+        paymentIntentId: result?.id,
+        clientSecret: result?.client_secret,
+        status: result?.status,
+      },
       res,
       HttpStatus.OK,
       false,
@@ -187,20 +192,112 @@ export class PaymentControllerExtension {
   }
 
   /**
-   * This is for test
-   * @param {Body} returnIntentDto - Request body object.
+   * Capture Payment intent
+   * @param {Body} captureIntentDto - Request body object.
    * @param {Response} res - The payload.
    * @memberof PaymentControllerExtension
    * @returns {JSON} - A JSON success response.
    */
-  @Get('test')
+  @UseGuards(AuthGuard)
+  @Post('intent/capture')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
-  @ApiOkResponse({ description: 'Payment intent created successfully' })
+  @ApiOkResponse({ description: 'Payment intent captured successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async testTax(
+  async captureIntent(
+    @Body() captureIntentDto: CaptureIntentDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.recordTax();
-    return formatResponse(result, res, HttpStatus.OK, false, 'Test completed');
+    const result =
+      await this.paymentServiceExtension.handleSupplementPaymentCapture(
+        captureIntentDto,
+      );
+    if (!result) {
+      return formatResponse(
+        'Payment capture failed',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Payment intent capture failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Payment intent captured successfully',
+    );
+  }
+
+  /**
+   * Top up subscription
+   * @param {Body} topUpDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('/supplement/topup')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Subscription top up processed successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async topUpSubscription(
+    @Body() topUpDto: TopUpDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.handleTopUpPayment(
+      topUpDto,
+    );
+    if (!result) {
+      return formatResponse(
+        'Subscription top up failed',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Payment intent capture failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription top up processed successfully',
+    );
+  }
+
+  /**
+   * Update item in basketC
+   * @param {Body} updateBasketItemDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch('basketC/:itemId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Subscription updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'itemId',
+    required: true,
+    description: 'The id of the item you want to update',
+  })
+  async updateItemInBasketC(
+    @Param('itemId') id: string,
+    @Body() updateBasketItemDto: UpdateBasketItemDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.updateBasketItem({
+      where: { id },
+      data: updateBasketItemDto,
+    });
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription updated successfully',
+    );
   }
 }

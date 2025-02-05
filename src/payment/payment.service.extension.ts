@@ -5,6 +5,8 @@ import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
+import { CaptureIntentDto } from './dto/capture-intent.dto';
+import { TopUpDto } from './dto/topup.dto';
 
 @Injectable()
 export class PaymentServiceExtension {
@@ -41,12 +43,12 @@ export class PaymentServiceExtension {
         options = {
           amount_to_capture: amountToCapture,
         };
-        const result = await this.stripe.paymentIntents.capture(
-          paymentIntentId,
-          options,
-        );
-        return result;
       }
+      const result = await this.stripe.paymentIntents.capture(
+        paymentIntentId,
+        options,
+      );
+      return result;
     } catch (error) {
       console.log(error);
     }
@@ -189,33 +191,89 @@ export class PaymentServiceExtension {
     });
   }
 
-  async recordTax() {
-    const calculation = await this.stripe.tax.calculations.create({
-      currency: 'gbp',
-      line_items: [
-        {
-          amount: 3000,
-          reference: 'L1',
-          tax_behavior: 'exclusive',
-          tax_code: 'txcd_41020003',
-        },
-      ],
-      customer_details: {
-        address: {
-          country: 'GB',
-        },
-        address_source: 'billing',
-      },
-    });
-    const tax = await this.stripe.tax.transactions.createFromCalculation({
-      calculation: calculation.id,
-      reference: `${Math.floor(Math.random() * 100)}`, // put payment intent
-      expand: ['line_items'],
-    });
+  async handleSupplementPaymentCapture(
+    captureIntentDto: CaptureIntentDto,
+  ): Promise<Payment | null> {
+    // get team latestOrder
+    const latestOrder = await this.paymentService.getTeamLatestOrder(
+      captureIntentDto.teamId,
+    );
+    const orderId = latestOrder?.id;
+
     // update payment intent
-    await this.updatePaymentIntent('paymentIntent', {
-      tax_transaction: '{{TAX_TRANSACTION}}',
+    await this.updatePaymentIntent(captureIntentDto.paymentIntentId, {
+      order_id: orderId,
+      user_id: captureIntentDto.userId,
     });
-    return tax;
+
+    // capture payment
+    const captureResult = await this.captureFund(
+      captureIntentDto.paymentIntentId,
+    );
+    // check if payment was successful
+    if (captureResult) {
+      // record payment
+      const paymentData = {
+        orderId,
+        paymentIntentId: captureIntentDto.paymentIntentId,
+        amount: captureIntentDto.amount,
+        status: PaymentStatus.CAPTURED,
+        userId: captureIntentDto.userId,
+      };
+
+      // accumulate amount paid
+      await this.paymentService.accumulateAmount(
+        orderId,
+        captureIntentDto.amount,
+        captureIntentDto.teamId,
+      );
+      return await this.paymentService.recordPayment(paymentData);
+    } else {
+      return null;
+    }
+  }
+
+  async findPayments(
+    paymentWhereInput: Prisma.PaymentWhereInput,
+  ): Promise<Payment[] | null> {
+    return await this.prisma.payment.findMany({
+      where: paymentWhereInput,
+    });
+  }
+
+  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | null> {
+    // get team latestOrder
+    const latestOrder = await this.paymentService.getTeamLatestOrder(
+      topUpDto.teamId,
+    );
+
+    // capture payment
+    const captureResult = await this.captureFund(topUpDto.paymentIntentId);
+
+    // check if payment was successful
+    if (captureResult) {
+      // save the top up basket
+      await this.prisma.topUpBasket.create({
+        data: {
+          productId: topUpDto.productId,
+          userId: topUpDto.userId,
+          orderId: latestOrder?.id,
+          quantity: topUpDto.quantity,
+          price: topUpDto.price,
+          // capsulePerDay: addSingleBasketDto.capsulePerDay,
+        },
+      });
+      // record payment
+      const paymentData = {
+        orderId: latestOrder?.id,
+        paymentIntentId: topUpDto.paymentIntentId,
+        amount: topUpDto.amount,
+        status: PaymentStatus.CAPTURED,
+        userId: topUpDto.userId,
+      };
+      return await this.paymentService.recordPayment(paymentData);
+    } else {
+      return null;
+    }
   }
 }

@@ -20,3 +20,12 @@ export class AddPaymentCardDto {
   @IsString()
   stripeCustomerId: string;
 }
+
+export interface IPaymentMethod {
+  cardLastFourDigits: string;
+  paymentMethodId: string;
+  userId: string;
+  stripeCustomerId: string;
+  isDefault?: boolean;
+  fingerprint: string;
+}

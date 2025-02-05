@@ -1,6 +1,12 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { Product, ProductCategory, RecentlyViewed, SupplementTeamProducts } from '@prisma/client';
+import {
+  Product,
+  ProductCategory,
+  RecentlyViewed,
+  SupplementTags,
+  SupplementTeamProducts,
+} from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
 import { ITeamWithOtherInfo, ProductApprovalStatus } from '../../src/lib/types';
@@ -28,7 +34,7 @@ export class ProductsService {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
     }
-    return await this.prisma.product.findFirst({
+    const result = await this.prisma.product.findFirst({
       where: {
         id,
       },
@@ -61,8 +67,27 @@ export class ProductsService {
             createdAt: 'desc',
           },
         },
+        supplementTeamProducts: {
+          select: {
+            orderTreashold: true,
+            foundingMembersDiscount: true,
+            status: true,
+            team: {
+              select: {
+                id: true,
+                _count: {
+                  select: {
+                    members: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
+    result['orderId'] = orderId;
+    return result;
   }
 
   async getProducerProducts(
@@ -334,14 +359,19 @@ export class ProductsService {
     return 'Update Successful';
   }
 
-  async getSupplementProducts(limit: number): Promise<Partial<SupplementTeamProducts>[] | null> {
+  async getSupplementProducts(
+    limit: number,
+  ): Promise<Partial<SupplementTeamProducts>[] | null> {
     return await this.prisma.supplementTeamProducts.findMany({
       orderBy: {
         createdAt: 'desc',
       },
-      select:{
+      select: {
         teamId: true,
         productId: true,
+        status: true,
+        orderTreashold: true,
+        foundingMembersDiscount: true,
         product: {
           select: {
             id: true,
@@ -354,22 +384,38 @@ export class ProductsService {
             rabbleMarkUp: true,
             status: true,
             rrp: true,
-            tags: true
-          }
+            tags: true,
+            producer: {
+              select: {
+                businessName: true,
+                imageUrl: true,
+              },
+            },
+            formulationSummary: true,
+          },
         },
         team: {
           select: {
             id: true,
             name: true,
             _count: {
-             select: {
+              select: {
                 members: true,
               },
             },
           },
-        },  
+        },
       },
       ...(limit && { take: +limit }),
+    });
+  }
+
+  async getSupplementProductsTags(): Promise<Partial<SupplementTags>[] | null> {
+    return await this.prisma.supplementTags.findMany({
+      select: {
+        name: true,
+        type: true,
+      },
     });
   }
 }

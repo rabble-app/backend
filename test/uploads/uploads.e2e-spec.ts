@@ -6,6 +6,7 @@ import { PrismaService } from '../../src/prisma.service';
 import { User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
+import { UploadsService } from '../../src/uploads/uploads.service';
 
 describe('UploadController (e2e)', () => {
   let app: INestApplication;
@@ -24,7 +25,18 @@ describe('UploadController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UploadsService)
+      .useValue({
+        uploadFile: jest.fn().mockResolvedValue({
+          Location: 'https://example.com/testImage.jpg',
+          Key: 'testImage.jpg',
+          $metadata: {
+            httpStatusCode: 200,
+          },
+        }),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     authService = app.get<AuthService>(AuthService);

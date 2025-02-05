@@ -15,8 +15,10 @@ describe('PaymentController (e2e)', () => {
   const phone = faker.phone.number('501-###-###');
   let customerId: string;
   let paymentIntentId: string;
+  let paymentIntentId2: string;
   let paymentMethodId: string;
   let userId: string;
+  let userId2: string;
   let producerId: string;
   let productId: string;
   let productId2: string;
@@ -25,6 +27,7 @@ describe('PaymentController (e2e)', () => {
   let itemId: string;
   let jwtToken: string;
   let stripe: Stripe;
+  let basketCId: string;
   const testTime = 120000;
 
   const chargeInfo = {
@@ -65,6 +68,14 @@ describe('PaymentController (e2e)', () => {
       },
     });
     userId = user.id;
+
+    // create dummy user for test
+    const user2 = await prisma.user.create({
+      data: {
+        phone: `${phone}2`,
+      },
+    });
+    userId2 = user2.id;
 
     // create dummy producer for test
     const producer = await prisma.producer.create({
@@ -129,6 +140,17 @@ describe('PaymentController (e2e)', () => {
     });
     orderId = order.id;
 
+    // create  copy basket record for test
+    const basketC = await prisma.basketC.create({
+      data: {
+        teamId,
+        userId,
+        productId,
+        quantity: 1,
+      },
+    });
+    basketCId = basketC.id;
+
     // create dummy token
     jwtToken = authService.generateToken({ userId });
   }, testTime);
@@ -155,6 +177,32 @@ describe('PaymentController (e2e)', () => {
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
+        const paymentMethod = await prisma.paymentMethod.findFirst({
+          where: {
+            userId,
+            stripeCustomerId: customerId,
+          },
+        });
+        expect(paymentMethod).toBeDefined();
+      },
+      testTime,
+    );
+    it(
+      '/payments/add-card(POST) should not add card to user account if payment method is already added',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/add-card')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ paymentMethodId, stripeCustomerId: customerId })
+          .expect(400);
+        expect(response.body.message).toBe('Payment method already exists');
+        const paymentMethod = await prisma.paymentMethod.findFirst({
+          where: {
+            userId,
+            stripeCustomerId: customerId,
+          },
+        });
+        expect(paymentMethod).toBeDefined();
       },
       testTime,
     );
@@ -248,12 +296,39 @@ describe('PaymentController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/payments/intent')
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ ...chargeInfo, customerId })
+          .send({
+            amount: 1000,
+            currency: 'gbp',
+            customerId,
+            paymentMethodId,
+          })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(typeof response.body.data).toBe('object');
         paymentIntentId = response.body.data.paymentIntentId;
+      },
+      testTime,
+    );
+
+    // create payment intent 2
+    it(
+      '/payments/intent(POST) should create payment intent',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/intent')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            amount: 1000,
+            currency: 'gbp',
+            customerId,
+            paymentMethodId,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        paymentIntentId2 = response.body.data.paymentIntentId;
       },
       testTime,
     );
@@ -316,6 +391,47 @@ describe('PaymentController (e2e)', () => {
       testTime,
     );
 
+    // capture payment intent
+    it(
+      '/payments/intent/capture(POST) should capture payment intent for supplement customers',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/intent/capture')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({ paymentIntentId, teamId, userId, amount: 1000 })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
+    // top up payment
+    it(
+      '/payments/supplement/topup(POST) should process payment for supplement topup',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/payments/supplement/topup')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send({
+            paymentIntentId: paymentIntentId2,
+            teamId,
+            userId,
+            amount: 1000,
+            productId: productId2,
+            quantity: 2,
+            price: 2,
+            capsulePerDay: 1,
+          })
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
+
     describe('Basket', () => {
       // add user bulk basket successfully
       it(
@@ -325,7 +441,7 @@ describe('PaymentController (e2e)', () => {
             basket: [
               {
                 orderId,
-                userId,
+                userId: userId2,
                 productId,
                 quantity: 2,
                 price: 2000,
@@ -375,13 +491,12 @@ describe('PaymentController (e2e)', () => {
         '/payments/basket(POST) should add a single item to basket',
         async () => {
           const basket = {
-            orderId,
             userId,
             productId: productId2,
             quantity: 2,
             price: 2000,
             teamId,
-            deadlineReached: false,
+            capsulePerDay: 3,
           };
           const response = await request(app.getHttpServer())
             .post('/payments/basket')
@@ -400,7 +515,7 @@ describe('PaymentController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/payments/basket')
           .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ orderId })
+          .send({ userId })
           .expect(400);
         expect(response.body).toHaveProperty('error');
         expect(typeof response.body.error).toBe('string');
@@ -416,6 +531,26 @@ describe('PaymentController (e2e)', () => {
           };
           const response = await request(app.getHttpServer())
             .patch(`/payments/basket/${itemId}`)
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send(basket)
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+
+      // update item in basketC
+      it(
+        '/payments/basketC/:itemId (PATCH) should update item in basketC',
+        async () => {
+          const basket = {
+            quantity: 6,
+            capsulePerDay: 2,
+          };
+          const response = await request(app.getHttpServer())
+            .patch(`/payments/basketC/${basketCId}`)
             .set('Authorization', `Bearer ${jwtToken}`)
             .send(basket)
             .expect(200);

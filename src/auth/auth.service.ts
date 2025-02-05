@@ -156,6 +156,7 @@ export class AuthService {
   async registerUser(createUserDto: CreateUserDto): Promise<Producer | User> {
     let producerRecord: Producer = undefined;
     let stripeCustomerId: string = undefined;
+    let referrerId: string = undefined;
 
     // encrypt password
     const password = await this.encryptPassword(createUserDto.password);
@@ -168,9 +169,18 @@ export class AuthService {
       stripeCustomerId = stripeResponse.id;
     }
 
+    // verify referrer
+    if (createUserDto.referralCode) {
+      const referrer = await this.userService.findUser({
+        refCode: createUserDto.referralCode,
+      });
+      referrerId = referrer?.id;
+    }
+
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
+        referrerId,
         password,
         stripeCustomerId,
         email: createUserDto.email,
@@ -203,6 +213,9 @@ export class AuthService {
     }
 
     // send mail
+    const url = !createUserDto.role
+      ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`
+      : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`;
     await this.courierClient.send({
       message: {
         to: {
@@ -210,11 +223,7 @@ export class AuthService {
         },
         template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
         data: {
-          url: `${this.parameters.EMAIL_URL}${
-            !createUserDto.role
-              ? this.parameters.CONFIRM_ACCOUNT_URL
-              : this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL
-          }?token=${token}`,
+          url,
         },
       },
     });

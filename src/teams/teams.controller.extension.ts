@@ -350,11 +350,18 @@ export class TeamsControllerExtension {
     required: true,
     description: 'The id of the team membership',
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'should be true or false',
+  })
   async skipNextDelivery(
     @Param('id') id: string,
+    @Query('status') status: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension2.skipDelivery(id);
+    const desiredStatus = status && status === 'false' ? false : true;
+    const result = await this.teamsServiceExtension2.skipDelivery(id, desiredStatus);
     return formatResponse(
       result,
       res,
@@ -386,7 +393,10 @@ export class TeamsControllerExtension {
     @Body() subscriptionStatusUpdateDto: SubscriptionStatusUpdateDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.teamsServiceExtension2.updateSubscriptionStatus(id, subscriptionStatusUpdateDto.status);
+    const result = await this.teamsServiceExtension2.updateSubscriptionStatus(
+      id,
+      subscriptionStatusUpdateDto.status,
+    );
     return formatResponse(
       result,
       res,

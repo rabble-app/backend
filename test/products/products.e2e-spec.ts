@@ -276,5 +276,20 @@ describe('ProductsController (e2e)', () => {
       },
       testTime,
     );
+
+    // return supplement products tags
+    it(
+      '/products/supplement/tags(GET) should return supplement products tags',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/products/supplement/tags`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+      },
+      testTime,
+    );
   });
 });

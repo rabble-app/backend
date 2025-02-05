@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, ValidateIf } from 'class-validator';
 
 export class CreateIntentDto {
   @ApiProperty({
@@ -28,4 +28,14 @@ export class CreateIntentDto {
   @IsNotEmpty()
   @IsString()
   customerId: string;
+
+  @ApiProperty({
+    type: 'string',
+    description: 'The payment method id',
+    required: false,
+  })
+  @ValidateIf((o) => o.paymentMethodId !== undefined)
+  @IsNotEmpty()
+  @IsString()
+  paymentMethodId: string;
 }

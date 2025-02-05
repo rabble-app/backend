@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { UsersService } from './users.service';
 import { ParametersModule } from '../config/config.module';
 import { UsersServiceExtension } from './users.service.extension';
+import { LoggerModule } from '../utils/logger.module';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -10,7 +11,7 @@ describe('UsersService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [UsersService, UsersServiceExtension, PrismaService],
-      imports: [ParametersModule],
+      imports: [ParametersModule, LoggerModule],
     }).compile();
 
     service = module.get<UsersService>(UsersService);

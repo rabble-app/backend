@@ -1,8 +1,10 @@
-import { Prisma } from '@prisma/client';
+import { OrderType, Prisma, OrderStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Request } from 'express';
 
 export interface IAPIResponse {
+  statusCode: number;
+  message?: string;
   data?: object | string;
   error?: object | string;
 }
@@ -23,13 +25,6 @@ export enum PartnerOpenHour {
   ALL_THE_TIME = 'ALL_THE_TIME',
   MON_TO_FRI = 'MON_TO_FRI',
   CUSTOM = 'CUSTOM',
-}
-
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  PENDING_DELIVERY = 'PENDING_DELIVERY',
-  SUCCESSFUL = 'SUCCESSFUL',
-  FAILED = 'FAILED',
 }
 
 export enum PasswordChangeRoute {
@@ -65,8 +60,10 @@ export enum Channel {
 }
 export interface IOrder {
   teamId: string;
-  minimumTreshold: Decimal;
-  deadline: Date;
+  minimumTreshold?: Decimal;
+  deadline?: Date;
+  type?: OrderType;
+  status?: OrderStatus;
 }
 export interface IPayment {
   orderId?: string;
@@ -165,16 +162,51 @@ export type ProducerWithCategories = Prisma.ProducerGetPayload<{
 
 export type UserWithProducerAndPartnerInfo = Prisma.UserGetPayload<{
   include: {
+    paymentMethods: {
+      where:{
+        isDefault: true
+      }
+    },
     producer: {
       select: {
-        id: true;
-      };
-    };
+        id: true,
+      },
+    },
     partner: {
       select: {
-        id: true;
-      };
-    };
+        id: true,
+        name: true,
+        postalCode: true,
+        stripeConnectId: true,
+        openhour: {
+          select: {
+            type: true,
+          },
+        },
+      },
+    },
+    employee: {
+      select: {
+        partner: {
+          select: {
+            id: true,
+            name: true,
+            postalCode: true,
+            openhour: {
+              select: {
+                type: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    },
+    shipping:true,
   };
 }>;
 
@@ -331,6 +363,6 @@ export interface IStoreEmployee {
 
 export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
   include: {
-    supplementTeamProducts: true
+    supplementTeamProducts: true;
   };
 }>;

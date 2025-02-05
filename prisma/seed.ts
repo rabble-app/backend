@@ -2,6 +2,157 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  // create supplement tags
+  await prisma.supplementTags.createMany({
+    data: [
+      {
+        name: 'Boost Focus and Memory',
+        type: 'GOALS',
+      },
+      {
+        name: 'Reduce Anxiety and Stress',
+        type: 'GOALS',
+      },
+      {
+        name: 'Enhance Energy and Vitality',
+        type: 'GOALS',
+      },
+      {
+        name: 'Age Gracefully and Healthily',
+        type: 'GOALS',
+      },
+      {
+        name: 'Improve Physical Performance and Recovery',
+        type: 'GOALS',
+      },
+      {
+        name: 'Strengthen Immunity and Resilience',
+        type: 'GOALS',
+      },
+      {
+        name: 'Support Daily Wellness',
+        type: 'GOALS',
+      },
+      {
+        name: 'Improve Emotional Regulation',
+        type: 'GOALS',
+      },
+      {
+        name: 'Heart Health',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'North East',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Fetility',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Sleep',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Healthy Aging',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Longevity',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Weight Training',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Athletics',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Immunity',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Cognitive Function',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Joint Health',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Gut Health',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Skin Health',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Mood and Anxiety',
+        type: 'CATEGORY',
+      },
+      {
+        name: 'Reduce Oxidative Stress',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Improve Cellular Health',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Boost Mitochondrial Function',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Enhance Recovery',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Build Strength and Endurance',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Support Hormonal Health',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Promote Relaxation and Sleep',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Strengthen Joints and Skin',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Improve Digestion',
+        type: 'FUNCTION',
+      },
+      {
+        name: 'Neurodivergent Support',
+        type: 'AUDIENCE',
+      },
+      {
+        name: 'Athletes & Weight Trainers',
+        type: 'AUDIENCE',
+      },
+      {
+        name: 'Longevity Enthusiasts',
+        type: 'AUDIENCE',
+      },
+      {
+        name: 'Women’s Health',
+        type: 'AUDIENCE',
+      },
+      {
+        name: 'Most Popular',
+        type: 'SORT',
+      },
+    ],
+  });
+
+  // create postal code regions
   await prisma.postalCodeRegion.createMany({
     data: [
       {
@@ -63,6 +214,7 @@ async function main() {
     ],
   });
 
+  // create postal code areas
   await prisma.postalCodeArea.createMany({
     data: [
       // area 2
@@ -2472,6 +2624,31 @@ async function main() {
       approvalStatus: 'APPROVED',
       rrp: 28.4,
     },
+  });
+  await prisma.reward.deleteMany();
+  await prisma.reward.createMany({
+    data: [
+      {
+        amount: 50000,
+        rate: 10000,
+      },
+      {
+        amount: 98000,
+        rate: 9800,
+      },
+      {
+        amount: 192000,
+        rate: 9600,
+      },
+      {
+        amount: 475000,
+        rate: 9500,
+      },
+      {
+        amount: 900000,
+        rate: 9000,
+      },
+    ],
   });
 }
 main()
