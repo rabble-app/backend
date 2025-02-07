@@ -43,6 +43,7 @@ export enum PaymentStatus {
   INTENT_CREATED = 'INTENT_CREATED',
   CAPTURED = 'CAPTURED',
   FAILED = 'FAILED',
+  COUPON_USED = 'COUPON_USED',
 }
 
 export enum Role {

@@ -56,6 +56,7 @@ model User {
   paymentMethods PaymentMethod[]
   bonuses Bonus[]
   claims Claim[]
+  coupons Coupon[]
 
   @@index([id])
   @@map("users")
@@ -496,6 +497,7 @@ model Order {
   collection         Collection[]
   orderConfirmation  OrderConfirmation?
   topUpBasket TopUpBasket[]
+  bonuses Bonus[]
 
   @@index([id, teamId, status])
   @@map("orders")
@@ -807,7 +809,8 @@ model Wallet {
   id        String   @id @default(uuid())
   userId    String   @unique@map("user_id")
   balance   Decimal 
-  claimed   Decimal  
+  claimed   Decimal
+  availableCredits   Decimal @default(0) @map("available_credits") // this value is in pounds
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -820,14 +823,25 @@ model Claim {
   id        String   @id @default(uuid())
   amount    Decimal
   userId    String   @map("user_id")
-  couponId  String  @map("coupon_id")
-  couponValue  Decimal @map("coupon_value")
-  used      Boolean  @default(false)
+  rewardId  String   @map("reward_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  @@index([id, userId])
+  @@map("claims")
+}
+
+model Coupon {
+  id        String   @id @default(uuid())
+  amount    Decimal  @default(0)
+  couponId  String   @map("coupon_id")
+  userId    String   @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([id, userId])
-  @@map("claims")
+  @@map("coupons")
 }
 
 model Reward {
@@ -836,8 +850,10 @@ model Reward {
   rate  Int
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  claims Claim[]
   @@index([id])
   @@map("rewards")
+
 }
 
 model Bonus {
@@ -850,6 +866,7 @@ model Bonus {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   @@index([id, userId])
   @@map("bonuses")
 }
@@ -906,6 +923,7 @@ enum PaymentStatus {
   FAILED
   INTENT_CREATED
   CAPTURED
+  COUPON_USED
 }
 
 enum SearchCategory {

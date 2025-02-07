@@ -286,12 +286,8 @@ export class PaymentService {
     offline = false,
   ): Promise<any | null> {
     try {
-      // const { amount, couponIds, amountOff } = await this.amountWithCoupon(
-      //   createIntentData.customerId,
-      //   Math.round(createIntentData.amount * 100),
-      // );
       const parameters = {
-        amount: Math.round(createIntentData.amount * 100),
+        amount: createIntentData.amount * 100,
         currency: createIntentData.currency,
         customer: createIntentData.customerId,
       };
@@ -310,16 +306,7 @@ export class PaymentService {
         ...parameters,
         capture_method: 'manual',
         use_stripe_sdk: true,
-        // metadata: {
-        //   ...(couponIds && { coupons: couponIds.join(',') }),
-        //   ...(amountOff && { amount_off: amountOff }),
-        // },
       });
-      if (paymentIntent.metadata.coupons) {
-        await this.referralsService.markClaimsAsUsed(
-          paymentIntent.metadata.coupons.split(','),
-        );
-      }
       return paymentIntent;
     } catch (e) {
       console.log(e);
@@ -338,49 +325,6 @@ export class PaymentService {
       //   }
       // }
     }
-  }
-
-  async amountWithCoupon(customerId: string, nextPurchaseAmount: number) {
-    const paymentMethod = await this.prisma.paymentMethod.findFirst({
-      where: {
-        stripeCustomerId: customerId,
-      },
-    });
-    if (!paymentMethod) {
-      return {
-        amount: nextPurchaseAmount,
-        couponIds: null,
-        amountOff: 0,
-      };
-    }
-    const unusedCoupons = await this.referralsService.getUnusedCoupons(
-      paymentMethod.userId,
-    );
-    if (!unusedCoupons) {
-      return {
-        amount: nextPurchaseAmount,
-        couponIds: null,
-        amountOff: 0,
-      };
-    }
-    const { couponIds, couponValue } = unusedCoupons;
-    const amountOff = couponValue * 100;
-    const chargeableAmount = nextPurchaseAmount - amountOff;
-    if (chargeableAmount < 100) {
-      this.logger.info(
-        'Chargeable amount is less than 100 if coupon is used, skipping coupon',
-      );
-      return {
-        amount: nextPurchaseAmount,
-        couponIds: null,
-        amountOff: 0,
-      };
-    }
-    return {
-      amount: chargeableAmount,
-      couponIds,
-      amountOff,
-    };
   }
 
   async createOrder(orderData: IOrder): Promise<Order> {

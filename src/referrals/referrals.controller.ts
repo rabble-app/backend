@@ -62,6 +62,30 @@ export class ReferralsController {
     );
   }
 
+  @Get('tracking')
+  @UseGuards(AuthGuard)
+  @UseFilters(HttpExceptionFilter)
+  async tracking(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const userId = req.user?.id ?? req.user?.userId;
+    const result = await this.referralsService.getReferralTracking(userId);
+    if (!result) {
+      throw new HttpException(
+        'No record found for user',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Referral tracking',
+    );
+  }
+
   @Get('info')
   @UseGuards(AuthGuard)
   @UseFilters(HttpExceptionFilter)

@@ -74,5 +74,5 @@ export class AddSingleBasketDto {
   @ValidateIf((o) => o.topupQuantity)
   @IsNotEmpty()
   @IsNumber()
-  topupQuantity: number = 0;
+  topupQuantity = 0;
 }

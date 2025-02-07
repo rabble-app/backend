@@ -264,7 +264,9 @@ export class ScheduleService {
           if (+amountToCapture > 0) {
             const result = await this.paymentServiceExtension.captureFund(
               payment.paymentIntentId,
-              +amountToCapture * 100,
+              {
+                amount_to_capture: +amountToCapture * 100,
+              },
             );
 
             // check whether capture was successful and send notification if not
