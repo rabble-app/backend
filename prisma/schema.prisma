@@ -597,7 +597,7 @@ model TopUpBasket {
   productId     String               @map("product_id")
   quantity      Int
   price         Decimal              @default(0) @db.Decimal(9, 2)
-  // capsulePerDay Decimal    @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  capsulePerDay Decimal    @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
   deliveryStatus TopUpDeliveryStatus @default(PENDING) @map("delivery_status")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")

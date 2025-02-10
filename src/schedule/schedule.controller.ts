@@ -271,4 +271,27 @@ export class ScheduleController {
       'Orders activated successfully',
     );
   }
+
+  /**
+   * Activate pre order team first order.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('activate-pre-order-team')
+  @ApiOkResponse({
+    description: 'Pre order teams activated successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async activatePreOrderTeam(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    // const result = await this.scheduleServiceExtended.createSupplementUsersBasket('c0921d0b-db0a-490d-b05a-b03e2110cab0','123',30);
+    return formatResponse(
+      {},
+      res,
+      HttpStatus.OK,
+      false,
+      'Pre order teams activated successfully',
+    );
+  }
 }

@@ -1,32 +1,32 @@
+import { Decimal } from '@prisma/client/runtime/library';
 import { Injectable } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PaymentService } from '../payment/payment.service';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { PrismaService } from '../prisma.service';
+import { ProductPaymentStatus } from '@prisma/client';
+import { ScheduleServiceExtended } from './schedule.service.extended';
+import { TeamsService } from '../../src/teams/teams.service';
+import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
+import { UsersService } from '../../src/users/users.service';
 import {
   IScheduleTeam,
   PaymentStatus,
   PaymentWithUserInfo,
   notificationType,
 } from '../lib/types';
-import { NotificationsService } from '../notifications/notifications.service';
-import { PaymentServiceExtension } from '../payment/payment.service.extension';
-import { ScheduleServiceExtended } from './schedule.service.extended';
-import { PaymentService } from '../payment/payment.service';
-import { UsersService } from '../../src/users/users.service';
-import { TeamsService } from '../../src/teams/teams.service';
-import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
-import { Decimal } from '@prisma/client/runtime/library';
-import { ProductPaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class ScheduleService {
   constructor(
-    private prisma: PrismaService,
-    private notificationsService: NotificationsService,
-    private paymentServiceExtension: PaymentServiceExtension,
-    private scheduleServiceExtended: ScheduleServiceExtended,
-    private paymentService: PaymentService,
-    private usersService: UsersService,
-    private teamsService: TeamsService,
-    private teamsServiceExtension: TeamsServiceExtension,
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+    private readonly paymentServiceExtension: PaymentServiceExtension,
+    private readonly scheduleServiceExtended: ScheduleServiceExtended,
+    private readonly paymentService: PaymentService,
+    private readonly usersService: UsersService,
+    private readonly teamsService: TeamsService,
+    private readonly teamsServiceExtension: TeamsServiceExtension,
   ) {}
 
   async chargeUsers() {
