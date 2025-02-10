@@ -597,8 +597,8 @@ describe('TeamsController (e2e)', () => {
       testTime,
     );
 
-     // cancel or reactivate user's buying team subscription
-     it(
+    // cancel or reactivate user's buying team subscription
+    it(
       '/teams/members/:id/subscription(PATCH) user should update subscription status',
       async () => {
         const response = await request(app.getHttpServer())

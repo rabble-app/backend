@@ -341,15 +341,18 @@ export class UsersControllerExtension {
     required: true,
     description: 'The id of the user',
   })
-  @ApiOkResponse({ description: 'Users upcoming deliveries returned successfully' })
+  @ApiOkResponse({
+    description: 'Users upcoming deliveries returned successfully',
+  })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async supplementUserUpcomingDeliveries(
     @Param('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.usersServiceExtension.getSupplementUserUpcomingDeliveries(
-      userId,
-    );
+    const result =
+      await this.usersServiceExtension.getSupplementUserUpcomingDeliveries(
+        userId,
+      );
     return formatResponse(
       result,
       res,
@@ -372,7 +375,9 @@ export class UsersControllerExtension {
     required: true,
     description: 'The id of the user',
   })
-  @ApiOkResponse({ description: 'Users supplement plans returned successfully' })
+  @ApiOkResponse({
+    description: 'Users supplement plans returned successfully',
+  })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async userSupplementPlans(
     @Param('userId') userId: string,
@@ -440,9 +445,7 @@ export class UsersControllerExtension {
     @Param('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.usersService.findUser(
-      {id: userId},
-    );
+    const result = await this.usersService.findUser({ id: userId });
     result.shipping['postalCode'] = result?.postalCode;
     return formatResponse(
       result,

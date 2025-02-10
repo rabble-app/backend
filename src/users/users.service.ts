@@ -43,9 +43,9 @@ export class UsersService {
       where: userWhereUniqueInput,
       include: {
         paymentMethods: {
-          where:{
-            isDefault: true
-          }
+          where: {
+            isDefault: true,
+          },
         },
         producer: {
           select: {
@@ -86,7 +86,7 @@ export class UsersService {
             },
           },
         },
-        shipping:true,
+        shipping: true,
         _count: {
           select: {
             employee: true,

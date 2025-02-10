@@ -308,15 +308,14 @@ export class PaymentControllerExtension {
    * @returns {JSON} - A JSON success response.
    */
   @UseGuards(AuthGuard)
-  @Post('setup-intent/:stripeCustomerId')
+  @Post('setup-intent')
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Payment intent created successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async createIntentForCardSetup(
-    @Param('stripeCustomerId') stripeCustomerId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntentForCardSetup(stripeCustomerId);
+    const result = await this.paymentService.createIntentForCardSetup();
     return formatResponse(
       result,
       res,
@@ -325,5 +324,4 @@ export class PaymentControllerExtension {
       'Payment intent created successfully',
     );
   }
-
 }
