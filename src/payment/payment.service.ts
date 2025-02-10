@@ -127,7 +127,7 @@ export class PaymentService {
     };
   }
 
-  async createIntentForCardSetup(customerId: string): Promise<object | null> {
+  async createIntentForCardSetup(): Promise<object | null> {
     return await this.stripe.setupIntents.create({
       payment_method_types: ['card'],
       // customer: customerId,
