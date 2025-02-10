@@ -65,6 +65,10 @@ export interface IOrder {
   type?: OrderType;
   status?: OrderStatus;
 }
+export interface IPricePlan {
+  percentageDiscount: number;
+  teamMemberCount: number;
+}
 export interface IPayment {
   orderId?: string;
   userId?: string;

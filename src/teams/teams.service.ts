@@ -1,9 +1,8 @@
-import { BuyingTeam, MembershipStatus, OrderStatus, OrderType, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
+import { BuyingTeam, MembershipStatus, OrderStatus, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   BuyingTeamsWithSupplementProduct,
-  IOrder,
   ITeamMember,
   Status,
   TeamMemberShip,
@@ -189,25 +188,6 @@ export class TeamsService {
     const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
       teamData.teamId,
     );
-
-    // check if team is for supplement and status is not active
-    if (team.supplementTeamProducts?.status == 'PREORDER') {
-      if (team.supplementTeamProducts.orderTreashold <= teamMembers.length) {
-        // update the team status to active
-        await this.updateSupplementProductTeam({
-          where: { id: team.supplementTeamProducts.id },
-          data: { status: 'ACTIVE' },
-        });
-
-      // create inactive order
-      const orderData: IOrder = {
-        teamId: teamData.teamId,
-        status: OrderStatus.INACTIVE,
-        type: OrderType.SUPPLEMENT,
-      };     
-      await this.paymentService.createOrder(orderData);
-      }
-    }
 
     if (teamMembers.length > 0) {
       teamMembers.forEach(async (admin) => {

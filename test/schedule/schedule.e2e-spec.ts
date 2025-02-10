@@ -120,5 +120,15 @@ describe('ScheduleController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/schedule/activate-pre-order-team(GET) should activate supplement pre order team',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/activate-pre-order-team')
+          .expect(200);
+      },
+      testTime,
+    );
   });
 });
