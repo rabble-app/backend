@@ -419,7 +419,7 @@ export class ProductsService {
     });
   }
 
-  getPriceDiscount(pricePlan: IPricePlan[], teamMemberCount: number): Promise<number | null> {
+  getPriceDiscount(pricePlan: IPricePlan[], teamMemberCount: number): number | null {
     pricePlan?.sort((a, b) => a.teamMemberCount > b.teamMemberCount ? 1 : -1)
     let discount = null
     for(const plan of pricePlan){

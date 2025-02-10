@@ -567,109 +567,112 @@ export class ScheduleServiceExtended {
     return preOrderSupplements;
   }
 
-  // async createSupplementUsersBasket(teamId: string, orderId:string, duration:number): Promise<any> {
-  //   // get the team members
-  //   const teamMembers = await this.prisma.teamMember.findMany({
-  //     where: {
-  //       teamId,
-  //       skipNextDelivery: false,
-  //       subscriptionStatus: 'ACTIVE',
-  //       status:'APPROVED'
-  //     },
-  //     select:{
-  //       id: true,
-  //       role: true,
-  //       userId: true,
-  //     }
-  //   });
+  async createSupplementUsersBasket(teamId: string, orderId:string, duration:number): Promise<any> {
+    // get the team members
+    const teamMembers = await this.prisma.teamMember.findMany({
+      where: {
+        teamId,
+        skipNextDelivery: false,
+        subscriptionStatus: 'ACTIVE',
+        status:'APPROVED'
+      },
+      select:{
+        id: true,
+        role: true,
+        userId: true,
+      }
+    });
 
-  //   // get their basket
-  //   for (const member of teamMembers) {
-  //     // find the basket for the member
-  //     const basket = await this.prisma.basketC.findMany({
-  //       where: {
-  //         teamId,
-  //         userId: member.userId,
-  //       },
-  //       select:{
-  //         capsulePerDay: true,
-  //         productId: true,
-  //         product:{
-  //           select:{
-  //             id: true,
-  //             priceInfo: true,
-  //             price: true,
-  //             status: true,
-  //             supplementTeamProducts:{
-  //               select:{
-  //                 foundingMembersDiscount: true,
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     });
-  //     let totalAmount = 0; // amount to be paid by the user
-  //     for (const item of basket) {
-  //       if (item.product.status == 'OUT_OF_STOCK') {
-  //         continue;
-  //       }
-  //       // get the dyanamic price for the product
-  //       const priceDiscount = this.productsService.getPriceDiscount(item.product.priceInfo as unknown as IPricePlan[], teamMembers.length);
-  //       const originalPrice = item.product.price;
-  //       const priceWithDiscount =  !priceDiscount? originalPrice : +originalPrice - (+priceDiscount/100 * +originalPrice);
-  //       const productQuantity = +item.capsulePerDay * duration;
+    console.log(teamMembers)
 
-  //       // create the subscription for this user
-  //       let productPrice = +priceWithDiscount * productQuantity;
-  //       let topupQuantity = 0
-  //       // calculate topup quantity
-  //       if(duration> 91){
-  //         const topupDuration = duration - 91;
-  //         topupQuantity= +item.capsulePerDay  * topupDuration;
-  //       }        
+    // get their basket
+    for (const member of teamMembers) {
+      // find the basket for the member
+      const basket = await this.prisma.basketC.findMany({
+        where: {
+          teamId,
+          userId: member.userId,
+        },
+        select:{
+          capsulePerDay: true,
+          productId: true,
+          product:{
+            select:{
+              id: true,
+              priceInfo: true,
+              price: true,
+              status: true,
+              supplementTeamProducts:{
+                select:{
+                  foundingMembersDiscount: true,
+                }
+              }
+            }
+          }
+        }
+      });
+      console.log(basket)
+      let totalAmount = 0; // amount to be paid by the user
+      for (const item of basket) {
+        if (item.product.status == 'OUT_OF_STOCK') {
+          continue;
+        }
+        // get the dyanamic price for the product
+        const priceDiscount = this.productsService.getPriceDiscount(item.product.priceInfo as unknown as IPricePlan[], teamMembers.length);
+        const originalPrice = item.product.price;
+        const priceWithDiscount =  !priceDiscount? originalPrice : +originalPrice - (+priceDiscount/100 * +originalPrice);
+        const productQuantity = +item.capsulePerDay * duration;
 
-  //        // if the user is a founding member, we will give them a discount
-  //       if(member.role === 'FOUNDING_MEMBER'){
-  //         productPrice = productPrice - (productPrice * +item.product?.supplementTeamProducts?.foundingMembersDiscount/100)
-  //       }
+        // create the subscription for this user
+        let productPrice = +priceWithDiscount * productQuantity;
+        let topupQuantity = 0
+        // calculate topup quantity
+        if(duration> 91){
+          const topupDuration = duration - 91;
+          topupQuantity= +item.capsulePerDay  * topupDuration;
+        }        
 
-  //       const newProduct = {
-  //         orderId,
-  //         userId: member.userId,
-  //         productId: item.productId,
-  //         quantity: productQuantity - topupQuantity,
-  //         price: priceWithDiscount,
-  //       };
+         // if the user is a founding member, we will give them a discount
+        if(member.role === 'FOUNDING_MEMBER'){
+          productPrice = productPrice - (productPrice * +item.product?.supplementTeamProducts?.foundingMembersDiscount/100)
+        }
 
-  //       // add to basket
-  //       await this.prisma.basket.create({
-  //         data: newProduct,
-  //       });
+        const newProduct = {
+          orderId,
+          userId: member.userId,
+          productId: item.productId,
+          quantity: productQuantity - topupQuantity,
+          price: priceWithDiscount,
+        };
 
-  //       // add alignment record to the basket
-  //       if(topupQuantity>0){
-  //         await this.prisma.topUpBasket.create({
-  //           data: {
-  //             ...newProduct,
-  //             quantity: topupQuantity,
-  //           },
-  //         });
-  //       }
+        // add to basket
+        await this.prisma.basket.create({
+          data: newProduct,
+        });
+
+        // add alignment record to the basket
+        if(topupQuantity>0){
+          await this.prisma.topUpBasket.create({
+            data: {
+              ...newProduct,
+              quantity: topupQuantity,
+            },
+          });
+        }
         
-  //       // increment totalAmount
-  //       totalAmount += +productPrice;
-  //     }
+        // increment totalAmount
+        totalAmount += +productPrice;
+      }
 
-  //      // record the payment to be made by the user
-  //      await this.paymentService.recordPayment({
-  //       orderId,
-  //       userId: member.userId,
-  //       amount: totalAmount,
-  //       status: PaymentStatus.PENDING,
-  //     });
-  //   }
+       // record the payment to be made by the user
+       await this.paymentService.recordPayment({
+        orderId,
+        userId: member.userId,
+        amount: totalAmount,
+        status: PaymentStatus.PENDING,
+      });
+    }
 
-  //   return true;
-  // }
+    return true;
+  }
 }
