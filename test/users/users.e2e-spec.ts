@@ -121,16 +121,15 @@ describe('UserController (e2e)', () => {
       },
     });
 
-    // create  user dummy subscription plan 
+    // create  user dummy subscription plan
     const teamMember = await prisma.teamMember.create({
       data: {
         teamId,
         userId,
-        status:'APPROVED'
+        status: 'APPROVED',
       },
     });
-    teamMemberId = teamMember.id
-
+    teamMemberId = teamMember.id;
   }, testTime);
 
   afterAll(async () => {
@@ -224,8 +223,8 @@ describe('UserController (e2e)', () => {
       testTime,
     );
 
-     // return single user
-     it(
+    // return single user
+    it(
       '/users/:id(GET) should return single user',
       async () => {
         const response = await request(app.getHttpServer())

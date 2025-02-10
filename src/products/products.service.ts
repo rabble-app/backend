@@ -9,7 +9,11 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
-import { IPricePlan, ITeamWithOtherInfo, ProductApprovalStatus } from '../../src/lib/types';
+import {
+  IPricePlan,
+  ITeamWithOtherInfo,
+  ProductApprovalStatus,
+} from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
 import { UpdateProductStatusDto } from './dto/update-product-status';
 
@@ -419,14 +423,17 @@ export class ProductsService {
     });
   }
 
-  getPriceDiscount(pricePlan: IPricePlan[], teamMemberCount: number): number | null {
-    pricePlan?.sort((a, b) => a.teamMemberCount > b.teamMemberCount ? 1 : -1)
-    let discount = null
-    for(const plan of pricePlan){
-        if(teamMemberCount >= plan.teamMemberCount){
-            discount = plan.percentageDiscount
-        }
+  getPriceDiscount(
+    pricePlan: IPricePlan[],
+    teamMemberCount: number,
+  ): number | null {
+    pricePlan?.sort((a, b) => (a.teamMemberCount > b.teamMemberCount ? 1 : -1));
+    let discount = null;
+    for (const plan of pricePlan) {
+      if (teamMemberCount >= plan.teamMemberCount) {
+        discount = plan.percentageDiscount;
+      }
     }
-    return discount
+    return discount;
   }
 }

@@ -75,31 +75,33 @@ export class PaymentService {
           customer: addPaymentCardDto.stripeCustomerId,
         },
       );
+      if (result) {
+        await this.SavePaymentMethod({
+          cardLastFourDigits: result.card.last4,
+          paymentMethodId: addPaymentCardDto.paymentMethodId,
+          userId,
+          stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+          fingerprint: result.card.fingerprint,
+        });
+
+        // make it user default payment method
+        await this.userService.updateUser({
+          where: {
+            stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+          },
+          data: {
+            stripeDefaultPaymentMethodId: addPaymentCardDto.paymentMethodId,
+          },
+        });
+      }
     } catch (error) {
+      console.log(error);
       this.logger.error(
         'error',
         'Error attaching payment method to user %o',
         error,
       );
     }
-
-    await this.SavePaymentMethod({
-      cardLastFourDigits: result.card.last4,
-      paymentMethodId: addPaymentCardDto.paymentMethodId,
-      userId,
-      stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-      fingerprint: result.card.fingerprint,
-    });
-
-    // make it user default payment method
-    await this.userService.updateUser({
-      where: {
-        stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-      },
-      data: {
-        stripeDefaultPaymentMethodId: addPaymentCardDto.paymentMethodId,
-      },
-    });
 
     return {
       paymentMethodId: addPaymentCardDto.paymentMethodId,
@@ -115,24 +117,22 @@ export class PaymentService {
 
     // remove it from our record
     await this.prisma.paymentMethod.deleteMany({
-      where:{
-        paymentMethodId:removePaymentCardDto.paymentMethodId
-      }
-    })
+      where: {
+        paymentMethodId: removePaymentCardDto.paymentMethodId,
+      },
+    });
 
     return {
       paymentMethodId: removePaymentCardDto.paymentMethodId,
     };
   }
 
-  async createIntentForCardSetup(
-    customerId: string,
-  ): Promise<object | null> {
+  async createIntentForCardSetup(customerId: string): Promise<object | null> {
     return await this.stripe.setupIntents.create({
       payment_method_types: ['card'],
-      customer: customerId,
+      // customer: customerId,
+      // confirm: true,
     });
-
   }
 
   async chargeUser(chargeUserDto: ChargeUserDto): Promise<object | null> {
@@ -291,7 +291,7 @@ export class PaymentService {
       //   Math.round(createIntentData.amount * 100),
       // );
       const parameters = {
-        amount:Math.round(createIntentData.amount * 100),
+        amount: Math.round(createIntentData.amount * 100),
         currency: createIntentData.currency,
         customer: createIntentData.customerId,
       };

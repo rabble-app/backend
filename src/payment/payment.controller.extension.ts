@@ -316,7 +316,9 @@ export class PaymentControllerExtension {
     @Param('stripeCustomerId') stripeCustomerId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntentForCardSetup(stripeCustomerId);
+    const result = await this.paymentService.createIntentForCardSetup(
+      stripeCustomerId,
+    );
     return formatResponse(
       result,
       res,
@@ -325,5 +327,4 @@ export class PaymentControllerExtension {
       'Payment intent created successfully',
     );
   }
-
 }

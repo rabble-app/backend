@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 let cachedServer;
 
 // eslint-disable-next-line prettier/prettier
-export const handler = async (event:any, context) => {
+export const handler = async (event: any, context) => {
   if (!cachedServer) {
     if (event.path === '/api') {
       event.path = '/api/';

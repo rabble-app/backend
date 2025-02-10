@@ -28,7 +28,7 @@ export class DeliveryAddressDto {
   })
   @IsString()
   address: string;
- 
+
   @ApiProperty({
     type: 'string',
     description: 'The address of the user',
