@@ -138,11 +138,21 @@ describe('ReferralsService', () => {
         balance: 50000,
         claimed: 0,
       };
-      jest.spyOn(service, 'createRewardCoupon').mockResolvedValueOnce({
-        id: 'coupon1',
-        amount_off: 500,
-      } as any);
       mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
+      mockPrismaService.$transaction.mockResolvedValueOnce([
+        {
+          ...mockWallet,
+          balance: 0,
+          claimed: 50000,
+          availableCredits: 10,
+        },
+        {
+          id: 'claim1',
+          userId: 'user1',
+          amount: 50000,
+          rewardId: 'reward1',
+        },
+      ]);
       mockPrismaService.reward.findUnique.mockResolvedValueOnce({
         amount: 50000,
         rate: 10000,
@@ -152,6 +162,7 @@ describe('ReferralsService', () => {
         ...mockWallet,
         balance: 0,
         claimed: 50000,
+        availableCredits: 10,
       });
 
       await service.claimRewards({ userId: 'user1', rewardId: 'reward1' });
@@ -161,6 +172,7 @@ describe('ReferralsService', () => {
         data: {
           balance: { decrement: 50000 },
           claimed: { increment: 50000 },
+          availableCredits: { increment: 5 },
         },
       });
     });

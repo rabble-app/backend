@@ -67,40 +67,31 @@ export class PaymentService {
       paymentMethodId: addPaymentCardDto.paymentMethodId,
       stripeCustomerId: addPaymentCardDto.stripeCustomerId,
     });
-    let result: Stripe.Response<Stripe.PaymentMethod>;
-    try {
-      result = await this.stripe.paymentMethods.attach(
-        addPaymentCardDto.paymentMethodId,
-        {
-          customer: addPaymentCardDto.stripeCustomerId,
-        },
-      );
-      if (result) {
-        await this.SavePaymentMethod({
-          cardLastFourDigits: result.card.last4,
-          paymentMethodId: addPaymentCardDto.paymentMethodId,
-          userId,
-          stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-          fingerprint: result.card.fingerprint,
-        });
 
-        // make it user default payment method
-        await this.userService.updateUser({
-          where: {
-            stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-          },
-          data: {
-            stripeDefaultPaymentMethodId: addPaymentCardDto.paymentMethodId,
-          },
-        });
-      }
-    } catch (error) {
-      console.log(error);
-      this.logger.error(
-        'error',
-        'Error attaching payment method to user %o',
-        error,
-      );
+    const result = await this.stripe.paymentMethods.attach(
+      addPaymentCardDto.paymentMethodId,
+      {
+        customer: addPaymentCardDto.stripeCustomerId,
+      },
+    );
+    if (result) {
+      await this.SavePaymentMethod({
+        cardLastFourDigits: result.card.last4,
+        paymentMethodId: addPaymentCardDto.paymentMethodId,
+        userId,
+        stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+        fingerprint: result.card.fingerprint,
+      });
+
+      // make it user default payment method
+      await this.userService.updateUser({
+        where: {
+          stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+        },
+        data: {
+          stripeDefaultPaymentMethodId: addPaymentCardDto.paymentMethodId,
+        },
+      });
     }
 
     return {

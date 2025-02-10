@@ -202,7 +202,6 @@ export class PaymentServiceExtension {
       order_id: orderId,
       user_id: captureIntentDto.userId,
     });
-
     const applyCouponResult = await this.referralsService.applyCoupon(
       captureIntentDto.userId,
       captureIntentDto.amount * 100,
@@ -236,7 +235,7 @@ export class PaymentServiceExtension {
       const paymentData = {
         orderId,
         paymentIntentId: captureIntentDto.paymentIntentId,
-        amount: amount / 100,
+        amount: captureIntentDto.amount,
         status: PaymentStatus.CAPTURED,
         userId: captureIntentDto.userId,
         ...(couponId && { coupons: couponId }),
@@ -311,7 +310,7 @@ export class PaymentServiceExtension {
           orderId: latestOrder?.id,
           quantity: topUpDto.quantity,
           price: topUpDto.price,
-          capsulePerDay: topUpDto.capsulePerDay,
+          // capsulePerDay: addSingleBasketDto.capsulePerDay,
         },
       });
       // record payment

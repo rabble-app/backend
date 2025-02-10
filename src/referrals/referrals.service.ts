@@ -249,7 +249,7 @@ export class ReferralsService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const creditValue = await this.getRewardValue(reward.amount, reward.rate);
+    const creditValue = this.getRewardValue(reward.amount, reward.rate);
     const [_wallet, claim] = await this.prisma.$transaction([
       this.prisma.wallet.update({
         where: { userId },
@@ -274,41 +274,6 @@ export class ReferralsService {
 
   getRewardValue(rewardAmount: number, rewardRate: number) {
     return rewardAmount / rewardRate;
-  }
-
-  async calcClaimCreditValue(
-    userId: string,
-    rewardAmount: number,
-    rewardRate: number,
-  ) {
-    const couponValue = this.getRewardValue(rewardAmount, rewardRate) * 100;
-    const coupon = await this.stripe.coupons.create({
-      amount_off: couponValue,
-      duration: 'once',
-      currency: 'GBP',
-      metadata: {
-        userId,
-        ccClaimed: rewardAmount,
-      },
-    });
-    return coupon;
-  }
-  async createRewardCoupon(
-    userId: string,
-    rewardAmount: number,
-    rewardRate: number,
-  ) {
-    const couponValue = this.getRewardValue(rewardAmount, rewardRate) * 100;
-    const coupon = await this.stripe.coupons.create({
-      amount_off: couponValue,
-      duration: 'once',
-      currency: 'GBP',
-      metadata: {
-        userId,
-        ccClaimed: rewardAmount,
-      },
-    });
-    return coupon;
   }
 
   async getReferralInfo(userId: string) {
@@ -375,12 +340,12 @@ export class ReferralsService {
     const wallet = await this.prisma.wallet.findUnique({
       where: { userId },
     });
-    return +wallet?.availableCredits ?? 0;
+    return +(wallet?.availableCredits ?? 0);
   }
 
   async createCoupon(userId: string, amount: number) {
     const coupon = await this.stripe.coupons.create({
-      amount_off: amount,
+      amount_off: amount * 100,
       duration: 'once',
       currency: 'GBP',
       metadata: {
@@ -438,7 +403,7 @@ export class ReferralsService {
       fullCouponCoverage: false,
     };
 
-    const availableCredits = (await this.getAvailableCredits(userId)) * 100;
+    const availableCredits = +(await this.getAvailableCredits(userId)) * 100;
     if (availableCredits < ReferralsService.MINIMUM_CREDIT_AMOUNT) {
       this.logger.info('CC APPLY COUPON: Insufficient credits', {
         userId,
@@ -465,17 +430,21 @@ export class ReferralsService {
     };
   }
   async getReferralTracking(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
     const referralTracking = await this.prisma.bonus.findMany({
       where: { userId },
       select: {
         type: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        amount: true,
+        referralId: true,
+        createdAt: true,
         order: {
           select: {
             id: true,
@@ -488,6 +457,36 @@ export class ReferralsService {
         },
       },
     });
-    return referralTracking;
+    const referralTrackingWithReferral = await Promise.all(
+      referralTracking.map(async (item) => {
+        if (item.referralId) {
+          const referral = await this.prisma.user.findUnique({
+            where: { id: item.referralId },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          });
+          return {
+            amount: +item.amount,
+            referral: referral,
+            type: item.type,
+            referralTeam: item.order?.team?.name,
+            createdAt: item.createdAt,
+          };
+        }
+        return {
+          amount: +item.amount,
+          type: item.type,
+          userTeam: item.order?.team?.name,
+          createdAt: item.createdAt,
+        };
+      }),
+    );
+    return {
+      user,
+      earnings: referralTrackingWithReferral,
+    };
   }
 }
