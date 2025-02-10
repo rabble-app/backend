@@ -276,12 +276,12 @@ export class PaymentService {
     offline = false,
   ): Promise<any | null> {
     try {
-      const { amount, couponIds, amountOff } = await this.amountWithCoupon(
-        createIntentData.customerId,
-        Math.round(createIntentData.amount * 100),
-      );
+      // const { amount, couponIds, amountOff } = await this.amountWithCoupon(
+      //   createIntentData.customerId,
+      //   Math.round(createIntentData.amount * 100),
+      // );
       const parameters = {
-        amount,
+        amount:Math.round(createIntentData.amount * 100),
         currency: createIntentData.currency,
         customer: createIntentData.customerId,
       };
@@ -300,10 +300,10 @@ export class PaymentService {
         ...parameters,
         capture_method: 'manual',
         use_stripe_sdk: true,
-        metadata: {
-          ...(couponIds && { coupons: couponIds.join(',') }),
-          ...(amountOff && { amount_off: amountOff }),
-        },
+        // metadata: {
+        //   ...(couponIds && { coupons: couponIds.join(',') }),
+        //   ...(amountOff && { amount_off: amountOff }),
+        // },
       });
       if (paymentIntent.metadata.coupons) {
         await this.referralsService.markClaimsAsUsed(

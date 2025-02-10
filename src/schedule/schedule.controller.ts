@@ -16,7 +16,7 @@ export class ScheduleController {
   constructor(
     private readonly scheduleService: ScheduleService,
     private readonly scheduleServiceExtended: ScheduleServiceExtended,
-  ) {}
+  ) { }
 
   /**
    * charge users.
@@ -285,9 +285,9 @@ export class ScheduleController {
   async activatePreOrderTeam(
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    // const result = await this.scheduleServiceExtended.createSupplementUsersBasket('c0921d0b-db0a-490d-b05a-b03e2110cab0','123',30);
+    const result = await this.scheduleServiceExtended.createSupplementUsersBasket('c0921d0b-db0a-490d-b05a-b03e2110cab0', '018268ee-d146-4ce2-93cb-97100483be50', 95);
     return formatResponse(
-      {},
+      result,
       res,
       HttpStatus.OK,
       false,
