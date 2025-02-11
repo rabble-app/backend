@@ -34,7 +34,7 @@ CREATE TABLE "coupons" (
 CREATE INDEX "coupons_id_user_id_idx" ON "coupons"("id", "user_id");
 
 -- AddForeignKey
-ALTER TABLE "claims" ADD CONSTRAINT "claims_reward_id_fkey" FOREIGN KEY ("reward_id") REFERENCES "rewards"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- ALTER TABLE "claims" ADD CONSTRAINT "claims_reward_id_fkey" FOREIGN KEY ("reward_id") REFERENCES "rewards"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "coupons" ADD CONSTRAINT "coupons_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
