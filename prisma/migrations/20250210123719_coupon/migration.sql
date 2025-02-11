@@ -10,10 +10,10 @@
 -- ALTER TYPE "PaymentStatus" ADD VALUE 'COUPON_USED';
 
 -- AlterTable
-ALTER TABLE "claims" DROP COLUMN "coupon_id";
-ALTER TABLE "claims" DROP COLUMN "coupon_value";
-ALTER TABLE "claims" DROP COLUMN "used";
-ALTER TABLE "claims" ADD COLUMN     "reward_id" STRING NOT NULL DEFAULT '';
+-- ALTER TABLE "claims" DROP COLUMN "coupon_id";
+-- ALTER TABLE "claims" DROP COLUMN "coupon_value";
+-- ALTER TABLE "claims" DROP COLUMN "used";
+-- ALTER TABLE "claims" ADD COLUMN     "reward_id" STRING NOT NULL DEFAULT '';
 
 -- AlterTable
 ALTER TABLE "wallets" ADD COLUMN     "available_credits" DECIMAL(65,30) NOT NULL DEFAULT 0;
