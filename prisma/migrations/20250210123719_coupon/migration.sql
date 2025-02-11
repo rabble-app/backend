@@ -16,7 +16,7 @@
 -- ALTER TABLE "claims" ADD COLUMN     "reward_id" STRING NOT NULL DEFAULT '';
 
 -- AlterTable
-ALTER TABLE "wallets" ADD COLUMN     "available_credits" DECIMAL(65,30) NOT NULL DEFAULT 0;
+-- ALTER TABLE "wallets" ADD COLUMN     "available_credits" DECIMAL(65,30) NOT NULL DEFAULT 0;
 
 -- CreateTable
 CREATE TABLE "coupons" (
