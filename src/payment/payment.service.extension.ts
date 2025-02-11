@@ -310,7 +310,7 @@ export class PaymentServiceExtension {
           orderId: latestOrder?.id,
           quantity: topUpDto.quantity,
           price: topUpDto.price,
-          // capsulePerDay: addSingleBasketDto.capsulePerDay,
+          capsulePerDay: topUpDto.capsulePerDay,
         },
       });
       // record payment
