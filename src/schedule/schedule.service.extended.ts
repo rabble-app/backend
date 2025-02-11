@@ -35,9 +35,8 @@ export class ScheduleServiceExtended {
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
     private insightsService: InsightsService,
-    private qRCodeService: QRCodeService,
-  ) // private teamsService: TeamsService,
-  {}
+    private qRCodeService: QRCodeService, // private teamsService: TeamsService,
+  ) {}
 
   async processCompleteOrders(
     pendingOrders: Array<{ id: string; minimumTreshold: Decimal }>,

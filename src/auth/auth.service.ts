@@ -125,7 +125,7 @@ export class AuthService {
     }
   }
 
-  generateToken(data: any): string {
+  generateToken(data: any) {
     return this.jwtService.sign(data, {
       secret: this.parameters.JWT_SECRET,
     });

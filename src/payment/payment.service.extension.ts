@@ -7,7 +7,8 @@ import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
 import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
-
+import { ReferralsService } from '../referrals/referrals.service';
+import { Logger } from 'winston';
 @Injectable()
 export class PaymentServiceExtension {
   private readonly stripe: Stripe;
@@ -15,6 +16,8 @@ export class PaymentServiceExtension {
     private readonly paymentService: PaymentService,
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+    private readonly referralsService: ReferralsService,
+    @Inject('LOGGER') private readonly logger: Logger,
   ) {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
@@ -35,15 +38,9 @@ export class PaymentServiceExtension {
 
   async captureFund(
     paymentIntentId: string,
-    amountToCapture = null,
+    options: Stripe.PaymentIntentCaptureParams = null,
   ): Promise<object | null> {
     try {
-      let options = null;
-      if (amountToCapture) {
-        options = {
-          amount_to_capture: amountToCapture,
-        };
-      }
       const result = await this.stripe.paymentIntents.capture(
         paymentIntentId,
         options,
@@ -205,10 +202,32 @@ export class PaymentServiceExtension {
       order_id: orderId,
       user_id: captureIntentDto.userId,
     });
-
+    const applyCouponResult = await this.referralsService.applyCoupon(
+      captureIntentDto.userId,
+      captureIntentDto.amount * 100,
+    );
+    if (applyCouponResult.couponId && applyCouponResult.fullCouponCoverage) {
+      this.logger.info(
+        'COUPON: Full Capture Amount covered by coupon: Coupon ID: %s',
+        applyCouponResult.couponId,
+      );
+      return await this.handleFullCouponCoverageCapture(
+        captureIntentDto,
+        orderId,
+        applyCouponResult.couponId,
+      );
+    }
+    const { amount, couponId, amountOff } = applyCouponResult;
     // capture payment
     const captureResult = await this.captureFund(
       captureIntentDto.paymentIntentId,
+      {
+        amount_to_capture: amount,
+        metadata: {
+          ...(couponId && { coupons: couponId }),
+          ...(amountOff && { amount_off: amountOff }),
+        },
+      },
     );
     // check if payment was successful
     if (captureResult) {
@@ -219,6 +238,8 @@ export class PaymentServiceExtension {
         amount: captureIntentDto.amount,
         status: PaymentStatus.CAPTURED,
         userId: captureIntentDto.userId,
+        ...(couponId && { coupons: couponId }),
+        ...(amountOff && { discount: amountOff / 100 }),
       };
 
       // accumulate amount paid
@@ -231,6 +252,35 @@ export class PaymentServiceExtension {
     } else {
       return null;
     }
+  }
+
+  async handleFullCouponCoverageCapture(
+    captureIntentDto: CaptureIntentDto,
+    orderId: string,
+    couponId: string,
+  ) {
+    const paymentData = {
+      orderId,
+      paymentIntentId: captureIntentDto.paymentIntentId,
+      amount: captureIntentDto.amount,
+      status: PaymentStatus.COUPON_USED,
+      userId: captureIntentDto.userId,
+      discount: captureIntentDto.amount,
+      coupons: couponId,
+    };
+
+    await this.updatePaymentIntent(captureIntentDto.paymentIntentId, {
+      coupons: couponId,
+      amount_off: captureIntentDto.amount * 100,
+    });
+    // accumulate amount paid
+    await this.paymentService.accumulateAmount(
+      orderId,
+      captureIntentDto.amount,
+      captureIntentDto.teamId,
+    );
+
+    return await this.paymentService.recordPayment(paymentData);
   }
 
   async findPayments(
