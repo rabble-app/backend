@@ -919,11 +919,11 @@ enum ProductApprovalStatus {
 }
 
 enum PaymentStatus {
+  COUPON_USED
   PENDING
   FAILED
   INTENT_CREATED
   CAPTURED
-  COUPON_USED
 }
 
 enum SearchCategory {
