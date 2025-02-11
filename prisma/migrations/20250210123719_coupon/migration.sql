@@ -7,7 +7,7 @@
 
 */
 -- AlterEnum
-ALTER TYPE "PaymentStatus" ADD VALUE 'COUPON_USED';
+-- ALTER TYPE "PaymentStatus" ADD VALUE 'COUPON_USED';
 
 -- AlterTable
 ALTER TABLE "claims" DROP COLUMN "coupon_id";
