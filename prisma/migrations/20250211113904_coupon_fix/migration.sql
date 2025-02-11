@@ -7,16 +7,16 @@
 
 */
 -- AlterEnum
--- ALTER TYPE "PaymentStatus" ADD VALUE 'COUPON_USED';
+ALTER TYPE "PaymentStatus" ADD VALUE 'COUPON_USED';
 
 -- AlterTable
--- ALTER TABLE "claims" DROP COLUMN "coupon_id";
--- ALTER TABLE "claims" DROP COLUMN "coupon_value";
--- ALTER TABLE "claims" DROP COLUMN "used";
--- ALTER TABLE "claims" ADD COLUMN     "reward_id" STRING NOT NULL DEFAULT '';
+ALTER TABLE "claims" DROP COLUMN "coupon_id";
+ALTER TABLE "claims" DROP COLUMN "coupon_value";
+ALTER TABLE "claims" DROP COLUMN "used";
+ALTER TABLE "claims" ADD COLUMN     "reward_id" STRING NOT NULL DEFAULT '';
 
 -- AlterTable
--- ALTER TABLE "wallets" ADD COLUMN     "available_credits" DECIMAL(65,30) NOT NULL DEFAULT 0;
+ALTER TABLE "wallets" ADD COLUMN     "available_credits" DECIMAL(65,30) NOT NULL DEFAULT 0;
 
 -- CreateTable
 CREATE TABLE "coupons" (
@@ -34,7 +34,7 @@ CREATE TABLE "coupons" (
 CREATE INDEX "coupons_id_user_id_idx" ON "coupons"("id", "user_id");
 
 -- AddForeignKey
--- ALTER TABLE "claims" ADD CONSTRAINT "claims_reward_id_fkey" FOREIGN KEY ("reward_id") REFERENCES "rewards"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "claims" ADD CONSTRAINT "claims_reward_id_fkey" FOREIGN KEY ("reward_id") REFERENCES "rewards"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "coupons" ADD CONSTRAINT "coupons_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
