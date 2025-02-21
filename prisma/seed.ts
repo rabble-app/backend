@@ -2654,11 +2654,11 @@ async function main() {
 
   // save user record
   const supplementProducerUser1 = await prisma.user.upsert({
-    where: { email: 'supplementuserone@gmail.com' },
+    where: { email: 'Vanessa.Colen@kaneka.be' },
     update: {},
     create: {
-      email: 'supplementuserone@gmail.com',
-      phone: 'supplementuserone@gmail.com',
+      email: 'Vanessa.Colen@kaneka.be',
+      phone: 'Vanessa.Colen@kaneka.be',
       password: '$2b$10$GegxBoq52cRqlI6Jl56Q/ufCq5ZLsZK8rM7LghdgvHApvbzWz4VFq',
       role: 'PRODUCER',
     },
@@ -2666,11 +2666,11 @@ async function main() {
 
   // save user record
   const supplementProducerUser2 = await prisma.user.upsert({
-    where: { email: 'supplementusertwo@gmail.com' },
+    where: { email: 'Oana.Caldararu@balchem.com' },
     update: {},
     create: {
-      email: 'supplementusertwo@gmail.com',
-      phone: 'supplementusertwo@gmail.com',
+      email: 'Oana.Caldararu@balchem.com',
+      phone: 'Oana.Caldararu@balchem.com',
       password: '$2b$10$GegxBoq52cRqlI6Jl56Q/ufCq5ZLsZK8rM7LghdgvHApvbzWz4VFq',
       role: 'PRODUCER',
     },
@@ -2678,11 +2678,11 @@ async function main() {
 
   // save user record
   const supplementProducerUser3 = await prisma.user.upsert({
-    where: { email: 'supplementuserthree@gmail.com' },
+    where: { email: 'Liandra.Melembe@alzchem.com' },
     update: {},
     create: {
-      email: 'supplementuserthree@gmail.com',
-      phone: 'supplementuserthree@gmail.com',
+      email: 'Liandra.Melembe@alzchem.com',
+      phone: 'Liandra.Melembe@alzchem.com',
       password: '$2b$10$GegxBoq52cRqlI6Jl56Q/ufCq5ZLsZK8rM7LghdgvHApvbzWz4VFq',
       role: 'PRODUCER',
     },
@@ -2696,15 +2696,13 @@ async function main() {
       isVerified: true,
       userId: supplementProducerUser1.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Herb+Fed+-+Producer+-+Dark.png',
-      businessName: 'Magnesium Bisglycinate Producer',
-      businessAddress: 'Herb Fed Ltd, Shires Farm, North Yorkshire, YO61 3EH',
-      accountsEmail: 'info@herbfed.co.uk',
-      salesEmail: 'info@herbfed.co.uk',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Kaneka.png',
+      businessName: "Kaneka Corporation",
+      businessAddress: "5-1-1 Torikainishi, Takasago, Hyogo 676-8688, Japan",
+      salesEmail: "Vanessa.Colen@kaneka.be",
       minimumTreshold: 110,
-      website: 'www.herbfedpoultry.co.uk',
-      description:
-        'Herb Fed proudly farm free range award winning Chickens fed a unique diet which includes over 10 varieties of fresh herbs, and happily living out in the field as birds should. By maintaining the highest possible animal welfare standards and enhancing their free range diet with fresh herbs, our birds have a flavour that is difficult to beat.',
+      website: "https://www.kaneka.com",
+      description: "Kaneka Corporation is a global leader in high-performance materials, pharmaceuticals, food products, and health ingredients. Founded in Japan in 1949, Kaneka focuses on research and development, ensuring innovative and high-quality products."
     },
   });
 
@@ -2716,19 +2714,17 @@ async function main() {
       isVerified: true,
       userId: supplementProducerUser2.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Herb+Fed+-+Producer+-+Dark.png',
-      businessName: 'Creatine Producer',
-      businessAddress: 'Herb Fed Ltd, Shires Farm, North Yorkshire, YO61 3EH',
-      accountsEmail: 'info@herbfed.co.uk',
-      salesEmail: 'info@herbfed.co.uk',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Balchem.png',
+      businessName: "Balchem Corporation",
+      businessAddress: "67 South Main Street, Layton, Utah 84041, USA",
+      salesEmail: "Oana.Caldararu@balchem.com",
       minimumTreshold: 110,
-      website: 'www.herbfedpoultry.co.uk',
-      description:
-        'Herb Fed proudly farm free range award winning Chickens fed a unique diet which includes over 10 varieties of fresh herbs, and happily living out in the field as birds should. By maintaining the highest possible animal welfare standards and enhancing their free range diet with fresh herbs, our birds have a flavour that is difficult to beat.',
+      website: "https://www.balchem.com",
+      description: "Balchem Corporation, through its Albion Minerals division, specializes in high-quality chelated minerals, optimizing bioavailability and nutrient absorption. Albion's TRAACS® technology ensures superior solubility, stability, and effectiveness."
     },
   });
 
-  // save supplement producer record 1
+  // save supplement producer record 3
   const supplememtProducer3 = await prisma.producer.upsert({
     where: { userId: supplementProducerUser3.id },
     update: {},
@@ -2736,15 +2732,13 @@ async function main() {
       isVerified: true,
       userId: supplementProducerUser3.id,
       imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Herb+Fed+-+Producer+-+Dark.png',
-      businessName: 'Ubiquinol Producer',
-      businessAddress: 'Herb Fed Ltd, Shires Farm, North Yorkshire, YO61 3EH',
-      accountsEmail: 'info@herbfed.co.uk',
-      salesEmail: 'info@herbfed.co.uk',
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/suppliers/Alzchem+(1).png',
+      businessName: "Alzchem Group AG",
+      businessAddress: "Dr.-Albert-Frank-Str. 32, 83308 Trostberg, Germany",
+      salesEmail: "Liandra.Melembe@alzchem.com",
       minimumTreshold: 110,
-      website: 'www.herbfedpoultry.co.uk',
-      description:
-        'Herb Fed proudly farm free range award winning Chickens fed a unique diet which includes over 10 varieties of fresh herbs, and happily living out in the field as birds should. By maintaining the highest possible animal welfare standards and enhancing their free range diet with fresh herbs, our birds have a flavour that is difficult to beat.',
+      website: "https://www.creapure.com",
+      description: "Alzchem Group AG is the exclusive producer of Creapure®, the highest-purity creatine monohydrate for muscle performance, cognitive function, and energy production. Manufactured in Germany under strict cGMP and ISO 9001 standards."
     },
   });
 
@@ -2753,7 +2747,7 @@ async function main() {
     where: {
       name_unique_producer: {
         name: 'Magnesium Bisglycinate TRAACS® 93mg',
-        producerId: supplememtProducer1.id,
+        producerId: supplememtProducer2.id,
       },
     },
     update: {},
@@ -2763,7 +2757,7 @@ async function main() {
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/MB+without+Shadow.png',
       description:
         'Magnesium Bisglycinate TRAACS® is a fully chelated, high-absorption form of magnesium that maximizes bioavailability while minimizing digestive discomfort. It supports muscle relaxation, sleep quality, energy production, and cognitive function.',
-      producerId: supplememtProducer1.id,
+      producerId: supplememtProducer2.id,
       categoryId: productCategoryEE.id,
       type: 'SINGLE',
       orderUnit: 'pouch',
@@ -2962,7 +2956,7 @@ async function main() {
     where: {
       name_unique_producer: {
         name: 'Creapure® Creatine Monohydrate',
-        producerId: supplememtProducer2.id,
+        producerId: supplememtProducer3.id,
       },
     },
     update: {},
@@ -2972,7 +2966,7 @@ async function main() {
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/CM+without+Shadow.png',
       description:
         'Creapure® is the purest form of creatine monohydrate, produced in Germany under strict quality controls. It enhances ATP production, supporting muscle strength, endurance, recovery, and cognitive function.',
-      producerId: supplememtProducer2.id,
+      producerId: supplememtProducer3.id,
       categoryId: productCategoryEE.id,
       type: 'SINGLE',
       orderUnit: 'pouch',
@@ -3153,7 +3147,7 @@ async function main() {
     where: {
       name_unique_producer: {
         name: 'Kaneka Ubiquinol 100mg',
-        producerId: supplememtProducer3.id,
+        producerId: supplememtProducer1.id,
       },
     },
     update: {},
@@ -3163,7 +3157,7 @@ async function main() {
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/CO+without+Shadow.png',
       description:
         'Kaneka Ubiquinol is the active and bioavailable form of Coenzyme Q10 (CoQ10), directly sourced from Kaneka, the global leader in CoQ10 science. Essential for mitochondrial energy production, cardiovascular health, and cognitive function, Kaneka Ubiquinol offers superior absorption compared to standard CoQ10.',
-      producerId: supplememtProducer3.id,
+      producerId: supplememtProducer1.id,
       categoryId: productCategoryEE.id,
       type: 'SINGLE',
       orderUnit: 'capsule',
@@ -3334,12 +3328,12 @@ async function main() {
   // create supplement team 1
   await prisma.buyingTeam.upsert({
     where: {
-      name: 'Magnesium Bisglycinate Team',
+      name: 'Kaneka Ubiquinol Team',
       postalCode: '12345',
     },
     update: {},
     create: {
-      name: 'Magnesium Bisglycinate Team',
+      name: 'Kaneka Ubiquinol Team',
       postalCode: '12345',
       producerId: supplememtProducer1.id,
       hostId: supplememtProducer1.userId,
@@ -3357,12 +3351,12 @@ async function main() {
   // create supplement team 2
   await prisma.buyingTeam.upsert({
     where: {
-      name: 'Creatine Team',
+      name: 'Magnesium Bisglycinate Team',
       postalCode: '12345',
     },
     update: {},
     create: {
-      name: 'Creatine Team',
+      name: 'Magnesium Bisglycinate Team',
       postalCode: '12345',
       producerId: supplememtProducer2.id,
       hostId: supplememtProducer2.userId,
@@ -3380,12 +3374,12 @@ async function main() {
   // create supplement team 3
   await prisma.buyingTeam.upsert({
     where: {
-      name: 'Ubiquinol Team',
+      name: 'Creapure® Team',
       postalCode: '12345',
     },
     update: {},
     create: {
-      name: 'Ubiquinol Team',
+      name: 'Creapure® Team',
       postalCode: '12345',
       producerId: supplememtProducer3.id,
       hostId: supplememtProducer3.userId,
