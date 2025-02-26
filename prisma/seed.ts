@@ -4,152 +4,152 @@ const prisma = new PrismaClient();
 async function main() {
   // // create supplement tags
   // await prisma.supplementTags.createMany({
-  //   data: [
-  //     {
-  //       name: 'Boost Focus and Memory',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Reduce Anxiety and Stress',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Enhance Energy and Vitality',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Age Gracefully and Healthily',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Improve Physical Performance and Recovery',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Strengthen Immunity and Resilience',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Support Daily Wellness',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Improve Emotional Regulation',
-  //       type: 'GOALS',
-  //     },
-  //     {
-  //       name: 'Heart Health',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'North East',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Fetility',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Sleep',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Healthy Aging',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Longevity',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Weight Training',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Athletics',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Immunity',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Cognitive Function',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Joint Health',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Gut Health',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Skin Health',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Mood and Anxiety',
-  //       type: 'CATEGORY',
-  //     },
-  //     {
-  //       name: 'Reduce Oxidative Stress',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Improve Cellular Health',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Boost Mitochondrial Function',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Enhance Recovery',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Build Strength and Endurance',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Support Hormonal Health',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Promote Relaxation and Sleep',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Strengthen Joints and Skin',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Improve Digestion',
-  //       type: 'FUNCTION',
-  //     },
-  //     {
-  //       name: 'Neurodivergent Support',
-  //       type: 'AUDIENCE',
-  //     },
-  //     {
-  //       name: 'Athletes & Weight Trainers',
-  //       type: 'AUDIENCE',
-  //     },
-  //     {
-  //       name: 'Longevity Enthusiasts',
-  //       type: 'AUDIENCE',
-  //     },
-  //     {
-  //       name: 'Women’s Health',
-  //       type: 'AUDIENCE',
-  //     },
-  //     {
-  //       name: 'Most Popular',
-  //       type: 'SORT',
-  //     },
-  //   ],
+    // data: [
+    //   {
+    //     name: 'Boost Focus and Memory',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Reduce Anxiety and Stress',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Enhance Energy and Vitality',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Age Gracefully and Healthily',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Improve Physical Performance and Recovery',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Strengthen Immunity and Resilience',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Support Daily Wellness',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Improve Emotional Regulation',
+    //     type: 'GOALS',
+    //   },
+    //   {
+    //     name: 'Heart Health',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'North East',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Fetility',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Sleep',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Healthy Aging',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Longevity',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Weight Training',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Athletics',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Immunity',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Cognitive Function',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Joint Health',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Gut Health',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Skin Health',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Mood and Anxiety',
+    //     type: 'CATEGORY',
+    //   },
+    //   {
+    //     name: 'Reduce Oxidative Stress',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Improve Cellular Health',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Boost Mitochondrial Function',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Enhance Recovery',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Build Strength and Endurance',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Support Hormonal Health',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Promote Relaxation and Sleep',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Strengthen Joints and Skin',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Improve Digestion',
+    //     type: 'FUNCTION',
+    //   },
+    //   {
+    //     name: 'Neurodivergent Support',
+    //     type: 'AUDIENCE',
+    //   },
+    //   {
+    //     name: 'Athletes & Weight Trainers',
+    //     type: 'AUDIENCE',
+    //   },
+    //   {
+    //     name: 'Longevity Enthusiasts',
+    //     type: 'AUDIENCE',
+    //   },
+    //   {
+    //     name: 'Women’s Health',
+    //     type: 'AUDIENCE',
+    //   },
+    //   {
+    //     name: 'Most Popular',
+    //     type: 'SORT',
+    //   },
+    // ],
   // });
 
   // // create postal code regions
@@ -3009,7 +3009,7 @@ async function main() {
       leadTime: 6,
       capsuleInfo: [
         {
-          "capsuleCount": "5g",
+          "capsuleCount": 5,
           "title1": "Daily Performance",
           "description1": "Supports energy, cognitive function, and endurance.",
           "title2": "Optimal ATP Production",
@@ -3017,7 +3017,7 @@ async function main() {
           "others": "5g is the standard daily serving, fueling ATP production for energy, muscle recovery, and cognitive support. Helps maintain mental clarity, endurance, and long-term muscular performance."
         },
         {
-          "capsuleCount": "10g",
+          "capsuleCount": 10,
           "title1": "Athletic Overstacking",
           "description1": "For high-intensity training and advanced recovery.",
           "title2": "Maximizes Muscle Saturation",

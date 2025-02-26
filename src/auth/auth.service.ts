@@ -176,7 +176,6 @@ export class AuthService {
       });
       referrerId = referrer?.id;
     }
-
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
@@ -186,6 +185,7 @@ export class AuthService {
         email: createUserDto.email,
         phone: createUserDto.phone ? createUserDto.phone : createUserDto.email,
         role: createUserDto.role ? createUserDto.role : 'PRODUCER',
+        metadata: createUserDto.metadata,
       },
     });
 
