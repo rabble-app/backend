@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsEnum, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, ValidateIf, IsObject } from 'class-validator';
 import { Role } from '../../lib/types';
 
 export class CreateUserDto {
@@ -69,4 +69,15 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   referralCode: string;
+
+
+  @ApiProperty({
+    type: 'string',
+    description: 'Metadata of the user',
+    required: true,
+  })
+  @ValidateIf((o) => o.metadata)
+  @IsNotEmpty()
+  @IsObject()
+  metadata: object;
 }

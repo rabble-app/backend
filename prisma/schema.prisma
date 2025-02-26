@@ -29,6 +29,7 @@ model User {
   onboardingStage               Int                             @default(0) @map("onboarding_stage")
   refCode                       String?                         @unique @map("ref_code")
   referrerId                    String?                         @map("referrer_id")
+  metadata                      Json?
   basketsC                      BasketC[]
   baskets                       Basket[]
   hosts                         BuyingTeam[]
