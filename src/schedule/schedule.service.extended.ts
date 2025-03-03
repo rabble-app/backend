@@ -24,7 +24,8 @@ import {
   startOfYear,
 } from 'date-fns';
 import { QRCodeService } from '../qrcode/qrcode.service';
-// import { TeamsService } from '../teams/teams.service';
+import { TeamsService } from '../teams/teams.service';
+import { setTimeout } from 'timers';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -35,7 +36,8 @@ export class ScheduleServiceExtended {
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
     private insightsService: InsightsService,
-    private qRCodeService: QRCodeService, // private teamsService: TeamsService,
+    private qRCodeService: QRCodeService, 
+    private readonly teamsService: TeamsService,
   ) {}
 
   async processCompleteOrders(
@@ -242,12 +244,21 @@ export class ScheduleServiceExtended {
     return await this.prisma.order.findMany({
       where: {
         status: OrderStatus.PENDING,
-        deadline: {
-          lte: new Date(),
-        },
-        minimumTreshold: {
-          lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when threshold has been met
-        },
+        OR: [
+          {
+            type:'RABBLE',
+            deadline: {
+              lte: new Date(),
+            },
+            minimumTreshold: {
+              lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when threshold has been met
+            },
+          },
+          {
+            type:'SUPPLEMENT'
+          }
+        ],
+       
       },
       select: {
         id: true,
@@ -525,10 +536,10 @@ export class ScheduleServiceExtended {
       // check if the prodcut has reached the threshold
       if (supplement.team._count.members >= supplement.orderTreashold) {
         // update the product status to active
-        // await this.teamsService.updateSupplementProductTeam({
-        //   where: { id: supplement.id },
-        //   data: { status: 'ACTIVE' },
-        // });
+        await this.teamsService.updateSupplementProductTeam({
+          where: { id: supplement.id },
+          data: { status: 'ACTIVE' },
+        });
 
         // check whether they can met the next quarter delivery or not
         const currentDate = new Date();
@@ -578,10 +589,14 @@ export class ScheduleServiceExtended {
           type: OrderType.SUPPLEMENT,
           deadline: upperQuarterDate,
         };
-        await this.paymentService.createOrder(orderData);
+        const {id} = await this.paymentService.createOrder(orderData);
 
-        // create the basket and payment for the team members
-        console.log(alignmentDays);
+        // create the basket
+        await this.createSupplementUsersBasket(
+          supplement.teamId,
+          id,
+          alignmentDays,
+        );  
       }
     }
 
@@ -594,119 +609,121 @@ export class ScheduleServiceExtended {
     duration: number,
   ): Promise<any> {
     // get the team members
-    const teamMembers = await this.prisma.teamMember.findMany({
-      where: {
-        teamId,
-        skipNextDelivery: false,
-        subscriptionStatus: 'ACTIVE',
-        status: 'APPROVED',
-      },
-      select: {
-        id: true,
-        role: true,
-        userId: true,
-      },
-    });
-
-    console.log(teamMembers);
-
-    // get their basket
-    for (const member of teamMembers) {
-      // find the basket for the member
-      const basket = await this.prisma.basketC.findMany({
+    try {
+      const teamMembers = await this.prisma.teamMember.findMany({
         where: {
           teamId,
-          userId: member.userId,
+          skipNextDelivery: false,
+          subscriptionStatus: 'ACTIVE',
+          status: 'APPROVED',
         },
         select: {
-          capsulePerDay: true,
-          productId: true,
-          product: {
-            select: {
-              id: true,
-              priceInfo: true,
-              price: true,
-              status: true,
-              supplementTeamProducts: {
-                select: {
-                  foundingMembersDiscount: true,
+          id: true,
+          role: true,
+          userId: true,
+        },
+      });
+  
+      // get their basket
+      for (const member of teamMembers) {
+        // find the basket for the member
+        const basket = await this.prisma.basketC.findMany({
+          where: {
+            teamId,
+            userId: member.userId,
+          },
+          select: {
+            capsulePerDay: true,
+            productId: true,
+            product: {
+              select: {
+                id: true,
+                priceInfo: true,
+                price: true,
+                status: true,
+                supplementTeamProducts: {
+                  select: {
+                    foundingMembersDiscount: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
-      console.log(basket);
-      let totalAmount = 0; // amount to be paid by the user
-      for (const item of basket) {
-        if (item.product.status == 'OUT_OF_STOCK') {
-          continue;
+        });
+  
+        let totalAmount = 0; // amount to be paid by the user
+        for (const item of basket) {
+          if (item.product.status == 'OUT_OF_STOCK') {
+            continue;
+          }
+          // get the dyanamic price for the product
+          const priceDiscount = this.productsService.getPriceDiscount(
+            item.product.priceInfo as unknown as IPricePlan[],
+            teamMembers.length,
+          );
+          const originalPrice = item.product.price;
+          const priceWithDiscount = !priceDiscount
+            ? originalPrice
+            : +originalPrice - (+priceDiscount / 100) * +originalPrice;
+          const productQuantity = +item.capsulePerDay * duration;
+  
+          // create the subscription for this user
+          let productPrice = +priceWithDiscount * productQuantity;
+          let topupQuantity = 0;
+          // calculate topup quantity
+          if (duration > 91) {
+            const topupDuration = duration - 91;
+            topupQuantity = +item.capsulePerDay * topupDuration;
+          }
+  
+          // if the user is a founding member, we will give them a discount
+          if (member.role === 'FOUNDING_MEMBER') {
+            productPrice =
+              productPrice -
+              (productPrice *
+                +item.product?.supplementTeamProducts?.foundingMembersDiscount) /
+                100;
+          }
+  
+          const newProduct = {
+            orderId,
+            userId: member.userId,
+            productId: item.productId,
+            quantity: productQuantity - topupQuantity,
+            price: priceWithDiscount,
+            capsulePerDay: item.capsulePerDay,
+          };
+  
+          // add to basket
+          await this.prisma.basket.create({
+            data: newProduct,
+          });
+  
+          // add alignment record to the basket
+          if (topupQuantity > 0) {
+            await this.prisma.topUpBasket.create({
+              data: {
+                ...newProduct,
+                quantity: topupQuantity,
+              },
+            });
+          }
+  
+          // increment totalAmount
+          totalAmount += +productPrice;
         }
-        // get the dyanamic price for the product
-        const priceDiscount = this.productsService.getPriceDiscount(
-          item.product.priceInfo as unknown as IPricePlan[],
-          teamMembers.length,
-        );
-        const originalPrice = item.product.price;
-        const priceWithDiscount = !priceDiscount
-          ? originalPrice
-          : +originalPrice - (+priceDiscount / 100) * +originalPrice;
-        const productQuantity = +item.capsulePerDay * duration;
-
-        // create the subscription for this user
-        let productPrice = +priceWithDiscount * productQuantity;
-        let topupQuantity = 0;
-        // calculate topup quantity
-        if (duration > 91) {
-          const topupDuration = duration - 91;
-          topupQuantity = +item.capsulePerDay * topupDuration;
-        }
-
-        // if the user is a founding member, we will give them a discount
-        if (member.role === 'FOUNDING_MEMBER') {
-          productPrice =
-            productPrice -
-            (productPrice *
-              +item.product?.supplementTeamProducts?.foundingMembersDiscount) /
-              100;
-        }
-
-        const newProduct = {
+  
+        // record the payment to be made by the user
+        await this.paymentService.recordPayment({
           orderId,
           userId: member.userId,
-          productId: item.productId,
-          quantity: productQuantity - topupQuantity,
-          price: priceWithDiscount,
-        };
-
-        // add to basket
-        await this.prisma.basket.create({
-          data: newProduct,
+          amount: totalAmount,
+          status: PaymentStatus.PENDING,
         });
-
-        // add alignment record to the basket
-        if (topupQuantity > 0) {
-          await this.prisma.topUpBasket.create({
-            data: {
-              ...newProduct,
-              quantity: topupQuantity,
-            },
-          });
-        }
-
-        // increment totalAmount
-        totalAmount += +productPrice;
-      }
-
-      // record the payment to be made by the user
-      await this.paymentService.recordPayment({
-        orderId,
-        userId: member.userId,
-        amount: totalAmount,
-        status: PaymentStatus.PENDING,
-      });
+      }    
+      return true;
+    } catch (error) {
+      console.log(error)
     }
-
-    return true;
   }
 }
