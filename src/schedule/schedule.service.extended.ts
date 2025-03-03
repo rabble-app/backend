@@ -600,7 +600,7 @@ export class ScheduleServiceExtended {
       }
     }
 
-    return preOrderSupplements;
+    return true;
   }
 
   async createSupplementUsersBasket(
