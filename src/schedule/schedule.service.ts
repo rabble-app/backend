@@ -1,5 +1,5 @@
 import { Decimal } from '@prisma/client/runtime/library';
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentService } from '../payment/payment.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
@@ -22,6 +22,7 @@ export class ScheduleService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly paymentServiceExtension: PaymentServiceExtension,
+    @Inject(forwardRef(() => ScheduleServiceExtended))
     private readonly scheduleServiceExtended: ScheduleServiceExtended,
     private readonly paymentService: PaymentService,
     private readonly usersService: UsersService,
@@ -301,7 +302,7 @@ export class ScheduleService {
 
               // send notification
               await this.notificationsService.createNotification({
-                title: 'Rabble Payment Capture Success',
+                title: 'Payment Capture Success',
                 text: `We have captured your payment with ${payment.order.team.name} team`,
                 userId: payment.userId,
                 orderId: payment.orderId,
@@ -312,7 +313,7 @@ export class ScheduleService {
             } else {
               // send notification
               await this.notificationsService.createNotification({
-                title: 'Rabble Payment Failure',
+                title: 'Payment Failure',
                 text: `We were unable to charge your card for your order with ${payment.order.team.name} team`,
                 userId: payment.userId,
                 orderId: payment.orderId,
@@ -419,7 +420,9 @@ export class ScheduleService {
           await this.captureFunds(pendingPayments);
         }
       });
-    } catch (error) {}
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   async handleSetDelivery() {

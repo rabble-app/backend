@@ -286,11 +286,7 @@ export class ScheduleController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result =
-      await this.scheduleServiceExtended.createSupplementUsersBasket(
-        'c0921d0b-db0a-490d-b05a-b03e2110cab0',
-        '018268ee-d146-4ce2-93cb-97100483be50',
-        95,
-      );
+      await this.scheduleServiceExtended.activatePreOrderTeams();
     return formatResponse(
       result,
       res,
