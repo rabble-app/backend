@@ -33,7 +33,6 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
-import { ReferralsService } from '../referrals/referrals.service';
 
 @Injectable()
 export class PaymentService {
@@ -48,7 +47,6 @@ export class PaymentService {
     @Inject(forwardRef(() => TeamsService))
     private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
-    private readonly referralsService: ReferralsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
   ) {

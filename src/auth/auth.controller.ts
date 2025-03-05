@@ -573,19 +573,4 @@ export class AuthController {
     res.status(200);
     res.send(auth);
   }
-
-  @Post('dummy-auth')
-  async generateDummyAuth(
-    @Body() body: any,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IAPIResponse> {
-    const result = this.authService.generateToken(body);
-    return formatResponse(
-      result,
-      res,
-      HttpStatus.OK,
-      false,
-      'Email verified successfully',
-    );
-  }
 }

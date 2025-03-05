@@ -4,7 +4,10 @@ import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { HttpException } from '@nestjs/common';
 import Stripe from 'stripe';
-import { CC_TO_POUNDS_RATE } from '../utils/constants';
+import {
+  CC_TO_POUNDS_RATE,
+  MINIMUM_STRIPE_AMOUNT_IN_PENCE,
+} from '../utils/constants';
 
 describe('ReferralsService', () => {
   let service: ReferralsService;
@@ -174,6 +177,64 @@ describe('ReferralsService', () => {
           claimed: { increment: 50000 },
           availableCredits: { increment: 5 },
         },
+      });
+    });
+  });
+
+  describe('Available credits', () => {
+    it('available credits should cover the capture amount', async () => {
+      jest.spyOn(service, 'getAvailableCredits').mockResolvedValueOnce(100);
+      const result = await service.getApplicableCredits('user1', 100);
+      expect(result).toEqual({
+        creditBalance: 0,
+        applicableCredits: 100,
+        amountToPay: 0,
+        availableCredits: 100,
+      });
+    });
+
+    it('available credits should partially   cover the capture amount', async () => {
+      jest.spyOn(service, 'getAvailableCredits').mockResolvedValueOnce(100);
+      const result = await service.getApplicableCredits('user1', 200);
+      expect(result).toEqual({
+        creditBalance: 0,
+        applicableCredits: 100,
+        amountToPay: 100,
+        availableCredits: 100,
+      });
+    });
+
+    it('should apply only possible available credits', async () => {
+      const availableCredits = 100;
+      jest
+        .spyOn(service, 'getAvailableCredits')
+        .mockResolvedValueOnce(availableCredits);
+      const captureAmount = 100.8;
+      const result = await service.getApplicableCredits('user1', captureAmount);
+      expect(result).toEqual({
+        creditBalance: MINIMUM_STRIPE_AMOUNT_IN_PENCE / 100,
+        applicableCredits:
+          availableCredits - MINIMUM_STRIPE_AMOUNT_IN_PENCE / 100,
+        amountToPay:
+          (captureAmount * 100 -
+            availableCredits * 100 +
+            MINIMUM_STRIPE_AMOUNT_IN_PENCE) /
+          100,
+        availableCredits,
+      });
+    });
+    it('should not apply if the available credits are less than the minimum applicable amount', async () => {
+      const availableCredits = 4;
+      jest
+        .spyOn(service, 'getAvailableCredits')
+        .mockResolvedValueOnce(availableCredits);
+      const captureAmount = 100.8;
+      const result = await service.getApplicableCredits('user1', captureAmount);
+      expect(result).toEqual({
+        creditBalance: availableCredits,
+        applicableCredits: 0,
+        amountToPay: captureAmount,
+        availableCredits,
       });
     });
   });
