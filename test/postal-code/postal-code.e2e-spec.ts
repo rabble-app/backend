@@ -70,8 +70,7 @@ describe('PostalCodeController (e2e)', () => {
     const producer = await prisma.producer.create({
       data: {
         userId,
-        businessName:
-          faker.internet.userName() +'Postal code producer',
+        businessName: faker.internet.userName() + 'Postal code producer',
       },
     });
     producerId = producer.id;

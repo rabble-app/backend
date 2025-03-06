@@ -43,6 +43,7 @@ export enum PaymentStatus {
   INTENT_CREATED = 'INTENT_CREATED',
   CAPTURED = 'CAPTURED',
   FAILED = 'FAILED',
+  COUPON_USED = 'COUPON_USED',
 }
 
 export enum Role {
@@ -64,6 +65,10 @@ export interface IOrder {
   deadline?: Date;
   type?: OrderType;
   status?: OrderStatus;
+}
+export interface IPricePlan {
+  percentageDiscount: number;
+  teamMemberCount: number;
 }
 export interface IPayment {
   orderId?: string;
@@ -163,50 +168,50 @@ export type ProducerWithCategories = Prisma.ProducerGetPayload<{
 export type UserWithProducerAndPartnerInfo = Prisma.UserGetPayload<{
   include: {
     paymentMethods: {
-      where:{
-        isDefault: true
-      }
-    },
+      where: {
+        isDefault: true;
+      };
+    };
     producer: {
       select: {
-        id: true,
-      },
-    },
+        id: true;
+      };
+    };
     partner: {
       select: {
-        id: true,
-        name: true,
-        postalCode: true,
-        stripeConnectId: true,
+        id: true;
+        name: true;
+        postalCode: true;
+        stripeConnectId: true;
         openhour: {
           select: {
-            type: true,
-          },
-        },
-      },
-    },
+            type: true;
+          };
+        };
+      };
+    };
     employee: {
       select: {
         partner: {
           select: {
-            id: true,
-            name: true,
-            postalCode: true,
+            id: true;
+            name: true;
+            postalCode: true;
             openhour: {
               select: {
-                type: true,
-              },
-            },
+                type: true;
+              };
+            };
             user: {
               select: {
-                id: true,
-              },
-            },
-          },
-        },
-      },
-    },
-    shipping:true,
+                id: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    shipping: true;
   };
 }>;
 

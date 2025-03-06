@@ -271,4 +271,28 @@ export class ScheduleController {
       'Orders activated successfully',
     );
   }
+
+  /**
+   * Activate pre order team first order.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('activate-pre-order-team')
+  @ApiOkResponse({
+    description: 'Pre order teams activated successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async activatePreOrderTeam(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result =
+      await this.scheduleServiceExtended.activatePreOrderTeams();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Pre order teams activated successfully',
+    );
+  }
 }

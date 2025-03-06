@@ -193,14 +193,20 @@ export class AuthController {
         businessName: createUserDto.businessName,
       });
     }
+    let valildationTitle = 'Email'
 
     if (emailExist || phoneExist || businessNameExist) {
+      if(phoneExist) {
+        valildationTitle = 'Phone number'
+      } else if (businessNameExist) {
+        valildationTitle = 'Business name'
+      }
       return formatResponse(
         'User already exist',
         res,
         HttpStatus.BAD_REQUEST,
         true,
-        'Email | phone number | business name already exist',
+        `${valildationTitle} already exist`,
       );
     }
 

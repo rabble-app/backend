@@ -27,8 +27,9 @@ model User {
   updatedAt                     DateTime                        @updatedAt @map("updated_at")
   notificationToken             String?                         @map("notification_token")
   onboardingStage               Int                             @default(0) @map("onboarding_stage")
-  refCode                  String?                         @unique @map("ref_code")
+  refCode                       String?                         @unique @map("ref_code")
   referrerId                    String?                         @map("referrer_id")
+  metadata                      Json?
   basketsC                      BasketC[]
   baskets                       Basket[]
   hosts                         BuyingTeam[]
@@ -51,21 +52,21 @@ model User {
   employee                      Employee[]
   collection                    Collection[]
   confirmation                  OrderConfirmation[]
-  topUpBasket TopUpBasket[]
-  wallet Wallet[]
-  paymentMethods PaymentMethod[]
-  bonuses Bonus[]
-  claims Claim[]
+  topUpBasket                   TopUpBasket[]
+  wallet                        Wallet[]
+  paymentMethods                PaymentMethod[]
+  bonuses                       Bonus[]
+  claims                        Claim[]
+  coupons                       Coupon[]
 
   @@index([id])
   @@map("users")
-
 }
 
 model PaymentMethod {
   id                 String   @id @default(uuid())
   userId             String   @map("user_id")
-  stripeCustomerId   String   @unique @map("stripe_customer_id")
+  stripeCustomerId   String   @map("stripe_customer_id")
   paymentMethodId    String   @map("payment_method_id")
   isDefault          Boolean  @default(true) @map("is_default")
   cardLastFourDigits String   @map("card_last_four_digits")
@@ -93,7 +94,7 @@ model Producer {
   minimumTreshold Decimal               @default(5000.00) @map("minimum_treshold") @db.Decimal(9, 2)
   website         String?
   description     String?
-  vat             String?               @unique
+  vat             String?               @unique //Todo: remove the unique enforcement
   paymentTerm     Int?                  @default(30) @map("payment_term")
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")
@@ -246,8 +247,10 @@ model Product {
   tags                      String[]              @default([])
   priceInfo                 Json?                 @map("price_info")
   capsuleInfo               Json?                 @map("capsule_info")
-  formulationSummary        String[]               @map("formulation_summary") @default([])
+  formulationSummary        String[]              @default([]) @map("formulation_summary")
   leadTime                  Int?                  @default(0) @map("lead_time")
+  productBenefits           Json?                 @map("product_benefits")
+  healthCategories          Json?                 @map("health_categories")
 
   createdAt              DateTime                    @default(now()) @map("created_at")
   updatedAt              DateTime                    @updatedAt @map("updated_at")
@@ -262,7 +265,7 @@ model Product {
   reviews                Review[]
   collectionItem         CollectionItems[]
   supplementTeamProducts SupplementTeamProducts?
-  topUpBasket TopUpBasket[]
+  topUpBasket            TopUpBasket[]
 
   @@unique([name, producerId], name: "name_unique_producer")
   @@index([id, producerId, categoryId])
@@ -485,7 +488,7 @@ model Order {
   lastNudge          DateTime?                   @map("last_nudge")
   deliveryDate       DateTime?                   @map("delivery_date")
   confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
-  type               OrderType                   @default(RABBLE) 
+  type               OrderType                   @default(RABBLE)
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
   basket             Basket[]
@@ -495,11 +498,11 @@ model Order {
   payments           Payment[]
   collection         Collection[]
   orderConfirmation  OrderConfirmation?
-  topUpBasket TopUpBasket[]
+  topUpBasket        TopUpBasket[]
+  bonuses            Bonus[]
 
   @@index([id, teamId, status])
   @@map("orders")
-
 }
 
 model OrderConfirmation {
@@ -590,20 +593,21 @@ model BasketC {
   @@index([id, userId, teamId])
   @@map("basket_c")
 }
+
 model TopUpBasket {
-  id            String               @id @default(uuid())
-  orderId       String               @map("order_id")
-  userId        String               @map("user_id")
-  productId     String               @map("product_id")
-  quantity      Int
-  price         Decimal              @default(0) @db.Decimal(9, 2)
-  // capsulePerDay Decimal    @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  id             String              @id @default(uuid())
+  orderId        String              @map("order_id")
+  userId         String              @map("user_id")
+  productId      String              @map("product_id")
+  quantity       Int
+  price          Decimal             @default(0) @db.Decimal(9, 2)
+  capsulePerDay  Decimal             @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
   deliveryStatus TopUpDeliveryStatus @default(PENDING) @map("delivery_status")
-  createdAt     DateTime             @default(now()) @map("created_at")
-  updatedAt     DateTime             @updatedAt @map("updated_at")
-  order         Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([id, orderId, userId])
   @@map("top_up_baskets")
@@ -804,52 +808,70 @@ model ProducerDeliveryArea {
 }
 
 model Wallet {
-  id        String   @id @default(uuid())
-  userId    String   @unique@map("user_id")
-  balance   Decimal 
-  claimed   Decimal  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([id,userId])
-  @@map("wallets")
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  balance          Decimal
+  claimed          Decimal
+  availableCredits Decimal  @default(0) @map("available_credits") // this value is in pounds
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([id, userId])
+  @@map("wallets")
 }
 
 model Claim {
   id        String   @id @default(uuid())
   amount    Decimal
   userId    String   @map("user_id")
-  couponId  String  @map("coupon_id")
-  couponValue  Decimal @map("coupon_value")
-  used      Boolean  @default(false)
+  rewardId  String   @default("") @map("reward_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
   @@index([id, userId])
   @@map("claims")
+}
+
+model Coupon {
+  id        String   @id @default(uuid())
+  amount    Decimal  @default(0)
+  couponId  String   @map("coupon_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id, userId])
+  @@map("coupons")
 }
 
 model Reward {
   id        String   @id @default(uuid())
   amount    Int
-  rate  Int
+  rate      Int
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  claims    Claim[]
+
   @@index([id])
   @@map("rewards")
 }
 
 model Bonus {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  amount    Decimal
-  type      BonusType
-  referralId    String?  @map("referral_id")
-  orderId   String?  @map("order_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  amount     Decimal
+  type       BonusType
+  referralId String?   @map("referral_id")
+  orderId    String?   @map("order_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   @@index([id, userId])
   @@map("bonuses")
 }
@@ -858,7 +880,6 @@ enum BonusType {
   REFERRAL
   SIGNUP
 }
-
 
 enum OrderStatus {
   PENDING
@@ -902,6 +923,7 @@ enum ProductApprovalStatus {
 }
 
 enum PaymentStatus {
+  COUPON_USED
   PENDING
   FAILED
   INTENT_CREATED

@@ -1,15 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
-import { IScheduleTeam, PaymentStatus, notificationType } from '../lib/types';
-import { OrderStatus } from '@prisma/client';
+import {
+  IOrder,
+  IPricePlan,
+  IScheduleTeam,
+  PaymentStatus,
+  notificationType,
+} from '../lib/types';
+import { OrderStatus, OrderType } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { InsightsService } from '../insights/insights.service';
-import { getWeek } from 'date-fns';
+import {
+  add,
+  differenceInDays,
+  eachQuarterOfInterval,
+  endOfYear,
+  getQuarter,
+  getWeek,
+  startOfYear,
+} from 'date-fns';
 import { QRCodeService } from '../qrcode/qrcode.service';
+import { TeamsService } from '../teams/teams.service';
+import { setTimeout } from 'timers';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -20,7 +36,8 @@ export class ScheduleServiceExtended {
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
     private insightsService: InsightsService,
-    private qRCodeService: QRCodeService,
+    private qRCodeService: QRCodeService, 
+    private readonly teamsService: TeamsService,
   ) {}
 
   async processCompleteOrders(
@@ -107,7 +124,7 @@ export class ScheduleServiceExtended {
         const tracker = [];
         for (let index = 0; index < teamMembers.length; index++) {
           const member = teamMembers[index];
-          // if we have created basker for this user before, skip
+          // if we have created basket for this user before, skip
           if (tracker.includes(member.userId)) {
             continue;
           }
@@ -227,12 +244,21 @@ export class ScheduleServiceExtended {
     return await this.prisma.order.findMany({
       where: {
         status: OrderStatus.PENDING,
-        deadline: {
-          lte: new Date(),
-        },
-        minimumTreshold: {
-          lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when threshold has been met
-        },
+        OR: [
+          {
+            type:'RABBLE',
+            deadline: {
+              lte: new Date(),
+            },
+            minimumTreshold: {
+              lte: this.prisma.order.fields.accumulatedAmount, // order is captured only when threshold has been met
+            },
+          },
+          {
+            type:'SUPPLEMENT'
+          }
+        ],
+       
       },
       select: {
         id: true,
@@ -453,7 +479,7 @@ export class ScheduleServiceExtended {
       },
       where: {
         status: 'INACTIVE',
-        type:'RABBLE',
+        type: 'RABBLE',
         deadline: {
           gte: new Date(),
         },
@@ -475,5 +501,229 @@ export class ScheduleServiceExtended {
     }
 
     return true;
+  }
+
+  async activatePreOrderTeams(): Promise<any> {
+    // get supplement with preorder status
+    const preOrderSupplements =
+      await this.prisma.supplementTeamProducts.findMany({
+        where: {
+          status: 'PREORDER',
+        },
+        select: {
+          id: true,
+          teamId: true,
+          orderTreashold: true,
+          product: {
+            select: {
+              leadTime: true,
+            },
+          },
+          team: {
+            select: {
+              _count: {
+                select: {
+                  members: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    // check whether they have reached the threshold
+    for (const supplement of preOrderSupplements) {
+      // check if the prodcut has reached the threshold
+      if (supplement.team._count.members >= supplement.orderTreashold) {
+        // update the product status to active
+        await this.teamsService.updateSupplementProductTeam({
+          where: { id: supplement.id },
+          data: { status: 'ACTIVE' },
+        });
+
+        // check whether they can met the next quarter delivery or not
+        const currentDate = new Date();
+        const currentQuarter = getQuarter(currentDate);
+
+        const quarters = eachQuarterOfInterval({
+          start: startOfYear(currentDate),
+          end: endOfYear(currentDate),
+        });
+        const targetQuarterDate = add(quarters[currentQuarter - 1], {
+          months: 3,
+        });
+
+        const upperQuarterDate = add(quarters[currentQuarter - 1], {
+          months: 6,
+        });
+
+        let alignmentDays = 0;
+        const numberOfDaysInAQuarter = differenceInDays(
+          upperQuarterDate,
+          targetQuarterDate,
+        );
+
+        // check if they can meet the next quarter delivery considering the product lead time(unit is weeks)
+        const interval = differenceInDays(
+          targetQuarterDate,
+          add(currentDate, { weeks: supplement.product.leadTime }),
+        );
+        // case 1: if the interval is less than 0, then they can't meet the next quarter delivery. we will need to give them alignment to the upper coming quarter
+        if (interval < 0) {
+          alignmentDays = differenceInDays(
+            upperQuarterDate,
+            add(currentDate, { weeks: supplement.product.leadTime }),
+          );
+          // case 2: if the interval is less than 7, we charge them for the next quarter only, no aligment
+        } else if (interval < 7) {
+          alignmentDays = numberOfDaysInAQuarter;
+          // case 3: if the interval is greater than 7, we charge them for the next quarter and alignment that will get them to the next quarter
+        } else if (interval > 7) {
+          alignmentDays = numberOfDaysInAQuarter + interval;
+        }
+
+        // create the order for the team
+        const orderData: IOrder = {
+          teamId: supplement.teamId,
+          status: OrderStatus.PENDING_DELIVERY,
+          type: OrderType.SUPPLEMENT,
+          deadline: upperQuarterDate,
+        };
+        const {id} = await this.paymentService.createOrder(orderData);
+
+        // create the basket
+        await this.createSupplementUsersBasket(
+          supplement.teamId,
+          id,
+          alignmentDays,
+        );  
+      }
+    }
+
+    return true;
+  }
+
+  async createSupplementUsersBasket(
+    teamId: string,
+    orderId: string,
+    duration: number,
+  ): Promise<any> {
+    // get the team members
+    try {
+      const teamMembers = await this.prisma.teamMember.findMany({
+        where: {
+          teamId,
+          skipNextDelivery: false,
+          subscriptionStatus: 'ACTIVE',
+          status: 'APPROVED',
+        },
+        select: {
+          id: true,
+          role: true,
+          userId: true,
+        },
+      });
+  
+      // get their basket
+      for (const member of teamMembers) {
+        // find the basket for the member
+        const basket = await this.prisma.basketC.findMany({
+          where: {
+            teamId,
+            userId: member.userId,
+          },
+          select: {
+            capsulePerDay: true,
+            productId: true,
+            product: {
+              select: {
+                id: true,
+                priceInfo: true,
+                price: true,
+                status: true,
+                supplementTeamProducts: {
+                  select: {
+                    foundingMembersDiscount: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+  
+        let totalAmount = 0; // amount to be paid by the user
+        for (const item of basket) {
+          if (item.product.status == 'OUT_OF_STOCK') {
+            continue;
+          }
+          // get the dyanamic price for the product
+          const priceDiscount = this.productsService.getPriceDiscount(
+            item.product.priceInfo as unknown as IPricePlan[],
+            teamMembers.length,
+          );
+          const originalPrice = item.product.price;
+          const priceWithDiscount = !priceDiscount
+            ? originalPrice
+            : +originalPrice - (+priceDiscount / 100) * +originalPrice;
+          const productQuantity = +item.capsulePerDay * duration;
+  
+          // create the subscription for this user
+          let productPrice = +priceWithDiscount * productQuantity;
+          let topupQuantity = 0;
+          // calculate topup quantity
+          if (duration > 91) {
+            const topupDuration = duration - 91;
+            topupQuantity = +item.capsulePerDay * topupDuration;
+          }
+  
+          // if the user is a founding member, we will give them a discount
+          if (member.role === 'FOUNDING_MEMBER') {
+            productPrice =
+              productPrice -
+              (productPrice *
+                +item.product?.supplementTeamProducts?.foundingMembersDiscount) /
+                100;
+          }
+  
+          const newProduct = {
+            orderId,
+            userId: member.userId,
+            productId: item.productId,
+            quantity: productQuantity - topupQuantity,
+            price: priceWithDiscount,
+            capsulePerDay: item.capsulePerDay,
+          };
+  
+          // add to basket
+          await this.prisma.basket.create({
+            data: newProduct,
+          });
+  
+          // add alignment record to the basket
+          if (topupQuantity > 0) {
+            await this.prisma.topUpBasket.create({
+              data: {
+                ...newProduct,
+                quantity: topupQuantity,
+              },
+            });
+          }
+  
+          // increment totalAmount
+          totalAmount += +productPrice;
+        }
+  
+        // record the payment to be made by the user
+        await this.paymentService.recordPayment({
+          orderId,
+          userId: member.userId,
+          amount: totalAmount,
+          status: PaymentStatus.PENDING,
+        });
+      }    
+      return true;
+    } catch (error) {
+      console.log(error)
+    }
   }
 }

@@ -33,7 +33,6 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
-import { ReferralsService } from '../referrals/referrals.service';
 
 @Injectable()
 export class PaymentService {
@@ -48,7 +47,6 @@ export class PaymentService {
     @Inject(forwardRef(() => TeamsService))
     private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
-    private readonly referralsService: ReferralsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
   ) {
@@ -67,39 +65,32 @@ export class PaymentService {
       paymentMethodId: addPaymentCardDto.paymentMethodId,
       stripeCustomerId: addPaymentCardDto.stripeCustomerId,
     });
-    let result: Stripe.Response<Stripe.PaymentMethod>;
-    try {
-      result = await this.stripe.paymentMethods.attach(
-        addPaymentCardDto.paymentMethodId,
-        {
-          customer: addPaymentCardDto.stripeCustomerId,
-        },
-      );
-    } catch (error) {
-      this.logger.error(
-        'error',
-        'Error attaching payment method to user %o',
-        error,
-      );
-    }
 
-    await this.SavePaymentMethod({
-      cardLastFourDigits: result.card.last4,
-      paymentMethodId: addPaymentCardDto.paymentMethodId,
-      userId,
-      stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-      fingerprint: result.card.fingerprint,
-    });
-
-    // make it user default payment method
-    await this.userService.updateUser({
-      where: {
+    const result = await this.stripe.paymentMethods.attach(
+      addPaymentCardDto.paymentMethodId,
+      {
+        customer: addPaymentCardDto.stripeCustomerId,
+      },
+    );
+    if (result) {
+      await this.SavePaymentMethod({
+        cardLastFourDigits: result.card.last4,
+        paymentMethodId: addPaymentCardDto.paymentMethodId,
+        userId,
         stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-      },
-      data: {
-        stripeDefaultPaymentMethodId: addPaymentCardDto.paymentMethodId,
-      },
-    });
+        fingerprint: result.card.fingerprint,
+      });
+
+      // make it user default payment method
+      await this.userService.updateUser({
+        where: {
+          stripeCustomerId: addPaymentCardDto.stripeCustomerId,
+        },
+        data: {
+          stripeDefaultPaymentMethodId: addPaymentCardDto.paymentMethodId,
+        },
+      });
+    }
 
     return {
       paymentMethodId: addPaymentCardDto.paymentMethodId,
@@ -115,14 +106,22 @@ export class PaymentService {
 
     // remove it from our record
     await this.prisma.paymentMethod.deleteMany({
-      where:{
-        paymentMethodId:removePaymentCardDto.paymentMethodId
-      }
-    })
+      where: {
+        paymentMethodId: removePaymentCardDto.paymentMethodId,
+      },
+    });
 
     return {
       paymentMethodId: removePaymentCardDto.paymentMethodId,
     };
+  }
+
+  async createIntentForCardSetup(): Promise<object | null> {
+    return await this.stripe.setupIntents.create({
+      payment_method_types: ['card'],
+      // customer: customerId,
+      // confirm: true,
+    });
   }
 
   async chargeUser(chargeUserDto: ChargeUserDto): Promise<object | null> {
@@ -276,12 +275,8 @@ export class PaymentService {
     offline = false,
   ): Promise<any | null> {
     try {
-      const { amount, couponIds, amountOff } = await this.amountWithCoupon(
-        createIntentData.customerId,
-        Math.round(createIntentData.amount * 100),
-      );
       const parameters = {
-        amount,
+        amount: Math.round(createIntentData.amount * 100),
         currency: createIntentData.currency,
         customer: createIntentData.customerId,
       };
@@ -300,16 +295,7 @@ export class PaymentService {
         ...parameters,
         capture_method: 'manual',
         use_stripe_sdk: true,
-        metadata: {
-          ...(couponIds && { coupons: couponIds.join(',') }),
-          ...(amountOff && { amount_off: amountOff }),
-        },
       });
-      if (paymentIntent.metadata.coupons) {
-        await this.referralsService.markClaimsAsUsed(
-          paymentIntent.metadata.coupons.split(','),
-        );
-      }
       return paymentIntent;
     } catch (e) {
       console.log(e);
@@ -328,49 +314,6 @@ export class PaymentService {
       //   }
       // }
     }
-  }
-
-  async amountWithCoupon(customerId: string, nextPurchaseAmount: number) {
-    const paymentMethod = await this.prisma.paymentMethod.findFirst({
-      where: {
-        stripeCustomerId: customerId,
-      },
-    });
-    if (!paymentMethod) {
-      return {
-        amount: nextPurchaseAmount,
-        couponIds: null,
-        amountOff: 0,
-      };
-    }
-    const unusedCoupons = await this.referralsService.getUnusedCoupons(
-      paymentMethod.userId,
-    );
-    if (!unusedCoupons) {
-      return {
-        amount: nextPurchaseAmount,
-        couponIds: null,
-        amountOff: 0,
-      };
-    }
-    const { couponIds, couponValue } = unusedCoupons;
-    const amountOff = couponValue * 100;
-    const chargeableAmount = nextPurchaseAmount - amountOff;
-    if (chargeableAmount < 100) {
-      this.logger.info(
-        'Chargeable amount is less than 100 if coupon is used, skipping coupon',
-      );
-      return {
-        amount: nextPurchaseAmount,
-        couponIds: null,
-        amountOff: 0,
-      };
-    }
-    return {
-      amount: chargeableAmount,
-      couponIds,
-      amountOff,
-    };
   }
 
   async createOrder(orderData: IOrder): Promise<Order> {

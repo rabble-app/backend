@@ -361,7 +361,10 @@ export class TeamsControllerExtension {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const desiredStatus = status && status === 'false' ? false : true;
-    const result = await this.teamsServiceExtension2.skipDelivery(id, desiredStatus);
+    const result = await this.teamsServiceExtension2.skipDelivery(
+      id,
+      desiredStatus,
+    );
     return formatResponse(
       result,
       res,

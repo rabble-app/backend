@@ -44,9 +44,7 @@ export class UsersServiceExtension {
     });
   }
 
-  async getSupplementUserUpcomingDeliveries(
-    userId: string,
-  ){
+  async getSupplementUserUpcomingDeliveries(userId: string) {
     const endOfToday = endOfDay(new Date());
 
     return await this.prisma.order.findMany({
@@ -59,14 +57,14 @@ export class UsersServiceExtension {
                 mode: 'insensitive',
               },
             },
-          }
+          },
         },
         deliveryDate: {
           gt: endOfToday,
         },
         status: {
           in: ['PENDING', 'PENDING_DELIVERY'],
-        } 
+        },
       },
       select: {
         id: true,
@@ -79,36 +77,36 @@ export class UsersServiceExtension {
                 businessName: true,
               },
             },
-            members:{
-              where:{
-                userId
+            members: {
+              where: {
+                userId,
               },
-              select:{
-                user:{
-                  select:{
+              select: {
+                user: {
+                  select: {
                     postalCode: true,
-                    shipping:true
-                  }
-                }
-              }
-            }
+                    shipping: true,
+                  },
+                },
+              },
+            },
           },
         },
-        basket:{
-          where:{
+        basket: {
+          where: {
             userId,
           },
-          select:{
+          select: {
             quantity: true,
-            product:{
-              select:{
+            product: {
+              select: {
                 id: true,
                 name: true,
                 price: true,
                 unitsOfMeasurePerSubUnit: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
       },
       orderBy: {
@@ -117,13 +115,11 @@ export class UsersServiceExtension {
     });
   }
 
-  async getUserSupplementPlans(
-    userId: string,
-  ) {
+  async getUserSupplementPlans(userId: string) {
     return await this.prisma.teamMember.findMany({
       where: {
         userId,
-        status: TeamStatus.APPROVED, 
+        status: TeamStatus.APPROVED,
       },
       select: {
         id: true,
@@ -134,15 +130,15 @@ export class UsersServiceExtension {
           select: {
             id: true,
             name: true,
-            basket:{
-              where:{
+            basket: {
+              where: {
                 userId,
               },
-              select:{
+              select: {
                 id: true,
                 quantity: true,
-                product:{
-                  select:{
+                product: {
+                  select: {
                     id: true,
                     name: true,
                     price: true,
@@ -154,24 +150,24 @@ export class UsersServiceExtension {
                       select: {
                         businessName: true,
                       },
-                    }
-                  }
+                    },
+                  },
                 },
-                capsulePerDay: true,   
-              }
+                capsulePerDay: true,
+              },
             },
-            supplementTeamProducts:{
-              select:{
-               foundingMembersDiscount: true,
-               status: true,
-               orderTreashold: true,
-              }
+            supplementTeamProducts: {
+              select: {
+                foundingMembersDiscount: true,
+                status: true,
+                orderTreashold: true,
+              },
             },
             _count: {
               select: {
-                 members: true,
-               },
-             },
+                members: true,
+              },
+            },
           },
         },
       },
@@ -181,13 +177,11 @@ export class UsersServiceExtension {
     });
   }
 
-  async getSingleSupplementPlans(
-    id: string,
-  ) {
+  async getSingleSupplementPlans(id: string) {
     return await this.prisma.teamMember.findFirst({
       where: {
         id,
-        status: TeamStatus.APPROVED, 
+        status: TeamStatus.APPROVED,
       },
       select: {
         id: true,
@@ -198,12 +192,12 @@ export class UsersServiceExtension {
           select: {
             id: true,
             name: true,
-            basket:{
-              select:{
+            basket: {
+              select: {
                 id: true,
                 quantity: true,
-                product:{
-                  select:{
+                product: {
+                  select: {
                     id: true,
                     name: true,
                     price: true,
@@ -216,24 +210,24 @@ export class UsersServiceExtension {
                       select: {
                         businessName: true,
                       },
-                    }
-                  }
+                    },
+                  },
                 },
-                capsulePerDay: true,   
-              }
+                capsulePerDay: true,
+              },
             },
-            supplementTeamProducts:{
-              select:{
-               foundingMembersDiscount: true,
-               status: true,
-               orderTreashold: true,
-              }
+            supplementTeamProducts: {
+              select: {
+                foundingMembersDiscount: true,
+                status: true,
+                orderTreashold: true,
+              },
             },
             _count: {
               select: {
-                 members: true,
-               },
-             },
+                members: true,
+              },
+            },
           },
         },
       },

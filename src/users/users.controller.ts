@@ -372,13 +372,13 @@ export class UsersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     if (updateDeliveryAddressDto.postalCode) {
-       await this.usersService.updateUser({
+      await this.usersService.updateUser({
         where: { id },
         data: {
           postalCode: updateDeliveryAddressDto.postalCode,
-        }
+        },
       });
-      delete updateDeliveryAddressDto.postalCode
+      delete updateDeliveryAddressDto.postalCode;
     }
     const result = await this.usersService.updateDeliveryAddress({
       where: { userId: id },

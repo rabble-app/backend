@@ -263,7 +263,7 @@ describe('ProductsController (e2e)', () => {
     );
 
     // return supplement products
-     it(
+    it(
       '/products/supplement/(GET) should return supplement products',
       async () => {
         const response = await request(app.getHttpServer())

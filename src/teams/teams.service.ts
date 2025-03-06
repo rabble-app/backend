@@ -1,9 +1,16 @@
-import { BuyingTeam, MembershipStatus, OrderStatus, OrderType, Prisma, SupplementTeamProducts, TeamMember, TeamRequest } from '@prisma/client';
+import {
+  BuyingTeam,
+  MembershipStatus,
+  OrderStatus,
+  Prisma,
+  SupplementTeamProducts,
+  TeamMember,
+  TeamRequest,
+} from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   BuyingTeamsWithSupplementProduct,
-  IOrder,
   ITeamMember,
   Status,
   TeamMemberShip,
@@ -30,7 +37,7 @@ export class TeamsService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => TeamsServiceExtension))
     private teamsServiceExtension: TeamsServiceExtension,
-  ) { }
+  ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
     const currentDate = new Date();
@@ -57,16 +64,16 @@ export class TeamsService {
         if (typeof teamImages[category] == 'function') {
           imageUrl =
             teamImages[category]()[
-            Math.floor(
-              Math.floor(Math.random() * 10) * teamImages[category]().length,
-            )
+              Math.floor(
+                Math.floor(Math.random() * 10) * teamImages[category]().length,
+              )
             ];
         } else {
           imageUrl =
             teamImages[category][
-            Math.floor(
-              Math.floor(Math.random() * 10) * teamImages[category].length,
-            )
+              Math.floor(
+                Math.floor(Math.random() * 10) * teamImages[category].length,
+              )
             ];
         }
       }
@@ -74,7 +81,7 @@ export class TeamsService {
     if (!imageUrl) {
       imageUrl =
         teamImages.General[
-        Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
+          Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
         ];
     }
 
@@ -114,7 +121,7 @@ export class TeamsService {
         data: {
           productId,
           teamId: result.id,
-          orderTreashold: preOrderThreshold
+          orderTreashold: preOrderThreshold,
         },
       });
     } else {
@@ -133,7 +140,9 @@ export class TeamsService {
         minimumTreshold: producerInfo.minimumTreshold,
         deadline: orderDeadlineDate,
         accumulatedAmount: accumulatedAmount,
-        status: createTeamDto.partnerId ? OrderStatus.INACTIVE : OrderStatus.PENDING,
+        status: createTeamDto.partnerId
+          ? OrderStatus.INACTIVE
+          : OrderStatus.PENDING,
       };
       const orderResponse = await this.paymentService.createOrder(orderData);
 
@@ -169,7 +178,11 @@ export class TeamsService {
     // get the team info
     const team = await this.findBuyingTeam({ id: teamData.teamId });
 
-    const memberStatus = teamData.role? teamData.role :team.supplementTeamProducts?.status == 'PREORDER'? MembershipStatus.FOUNDING_MEMBER: MembershipStatus.MEMBER;
+    const memberStatus = teamData.role
+      ? teamData.role
+      : team.supplementTeamProducts?.status == 'PREORDER'
+      ? MembershipStatus.FOUNDING_MEMBER
+      : MembershipStatus.MEMBER;
 
     const result = await this.prisma.teamMember.upsert({
       where: {
@@ -185,29 +198,10 @@ export class TeamsService {
     // get the sender info
     const sender = await this.userService.findUser({ id: teamData.userId });
 
-    // get team members 
+    // get team members
     const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
       teamData.teamId,
     );
-
-    // check if team is for supplement and status is not active
-    if (team.supplementTeamProducts?.status == 'PREORDER') {
-      if (team.supplementTeamProducts.orderTreashold <= teamMembers.length) {
-        // update the team status to active
-        await this.updateSupplementProductTeam({
-          where: { id: team.supplementTeamProducts.id },
-          data: { status: 'ACTIVE' },
-        });
-
-      // create inactive order
-      const orderData: IOrder = {
-        teamId: teamData.teamId,
-        status: OrderStatus.INACTIVE,
-        type: OrderType.SUPPLEMENT,
-      };     
-      await this.paymentService.createOrder(orderData);
-      }
-    }
 
     if (teamMembers.length > 0) {
       teamMembers.forEach(async (admin) => {
@@ -228,7 +222,7 @@ export class TeamsService {
 
     return result;
   }
-  
+
   async getProducerTeams(id: string): Promise<BuyingTeam[] | null> {
     return await this.prisma.buyingTeam.findMany({
       where: {
@@ -470,8 +464,8 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findUnique({
       where: buyingTeamWhereUniqueInput,
       include: {
-        supplementTeamProducts: true
-      }
+        supplementTeamProducts: true,
+      },
     });
   }
 
@@ -480,12 +474,12 @@ export class TeamsService {
     userId: string,
   ): Promise<
     | {
-      id: string;
-      name: string;
-      imageUrl: string;
-      producerId: string;
-      hostId: string;
-    }[]
+        id: string;
+        name: string;
+        imageUrl: string;
+        producerId: string;
+        hostId: string;
+      }[]
     | null
   > {
     return await this.prisma.buyingTeam.findMany({

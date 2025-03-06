@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-  ValidateIf,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, ValidateIf } from 'class-validator';
 
 export class AddSingleBasketDto {
   @ApiProperty({
@@ -59,7 +54,7 @@ export class AddSingleBasketDto {
   })
   @IsNotEmpty()
   @IsNumber()
-  capsulePerDay: number; 
+  capsulePerDay: number;
 
   @ApiProperty({
     type: 'string',
@@ -79,5 +74,5 @@ export class AddSingleBasketDto {
   @ValidateIf((o) => o.topupQuantity)
   @IsNotEmpty()
   @IsNumber()
-  topupQuantity: number = 0;
+  topupQuantity = 0;
 }

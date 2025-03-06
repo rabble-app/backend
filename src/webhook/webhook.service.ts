@@ -36,7 +36,6 @@ export class WebhookService {
           'Payment intent succeeded: %o',
           paymentIntentSucceeded,
         );
-        await this.updatePayment(paymentIntentSucceeded);
         await this.referralsService.handleReferral(
           paymentIntentSucceeded.metadata,
         );
