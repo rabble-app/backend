@@ -16,8 +16,12 @@ import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
 import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
 import { Response } from 'express';
-import { ClaimCCDto } from './dto/referrals.dto';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ClaimCCDto,
+  CreditInfoDto,
+  CreditInfoResponseDto,
+} from './dto/referrals.dto';
+import { ApiTags, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 
 @Controller('referrals')
 @ApiTags('referrals')
@@ -117,6 +121,33 @@ export class ReferralsController {
       HttpStatus.OK,
       false,
       'Reward categories',
+    );
+  }
+
+  @Post('credit-info')
+  @UseGuards(AuthGuard)
+  @UseFilters(HttpExceptionFilter)
+  @ApiResponse({
+    status: 200,
+    description: 'Available credits info',
+    type: CreditInfoResponseDto,
+  })
+  async availableCreditInfo(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+    @Body() payload: CreditInfoDto,
+  ): Promise<IAPIResponse> {
+    const userId = req.user?.id ?? req.user?.userId;
+    const result = await this.referralsService.getApplicableCredits(
+      userId,
+      payload.amount,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Available credits info',
     );
   }
 }

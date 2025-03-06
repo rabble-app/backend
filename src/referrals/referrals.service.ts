@@ -403,7 +403,13 @@ export class ReferralsService {
       fullCouponCoverage: false,
     };
 
-    const availableCredits = +(await this.getAvailableCredits(userId)) * 100;
+    const {
+      creditBalance,
+      couponValue,
+      remainingAmount,
+      fullCoverage,
+      availableCredits,
+    } = await this.getAvailableCreditInfo(userId, captureAmount);
     if (availableCredits < ReferralsService.MINIMUM_CREDIT_AMOUNT) {
       this.logger.info('CC APPLY COUPON: Insufficient credits', {
         userId,
@@ -411,9 +417,6 @@ export class ReferralsService {
       });
       return result;
     }
-
-    const { creditBalance, couponValue, remainingAmount, fullCoverage } =
-      this.calculateCouponValues(availableCredits, captureAmount);
 
     const coupon = await this.createCoupon(userId, couponValue / 100);
 
@@ -487,6 +490,40 @@ export class ReferralsService {
     return {
       user,
       earnings: referralTrackingWithReferral,
+    };
+  }
+
+  async getAvailableCreditInfo(userId: string, captureAmount: number) {
+    const availableCredits = +(await this.getAvailableCredits(userId)) * 100;
+
+    if (availableCredits < ReferralsService.MINIMUM_CREDIT_AMOUNT) {
+      return {
+        creditBalance: availableCredits,
+        couponValue: 0,
+        remainingAmount: captureAmount,
+        fullCoverage: false,
+        availableCredits,
+      };
+    }
+    const { creditBalance, couponValue, remainingAmount, fullCoverage } =
+      this.calculateCouponValues(availableCredits, captureAmount);
+    return {
+      creditBalance,
+      couponValue,
+      remainingAmount,
+      fullCoverage,
+      availableCredits,
+    };
+  }
+  async getApplicableCredits(userId: string, captureAmount: number) {
+    const captureAmountInPence = captureAmount * 100;
+    const { creditBalance, couponValue, remainingAmount, availableCredits } =
+      await this.getAvailableCreditInfo(userId, captureAmountInPence);
+    return {
+      creditBalance: creditBalance / 100,
+      applicableCredits: couponValue / 100,
+      amountToPay: remainingAmount / 100,
+      availableCredits: availableCredits / 100,
     };
   }
 }
