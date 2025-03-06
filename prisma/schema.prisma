@@ -66,7 +66,7 @@ model User {
 model PaymentMethod {
   id                 String   @id @default(uuid())
   userId             String   @map("user_id")
-  stripeCustomerId   String   @unique @map("stripe_customer_id")
+  stripeCustomerId   String   @map("stripe_customer_id")
   paymentMethodId    String   @map("payment_method_id")
   isDefault          Boolean  @default(true) @map("is_default")
   cardLastFourDigits String   @map("card_last_four_digits")
