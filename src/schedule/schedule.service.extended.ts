@@ -17,15 +17,13 @@ import { InsightsService } from '../insights/insights.service';
 import {
   add,
   differenceInDays,
-  eachQuarterOfInterval,
-  endOfYear,
-  getQuarter,
   getWeek,
-  startOfYear,
+  subWeeks,
 } from 'date-fns';
 import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { setTimeout } from 'timers';
+import { currentDate, targetQuarterDate, upperQuarterDate } from '../utils/date';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -50,6 +48,9 @@ export class ScheduleServiceExtended {
           where: {
             orderId: order.id,
             status: 'CAPTURED',
+            order: {
+              type: 'RABBLE',
+            }
           },
           _sum: {
             amount: true,
@@ -232,6 +233,7 @@ export class ScheduleServiceExtended {
         deadline: {
           lt: new Date(),
         },
+        type: 'RABBLE',
       },
       select: {
         id: true,
@@ -280,6 +282,7 @@ export class ScheduleServiceExtended {
             nextDeliveryDate: null,
           },
         ],
+        supplementTeamProducts: null
       },
       select: {
         id: true,
@@ -297,6 +300,33 @@ export class ScheduleServiceExtended {
         order: {
           status: 'PENDING',
         },
+        OR: [
+          {
+            order: {
+              type: 'RABBLE',
+              deadline: {
+                gte: new Date(),
+              }
+            },
+          },
+          // authorize the payment of the supplement first order after activation
+          {
+            order: {
+              type: 'SUPPLEMENT',
+              firstDelivery: true
+            },
+          },
+          // authorize the payment of the supplement order if the deadline has reached
+          {
+            order: {
+              type: 'SUPPLEMENT',
+              firstDelivery: false,
+              deadline: {
+                lte: new Date(),
+              }
+            },
+          },
+        ]
       },
       include: {
         user: {
@@ -542,20 +572,6 @@ export class ScheduleServiceExtended {
         });
 
         // check whether they can met the next quarter delivery or not
-        const currentDate = new Date();
-        const currentQuarter = getQuarter(currentDate);
-
-        const quarters = eachQuarterOfInterval({
-          start: startOfYear(currentDate),
-          end: endOfYear(currentDate),
-        });
-        const targetQuarterDate = add(quarters[currentQuarter - 1], {
-          months: 3,
-        });
-
-        const upperQuarterDate = add(quarters[currentQuarter - 1], {
-          months: 6,
-        });
 
         let alignmentDays = 0;
         const numberOfDaysInAQuarter = differenceInDays(
@@ -581,13 +597,15 @@ export class ScheduleServiceExtended {
         } else if (interval > 7) {
           alignmentDays = numberOfDaysInAQuarter + interval;
         }
-
+  
         // create the order for the team
         const orderData: IOrder = {
           teamId: supplement.teamId,
-          status: OrderStatus.PENDING_DELIVERY,
+          status: OrderStatus.PENDING,
           type: OrderType.SUPPLEMENT,
-          deadline: upperQuarterDate,
+          // we add 1 week extra to the leadtime for that to the duration for processing their payment
+          deadline: subWeeks(upperQuarterDate, supplement.product.leadTime + 1),
+          firstDelivery: true,
         };
         const {id} = await this.paymentService.createOrder(orderData);
 
@@ -725,5 +743,66 @@ export class ScheduleServiceExtended {
     } catch (error) {
       console.log(error)
     }
+  }
+
+  async createSupplementOrders(){
+    // get all supplement active teams whose last order has expired
+    const query = {
+      type: OrderType.SUPPLEMENT,
+        status: OrderStatus.PENDING,
+        deadline: {
+          lte: new Date(),
+        },
+    }
+    const expiredOrders = await this.prisma.order.findMany({
+      where: {
+        ...query
+      },
+      select: {
+        id: true,
+        teamId: true,
+        team: {
+          select: {
+            supplementTeamProducts: {
+              select: {
+                product: {
+                  select: {
+                    leadTime: true,
+                  },
+                },
+              },
+            },
+          },
+        }
+      },
+    });
+
+    for (const order of expiredOrders) {
+       // create the order for the team
+       const orderData: IOrder = {
+        teamId: order.teamId,
+        status: OrderStatus.PENDING,
+        type: OrderType.SUPPLEMENT,
+         // we add 1 week extra to the leadtime for that to the duration for processing their payment
+        deadline: subWeeks(upperQuarterDate, order.team.supplementTeamProducts.product.leadTime + 1),
+      };
+      const {id} = await this.paymentService.createOrder(orderData);
+
+      // create the basket
+      await this.createSupplementUsersBasket(
+        order.teamId,
+        id,
+        91,
+      );  
+    }
+    // update the status of the expired orders to pending delivery
+    await this.prisma.order.updateMany({
+      where: {
+        ...query
+      },
+      data: {
+        status: OrderStatus.PENDING_DELIVERY,
+      },
+    });
   }
 }

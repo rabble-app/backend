@@ -9,6 +9,7 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
+import { add } from 'date-fns';
 @Injectable()
 export class PaymentServiceExtension {
   private readonly stripe: Stripe;
@@ -312,6 +313,7 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
+          deliveryDate: add(new Date(),{ weeks: latestOrder.team.supplementTeamProducts?.product?.leadTime || 1})
         },
       });
       // record payment

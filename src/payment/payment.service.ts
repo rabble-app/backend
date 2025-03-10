@@ -21,6 +21,7 @@ import {
   ICreateIntent,
   IOrder,
   IPayment,
+  OrderWithSupplementPayload,
   PaymentStatus,
   notificationType,
 } from '../lib/types';
@@ -33,6 +34,7 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
+import { add } from 'date-fns';
 
 @Injectable()
 export class PaymentService {
@@ -199,7 +201,7 @@ export class PaymentService {
     return await this.recordPayment(paymentData);
   }
 
-  async getTeamLatestOrder(teamId: string): Promise<Order | null> {
+  async getTeamLatestOrder(teamId: string): Promise<OrderWithSupplementPayload | null> {
     return await this.prisma.order.findFirst({
       where: {
         teamId: teamId,
@@ -207,6 +209,23 @@ export class PaymentService {
       orderBy: {
         createdAt: 'desc',
       },
+      select:{
+        id: true,
+        deadline: true,
+        team: {
+          select: {
+            supplementTeamProducts: {
+              select: {
+                product: {
+                  select: {
+                    leadTime: true,
+                  },
+                },
+              },
+            },
+          },
+        }
+      }
     });
   }
 
@@ -559,7 +578,8 @@ export class PaymentService {
             orderId: addSingleBasketDto.orderId,
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.price,
-            // capsulePerDay: addSingleBasketDto.capsulePerDay,
+            capsulePerDay: addSingleBasketDto.capsulePerDay,
+            deliveryDate: add(new Date(),{ weeks: team.supplementTeamProducts.product.leadTime})
           },
         });
       }
