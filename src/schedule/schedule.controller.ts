@@ -295,4 +295,28 @@ export class ScheduleController {
       'Pre order teams activated successfully',
     );
   }
+
+  /**
+   * Create supplement orders.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('create-supplement-orders')
+  @ApiOkResponse({
+    description: 'Supplement orders created successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async createSupplementOrders(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result =
+      await this.scheduleServiceExtended.createSupplementOrders();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Supplement orders created successfully',
+    );
+  }
 }

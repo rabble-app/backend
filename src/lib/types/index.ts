@@ -65,6 +65,7 @@ export interface IOrder {
   deadline?: Date;
   type?: OrderType;
   status?: OrderStatus;
+  firstDelivery?: boolean
 }
 export interface IPricePlan {
   percentageDiscount: number;
@@ -368,6 +369,37 @@ export interface IStoreEmployee {
 
 export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
   include: {
-    supplementTeamProducts: true;
-  };
+    supplementTeamProducts: {
+      select:{
+        status: true,
+        product:{
+          select:{
+            leadTime: true,
+            id: true,
+            name: true
+          }   
+        }
+      }
+    },
+  },
+}>;
+
+export type OrderWithSupplementPayload = Prisma.OrderGetPayload<{
+  select:{
+    id: true,
+    deadline: true,
+    team: {
+      select: {
+        supplementTeamProducts: {
+          select: {
+            product: {
+              select: {
+                leadTime: true,
+              },
+            },
+          },
+        },
+      },
+    }
+  }
 }>;

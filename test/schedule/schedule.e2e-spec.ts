@@ -130,5 +130,15 @@ describe('ScheduleController (e2e)', () => {
       },
       testTime,
     );
+
+    it(
+      '/schedule/create-supplement-orders(GET) should create new orders for suppplement teams',
+      async () => {
+        await request(app.getHttpServer())
+          .get('/schedule/create-supplement-orders')
+          .expect(200);
+      },
+      testTime,
+    );
   });
 });

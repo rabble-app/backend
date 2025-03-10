@@ -103,7 +103,7 @@ describe('PaymentController (e2e)', () => {
       data: {
         producerId,
         name: faker.internet.userName(),
-
+        leadTime:2,
         price: 200,
       },
     });
@@ -114,7 +114,7 @@ describe('PaymentController (e2e)', () => {
       data: {
         producerId,
         name: faker.internet.userName(),
-
+        leadTime:2,
         price: 200,
       },
     });

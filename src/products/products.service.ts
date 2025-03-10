@@ -32,11 +32,12 @@ export class ProductsService {
   }
 
   async getProduct(id: string, teamId = ''): Promise<Product | null> {
-    let orderId = '';
+    let orderId = ''; let orderDeadline: Date
     // get team latest order id
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
+      orderDeadline = result.deadline
     }
     const result = await this.prisma.product.findFirst({
       where: {
@@ -91,6 +92,7 @@ export class ProductsService {
       },
     });
     result['orderId'] = orderId;
+    result['orderDeadline'] = orderDeadline
     return result;
   }
 

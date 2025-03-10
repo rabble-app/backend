@@ -96,93 +96,87 @@ export class ScheduleService {
       if (result && result.length > 0) {
         for (let index = 0; index < result.length; index++) {
           const payment = result[index];
+          const otherNotificationConditions = {
+            userId: payment.userId,
+            orderId: payment.orderId,
+            teamId: payment.order.teamId,
+            notficationToken: payment.user.notificationToken,
+            type: notificationType.PAYMENT,
+          };
           if (
-            payment.order &&
-            payment.order.deadline &&
-            payment.order.deadline.getTime() > new Date().getTime()
+            payment.user.stripeDefaultPaymentMethodId &&
+            payment.user.stripeCustomerId
           ) {
-            const otherNotificationConditions = {
-              userId: payment.userId,
-              orderId: payment.orderId,
-              teamId: payment.order.teamId,
-              notficationToken: payment.user.notificationToken,
-              type: notificationType.PAYMENT,
-            };
-            if (
-              payment.user.stripeDefaultPaymentMethodId &&
-              payment.user.stripeCustomerId
-            ) {
-              // authorize payment for this user
-              setTimeout(async () => {
-                const paymentRecord = await this.handleAuthorizePayments(
-                  payment,
-                );
-                if (!paymentRecord) {
-                  // if the team belongs to a partner
-                  if (payment.order.team.partnerId) {
-                    // search for portion product for this payment
-                    const portionedProducts =
-                      await this.prisma.partitionedProductsBasket.findMany({
-                        where: {
-                          orderId: payment.orderId,
-                        },
-                        include: {
-                          PartitionedProductUsersRecord: {
-                            where: {
-                              userId: payment.userId,
-                            },
+            // authorize payment for this user
+            setTimeout(async () => {
+              const paymentRecord = await this.handleAuthorizePayments(
+                payment,
+              );
+              if (!paymentRecord) {
+                // if the team belongs to a partner
+                if (payment.order.team.partnerId) {
+                  // search for portion product for this payment
+                  const portionedProducts =
+                    await this.prisma.partitionedProductsBasket.findMany({
+                      where: {
+                        orderId: payment.orderId,
+                      },
+                      include: {
+                        PartitionedProductUsersRecord: {
+                          where: {
+                            userId: payment.userId,
                           },
                         },
-                      });
-                    if (portionedProducts && portionedProducts.length > 0) {
-                      portionedProducts.forEach(async (portionedProduct) => {
-                        if (
-                          portionedProduct &&
-                          portionedProduct.PartitionedProductUsersRecord
-                            .length > 0
-                        ) {
-                          // reduce the portion product basket accumulation to signal that there is still space
-                          await this.prisma.partitionedProductsBasket.update({
+                      },
+                    });
+                  if (portionedProducts && portionedProducts.length > 0) {
+                    portionedProducts.forEach(async (portionedProduct) => {
+                      if (
+                        portionedProduct &&
+                        portionedProduct.PartitionedProductUsersRecord
+                          .length > 0
+                      ) {
+                        // reduce the portion product basket accumulation to signal that there is still space
+                        await this.prisma.partitionedProductsBasket.update({
+                          where: {
+                            id: portionedProduct.id,
+                          },
+                          data: {
+                            accumulator: {
+                              decrement:
+                                portionedProduct
+                                  .PartitionedProductUsersRecord[0].quantity,
+                            },
+                          },
+                        });
+                        // remove user record from portion product basket
+                        await this.prisma.partitionedProductUsersRecord.delete(
+                          {
                             where: {
-                              id: portionedProduct.id,
+                              id: portionedProduct
+                                .PartitionedProductUsersRecord[0].id,
                             },
-                            data: {
-                              accumulator: {
-                                decrement:
-                                  portionedProduct
-                                    .PartitionedProductUsersRecord[0].quantity,
-                              },
-                            },
-                          });
-                          // remove user record from portion product basket
-                          await this.prisma.partitionedProductUsersRecord.delete(
-                            {
-                              where: {
-                                id: portionedProduct
-                                  .PartitionedProductUsersRecord[0].id,
-                              },
-                            },
-                          );
-                        }
-                      });
-                    }
+                          },
+                        );
+                      }
+                    });
                   }
-                  // send notification that payment failed
-                  await this.notificationsService.createNotification({
-                    title: 'Payment Failure',
-                    text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
-                    ...otherNotificationConditions,
-                  });
                 }
-              }, 4000 * index);
-            } else {
-              // send notification that user should add default payment method
-              await this.notificationsService.createNotification({
-                title: 'Payment Failure',
-                text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and set a default payment method`,
-                ...otherNotificationConditions,
-              });
-            }
+                // send notification that payment failed
+                await this.notificationsService.createNotification({
+                  title: 'Payment Failure',
+                  text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, please fund your card, you will be removed from the buying team if we can't charge your card`,
+                  ...otherNotificationConditions,
+                });
+              }
+            }, 4000 * index);
+          } else {
+            // send notification that user should add default payment method
+            await this.notificationsService.createNotification({
+              title: 'Payment Failure',
+              text: `We were unable to charge your card for your order with ${payment.order.team.name} buying team, kindly login into the app and set a default payment method`,
+              ...otherNotificationConditions,
+            });
           }
         }
       }

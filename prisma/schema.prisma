@@ -489,6 +489,7 @@ model Order {
   deliveryDate       DateTime?                   @map("delivery_date")
   confirmationStatus OrderConfirmationStatus     @default(PENDING) @map("confirmation_status")
   type               OrderType                   @default(RABBLE)
+  firstDelivery      Boolean                     @default(false)
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
   basket             Basket[]
@@ -602,6 +603,7 @@ model TopUpBasket {
   quantity       Int
   price          Decimal             @default(0) @db.Decimal(9, 2)
   capsulePerDay  Decimal             @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  deliveryDate   DateTime?           @map("delivery_date")
   deliveryStatus TopUpDeliveryStatus @default(PENDING) @map("delivery_status")
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")

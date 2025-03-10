@@ -464,7 +464,18 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findUnique({
       where: buyingTeamWhereUniqueInput,
       include: {
-        supplementTeamProducts: true,
+        supplementTeamProducts: {
+          select:{
+            status: true,
+            product:{
+              select:{
+                leadTime: true,
+                id: true,
+                name: true
+              }   
+            }
+          }
+        },
       },
     });
   }
