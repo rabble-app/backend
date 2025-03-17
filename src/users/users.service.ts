@@ -92,6 +92,11 @@ export class UsersService {
             employee: true,
           },
         },
+        basketsC: {
+          select: {
+            productId: true
+          },
+        }
       },
     });
   }

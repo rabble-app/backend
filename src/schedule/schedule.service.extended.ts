@@ -662,6 +662,7 @@ export class ScheduleServiceExtended {
                 supplementTeamProducts: {
                   select: {
                     foundingMembersDiscount: true,
+                    earlyMembersDiscount: true,
                   },
                 },
               },
@@ -700,6 +701,14 @@ export class ScheduleServiceExtended {
               productPrice -
               (productPrice *
                 +item.product?.supplementTeamProducts?.foundingMembersDiscount) /
+                100;
+          }
+
+          if (member.role === 'EARLY_MEMBER') {
+            productPrice =
+              productPrice -
+              (productPrice *
+                +item.product?.supplementTeamProducts?.earlyMembersDiscount) /
                 100;
           }
   
