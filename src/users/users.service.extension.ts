@@ -159,6 +159,7 @@ export class UsersServiceExtension {
             supplementTeamProducts: {
               select: {
                 foundingMembersDiscount: true,
+                earlyMembersDiscount: true,
                 status: true,
                 orderTreashold: true,
               },
@@ -219,6 +220,7 @@ export class UsersServiceExtension {
             supplementTeamProducts: {
               select: {
                 foundingMembersDiscount: true,
+                earlyMembersDiscount: true,
                 status: true,
                 orderTreashold: true,
               },

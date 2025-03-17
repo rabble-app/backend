@@ -76,6 +76,7 @@ export class ProductsService {
           select: {
             orderTreashold: true,
             foundingMembersDiscount: true,
+            earlyMembersDiscount: true,
             status: true,
             team: {
               select: {
@@ -367,8 +368,21 @@ export class ProductsService {
 
   async getSupplementProducts(
     limit: number,
+    userId: string = null,
   ): Promise<Partial<SupplementTeamProducts>[] | null> {
-    return await this.prisma.supplementTeamProducts.findMany({
+    let userPurchasedProducts = [];
+    if (userId) {
+      userPurchasedProducts = await this.prisma.basketC.findMany({
+        where: {
+          userId,
+        },
+        select: {
+          productId: true,
+        },
+      });
+    }
+
+    const allProducts = await this.prisma.supplementTeamProducts.findMany({
       orderBy: {
         createdAt: 'desc',
       },
@@ -378,6 +392,7 @@ export class ProductsService {
         status: true,
         orderTreashold: true,
         foundingMembersDiscount: true,
+        earlyMembersDiscount: true,
         product: {
           select: {
             id: true,
@@ -414,6 +429,14 @@ export class ProductsService {
       },
       ...(limit && { take: +limit }),
     });
+
+    // return unpurchased products
+    const unpurchasedProducts = allProducts.filter(
+      (product) => !userPurchasedProducts.some((p) => p.productId === product.productId),
+    );
+      
+
+    return unpurchasedProducts;
   }
 
   async getSupplementProductsTags(): Promise<Partial<SupplementTags>[] | null> {
