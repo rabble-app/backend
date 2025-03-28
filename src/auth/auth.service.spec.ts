@@ -12,6 +12,7 @@ import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
 import { RollbarModule } from '../utils/rollbar.module';
 import { ReferralsService } from '../referrals/referrals.service';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -28,6 +29,7 @@ describe('AuthService', () => {
         TeamsService,
         ProductsService,
         ReferralsService,
+        PaymentServiceExtension
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

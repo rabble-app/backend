@@ -26,7 +26,7 @@ export class ReferralsService {
     @Inject('LOGGER') private readonly logger: Logger,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
   ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+    this.stripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
   }
@@ -49,7 +49,7 @@ export class ReferralsService {
     }
     return code;
   }
-  async handleReferral(metadata: Stripe.Metadata) {
+  async handleReferral(metadata: Stripe.Metadata, amount: number) {
     const { order_id, user_id } = metadata;
     const user = await this.prisma.user.findUnique({
       where: { id: user_id },
@@ -59,11 +59,11 @@ export class ReferralsService {
       this.rollbar.error('PAYMENT WEBHOOK: User not found: %o', metadata);
       return;
     }
-    const firstTimePurchase = await this.isFirstTimePurchase(user_id, metadata);
+    const firstTimePurchase = await this.isFirstTimePurchase(user_id, metadata, amount);
     if (!firstTimePurchase) {
       return;
     }
-    const bonusAmount = this.calculateReferralBonus(+firstTimePurchase.amount);
+    const bonusAmount = this.calculateReferralBonus(+firstTimePurchase);
     this.logger.info(
       'PAYMENT WEBHOOK: Calculated referral bonus: %s',
       bonusAmount,
@@ -85,10 +85,6 @@ export class ReferralsService {
 
     if (!user.referrerId) {
       this.logger.info('PAYMENT WEBHOOK: User has no referrerId: %o', metadata);
-      this.rollbar.info(
-        'PAYMENT WEBHOOK: User has no referrerId: %o',
-        metadata,
-      );
       return;
     }
     const sponsor = await this.prisma.user.findUnique({
@@ -162,7 +158,7 @@ export class ReferralsService {
     );
   }
 
-  async isFirstTimePurchase(userId: string, metadata: Stripe.Metadata) {
+  async isFirstTimePurchase(userId: string, metadata: Stripe.Metadata, amount: number) {
     const payments = await this.prisma.payment.findMany({
       where: {
         userId,
@@ -175,12 +171,7 @@ export class ReferralsService {
         userId,
         metadata,
       );
-      this.rollbar.info(
-        'PAYMENT WEBHOOK: User has no payments: %s: %o',
-        userId,
-        metadata,
-      );
-      return false;
+      return amount;
     }
     if (payments.length > 1) {
       this.logger.info(
@@ -195,7 +186,7 @@ export class ReferralsService {
       );
       return false;
     }
-    return payments[0];
+    return payments[0].amount;
   }
 
   public poundsToCC(pounds: number) {

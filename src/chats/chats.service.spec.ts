@@ -13,6 +13,7 @@ import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
 import { RollbarModule } from '../utils/rollbar.module';
 import { ReferralsService } from '../referrals/referrals.service';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 describe('ChatsService', () => {
   let service: ChatsService;
 
@@ -30,6 +31,7 @@ describe('ChatsService', () => {
         ProductsService,
         JwtService,
         ReferralsService,
+        PaymentServiceExtension
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

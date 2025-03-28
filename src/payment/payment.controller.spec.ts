@@ -13,6 +13,7 @@ import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
 import { RollbarModule } from '../utils/rollbar.module';
 import { ReferralsService } from '../referrals/referrals.service';
+import { PaymentServiceExtension } from './payment.service.extension';
 
 describe('PaymentController', () => {
   let controller: PaymentController;
@@ -31,6 +32,7 @@ describe('PaymentController', () => {
         AuthService,
         JwtService,
         ReferralsService,
+        PaymentServiceExtension
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

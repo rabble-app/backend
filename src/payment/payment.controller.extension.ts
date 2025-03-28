@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { IAPIResponse } from '../lib/types';
@@ -29,6 +31,7 @@ import { ReturnIntentDto } from './dto/return-intent.dto';
 import { AuthGuard } from '../../src/auth/auth.guard';
 import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
+import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -56,11 +59,17 @@ export class PaymentControllerExtension {
     required: true,
     description: 'The stripe customer id',
   })
+  @ApiQuery({
+    name: 'isSupplementApp',
+    required: true,
+    description: 'Specifies that this is coming from supplement App',
+  })
   async userPaymentOptions(
     @Param('id') id: string,
+    @Query('isSupplementApp') isSupplementApp: boolean,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.getUserPaymentOptions(id);
+    const result = await this.paymentServiceExtension.getUserPaymentOptions(id, isSupplementApp);
     return formatResponse(
       result,
       res,
@@ -117,11 +126,17 @@ export class PaymentControllerExtension {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiOkResponse({ description: 'Payment intent created successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiQuery({
+    name: 'isSupplementApp',
+    required: true,
+    description: 'Specifies that this is coming from supplement App',
+  })
   async createIntent(
     @Body() createIntentDto: CreateIntentDto,
+    @Query('isSupplementApp') isSupplementApp: boolean,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntent(createIntentDto);
+    const result = await this.paymentService.createIntent(createIntentDto, false, isSupplementApp);
     return formatResponse(
       {
         paymentIntentId: result?.id,
@@ -322,6 +337,69 @@ export class PaymentControllerExtension {
       HttpStatus.OK,
       false,
       'Payment intent created successfully',
+    );
+  }
+
+  /**
+   * Create Payment intent
+   * @param {Response} res - The payload.
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Post('supplement/join-team')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'User joined team successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async joinSupplementTeam(
+    @Res({ passthrough: true }) res: Response,
+    @Body() joinSupplementTeamDto: JoinSupplementTeamDto,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentService.joinSupplementTeam(joinSupplementTeamDto);
+    if (result == 1) {
+      return formatResponse(
+        'User not found',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Joining team failed',
+      );
+    }
+    if (result == 2 || result == 3) {
+      return formatResponse(
+        'User could not be charged',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Payment failed',
+      );
+    }
+
+    if (result == 4) {
+      return formatResponse(
+        'Could not add user to team',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Joining team failed',
+      );
+    }
+
+    if (result == 5) {
+      return formatResponse(
+        'Could not store user basket',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Joining team failed',
+      );
+    }
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User joined team successfully',
     );
   }
 }

@@ -8,6 +8,7 @@ import {
   Payment,
   Prisma,
   ProductPaymentStatus,
+  SupplementTeamStatus,
 } from '@prisma/client';
 import {
   HttpException,
@@ -23,6 +24,7 @@ import {
   IPayment,
   OrderWithSupplementPayload,
   PaymentStatus,
+  Status,
   notificationType,
 } from '../lib/types';
 import { PrismaService } from '../prisma.service';
@@ -35,10 +37,13 @@ import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
 import { add } from 'date-fns';
+import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
+import { PaymentServiceExtension } from './payment.service.extension';
 
 @Injectable()
 export class PaymentService {
   private readonly stripe: Stripe;
+  private readonly supplementStripe: Stripe;
   constructor(
     @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
@@ -51,8 +56,13 @@ export class PaymentService {
     private readonly productsService: ProductsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
+    @Inject(forwardRef(() => PaymentServiceExtension))
+    private readonly paymentServiceExtension: PaymentServiceExtension,
   ) {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
+    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
   }
@@ -60,7 +70,9 @@ export class PaymentService {
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
     userId: string,
+    isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
+    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
     // attach payment method to user
     this.logger.log('info', 'Attaching payment method to user %o', {
       userId,
@@ -68,7 +80,7 @@ export class PaymentService {
       stripeCustomerId: addPaymentCardDto.stripeCustomerId,
     });
 
-    const result = await this.stripe.paymentMethods.attach(
+    const result = await stripe.paymentMethods.attach(
       addPaymentCardDto.paymentMethodId,
       {
         customer: addPaymentCardDto.stripeCustomerId,
@@ -101,8 +113,10 @@ export class PaymentService {
 
   async removeCustomerCard(
     removePaymentCardDto: RemovePaymentCardDto,
+    isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
-    await this.stripe.paymentMethods.detach(
+    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
+    await stripe.paymentMethods.detach(
       removePaymentCardDto.paymentMethodId,
     );
 
@@ -119,7 +133,7 @@ export class PaymentService {
   }
 
   async createIntentForCardSetup(): Promise<object | null> {
-    return await this.stripe.setupIntents.create({
+    return await this.supplementStripe.setupIntents.create({
       payment_method_types: ['card'],
       // customer: customerId,
       // confirm: true,
@@ -209,7 +223,7 @@ export class PaymentService {
       orderBy: {
         createdAt: 'desc',
       },
-      select:{
+      select: {
         id: true,
         deadline: true,
         team: {
@@ -292,8 +306,10 @@ export class PaymentService {
   async createIntent(
     createIntentData: ICreateIntent,
     offline = false,
+    isSupplementApp = false
   ): Promise<any | null> {
     try {
+      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const parameters = {
         amount: Math.round(createIntentData.amount * 100),
         currency: createIntentData.currency,
@@ -310,7 +326,7 @@ export class PaymentService {
       } else {
         parameters['setup_future_usage'] = 'off_session';
       }
-      const paymentIntent = await this.stripe.paymentIntents.create({
+      const paymentIntent = await stripe.paymentIntents.create({
         ...parameters,
         capture_method: 'manual',
         use_stripe_sdk: true,
@@ -579,7 +595,7 @@ export class PaymentService {
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.price,
             capsulePerDay: addSingleBasketDto.capsulePerDay,
-            deliveryDate: add(new Date(),{ weeks: team.supplementTeamProducts.product.leadTime})
+            deliveryDate: add(new Date(), { weeks: team.supplementTeamProducts.product.leadTime })
           },
         });
       }
@@ -682,7 +698,7 @@ export class PaymentService {
       distinct: ['stripeDefaultPaymentMethodId'],
     });
     for (const user of users) {
-      const paymentMethod = await this.stripe.paymentMethods.retrieve(
+      const paymentMethod = await this.supplementStripe.paymentMethods.retrieve(
         user.stripeDefaultPaymentMethodId,
       );
       this.logger.info(`Seeding payment method for user ${user.id}`);
@@ -696,4 +712,38 @@ export class PaymentService {
       });
     }
   }
+
+  async joinSupplementTeam(joinSupplementTeamDto: JoinSupplementTeamDto) {
+    let orderId = '';
+    if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
+      // get the user stripe id
+      const userInfo = await this.userService.findUser({ id: joinSupplementTeamDto.userId });
+      if (!userInfo.stripeCustomerId) return 1
+      // create payment intent
+      const paymentIntent = await this.createIntent({ amount: joinSupplementTeamDto.amount, currency: joinSupplementTeamDto.currency, paymentMethodId: joinSupplementTeamDto.paymentMethodId, customerId: userInfo.stripeCustomerId }, false, true)
+      if (!paymentIntent || paymentIntent.status != 'requires_capture') return 2
+      // charge the user
+      const paymentCaptureResult = await this.paymentServiceExtension.handleSupplementPaymentCapture({paymentIntentId: paymentIntent.id, teamId: joinSupplementTeamDto.teamId, userId: joinSupplementTeamDto.userId, amount: joinSupplementTeamDto.amount })
+      if(!paymentCaptureResult) return 3
+      orderId = paymentCaptureResult.orderId
+    }
+    // add to team --> we need a utility function to get the member status
+    const addToTeam = await this.teamsService.addTeamMember({teamId: joinSupplementTeamDto.teamId, userId: joinSupplementTeamDto.userId, status: Status.APPROVED})
+    if (!addToTeam) return 4
+
+    // store the basket
+    const basket = await this.addToBasket({
+      orderId,
+      teamId: joinSupplementTeamDto.teamId,
+      userId: joinSupplementTeamDto.userId,
+      productId: joinSupplementTeamDto.productId,
+      quantity: joinSupplementTeamDto.quantity,
+      price: joinSupplementTeamDto.price,
+      capsulePerDay: joinSupplementTeamDto.capsulePerDay,
+      topupQuantity: joinSupplementTeamDto.topupQuantity,
+    });
+    if (!basket) return 5
+    return joinSupplementTeamDto
+  }
+
 }

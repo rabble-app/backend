@@ -26,12 +26,16 @@ import { parse } from 'postcode';
 @Injectable()
 export class UsersService {
   private readonly stripe: Stripe;
+  private readonly supplementStripe: Stripe;
   constructor(
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
   ) {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
+    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
   }
@@ -699,12 +703,13 @@ export class UsersService {
   }: {
     phone?: string;
     email?: string;
-  }): Promise<{ id: string } | null> {
+  }, isSupplementApp = false): Promise<{ id: string } | null> {
     try {
+      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const params: Stripe.CustomerCreateParams = {};
       if (email) params['email'] = email;
       if (phone) params['phone'] = phone;
-      const response = await this.stripe.customers.create(params);
+      const response = await stripe.customers.create(params);
       return {
         id: response.id,
       };
@@ -717,12 +722,14 @@ export class UsersService {
       firstName: string;
       lastName: string;
     },
+    isSupplementApp = false,
   ): Promise<{ id: string } | null> {
     try {
+      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const params: Stripe.CustomerUpdateParams = {
         name: `${data.lastName} ${data.firstName}`,
       };
-      return await this.stripe.customers.update(customerId, params);
+      return await stripe.customers.update(customerId, params);
     } catch (error) {}
   }
 

@@ -14,6 +14,7 @@ import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
 import { RollbarModule } from '../utils/rollbar.module';
 import { ReferralsService } from '../referrals/referrals.service';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 
 describe('ChatsController', () => {
   let controller: ChatsController;
@@ -33,6 +34,8 @@ describe('ChatsController', () => {
         ProductsService,
         JwtService,
         ReferralsService,
+        PaymentServiceExtension,
+  
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();
