@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   Inject,
+  Query,
 } from '@nestjs/common';
 import { Logger } from 'winston';
 import { PaymentService } from './payment.service';
@@ -19,6 +20,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { AddPaymentCardDto } from './dto/add-payment-card.dto';
@@ -56,9 +58,11 @@ export class PaymentController {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Card added successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiQuery({ name: 'isSupplementApp', type: 'boolean' })
   async addPaymentCard(
     @Body() addPaymentCardDto: AddPaymentCardDto,
     @Res({ passthrough: true }) res: Response,
+    @Query('isSupplementApp') isSupplementApp: boolean,
     @Request() req,
   ): Promise<IAPIResponse> {
     this.logger.info('Adding payment card for user %o', {
@@ -68,6 +72,7 @@ export class PaymentController {
     const result = await this.paymentService.addCustomerCard(
       addPaymentCardDto,
       req.user?.id ?? req.user?.userId,
+      isSupplementApp,
     );
     return formatResponse(
       result,
@@ -90,12 +95,15 @@ export class PaymentController {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiCreatedResponse({ description: 'Card added successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiQuery({ name: 'isSupplementApp', type: 'boolean' })
   async removePaymentCard(
     @Body() removePaymentCardDto: RemovePaymentCardDto,
+    @Query('isSupplementApp') isSupplementApp: boolean,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const result = await this.paymentService.removeCustomerCard(
       removePaymentCardDto,
+      isSupplementApp,
     );
     return formatResponse(
       result,

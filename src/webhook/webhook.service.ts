@@ -14,21 +14,28 @@ export class WebhookService {
     private readonly referralsService: ReferralsService,
     private readonly prisma: PrismaService,
   ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
+    this.stripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
   }
 
+  /**
+   * Constructs a Stripe webhook event from the given payload and signature
+   * Handles 'payment_intent.succeeded' events by logging and processing referrals
+   * 
+   * @param signature The Stripe webhook signature for verification
+   * @param payload The raw webhook payload buffer
+   * @returns void
+   * for local testing use this env value SUPPLEMENT_STRIPE_LOCAL_WEBHOOK_SECRET
+   */
   public async constructEventFromPayload(signature: string, payload: Buffer) {
-    const webhookSecret = this.parameters.STRIPE_WEBHOOK_SECRET;
-
+    const webhookSecret = this.parameters.SUPPLEMENT_STRIPE_WEBHOOK_SECRET;
     try {
       const event = this.stripe.webhooks.constructEvent(
         payload,
         signature,
         webhookSecret,
       );
-
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntentSucceeded = event.data
           .object as Stripe.PaymentIntent;
@@ -38,9 +45,11 @@ export class WebhookService {
         );
         await this.referralsService.handleReferral(
           paymentIntentSucceeded.metadata,
+          paymentIntentSucceeded.amount_received / 100,
         );
       }
     } catch (error) {
+      console.log(error)
       return;
     }
   }

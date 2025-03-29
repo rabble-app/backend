@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { Basket, BasketC, Payment, Prisma } from '@prisma/client';
-import { Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth, PaymentStatus } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
@@ -13,7 +13,9 @@ import { add } from 'date-fns';
 @Injectable()
 export class PaymentServiceExtension {
   private readonly stripe: Stripe;
+  private readonly supplementStripe: Stripe;
   constructor(
+    @Inject(forwardRef(() => PaymentService))
     private readonly paymentService: PaymentService,
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
@@ -23,26 +25,34 @@ export class PaymentServiceExtension {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
+    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
   }
 
-  async getUserPaymentOptions(id: string): Promise<object | null> {
-    const result = await this.stripe.customers.listPaymentMethods(id);
+  async getUserPaymentOptions(id: string, isSupplementApp = false): Promise<object | null> {;
+    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
+    const result = await stripe.customers.listPaymentMethods(id);
+
     const unique = [
       ...new Map(result.data.map((m) => [m.card.last4, m])).values(),
     ];
     return unique;
   }
 
-  async removePaymentOption(id: string): Promise<object | null> {
-    return await this.stripe.paymentMethods.detach(id);
+  async removePaymentOption(id: string, isSupplementApp = false): Promise<object | null> {
+    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
+    return await stripe.paymentMethods.detach(id);
   }
 
   async captureFund(
     paymentIntentId: string,
     options: Stripe.PaymentIntentCaptureParams = null,
+    isSupplementApp = false,
   ): Promise<object | null> {
     try {
-      const result = await this.stripe.paymentIntents.capture(
+      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
+      const result = await stripe.paymentIntents.capture(
         paymentIntentId,
         options,
       );
@@ -140,6 +150,7 @@ export class PaymentServiceExtension {
 
   async schedulePaymentAuthorization(
     iPaymentAuth: IPaymentAuth,
+    isSupplementApp = false,
   ): Promise<Payment> {
     try {
       const paymentIntent = await this.paymentService.createIntent(
@@ -150,6 +161,7 @@ export class PaymentServiceExtension {
           paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
         },
         true,
+        isSupplementApp
       );
 
       if (!paymentIntent || paymentIntent.status != 'requires_capture') {
@@ -183,8 +195,10 @@ export class PaymentServiceExtension {
   async updatePaymentIntent(
     paymentIntentId: string,
     metadata: Stripe.MetadataParam,
+    isSupplementApp = false,
   ): Promise<object | null> {
-    return await this.stripe.paymentIntents.update(paymentIntentId, {
+    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
+    return await stripe.paymentIntents.update(paymentIntentId, {
       metadata,
     });
   }
@@ -202,7 +216,7 @@ export class PaymentServiceExtension {
     await this.updatePaymentIntent(captureIntentDto.paymentIntentId, {
       order_id: orderId,
       user_id: captureIntentDto.userId,
-    });
+    }, true);
     const applyCouponResult = await this.referralsService.applyCoupon(
       captureIntentDto.userId,
       captureIntentDto.amount * 100,
@@ -229,6 +243,7 @@ export class PaymentServiceExtension {
           ...(amountOff && { amount_off: amountOff }),
         },
       },
+      true
     );
     // check if payment was successful
     if (captureResult) {
@@ -300,7 +315,7 @@ export class PaymentServiceExtension {
     );
 
     // capture payment
-    const captureResult = await this.captureFund(topUpDto.paymentIntentId);
+    const captureResult = await this.captureFund(topUpDto.paymentIntentId, null, true);
 
     // check if payment was successful
     if (captureResult) {
@@ -313,7 +328,7 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
-          deliveryDate: add(new Date(),{ weeks: latestOrder.team.supplementTeamProducts?.product?.leadTime || 1})
+          deliveryDate: add(new Date(), { weeks: latestOrder.team.supplementTeamProducts?.product?.leadTime || 1 })
         },
       });
       // record payment

@@ -165,7 +165,7 @@ export class AuthService {
       // create user stripe account
       const stripeResponse = await this.userService.createStripeCustomer({
         email: createUserDto.email,
-      });
+      }, true);
       stripeCustomerId = stripeResponse.id;
     }
 

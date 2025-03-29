@@ -270,7 +270,7 @@ describe('ReferralsService', () => {
       });
       mockPrismaService.payment.findMany.mockResolvedValueOnce([mockPayment]);
 
-      await service.handleReferral(mockMetadata);
+      await service.handleReferral(mockMetadata, mockPayment.amount);
 
       expect(mockUsersService.updateUser).toHaveBeenCalled();
       expect(mockPrismaService.bonus.create).toHaveBeenCalledTimes(2); // One for signup, one for referral
