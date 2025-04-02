@@ -372,6 +372,7 @@ export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
     supplementTeamProducts: {
       select:{
         status: true,
+        orderTreashold: true,
         product:{
           select:{
             leadTime: true,

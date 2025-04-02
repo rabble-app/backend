@@ -1,3 +1,5 @@
+import { MembershipStatus } from "@prisma/client";
+
 export const teamImages = {
   Alcohol: [
     'https://rabble-dev1.s3.us-east-2.amazonaws.com/teams/wine/image+20wine.png',
@@ -64,3 +66,15 @@ export const getFileBasePath = (location: string) => {
       return isTestEnv ? '../assets' : '../../assets';
   }
 };
+
+export const getTeamMembershipRole = (teamMemberCount: number,isSupplementTeam:boolean, orderThreshold?:number, assignedRole?: MembershipStatus) =>{
+  if(assignedRole) return assignedRole;
+  if(isSupplementTeam && orderThreshold){
+      const foundingMemberQuota = 0.2 * orderThreshold;
+      const earlyMemberQuota = 0.3 * orderThreshold;
+      if(foundingMemberQuota > teamMemberCount) return MembershipStatus.FOUNDING_MEMBER
+      
+      if(teamMemberCount >= foundingMemberQuota && teamMemberCount< foundingMemberQuota + earlyMemberQuota) return MembershipStatus.EARLY_MEMBER
+  }
+  return MembershipStatus.MEMBER
+}
