@@ -33,7 +33,8 @@
     "studio": "npx prisma studio"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
+    "schema": "prisma/schema.prisma"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.341.0",
@@ -45,7 +46,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/platform-express": "^10.3.8",
     "@nestjs/swagger": "^7.3.1",
-    "@prisma/client": "^5.13.0",
+    "@prisma/client": "5.10.2",
     "@trycourier/courier": "^5.6.0",
     "@twilio/conversations": "^2.4.0",
     "@vendia/serverless-express": "^4.10.1",
@@ -115,7 +116,8 @@
     "tsconfig-paths": "4.1.1",
     "typescript": "^4.7.4",
     "webpack": "^5.79.0",
-    "webpack-node-externals": "^3.0.0"
+    "webpack-node-externals": "^3.0.0",
+    "prisma": "5.10.2"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -135,6 +137,6 @@
     "testEnvironment": "node"
   },
   "engines": {
-    "node": "18.15.0"
+    "node": ">=18.15.0"
   }
 }

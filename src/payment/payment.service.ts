@@ -6,6 +6,7 @@ import {
   BasketC,
   Order,
   Payment,
+  PaymentStatus,
   Prisma,
   ProductPaymentStatus,
   SupplementTeamStatus,
@@ -23,7 +24,6 @@ import {
   IOrder,
   IPayment,
   OrderWithSupplementPayload,
-  PaymentStatus,
   Status,
   notificationType,
 } from '../lib/types';

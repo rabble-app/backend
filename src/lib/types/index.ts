@@ -1,4 +1,4 @@
-import { OrderType, Prisma, OrderStatus } from '@prisma/client';
+import { OrderType, Prisma, OrderStatus, PaymentStatus, PaymentType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Request } from 'express';
 
@@ -38,14 +38,6 @@ export enum ProductType {
   PORTIONED_DYNAMIC_PRODUCT = 'PORTIONED_DYNAMIC_PRODUCT',
 }
 
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  INTENT_CREATED = 'INTENT_CREATED',
-  CAPTURED = 'CAPTURED',
-  FAILED = 'FAILED',
-  COUPON_USED = 'COUPON_USED',
-}
-
 export enum Role {
   USER = 'USER',
   PRODUCER = 'PRODUCER',
@@ -77,6 +69,10 @@ export interface IPayment {
   amount: number;
   paymentIntentId?: string;
   status: PaymentStatus;
+  type?: PaymentType;
+  expiryDate?: Date;
+  discount?: number;
+  coupons?: string;
 }
 
 export enum TeamMemberShip {

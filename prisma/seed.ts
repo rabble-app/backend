@@ -2746,13 +2746,13 @@ async function main() {
   const supplementProduct1 = await prisma.product.upsert({
     where: {
       name_unique_producer: {
-        name: 'TRAACS™ MAGNESIUM BISGLYCINATE',
+        name: 'TRAACS MAGNESIUM BISGLYCINATE',
         producerId: supplememtProducer2.id,
       },
     },
     update: {},
     create: {
-      name: 'TRAACS™ MAGNESIUM BISGLYCINATE',
+      name: 'TRAACS MAGNESIUM BISGLYCINATE',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/MB+without+Shadow.png',
       description:
@@ -2955,13 +2955,13 @@ async function main() {
   const supplementProduct2 = await prisma.product.upsert({
     where: {
       name_unique_producer: {
-        name: 'CREAPURE™ CREATINE MONOHYDRATE',
+        name: 'CREAPURE CREATINE MONOHYDRATE',
         producerId: supplememtProducer3.id,
       },
     },
     update: {},
     create: {
-      name: 'CREAPURE™ CREATINE MONOHYDRATE',
+      name: 'CREAPURE CREATINE MONOHYDRATE',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/CM+without+Shadow.png',
       description:
@@ -3146,13 +3146,13 @@ async function main() {
   const supplementProduct3 = await prisma.product.upsert({
     where: {
       name_unique_producer: {
-        name: 'KANEKA™ UBIQUINOL',
+        name: 'KANEKA UBIQUINOL',
         producerId: supplememtProducer1.id,
       },
     },
     update: {},
     create: {
-      name: 'KANEKA™ UBIQUINOL',
+      name: 'KANEKA UBIQUINOL',
       imageUrl:
         'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/CO+without+Shadow.png',
       description:

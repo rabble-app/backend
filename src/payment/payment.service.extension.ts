@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
-import { Basket, BasketC, Payment, Prisma } from '@prisma/client';
+import { Basket, BasketC, Payment, Prisma, PaymentType, PaymentStatus } from '@prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { IPaymentAuth, PaymentStatus } from '../lib/types';
+import { IPaymentAuth } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
@@ -9,7 +9,7 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
-import { add } from 'date-fns';
+import { add, addYears } from 'date-fns';
 @Injectable()
 export class PaymentServiceExtension {
   private readonly stripe: Stripe;
@@ -328,7 +328,7 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
-          deliveryDate: add(new Date(), { weeks: latestOrder.team.supplementTeamProducts?.product?.leadTime || 1 })
+          deliveryDate: add(new Date(), { weeks: latestOrder.team.supplementTeamProducts?.product?.leadTime ?? 1 })
         },
       });
       // record payment
@@ -342,6 +342,93 @@ export class PaymentServiceExtension {
       return await this.paymentService.recordPayment(paymentData);
     } else {
       return null;
+    }
+  }
+
+  async handleYearlySubscription(userId: string): Promise<Payment | null> {
+    try {
+      // Get user's default payment method
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { stripeDefaultPaymentMethodId: true, stripeCustomerId: true }
+      });
+      console.log('user', user) 
+
+      if (!user?.stripeDefaultPaymentMethodId || !user?.stripeCustomerId) {
+        return null;
+      }
+
+      // Create payment intent for subscription
+      const paymentIntent = await this.paymentService.createIntent(
+        {
+          amount: 28, // £28 yearly subscription
+          currency: 'gbp',
+          customerId: user.stripeCustomerId,
+          paymentMethodId: user.stripeDefaultPaymentMethodId,
+        },
+        true,
+        true // isSupplementApp
+      );
+
+      if (!paymentIntent || paymentIntent.status !== 'requires_capture') {
+        return null;
+      }
+
+      // Capture the payment
+      const captureResult = await this.captureFund(paymentIntent.id, null, true);
+      if (!captureResult) {
+        return null;
+      }
+
+      // Record the subscription payment
+      const paymentData = {
+        userId,
+        amount: 28,
+        paymentIntentId: paymentIntent.id,
+        status: PaymentStatus.CAPTURED,
+        type: PaymentType.YEARLY_SUBSCRIPTION,
+        expiryDate: addYears(new Date(), 1),
+      };
+
+      return await this.paymentService.recordPayment(paymentData);
+    } catch (error) {
+      console.error('Error handling yearly subscription:', error);
+      return null;
+    }
+  }
+
+  async checkUserSubscriptionStatus(userId: string): Promise<boolean> {
+    try {
+      // Get user's successful payments count
+      const successfulPayments = await this.findPayments({
+        userId,
+        // status should be captured or intent created
+        status: {
+          in: [PaymentStatus.CAPTURED, PaymentStatus.COUPON_USED]
+        },
+        type: PaymentType.OTHERS,
+      });
+
+      // If user has less than 2 successful payments, no subscription needed
+      if (!successfulPayments || successfulPayments.length < 2) {
+        return true;
+      }
+
+      // Check for active subscription
+      const activeSubscription = await this.findPayments({
+        userId,
+        status: PaymentStatus.CAPTURED,
+        type: PaymentType.YEARLY_SUBSCRIPTION,
+        expiryDate: {
+          gt: new Date(),
+        },
+      });
+
+      // Return true only if there is an active subscription
+      return activeSubscription && activeSubscription.length > 0;
+    } catch (error) {
+      this.logger.error('Error checking subscription status:', error);
+      return false;
     }
   }
 }
