@@ -311,6 +311,7 @@ export class ScheduleController {
   ): Promise<IAPIResponse> {
     const result =
       await this.scheduleServiceExtended.createSupplementOrders();
+      
     return formatResponse(
       result,
       res,

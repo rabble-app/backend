@@ -5,10 +5,9 @@ import {
   IOrder,
   IPricePlan,
   IScheduleTeam,
-  PaymentStatus,
   notificationType,
 } from '../lib/types';
-import { OrderStatus, OrderType } from '@prisma/client';
+import { OrderStatus, OrderType, PaymentStatus } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -24,6 +23,7 @@ import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { setTimeout } from 'timers';
 import { currentDate, targetQuarterDate, upperQuarterDate } from '../utils/date';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -36,6 +36,7 @@ export class ScheduleServiceExtended {
     private insightsService: InsightsService,
     private qRCodeService: QRCodeService, 
     private readonly teamsService: TeamsService,
+    private readonly paymentServiceExtension: PaymentServiceExtension,
   ) {}
 
   async processCompleteOrders(
@@ -69,7 +70,10 @@ export class ScheduleServiceExtended {
         }
       });
       return true;
-    } catch (error) {}
+    } catch (error) {
+      // log error
+      console.log(error);
+    }
   }
 
   async createNewOrder(team: IScheduleTeam) {
@@ -95,7 +99,10 @@ export class ScheduleServiceExtended {
       return await this.prisma.order.create({
         data: orderObject,
       });
-    } catch (error) {}
+    } catch (error) {
+      // log error
+      console.log(error);
+    }
   }
 
   async createUserBasket(teamId: string, newOrderId: string) {
@@ -208,7 +215,10 @@ export class ScheduleServiceExtended {
           }
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      // log error
+      console.log(error);
+    }
   }
 
   async getFullPendingOrders() {
@@ -644,6 +654,18 @@ export class ScheduleServiceExtended {
   
       // get their basket
       for (const member of teamMembers) {
+        // Check subscription status
+        const hasActiveSubscription = await this.paymentServiceExtension.checkUserSubscriptionStatus(member.userId);
+        if (!hasActiveSubscription) {
+          // Try to charge for subscription
+          const subscriptionPayment = await this.paymentServiceExtension.handleYearlySubscription(member.userId);
+          
+          if (!subscriptionPayment) {
+            console.log('we were not able to charge the annual subscription')
+            // Skip this user if subscription payment fails
+            continue;
+          }
+        }
         // find the basket for the member
         const basket = await this.prisma.basketC.findMany({
           where: {

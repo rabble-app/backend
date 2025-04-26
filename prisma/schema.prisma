@@ -625,6 +625,8 @@ model Payment {
   status          PaymentStatus @default(PENDING)
   discount        Decimal       @default(0) @db.Decimal(9, 2)
   coupons         String?       @map("coupons")
+  type            PaymentType   @default(OTHERS)
+  expiryDate      DateTime?     @map("expiry_date")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   order           Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -1019,4 +1021,9 @@ enum OrderType {
 enum TopUpDeliveryStatus {
   PENDING
   DELIVERED
+}
+
+enum PaymentType {
+  YEARLY_SUBSCRIPTION
+  OTHERS
 }

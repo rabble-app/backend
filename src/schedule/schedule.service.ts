@@ -4,14 +4,13 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentService } from '../payment/payment.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { PrismaService } from '../prisma.service';
-import { ProductPaymentStatus } from '@prisma/client';
+import { PaymentStatus, ProductPaymentStatus } from '@prisma/client';
 import { ScheduleServiceExtended } from './schedule.service.extended';
 import { TeamsService } from '../../src/teams/teams.service';
 import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
 import { UsersService } from '../../src/users/users.service';
 import {
   IScheduleTeam,
-  PaymentStatus,
   PaymentWithUserInfo,
   notificationType,
 } from '../lib/types';
@@ -380,7 +379,10 @@ export class ScheduleService {
           );
         }
       }
-    } catch (error) { }
+    } catch (error) {
+      // log error
+      console.log(error);
+    }
   }
 
   async processPendingOrders(pendingOrders: Array<{ id: string }>) {
@@ -504,75 +506,80 @@ export class ScheduleService {
   }
 
   async handlePaymentMetaDataUpdate() {
-    const payments = await this.scheduleServiceExtended.getLatestPayments();
-    if (payments && payments.length > 0) {
-      payments.forEach(async (payment) => {
-        let formattedProducts: {
-          name: string;
-          quantity: number;
-          retail_price: Decimal;
-          wholesale_price: Decimal;
-          vat_rate: Decimal;
-          retail_price_vat: Decimal;
-          wholesale_price_vat: Decimal;
-        }[];
-        // get user products details and save it with other information to the metadata
-        let totalTax: Decimal = new Decimal(0.0);
-        const userProducts = await this.prisma.basket.findMany({
-          where: {
-            userId: payment.userId,
-            orderId: payment.orderId,
-          },
-          select: {
-            product: {
-              select: {
-                name: true,
-                wholesalePrice: true,
-                vat: true,
-              },
+    try {
+      const payments = await this.scheduleServiceExtended.getLatestPayments();
+      if (payments && payments.length > 0) {
+        payments.forEach(async (payment) => {
+          let formattedProducts: {
+            name: string;
+            quantity: number;
+            retail_price: Decimal;
+            wholesale_price: Decimal;
+            vat_rate: Decimal;
+            retail_price_vat: Decimal;
+            wholesale_price_vat: Decimal;
+          }[];
+          // get user products details and save it with other information to the metadata
+          let totalTax: Decimal = new Decimal(0.0);
+          const userProducts = await this.prisma.basket.findMany({
+            where: {
+              userId: payment.userId,
+              orderId: payment.orderId,
             },
-            price: true,
-            quantity: true,
-          },
-        });
-        if (userProducts && userProducts.length > 0) {
-          formattedProducts = userProducts.map((item) => {
-            const retailTax = new Decimal(
-              (+item.price * item.quantity * +item.product.vat) / 100,
-            );
-            const wholesaleTax = new Decimal(
-              (+item.product.wholesalePrice *
-                item.quantity *
-                +item.product.vat) /
-              100,
-            );
-            totalTax = new Decimal(+totalTax + +retailTax);
-            return {
-              name: item.product.name,
-              quantity: item.quantity,
-              retail_price: item.price,
-              wholesale_price: item.product.wholesalePrice,
-              vat_rate: item.product.vat,
-              retail_price_vat: retailTax,
-              wholesale_price_vat: wholesaleTax,
-            };
+            select: {
+              product: {
+                select: {
+                  name: true,
+                  wholesalePrice: true,
+                  vat: true,
+                },
+              },
+              price: true,
+              quantity: true,
+            },
           });
-        }
-        await this.paymentServiceExtension.updatePaymentIntent(
-          payment.paymentIntentId,
-          {
-            transactionId: payment.id,
-            orderId: payment.orderId,
-            teamId: payment.order.teamId,
-            userId: payment.userId,
-            supplierId: payment.order.team.producerId,
-            product: JSON.stringify(formattedProducts),
-            totalRetailPriceVat: +totalTax,
-          },
-        );
-      });
+          if (userProducts && userProducts.length > 0) {
+            formattedProducts = userProducts.map((item) => {
+              const retailTax = new Decimal(
+                (+item.price * item.quantity * +item.product.vat) / 100,
+              );
+              const wholesaleTax = new Decimal(
+                (+item.product.wholesalePrice *
+                  item.quantity *
+                  +item.product.vat) /
+                100,
+              );
+              totalTax = new Decimal(+totalTax + +retailTax);
+              return {
+                name: item.product.name,
+                quantity: item.quantity,
+                retail_price: item.price,
+                wholesale_price: item.product.wholesalePrice,
+                vat_rate: item.product.vat,
+                retail_price_vat: retailTax,
+                wholesale_price_vat: wholesaleTax,
+              };
+            });
+          }
+          await this.paymentServiceExtension.updatePaymentIntent(
+            payment.paymentIntentId,
+            {
+              transactionId: payment.id,
+              // orderId: payment.orderId,
+              teamId: payment.order.teamId,
+              // userId: payment.userId,
+              supplierId: payment.order.team.producerId,
+              product: JSON.stringify(formattedProducts),
+              totalRetailPriceVat: +totalTax,
+            },
+            true
+          );
+        });
+      }
+      return true;
+    } catch (error) {
+      console.log(error)
     }
-    return true;
   }
 
   async handleGetPaymentMethod() {
