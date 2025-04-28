@@ -421,4 +421,71 @@ export class PaymentControllerExtension {
       'User joined team successfully',
     );
   }
+
+  /**
+   * Handle yearly subscription payment
+   * @param {string} userId - The user ID
+   * @param {Response} res - The response object
+   * @memberof PaymentControllerExtension
+   * @returns {JSON} - A JSON success response
+   */
+  @UseGuards(AuthGuard)
+  @Post('subscription/yearly/:userId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Yearly subscription processed successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The ID of the user to process subscription for',
+  })
+  async handleYearlySubscription(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.handleYearlySubscription(userId);
+    
+    if (!result) {
+      return formatResponse(
+        'Failed to process yearly subscription',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Subscription processing failed',
+      );
+    }
+
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Yearly subscription processed successfully',
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('subscription/status/:userId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Subscription status retrieved successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The ID of the user to check subscription status for',
+  })
+  async getSubscriptionStatus(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.getSubscriptionStatus(userId);
+    
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription status retrieved successfully',
+    );
+  }
 }

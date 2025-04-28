@@ -8,6 +8,7 @@ import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 import { describe } from 'node:test';
 import { SupplementTeamStatus } from '@prisma/client';
+import { PaymentStatus, PaymentType } from '@prisma/client';
 
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
@@ -244,6 +245,45 @@ describe('PaymentController (e2e)', () => {
           expect(response.body).toHaveProperty('data');
           expect(response.body.error).toBeUndefined();
           expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+
+      // handle yearly subscription
+      it(
+        '/payments/subscription/yearly/:userId(POST) should process yearly subscription',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post(`/payments/subscription/yearly/${userId}`)
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .expect(200);
+          
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(response.body.data.status).toBe(PaymentStatus.CAPTURED);
+          expect(response.body.data.type).toBe(PaymentType.YEARLY_SUBSCRIPTION);
+          expect(response.body.data.amount).toBe("28");
+          expect(response.body.data.expiryDate).toBeDefined();
+        },
+        testTime,
+      );
+
+      // get subscription status
+      it(
+        '/payments/subscription/status/:userId(GET) should return subscription status',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .get(`/payments/subscription/status/${userId}`)
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .expect(200);
+          
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(response.body.data).toHaveProperty('hasActiveSubscription');
+          expect(response.body.data).toHaveProperty('expiryDate');
+          expect(typeof response.body.data.hasActiveSubscription).toBe('boolean');
+          expect(response.body.data.expiryDate).toBeDefined();
+          expect(new Date(response.body.data.expiryDate) > new Date()).toBe(true);
         },
         testTime,
       );

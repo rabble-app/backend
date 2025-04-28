@@ -361,7 +361,6 @@ export class PaymentServiceExtension {
         where: { id: userId },
         select: { stripeDefaultPaymentMethodId: true, stripeCustomerId: true }
       });
-      console.log('user', user) 
 
       if (!user?.stripeDefaultPaymentMethodId || !user?.stripeCustomerId) {
         return null;
@@ -438,6 +437,43 @@ export class PaymentServiceExtension {
     } catch (error) {
       this.logger.error('Error checking subscription status:', error);
       return false;
+    }
+  }
+
+  async getSubscriptionStatus(userId: string): Promise<{ hasActiveSubscription: boolean; expiryDate: Date | null }> {
+    try {
+      // Get all subscription payments for the user
+      const subscriptionPayments = await this.findPayments({
+        userId,
+        status: PaymentStatus.CAPTURED,
+        type: PaymentType.YEARLY_SUBSCRIPTION,
+      });
+
+      if (!subscriptionPayments || subscriptionPayments.length === 0) {
+        return {
+          hasActiveSubscription: false,
+          expiryDate: null
+        };
+      }
+
+      // Sort by expiry date to get the most recent subscription
+      const sortedSubscriptions = subscriptionPayments.sort((a, b) => 
+        new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime()
+      );
+
+      const latestSubscription = sortedSubscriptions[0];
+      const isActive = new Date(latestSubscription.expiryDate) > new Date();
+
+      return {
+        hasActiveSubscription: isActive,
+        expiryDate: latestSubscription.expiryDate
+      };
+    } catch (error) {
+      this.logger.error('Error getting subscription status:', error);
+      return {
+        hasActiveSubscription: false,
+        expiryDate: null
+      };
     }
   }
 }
