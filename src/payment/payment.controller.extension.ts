@@ -263,7 +263,16 @@ export class PaymentControllerExtension {
     const result = await this.paymentServiceExtension.handleTopUpPayment(
       topUpDto,
     );
-    if (!result) {
+    if (result == 1 ) {
+      return formatResponse(
+        'User do not have any active subscription',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'No Active Subscription',
+      );
+    }
+    if (result == 2 ) {
       return formatResponse(
         'Subscription top up failed',
         res,
@@ -388,6 +397,16 @@ export class PaymentControllerExtension {
     if (result == 5) {
       return formatResponse(
         'Could not store user basket',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Joining team failed',
+      );
+    }
+
+    if (result == 6) {
+      return formatResponse(
+        'User does not have an active subscription',
         res,
         HttpStatus.BAD_REQUEST,
         true,

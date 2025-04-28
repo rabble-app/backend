@@ -308,7 +308,16 @@ export class PaymentServiceExtension {
     });
   }
 
-  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | null> {
+  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | number> {
+    // Check if user has active subscription
+    const hasActiveSubscription = await this.checkUserSubscriptionStatus(topUpDto.userId);
+    if (!hasActiveSubscription) {
+      this.logger.warn('User does not have an active subscription for top-up payment', {
+        userId: topUpDto.userId
+      });
+      return 1;
+    }
+
     // get team latestOrder
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       topUpDto.teamId,
@@ -341,7 +350,7 @@ export class PaymentServiceExtension {
       };
       return await this.paymentService.recordPayment(paymentData);
     } else {
-      return null;
+      return 2;
     }
   }
 
