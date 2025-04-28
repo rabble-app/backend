@@ -178,7 +178,7 @@ export class UsersServiceExtension {
     });
   }
 
-  async getSingleSupplementPlans(id: string, userId: string ='43c4e6e2-1793-4556-84ea-6a9a114d6961') {
+  async getSingleSupplementPlans(id: string, userId: string) {
     return await this.prisma.teamMember.findFirst({
       where: {
         id,

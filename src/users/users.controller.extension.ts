@@ -412,10 +412,13 @@ export class UsersControllerExtension {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async userSingleSupplementPlan(
     @Param('id') id: string,
+    @Request() req,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const userId = req.user.userId;
     const result = await this.usersServiceExtension.getSingleSupplementPlans(
       id,
+      userId,
     );
     return formatResponse(
       result,
