@@ -13,7 +13,7 @@ describe('InsightsController (e2e)', () => {
   let userId: string;
   let jwtToken: string;
   const testTime = 120000;
-  const phone = faker.phone.number();
+  const phone = `+44${faker.phone.number()}22`;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

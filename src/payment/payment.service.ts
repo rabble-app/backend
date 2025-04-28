@@ -281,7 +281,7 @@ export class PaymentService {
         // send notification
         await this.notificationService.createNotification({
           title: 'Threshold Reached 👏',
-          text: `Congratulations! Your buying team ${member.team.name} have collectively reached the suppliers’s minimum threshold for a new shipment. You have 24 hours to add to it or invite others to join the team before the order is shipped`,
+          text: `Congratulations! Your buying team ${member.team.name} have collectively reached the suppliers's minimum threshold for a new shipment. You have 24 hours to add to it or invite others to join the team before the order is shipped`,
           userId: member.userId,
           teamId: member.teamId,
           notficationToken: member.user.notificationToken,
@@ -714,6 +714,15 @@ export class PaymentService {
   }
 
   async joinSupplementTeam(joinSupplementTeamDto: JoinSupplementTeamDto) {
+    // Check if user has active subscription
+    const hasActiveSubscription = await this.paymentServiceExtension.checkUserSubscriptionStatus(joinSupplementTeamDto.userId);
+    if (!hasActiveSubscription) {
+      this.logger.warn('User does not have an active subscription for joining supplement team', {
+        userId: joinSupplementTeamDto.userId
+      });
+      return 6;
+    }
+
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
       // get the user stripe id
