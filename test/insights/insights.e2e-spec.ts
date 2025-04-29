@@ -46,7 +46,7 @@ describe('InsightsController (e2e)', () => {
         id: userId,
       },
     });
-    // await app.close();
+    await app.close();
   });
 
   describe('InsightsController (e2e)', () => {

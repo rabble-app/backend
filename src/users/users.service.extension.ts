@@ -179,7 +179,7 @@ export class UsersServiceExtension {
   }
 
   async getSingleSupplementPlans(id: string, userId: string) {
-    return await this.prisma.teamMember.findFirst({
+    const teamMember = await this.prisma.teamMember.findFirst({
       where: {
         id,
         status: TeamStatus.APPROVED,
@@ -241,5 +241,28 @@ export class UsersServiceExtension {
         createdAt: 'desc',
       },
     });
+
+    if (!teamMember) return null;
+
+    const latestOrder = await this.prisma.order.findFirst({
+      where: {
+        teamId: teamMember.team.id
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        deadline: true
+      }
+    });
+
+    return {
+      ...teamMember,
+      team: {
+        ...teamMember.team,
+        latestOrder
+      }
+    };
   }
 }
