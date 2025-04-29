@@ -16,37 +16,50 @@ describe('InsightsController (e2e)', () => {
   const phone = `+44${faker.phone.number()}22`;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    try {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
 
-    app = moduleFixture.createNestApplication();
-    prisma = app.get<PrismaService>(PrismaService);
-    authService = app.get<AuthService>(AuthService);
-    app.useGlobalPipes(new ValidationPipe());
+      app = moduleFixture.createNestApplication();
+      prisma = app.get<PrismaService>(PrismaService);
+      authService = app.get<AuthService>(AuthService);
+      app.useGlobalPipes(new ValidationPipe());
 
-    await app.init();
-    await app.listen(process.env.PORT);
+      await app.init();
+      await app.listen(process.env.PORT);
 
-    // create dummy user for test
-    const user = await prisma.user.create({
-      data: {
-        phone,
-      },
-    });
-    userId = user.id;
+      // create dummy user for test
+      const user = await prisma.user.create({
+        data: {
+          phone,
+        },
+      });
+      userId = user.id;
 
-    // create dummy token
-    jwtToken = authService.generateToken({ userId });
+      // create dummy token
+      jwtToken = authService.generateToken({ userId });
+    } catch (error) {
+      console.error('Test setup failed:', error);
+      throw error;
+    }
   }, testTime);
 
   afterAll(async () => {
-    await prisma.user.delete({
-      where: {
-        id: userId,
-      },
-    });
-    await app.close();
+    try {
+      if (userId) {
+        await prisma.user.delete({
+          where: {
+            id: userId,
+          },
+        });
+      }
+      if (app) {
+        await app.close();
+      }
+    } catch (error) {
+      console.error('Test teardown failed:', error);
+    }
   });
 
   describe('InsightsController (e2e)', () => {
