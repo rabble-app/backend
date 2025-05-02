@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { mockStripeService } from '../mocks';
+import { StripeService } from '../../src/stripe/stripe.service';
 jest.useFakeTimers();
 
 describe('ScheduleController (e2e)', () => {
@@ -11,13 +13,15 @@ describe('ScheduleController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(mockStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
   }, testTime);
 
   describe('ScheduleController (e2e)', () => {

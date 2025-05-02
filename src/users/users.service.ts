@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { DeliveryAddressDto } from './dto/delivery-address.dto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { Logger } from 'winston';
 import { PrismaService } from '../prisma.service';
 import {
   User,
@@ -23,26 +24,16 @@ import {
 } from '../lib/types';
 import { parse } from 'postcode';
 import { differenceInDays } from 'date-fns';
+import { StripeService } from '../stripe/stripe.service';
 
 @Injectable()
 export class UsersService {
-  private readonly stripe: Stripe;
-  private readonly supplementStripe: Stripe;
   constructor(
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
-  ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-    this.supplementStripe = new Stripe(
-      this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY,
-      {
-        apiVersion: '2022-11-15',
-      },
-    );
-  }
+    private readonly stripeService: StripeService,
+  ) {}
 
   async findUser(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
@@ -712,15 +703,19 @@ export class UsersService {
     isSupplementApp = false,
   ): Promise<{ id: string } | null> {
     try {
-      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const params: Stripe.CustomerCreateParams = {};
       if (email) params['email'] = email;
       if (phone) params['phone'] = phone;
-      const response = await stripe.customers.create(params);
+      const response = await this.stripeService.createCustomer(
+        params,
+        isSupplementApp,
+      );
       return {
         id: response.id,
       };
-    } catch (error) {}
+    } catch (error) {
+      console.log({ error });
+    }
   }
 
   async updateStripeCustomerInfo(
@@ -732,12 +727,19 @@ export class UsersService {
     isSupplementApp = false,
   ): Promise<{ id: string } | null> {
     try {
-      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const params: Stripe.CustomerUpdateParams = {
         name: `${data.lastName} ${data.firstName}`,
       };
-      return await stripe.customers.update(customerId, params);
+      return await this.stripeService.updateCustomer(
+        customerId,
+        params,
+        isSupplementApp,
+      );
     } catch (error) {}
+  }
+
+  async getStripeProfile(accountId: string): Promise<object> {
+    return await this.stripeService.retrieveAccount(accountId);
   }
 
   async getProducersCategories(): Promise<
@@ -749,10 +751,6 @@ export class UsersService {
         name: true,
       },
     });
-  }
-
-  async getStripeProfile(accountId: string): Promise<object> {
-    return await this.stripe.accounts.retrieve(accountId);
   }
 
   async isEarlyUser(threshold = 100) {
@@ -771,7 +769,12 @@ export class UsersService {
       where: { id: userId },
     });
     if (!user?.firstPaymentDate) return false;
-    return differenceInDays(new Date(), new Date(user.firstPaymentDate)) <= 30;
+    const daysOld = differenceInDays(
+      new Date(),
+      new Date(user.firstPaymentDate),
+    );
+    this.logger.info('Days old: %s', daysOld);
+    return daysOld <= 30;
   }
 
   async countUserReferrals(userId: string) {
@@ -779,5 +782,13 @@ export class UsersService {
       where: { referrerId: userId },
     });
     return count;
+  }
+
+  async removeUser(userId: string) {
+    if (process.env.APP_ENV === 'local') {
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+    }
   }
 }

@@ -3,7 +3,6 @@ import EmailVerificationDto from './dto/email-verification.dto';
 import ResendEmailVerificationDto from './dto/resend-email-verification.dto';
 import ResetPasswordDto from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
-import { courier } from '../../src/utils/mail';
 import { CreateUserDto } from './dto/create-user.dto';
 import { formatResponse } from '../lib/helpers';
 import { IAPIResponse } from '../lib/types';
@@ -40,20 +39,19 @@ import { PusherUserAuthDto } from './dto/pusher-user-auth.dto';
 import { AuthGuard } from './auth.guard';
 import Pusher from 'pusher';
 import { PusherChannelAuthDto } from './dto/pusher-channel-auth.dto';
-import { ICourierClient } from '@trycourier/courier';
+import { CourierService } from '../notifications/courier.service';
 
 @ApiTags('auth')
 @Controller('auth')
 @ApiBearerAuth()
 export class AuthController {
-  private courierClient: ICourierClient;
   private pusher: Pusher;
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly courierService: CourierService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
   ) {
-    this.courierClient = courier(this.parameters.COURIER_API);
     this.pusher = new Pusher({
       appId: this.parameters.PUSHER_APP_ID,
       key: this.parameters.PUSHER_APP_KEY,
@@ -338,17 +336,9 @@ export class AuthController {
     const url = !resendEmailVerificationDto.role
       ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`
       : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`;
-    await this.courierClient.send({
-      message: {
-        to: {
-          email: user.email,
-        },
-        template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
-        data: {
-          url,
-        },
-      },
-    });
+
+    await this.courierService.sendEmailVerification(user.email, url);
+
     return formatResponse(
       user,
       res,
@@ -390,21 +380,13 @@ export class AuthController {
       userId: user.id,
       producerId: user?.producer?.id,
     });
+
     // send mail
     const url = !resetPasswordDto.role
       ? `${this.parameters.EMAIL_URL}${this.parameters.RESET_PASSWORD_URL}?token=${token}`
       : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_RESET_PASSWORD_URL}?token=${token}`;
-    await this.courierClient.send({
-      message: {
-        to: {
-          email: user.email,
-        },
-        template: `${this.parameters.RESET_PASSWORD_TEMPLATE}`,
-        data: {
-          url,
-        },
-      },
-    });
+
+    await this.courierService.sendPasswordReset(user.email, url);
 
     return formatResponse(
       user,
@@ -572,5 +554,23 @@ export class AuthController {
     );
     res.status(200);
     res.send(auth);
+  }
+
+  @Post('dummy-auth')
+  async generateDummyAuth(
+    @Body() body: any,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    if (process.env.APP_ENV !== 'local') {
+      return formatResponse(
+        'Not allowed',
+        res,
+        HttpStatus.FORBIDDEN,
+        true,
+        'Not allowed',
+      );
+    }
+    const result = await this.authService.generateToken(body);
+    return formatResponse(result, res, HttpStatus.OK, false, 'Token generated');
   }
 }

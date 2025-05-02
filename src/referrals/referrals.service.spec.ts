@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReferralsService } from './referrals.service';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
+import { StripeService } from '../stripe/stripe.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import Stripe from 'stripe';
 import { CC_TO_POUNDS_RATE } from '../utils/constants';
@@ -9,61 +10,66 @@ import { BonusType, ReferralType } from '@prisma/client';
 
 describe('ReferralsService', () => {
   let service: ReferralsService;
+  let mockPrismaService: any;
+  let mockUsersService: any;
   let mockLogger: any;
   let mockRollbar: any;
-
-  const mockPrismaService = {
-    user: {
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      update: jest.fn(),
-    },
-    wallet: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    bonus: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    payment: {
-      findMany: jest.fn(),
-    },
-    claim: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-      updateMany: jest.fn(),
-    },
-    reward: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-    },
-    referral: {
-      create: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    subscription: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    coupon: {
-      create: jest.fn(),
-      aggregate: jest.fn(),
-    },
-    $transaction: jest.fn(),
-  };
-
-  const mockUsersService = {
-    updateUser: jest.fn(),
-    isEarlyUser: jest.fn(),
-    isUserFirst30Days: jest.fn(),
-    findUser: jest.fn(),
-  };
+  let mockStripeService: any;
 
   beforeEach(async () => {
+    mockPrismaService = {
+      user: {
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+      },
+      referral: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        count: jest.fn(),
+      },
+      subscription: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        findUnique: jest.fn(),
+      },
+      payment: {
+        findMany: jest.fn(),
+      },
+      wallet: {
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        create: jest.fn(),
+      },
+      bonus: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findFirst: jest.fn(),
+      },
+      claim: {
+        findMany: jest.fn(),
+      },
+      coupon: {
+        aggregate: jest.fn(),
+      },
+      $transaction: jest.fn(),
+    };
+
+    mockUsersService = {
+      findOne: jest.fn(),
+      findUser: jest.fn(),
+      isEarlyUser: jest.fn(),
+      isUserFirst30Days: jest.fn(),
+    };
+
+    mockStripeService = {
+      getStripe: jest.fn(),
+      createPaymentIntent: jest.fn(),
+      createCustomer: jest.fn(),
+      createSubscription: jest.fn(),
+    };
+
     mockLogger = {
       info: jest.fn(),
       error: jest.fn(),
@@ -85,6 +91,10 @@ describe('ReferralsService', () => {
         {
           provide: UsersService,
           useValue: mockUsersService,
+        },
+        {
+          provide: StripeService,
+          useValue: mockStripeService,
         },
         {
           provide: 'LOGGER',
@@ -223,6 +233,7 @@ describe('ReferralsService', () => {
       const mockReferral = {
         referrerId: 'sponsor1',
         type: ReferralType.INTERNAL,
+        userId: 'user1',
       };
       const mockUser = {
         id: 'user1',
@@ -233,28 +244,75 @@ describe('ReferralsService', () => {
         expiryDate: new Date(),
       };
 
-      mockUsersService.findUser.mockResolvedValueOnce(mockUser);
+      // Mock all the necessary service calls
+      mockUsersService.findUser
+        .mockResolvedValueOnce(mockUser) // First call for user
+        .mockResolvedValueOnce({ id: 'sponsor1' }); // Second call for sponsor
       mockPrismaService.referral.findFirst.mockResolvedValueOnce(mockReferral);
       mockPrismaService.payment.findMany.mockResolvedValueOnce([
         { amount: 10000, status: 'CAPTURED' },
       ]);
       mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
       mockUsersService.isUserFirst30Days.mockResolvedValueOnce(true);
-      mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
+      mockPrismaService.user.findUnique
+        .mockResolvedValueOnce(mockUser) // For checkFreeSubscriptionDuration
+        .mockResolvedValueOnce({ firstPaymentDate: new Date() }); // For applyFirst30DaysReferralBonus
+      mockPrismaService.subscription.findUnique.mockResolvedValueOnce(
+        mockSubscription,
+      ); // For checkFreeSubscriptionDuration
       mockPrismaService.subscription.findFirst.mockResolvedValueOnce(
         mockSubscription,
-      );
+      ); // For applyFirst30DaysReferralBonus
+      mockPrismaService.referral.count.mockResolvedValueOnce(3);
+
+      // Create mocks for the transaction
+      const txSubscriptionUpdateMock = jest
+        .fn()
+        .mockResolvedValueOnce(mockSubscription);
+      const txBonusCreateMock = jest
+        .fn()
+        .mockResolvedValueOnce({ id: 'bonus1' });
+
+      // Mock the transaction to properly execute the callback
       mockPrismaService.$transaction.mockImplementationOnce(
         async (callback) => {
-          const result = await callback(mockPrismaService);
-          return result;
+          const txMock = {
+            user: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValueOnce({ firstPaymentDate: new Date() }),
+            },
+            subscription: {
+              findFirst: jest.fn().mockResolvedValueOnce(mockSubscription),
+              update: txSubscriptionUpdateMock,
+            },
+            bonus: {
+              create: txBonusCreateMock,
+            },
+          };
+          return callback(txMock);
         },
       );
 
       await service.handleReferral(mockMetadata, 10000);
 
-      expect(mockPrismaService.subscription.update).toHaveBeenCalled();
-      expect(mockPrismaService.bonus.create).toHaveBeenCalled();
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(txSubscriptionUpdateMock).toHaveBeenCalledWith({
+        where: { id: mockSubscription.id },
+        data: {
+          expiryDate: expect.any(Date),
+        },
+      });
+      expect(txBonusCreateMock).toHaveBeenCalledWith({
+        data: {
+          userId: 'sponsor1',
+          amount: 0,
+          type: BonusType.REFERRAL,
+          category: '6 months free subscription',
+          orderId: 'order1',
+          referralId: 'user1',
+        },
+      });
     });
 
     it('should not process if no referral exists', async () => {
@@ -314,7 +372,7 @@ describe('ReferralsService', () => {
         },
       );
 
-      await service.applyFirst30DaysReferralBonus('user1', 'order1', 1000);
+      await service.applyFirst30DaysReferralBonus('user1', 'order1', 'user1');
 
       expect(mockPrismaService.subscription.update).toHaveBeenCalled();
       expect(mockPrismaService.bonus.create).toHaveBeenCalledWith({
@@ -324,6 +382,7 @@ describe('ReferralsService', () => {
           type: BonusType.REFERRAL,
           category: '6 months free subscription',
           orderId: 'order1',
+          referralId: 'user1',
         },
       });
     });
@@ -338,7 +397,7 @@ describe('ReferralsService', () => {
       );
 
       await expect(
-        service.applyFirst30DaysReferralBonus('user1', 'order1', 1000),
+        service.applyFirst30DaysReferralBonus('user1', 'order1', 'user1'),
       ).rejects.toThrow(HttpException);
     });
   });
@@ -522,6 +581,12 @@ describe('ReferralsService', () => {
       mockPrismaService.subscription.findFirst.mockResolvedValueOnce(null);
       mockPrismaService.bonus.findFirst.mockResolvedValueOnce(null);
       mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockPrismaService.$transaction.mockImplementationOnce(
+        async (callback) => {
+          const result = await callback(mockPrismaService);
+          return result;
+        },
+      );
 
       await service.createFreeTrialSubscription('user1');
 
@@ -546,7 +611,7 @@ describe('ReferralsService', () => {
       };
 
       mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
-      mockPrismaService.subscription.findFirst.mockResolvedValueOnce(
+      mockPrismaService.subscription.findUnique.mockResolvedValueOnce(
         mockSubscription,
       );
 

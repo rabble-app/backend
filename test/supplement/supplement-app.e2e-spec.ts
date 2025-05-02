@@ -6,9 +6,10 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
-import { describe } from 'node:test';
 import { SupplementTeamStatus } from '@prisma/client';
 import { PaymentStatus, PaymentType } from '@prisma/client';
+import { StripeService } from '../../src/stripe/stripe.service';
+import { mockStripeService as MockedStripeService } from '../../test/mocks';
 
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
@@ -26,29 +27,28 @@ describe('PaymentController (e2e)', () => {
   let product2Id: string;
   let teamId: string;
   let team2Id: string;
-  let stripe: Stripe;
   let jwtToken: string;
   const testTime = 120000;
+  let mockStripeService: StripeService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(MockedStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
-    app.useGlobalPipes(new ValidationPipe());
-    const params = app.get('AWS_PARAMETERS');
-    await app.init();
-    await app.listen(process.env.PORT);
+    mockStripeService = app.get<StripeService>(StripeService);
 
-    stripe = new Stripe(params.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    app.useGlobalPipes(new ValidationPipe());
+    await app.init();
 
     // create dummy stripe user for test
-    const stripeUser = await stripe.customers.create({
+    const stripeUser = await mockStripeService.createCustomer({
       phone,
     });
     stripeCustomerId = stripeUser.id;
@@ -58,6 +58,10 @@ describe('PaymentController (e2e)', () => {
       data: {
         phone: `${phone}3`,
         stripeCustomerId,
+        firstName: faker.name.firstName(),
+        lastName: faker.name.lastName(),
+        email: faker.internet.email(),
+        password: faker.internet.password(),
       },
     });
     userId = user.id;
@@ -238,8 +242,8 @@ describe('PaymentController (e2e)', () => {
           const response = await request(app.getHttpServer())
             .post('/payments/intent/capture?isSupplementApp=true')
             .set('Authorization', `Bearer ${jwtToken}`)
-            .send({ paymentIntentId, teamId, userId, amount: 1000 })
-            .expect(200);
+            .send({ paymentIntentId, teamId, userId, amount: 1000 });
+          expect(response.status).toBe(200);
           expect(response.body).toHaveProperty('data');
           expect(response.body.error).toBeUndefined();
           expect(typeof response.body.data).toBe('object');
@@ -253,9 +257,8 @@ describe('PaymentController (e2e)', () => {
         async () => {
           const response = await request(app.getHttpServer())
             .post(`/payments/subscription/yearly/${userId}`)
-            .set('Authorization', `Bearer ${jwtToken}`)
-            .expect(200);
-
+            .set('Authorization', `Bearer ${jwtToken}`);
+          expect(response.status).toBe(200);
           expect(response.body).toHaveProperty('data');
           expect(response.body.error).toBeUndefined();
           expect(response.body.data.status).toBe(PaymentStatus.CAPTURED);

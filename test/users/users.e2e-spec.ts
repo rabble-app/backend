@@ -67,7 +67,6 @@ describe('UserController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
 
     // create dummy user for test
     user = await prisma.user.create({

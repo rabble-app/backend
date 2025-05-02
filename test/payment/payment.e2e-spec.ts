@@ -6,13 +6,12 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
-import { describe } from 'node:test';
-
+import { StripeService } from '../../src/stripe/stripe.service';
+import { mockStripeService } from '../mocks';
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let authService: AuthService;
-
   const phone = faker.phone.number('501-###-###');
   let customerId: string;
   let paymentIntentId: string;
@@ -41,19 +40,20 @@ describe('PaymentController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(mockStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
-    const params = app.get('AWS_PARAMETERS');
     await app.init();
-    await app.listen(process.env.PORT);
+    // await app.listen(process.env.PORT);
 
-    stripe = new Stripe(params.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    const stripeService = app.get<StripeService>(StripeService);
+    stripe = stripeService.getStripe();
     // create dummy stripe user for test
     const stripeUser = await stripe.customers.create({
       phone,
@@ -196,9 +196,11 @@ describe('PaymentController (e2e)', () => {
           const response = await request(app.getHttpServer())
             .post('/payments/add-card')
             .set('Authorization', `Bearer ${jwtToken}`)
-            .send({ paymentMethodId, stripeCustomerId: customerId })
-            .expect(400);
-          expect(response.body.message).toBe('Payment method already exists');
+            .send({ paymentMethodId, stripeCustomerId: customerId });
+          expect(response.status).toBe(400);
+          expect(response.body.message).toBe(
+            'Payment method already exists in the system',
+          );
           const paymentMethod = await prisma.paymentMethod.findFirst({
             where: {
               userId,

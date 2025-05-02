@@ -3,21 +3,17 @@ import { ReferralsService } from '../referrals/referrals.service';
 import Stripe from 'stripe';
 import { Logger } from 'winston';
 import { PrismaService } from '../prisma.service';
+import { StripeService } from '../stripe/stripe.service';
 
 @Injectable()
 export class WebhookService {
-  private readonly stripe: Stripe;
-
   constructor(
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
     private readonly referralsService: ReferralsService,
     private readonly prisma: PrismaService,
-  ) {
-    this.stripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    private readonly stripeService: StripeService,
+  ) {}
 
   /**
    * Constructs a Stripe webhook event from the given payload and signature
@@ -28,29 +24,36 @@ export class WebhookService {
    * @returns void
    * for local testing use this env value SUPPLEMENT_STRIPE_LOCAL_WEBHOOK_SECRET
    */
-  public async constructEventFromPayload(signature: string, payload: Buffer) {
-    const webhookSecret = this.parameters.SUPPLEMENT_STRIPE_WEBHOOK_SECRET;
+  public async handleWebhook(
+    signature: string,
+    payload: Buffer,
+    isSupplementApp = true,
+  ): Promise<void> {
+    const webhookSecret = isSupplementApp
+      ? this.parameters.SUPPLEMENT_STRIPE_WEBHOOK_SECRET
+      : this.parameters.STRIPE_WEBHOOK_SECRET;
+    this.logger.info('Webhook secret: %o', webhookSecret);
+
     try {
-      const event = this.stripe.webhooks.constructEvent(
+      const event = await this.stripeService.constructWebhookEvent(
         payload,
         signature,
         webhookSecret,
+        isSupplementApp,
       );
+
+      this.logger.info('Event: %o', event);
       if (event.type === 'payment_intent.succeeded') {
-        const paymentIntentSucceeded = event.data
-          .object as Stripe.PaymentIntent;
-        this.logger.info(
-          'Payment intent succeeded: %o',
-          paymentIntentSucceeded,
-        );
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        this.logger.info('Payment intent succeeded: %o', paymentIntent);
         await this.referralsService.handleReferral(
-          paymentIntentSucceeded.metadata,
-          paymentIntentSucceeded.amount_received / 100,
+          paymentIntent.metadata,
+          paymentIntent.amount_received / 100,
         );
       }
-    } catch (error) {
-      console.log(error);
-      return;
+    } catch (err) {
+      this.logger.error('Error processing webhook: %o', err);
+      throw err;
     }
   }
 

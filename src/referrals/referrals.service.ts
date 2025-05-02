@@ -5,21 +5,20 @@ import crypto from 'crypto';
 import { BonusType, PaymentStatus, ReferralType } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import Rollbar from 'rollbar';
-import Stripe from 'stripe';
 import { Logger } from 'winston';
 import {
   CC_TO_POUNDS_RATE,
   MINIMUM_STRIPE_AMOUNT_IN_PENCE,
   REFERRAL_BONUS_PERCENTAGE,
 } from '../utils/constants';
-import { addMonths, differenceInYears } from 'date-fns';
-import { Prisma } from '@prisma/client';
+import { addMonths, differenceInMonths } from 'date-fns';
+import { StripeService } from '../stripe/stripe.service';
+
 @Injectable()
 export class ReferralsService {
   private static readonly CODE_LENGTH = 6;
   private static readonly USER_CODE_LENGTH = 3;
   private static readonly CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  private readonly stripe: Stripe;
   private static readonly MINIMUM_CREDIT_AMOUNT = 500; // £5 in pence
 
   constructor(
@@ -28,11 +27,8 @@ export class ReferralsService {
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
     @Inject('LOGGER') private readonly logger: Logger,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
-  ) {
-    this.stripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    private readonly stripeService: StripeService,
+  ) {}
 
   async generateReferralCode() {
     let code = this.generateRandomCode();
@@ -63,7 +59,8 @@ export class ReferralsService {
     }
     return code;
   }
-  async handleReferral(metadata: Stripe.Metadata, amount: number) {
+  async handleReferral(metadata: Record<string, any>, amount: number) {
+    this.logger.info('Handling referral %o', { metadata, amount });
     const { order_id, user_id } = metadata;
     const user = await this.usersService.findUser({ id: user_id });
     if (!user) {
@@ -87,31 +84,6 @@ export class ReferralsService {
       // TODO: Handle affiliate referral bonus
       return;
     }
-    const bonusAmount = this.calculateReferralBonus(+firstTimePurchase);
-    this.logger.info(
-      'PAYMENT WEBHOOK: Calculated referral bonus: %s',
-      bonusAmount,
-    );
-    const bonusAmountInCC = this.poundsToCC(bonusAmount);
-    const isEarlyUser = await this.usersService.isEarlyUser();
-    const isFirst30Days = await this.usersService.isUserFirst30Days(
-      referral.referrerId,
-    );
-    if (isEarlyUser && isFirst30Days) {
-      await this.applyFirst30DaysReferralBonus(
-        referral.referrerId,
-        order_id,
-        bonusAmountInCC,
-      );
-      return;
-    }
-
-    await this.handleBonus({
-      userId: user_id,
-      amount: bonusAmountInCC,
-      type: BonusType.SIGNUP,
-      orderId: order_id,
-    });
     const sponsor = await this.usersService.findUser({
       id: referral.referrerId,
     });
@@ -128,6 +100,40 @@ export class ReferralsService {
       );
       return;
     }
+    const referralCount = await this.countReferrals(sponsor.id);
+    const totalSubscriptionDuration = await this.checkFreeSubscriptionDuration(
+      sponsor.id,
+      user.firstPaymentDate,
+    );
+    const isEarlyUser = await this.usersService.isEarlyUser();
+    const isFirst30Days = await this.usersService.isUserFirst30Days(
+      referral.referrerId,
+    );
+    if (
+      isEarlyUser &&
+      isFirst30Days &&
+      referralCount <= 3 &&
+      totalSubscriptionDuration < 2
+    ) {
+      await this.applyFirst30DaysReferralBonus(
+        referral.referrerId,
+        order_id,
+        referral.userId,
+      );
+      return;
+    }
+    const bonusAmount = this.calculateReferralBonus(+firstTimePurchase);
+    this.logger.info(
+      'PAYMENT WEBHOOK: Calculated referral bonus: %s',
+      bonusAmount,
+    );
+    const bonusAmountInCC = this.poundsToCC(bonusAmount);
+    await this.handleBonus({
+      userId: user_id,
+      amount: bonusAmountInCC,
+      type: BonusType.SIGNUP,
+      orderId: order_id,
+    });
     await this.handleBonus({
       userId: sponsor.id,
       amount: bonusAmountInCC,
@@ -140,9 +146,13 @@ export class ReferralsService {
   async applyFirst30DaysReferralBonus(
     referrerId: string,
     order_id: string,
-    bonusAmount: number,
+    userId: string,
   ) {
     try {
+      this.logger.info('Applying first 30 days referral bonus %o', {
+        referrerId,
+        order_id,
+      });
       return await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({
           where: { id: referrerId },
@@ -150,10 +160,6 @@ export class ReferralsService {
         });
         if (!user?.firstPaymentDate) {
           this.logger.error('User not found', { referrerId });
-          return;
-        }
-
-        if (!user?.firstPaymentDate) {
           return;
         }
 
@@ -165,20 +171,6 @@ export class ReferralsService {
           return;
         }
 
-        const totalSubscriptionDuration = differenceInYears(
-          new Date(subscription.expiryDate),
-          new Date(user.firstPaymentDate),
-        );
-
-        if (totalSubscriptionDuration >= 1) {
-          await this.handleBonus({
-            userId: referrerId,
-            amount: bonusAmount,
-            type: BonusType.REFERRAL,
-            orderId: order_id,
-          });
-          return;
-        }
         await Promise.all([
           tx.subscription.update({
             where: { id: subscription.id },
@@ -193,6 +185,7 @@ export class ReferralsService {
               type: BonusType.REFERRAL,
               category: '6 months free subscription',
               orderId: order_id,
+              referralId: userId,
             },
           }),
         ]);
@@ -257,7 +250,7 @@ export class ReferralsService {
 
   async isFirstTimePurchase(
     userId: string,
-    metadata: Stripe.Metadata,
+    metadata: Record<string, any>,
     amount: number,
   ) {
     const payments = await this.prisma.payment.findMany({
@@ -430,14 +423,17 @@ export class ReferralsService {
   }
 
   async createCoupon(userId: string, amount: number) {
-    const coupon = await this.stripe.coupons.create({
-      amount_off: amount * 100,
-      duration: 'once',
-      currency: 'GBP',
-      metadata: {
-        userId,
+    const coupon = await this.stripeService.createCoupon(
+      {
+        amount_off: amount * 100,
+        duration: 'once',
+        currency: 'GBP',
+        metadata: {
+          userId,
+        },
       },
-    });
+      true,
+    );
     this.logger.info('CC CREATE COUPON: Created coupon %s', coupon.id);
     await this.prisma.coupon.create({
       data: {
@@ -534,6 +530,7 @@ export class ReferralsService {
         amount: true,
         referralId: true,
         createdAt: true,
+        category: true,
         order: {
           select: {
             id: true,
@@ -563,6 +560,7 @@ export class ReferralsService {
             type: item.type,
             referralTeam: item.order?.team?.name,
             createdAt: item.createdAt,
+            category: item.category,
           };
         }
         return {
@@ -570,6 +568,7 @@ export class ReferralsService {
           type: item.type,
           userTeam: item.order?.team?.name,
           createdAt: item.createdAt,
+          category: item.category,
         };
       }),
     );
@@ -612,67 +611,70 @@ export class ReferralsService {
       availableCredits: availableCredits / 100,
     };
   }
-  async handleRefCodeAndFreeTrial(
-    userId: string,
-    tx?: Prisma.TransactionClient,
-  ) {
-    await this.createReferralCodes(userId, tx);
-    await this.createFreeTrialSubscription(userId, tx);
-  }
+  async handleRefCodeAndFreeTrial(userId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { refCode: true, userCode: true, firstName: true },
+      });
 
-  async createReferralCodes(userId: string, tx?: Prisma.TransactionClient) {
-    const prisma = tx || this.prisma;
-    const user = await this.usersService.findUser({ id: userId });
-    if (!user) {
-      this.logger.error('REFERRAL CODE: User not found', { userId });
-      return;
-    }
-    const referralCode = await this.generateReferralCode();
-    const userCode = await this.generateUserCode(user.firstName);
-    await prisma.user.update({
-      where: { id: userId },
-      data: { refCode: referralCode, userCode },
-    });
-  }
-  async createFreeTrialSubscription(
-    userId: string,
-    tx?: Prisma.TransactionClient,
-  ) {
-    const earlyUser = await this.usersService.isEarlyUser();
-    const prisma = tx || this.prisma;
+      if (user?.refCode && user?.userCode) {
+        this.logger.info('User already has referral codes', { userId });
+        return;
+      }
 
-    const existingSubscription = await prisma.subscription.findFirst({
-      where: { userId },
-    });
+      const referralCode = await this.generateReferralCode();
+      const userCode = await this.generateUserCode(user.firstName);
 
-    if (existingSubscription) {
-      this.logger.warn('User already has a subscription', { userId });
-      return;
-    }
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { refCode: referralCode, userCode },
+      });
 
-    const existingBonus = await prisma.bonus.findFirst({
-      where: {
+      await this.createFreeTrialSubscription(userId);
+    } catch (error) {
+      this.logger.error('Failed to handle referral code and free trial', {
         userId,
-        type: BonusType.FREE_TRIAL,
-        category: earlyUser
-          ? '1 year free subscription'
-          : '6 months free subscription',
-      },
-    });
-
-    if (existingBonus) {
-      this.logger.warn('User already has a free trial bonus', { userId });
-      return;
+        error,
+      });
     }
+  }
 
-    await Promise.all([
-      prisma.subscription.create({
+  async createFreeTrialSubscription(userId: string) {
+    try {
+      const earlyUser = await this.usersService.isEarlyUser();
+
+      const existingSubscription = await this.prisma.subscription.findUnique({
+        where: { userId },
+      });
+      if (existingSubscription) {
+        this.logger.warn('User already has a subscription', { userId });
+        return;
+      }
+
+      const existingBonus = await this.prisma.bonus.findFirst({
+        where: {
+          userId,
+          type: BonusType.FREE_TRIAL,
+          category: earlyUser
+            ? '1 year free subscription'
+            : '6 months free subscription',
+        },
+      });
+
+      if (existingBonus) {
+        this.logger.warn('User already has a free trial bonus', { userId });
+        return;
+      }
+
+      await this.prisma.subscription.create({
         data: {
           userId,
           expiryDate: addMonths(new Date(), earlyUser ? 12 : 6),
         },
-      }),
-      prisma.bonus.create({
+      });
+
+      await this.prisma.bonus.create({
         data: {
           userId,
           amount: 0,
@@ -681,8 +683,17 @@ export class ReferralsService {
             ? '1 year free subscription'
             : '6 months free subscription',
         },
-      }),
-    ]);
+      });
+    } catch (error) {
+      this.logger.error('Failed to create free trial subscription', {
+        userId,
+        error,
+      });
+      this.rollbar.error('Failed to create free trial subscription', {
+        userId,
+        error,
+      });
+    }
   }
 
   async createReferral(userId: string, refCode: string) {
@@ -736,5 +747,27 @@ export class ReferralsService {
       type: referral.type,
       name: `${referrer.firstName} ${referrer.lastName}`,
     };
+  }
+
+  async countReferrals(userId: string) {
+    const referrals = await this.prisma.referral.count({
+      where: { referrerId: userId },
+    });
+    return referrals;
+  }
+  async checkFreeSubscriptionDuration(userId: string, firstPaymentDate: Date) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
+    if (!subscription) {
+      this.logger.error('Subscription not found', { userId });
+      return 0;
+    }
+    const totalSubscriptionDuration =
+      differenceInMonths(
+        new Date(subscription.expiryDate),
+        new Date(firstPaymentDate),
+      ) / 12;
+    return totalSubscriptionDuration;
   }
 }

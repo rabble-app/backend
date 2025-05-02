@@ -13,7 +13,13 @@ const parametersProvider: Provider = {
       return process.env;
     }
     const parameters = await loadParameters();
-    return parameters;
+    return {
+      ...parameters,
+      ...(process.env.APP_ENV === 'local' && {
+        SUPPLEMENT_STRIPE_WEBHOOK_SECRET:
+          process.env.SUPPLEMENT_STRIPE_WEBHOOK_SECRET,
+      }),
+    };
   },
 };
 

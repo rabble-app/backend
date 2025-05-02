@@ -458,4 +458,27 @@ export class UsersControllerExtension {
       'Users profile returned successfully',
     );
   }
+
+  @UseGuards(AuthGuard)
+  @Delete('/:userId')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'User deleted successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async deleteUser(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    await this.usersService.removeUser(userId);
+    return formatResponse(
+      'User deleted successfully',
+      res,
+      HttpStatus.OK,
+      false,
+      'User deleted successfully',
+    );
+  }
 }

@@ -1,24 +1,18 @@
-import * as firebase from 'firebase-admin';
 import twilio from 'twilio';
 import { ICreateNotification } from '../../src/lib/types';
 import { Inject, Injectable } from '@nestjs/common';
 import { Notification, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { FirebaseService } from './firebase.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
-  ) {
-    firebase.initializeApp({
-      credential: firebase.credential.cert({
-        projectId: this.parameters.FIREBASE_PROJECT_ID,
-        privateKey: this.parameters.FIREBASE_PRIVATE_KEY,
-        clientEmail: this.parameters.FIREBASE_CLIENT_EMAIL,
-      }),
-    });
-  }
+    private readonly firebaseService: FirebaseService,
+  ) {}
+
   async sendSMS(message: string, receiver: string): Promise<object> {
     try {
       const client = twilio(
@@ -48,25 +42,15 @@ export class NotificationsService {
     });
     // send push notification
     if (notificationToken) {
-      await firebase
-        .messaging()
-        .send({
-          notification: {
-            title: createNotificationDto.title,
-            body: createNotificationDto.text,
-          },
-          data: {
-            title: createNotificationDto.title,
-            body: createNotificationDto.text,
-            teamId: createNotificationDto.teamId,
-            type: createNotificationDto.type,
-          },
-          token: notificationToken,
-          android: { priority: 'high' },
-        })
-        .catch((/*error: any*/) => {
-          // console.error(error);
-        });
+      await this.firebaseService.sendPushNotification({
+        token: notificationToken,
+        title: createNotificationDto.title,
+        body: createNotificationDto.text,
+        data: {
+          teamId: createNotificationDto.teamId,
+          type: createNotificationDto.type,
+        },
+      });
     }
 
     return result;

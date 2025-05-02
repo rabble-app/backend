@@ -6,6 +6,8 @@ import { PrismaService } from '../../src/prisma.service';
 import { Producer, ProductApprovalStatus, User } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
+import { mockStripeService } from '../mocks';
+import { StripeService } from '../../src/stripe/stripe.service';
 
 describe('ProductsController (e2e)', () => {
   let app: INestApplication;
@@ -31,7 +33,10 @@ describe('ProductsController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(mockStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
@@ -39,7 +44,6 @@ describe('ProductsController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
 
     // create dummy user for test
     user = await prisma.user.create({

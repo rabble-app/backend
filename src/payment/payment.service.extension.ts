@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import {
   Basket,
   BasketC,
@@ -17,10 +16,10 @@ import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
 import { add, addYears } from 'date-fns';
+import { StripeService } from '../stripe/stripe.service';
+import Rollbar from 'rollbar';
 @Injectable()
 export class PaymentServiceExtension {
-  private readonly stripe: Stripe;
-  private readonly supplementStripe: Stripe;
   constructor(
     @Inject(forwardRef(() => PaymentService))
     private readonly paymentService: PaymentService,
@@ -28,25 +27,18 @@ export class PaymentServiceExtension {
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     private readonly referralsService: ReferralsService,
     @Inject('LOGGER') private readonly logger: Logger,
-  ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-    this.supplementStripe = new Stripe(
-      this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY,
-      {
-        apiVersion: '2022-11-15',
-      },
-    );
-  }
+    private readonly stripeService: StripeService,
+    @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+  ) {}
 
   async getUserPaymentOptions(
     id: string,
     isSupplementApp = false,
   ): Promise<object | null> {
-    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
-    const result = await stripe.customers.listPaymentMethods(id);
-
+    const result = await this.stripeService.listPaymentMethods(
+      id,
+      isSupplementApp,
+    );
     const unique = [
       ...new Map(result.data.map((m) => [m.card.last4, m])).values(),
     ];
@@ -57,24 +49,23 @@ export class PaymentServiceExtension {
     id: string,
     isSupplementApp = false,
   ): Promise<object | null> {
-    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
-    return await stripe.paymentMethods.detach(id);
+    return await this.stripeService.detachPaymentMethod(id, isSupplementApp);
   }
 
   async captureFund(
     paymentIntentId: string,
-    options: Stripe.PaymentIntentCaptureParams = null,
+    options: any = null,
     isSupplementApp = false,
   ): Promise<object | null> {
     try {
-      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
-      const result = await stripe.paymentIntents.capture(
+      return await this.stripeService.capturePaymentIntent(
         paymentIntentId,
         options,
+        isSupplementApp,
       );
-      return result;
     } catch (error) {
       console.log(error);
+      return null;
     }
   }
 
@@ -210,13 +201,14 @@ export class PaymentServiceExtension {
 
   async updatePaymentIntent(
     paymentIntentId: string,
-    metadata: Stripe.MetadataParam,
+    metadata: any,
     isSupplementApp = false,
   ): Promise<object | null> {
-    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
-    return await stripe.paymentIntents.update(paymentIntentId, {
-      metadata,
-    });
+    return await this.stripeService.updatePaymentIntent(
+      paymentIntentId,
+      { metadata },
+      isSupplementApp,
+    );
   }
 
   async handleSupplementPaymentCapture(
@@ -409,7 +401,6 @@ export class PaymentServiceExtension {
         true,
         true, // isSupplementApp
       );
-
       if (!paymentIntent || paymentIntent.status !== 'requires_capture') {
         return null;
       }
@@ -434,14 +425,9 @@ export class PaymentServiceExtension {
         expiryDate: addYears(new Date(), 1),
       };
 
-      await this.prisma.subscription.create({
-        data: {
-          userId,
-          expiryDate: addYears(new Date(), 1),
-        },
-      });
       return await this.paymentService.recordPayment(paymentData);
     } catch (error) {
+      this.rollbar.error('Error handling yearly subscription:', error);
       console.error('Error handling yearly subscription:', error);
       return null;
     }
