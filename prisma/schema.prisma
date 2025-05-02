@@ -25,9 +25,11 @@ model User {
   role                          Role                            @default(USER)
   createdAt                     DateTime                        @default(now()) @map("created_at")
   updatedAt                     DateTime                        @updatedAt @map("updated_at")
+  firstPaymentDate              DateTime?                       @map("first_payment_date")
   notificationToken             String?                         @map("notification_token")
   onboardingStage               Int                             @default(0) @map("onboarding_stage")
   refCode                       String?                         @unique @map("ref_code")
+  userCode                      String?                         @unique @map("user_code")
   referrerId                    String?                         @map("referrer_id")
   metadata                      Json?
   basketsC                      BasketC[]
@@ -58,7 +60,7 @@ model User {
   bonuses                       Bonus[]
   claims                        Claim[]
   coupons                       Coupon[]
-
+  subscription                  Subscription?
   @@index([id])
   @@map("users")
 }
@@ -870,6 +872,7 @@ model Bonus {
   userId     String    @map("user_id")
   amount     Decimal
   type       BonusType
+  category   String?    @default("credit")
   referralId String?   @map("referral_id")
   orderId    String?   @map("order_id")
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -880,11 +883,44 @@ model Bonus {
   @@index([id, userId])
   @@map("bonuses")
 }
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id") @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  status    SubscriptionStatus @default(ACTIVE)
+  expiryDate DateTime? @map("expiry_date")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id, userId])
+  @@map("subscriptions")
+}
+
+
+model Referral {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  referrerId String?   @map("referrer_id")
+  type       ReferralType @default(INTERNAL)
+  affiliateId String? @map("affiliate_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([id, userId])
+  @@map("referrals")
+}
+
+enum ReferralType {
+  AFFILIATE
+  INTERNAL
+}
 
 enum BonusType {
   REFERRAL
   SIGNUP
+  FREE_TRIAL
 }
+
 
 enum OrderStatus {
   PENDING

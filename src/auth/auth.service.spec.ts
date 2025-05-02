@@ -29,7 +29,7 @@ describe('AuthService', () => {
         TeamsService,
         ProductsService,
         ReferralsService,
-        PaymentServiceExtension
+        PaymentServiceExtension,
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

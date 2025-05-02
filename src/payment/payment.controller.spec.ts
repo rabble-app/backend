@@ -32,7 +32,7 @@ describe('PaymentController', () => {
         AuthService,
         JwtService,
         ReferralsService,
-        PaymentServiceExtension
+        PaymentServiceExtension,
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

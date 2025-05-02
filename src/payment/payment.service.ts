@@ -7,6 +7,7 @@ import {
   Order,
   Payment,
   PaymentStatus,
+  PaymentType,
   Prisma,
   ProductPaymentStatus,
   SupplementTeamStatus,
@@ -39,6 +40,7 @@ import { TeamsService } from '../teams/teams.service';
 import { add } from 'date-fns';
 import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
+import { ReferralsService } from '../referrals/referrals.service';
 
 @Injectable()
 export class PaymentService {
@@ -54,6 +56,7 @@ export class PaymentService {
     @Inject(forwardRef(() => TeamsService))
     private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
+    private readonly referralsService: ReferralsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
     @Inject(forwardRef(() => PaymentServiceExtension))
@@ -62,9 +65,12 @@ export class PaymentService {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
-    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    this.supplementStripe = new Stripe(
+      this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY,
+      {
+        apiVersion: '2022-11-15',
+      },
+    );
   }
 
   async addCustomerCard(
@@ -116,9 +122,7 @@ export class PaymentService {
     isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
     const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
-    await stripe.paymentMethods.detach(
-      removePaymentCardDto.paymentMethodId,
-    );
+    await stripe.paymentMethods.detach(removePaymentCardDto.paymentMethodId);
 
     // remove it from our record
     await this.prisma.paymentMethod.deleteMany({
@@ -215,7 +219,9 @@ export class PaymentService {
     return await this.recordPayment(paymentData);
   }
 
-  async getTeamLatestOrder(teamId: string): Promise<OrderWithSupplementPayload | null> {
+  async getTeamLatestOrder(
+    teamId: string,
+  ): Promise<OrderWithSupplementPayload | null> {
     return await this.prisma.order.findFirst({
       where: {
         teamId: teamId,
@@ -238,8 +244,8 @@ export class PaymentService {
               },
             },
           },
-        }
-      }
+        },
+      },
     });
   }
 
@@ -306,7 +312,7 @@ export class PaymentService {
   async createIntent(
     createIntentData: ICreateIntent,
     offline = false,
-    isSupplementApp = false
+    isSupplementApp = false,
   ): Promise<any | null> {
     try {
       const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
@@ -358,9 +364,46 @@ export class PaymentService {
   }
 
   async recordPayment(paymentData: IPayment): Promise<Payment> {
-    return await this.prisma.payment.create({
-      data: paymentData,
-    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        if (paymentData.type !== PaymentType.YEARLY_SUBSCRIPTION) {
+          const hasPreviousPayment = await tx.payment.count({
+            where: {
+              userId: paymentData.userId,
+            },
+          });
+
+          if (!hasPreviousPayment) {
+            await tx.user.update({
+              where: {
+                id: paymentData.userId,
+              },
+              data: {
+                firstPaymentDate: new Date(),
+              },
+            });
+
+            await this.referralsService.handleRefCodeAndFreeTrial(
+              paymentData.userId,
+              tx,
+            );
+          }
+        }
+
+        return await tx.payment.create({
+          data: paymentData,
+        });
+      });
+    } catch (error) {
+      this.logger.error('Failed to record payment', {
+        error,
+        paymentData,
+      });
+      throw new HttpException(
+        'Failed to record payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async updatePayment(params: {
@@ -595,7 +638,9 @@ export class PaymentService {
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.price,
             capsulePerDay: addSingleBasketDto.capsulePerDay,
-            deliveryDate: add(new Date(), { weeks: team.supplementTeamProducts.product.leadTime })
+            deliveryDate: add(new Date(), {
+              weeks: team.supplementTeamProducts.product.leadTime,
+            }),
           },
         });
       }
@@ -715,30 +760,58 @@ export class PaymentService {
 
   async joinSupplementTeam(joinSupplementTeamDto: JoinSupplementTeamDto) {
     // Check if user has active subscription
-    const hasActiveSubscription = await this.paymentServiceExtension.checkUserSubscriptionStatus(joinSupplementTeamDto.userId);
+    const hasActiveSubscription =
+      await this.paymentServiceExtension.checkUserSubscriptionStatus(
+        joinSupplementTeamDto.userId,
+      );
     if (!hasActiveSubscription) {
-      this.logger.warn('User does not have an active subscription for joining supplement team', {
-        userId: joinSupplementTeamDto.userId
-      });
+      this.logger.warn(
+        'User does not have an active subscription for joining supplement team',
+        {
+          userId: joinSupplementTeamDto.userId,
+        },
+      );
       return 6;
     }
 
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
       // get the user stripe id
-      const userInfo = await this.userService.findUser({ id: joinSupplementTeamDto.userId });
-      if (!userInfo.stripeCustomerId) return 1
+      const userInfo = await this.userService.findUser({
+        id: joinSupplementTeamDto.userId,
+      });
+      if (!userInfo.stripeCustomerId) return 1;
       // create payment intent
-      const paymentIntent = await this.createIntent({ amount: joinSupplementTeamDto.amount, currency: joinSupplementTeamDto.currency, paymentMethodId: joinSupplementTeamDto.paymentMethodId, customerId: userInfo.stripeCustomerId }, false, true)
-      if (!paymentIntent || paymentIntent.status != 'requires_capture') return 2
+      const paymentIntent = await this.createIntent(
+        {
+          amount: joinSupplementTeamDto.amount,
+          currency: joinSupplementTeamDto.currency,
+          paymentMethodId: joinSupplementTeamDto.paymentMethodId,
+          customerId: userInfo.stripeCustomerId,
+        },
+        false,
+        true,
+      );
+      if (!paymentIntent || paymentIntent.status != 'requires_capture')
+        return 2;
       // charge the user
-      const paymentCaptureResult = await this.paymentServiceExtension.handleSupplementPaymentCapture({paymentIntentId: paymentIntent.id, teamId: joinSupplementTeamDto.teamId, userId: joinSupplementTeamDto.userId, amount: joinSupplementTeamDto.amount })
-      if(!paymentCaptureResult) return 3
-      orderId = paymentCaptureResult.orderId
+      const paymentCaptureResult =
+        await this.paymentServiceExtension.handleSupplementPaymentCapture({
+          paymentIntentId: paymentIntent.id,
+          teamId: joinSupplementTeamDto.teamId,
+          userId: joinSupplementTeamDto.userId,
+          amount: joinSupplementTeamDto.amount,
+        });
+      if (!paymentCaptureResult) return 3;
+      orderId = paymentCaptureResult.orderId;
     }
     // add to team --> we need a utility function to get the member status
-    const addToTeam = await this.teamsService.addTeamMember({teamId: joinSupplementTeamDto.teamId, userId: joinSupplementTeamDto.userId, status: Status.APPROVED})
-    if (!addToTeam) return 4
+    const addToTeam = await this.teamsService.addTeamMember({
+      teamId: joinSupplementTeamDto.teamId,
+      userId: joinSupplementTeamDto.userId,
+      status: Status.APPROVED,
+    });
+    if (!addToTeam) return 4;
 
     // store the basket
     const basket = await this.addToBasket({
@@ -751,8 +824,7 @@ export class PaymentService {
       capsulePerDay: joinSupplementTeamDto.capsulePerDay,
       topupQuantity: joinSupplementTeamDto.topupQuantity,
     });
-    if (!basket) return 5
-    return joinSupplementTeamDto
+    if (!basket) return 5;
+    return joinSupplementTeamDto;
   }
-
 }

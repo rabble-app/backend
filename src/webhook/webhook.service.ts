@@ -22,7 +22,7 @@ export class WebhookService {
   /**
    * Constructs a Stripe webhook event from the given payload and signature
    * Handles 'payment_intent.succeeded' events by logging and processing referrals
-   * 
+   *
    * @param signature The Stripe webhook signature for verification
    * @param payload The raw webhook payload buffer
    * @returns void
@@ -49,7 +49,7 @@ export class WebhookService {
         );
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return;
     }
   }

@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SupplementTeamStatus } from '@prisma/client';
-import { IsString, IsNotEmpty, IsNumber, ValidateIf, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  ValidateIf,
+  IsEnum,
+} from 'class-validator';
 
 export class JoinSupplementTeamDto {
   @ApiProperty({

@@ -27,7 +27,7 @@ export class ScheduleService {
     private readonly usersService: UsersService,
     private readonly teamsService: TeamsService,
     private readonly teamsServiceExtension: TeamsServiceExtension,
-  ) { }
+  ) {}
 
   async chargeUsers() {
     // check if status is pending and threshold has been reached
@@ -108,10 +108,8 @@ export class ScheduleService {
           ) {
             // authorize payment for this user
             setTimeout(async () => {
-              const paymentRecord = await this.handleAuthorizePayments(
-                payment,
-              );
-       
+              const paymentRecord = await this.handleAuthorizePayments(payment);
+
               if (!paymentRecord) {
                 // if the team belongs to a partner
                 if (payment.order.team.partnerId) {
@@ -133,8 +131,8 @@ export class ScheduleService {
                     portionedProducts.forEach(async (portionedProduct) => {
                       if (
                         portionedProduct &&
-                        portionedProduct.PartitionedProductUsersRecord
-                          .length > 0
+                        portionedProduct.PartitionedProductUsersRecord.length >
+                          0
                       ) {
                         // reduce the portion product basket accumulation to signal that there is still space
                         await this.prisma.partitionedProductsBasket.update({
@@ -150,14 +148,12 @@ export class ScheduleService {
                           },
                         });
                         // remove user record from portion product basket
-                        await this.prisma.partitionedProductUsersRecord.delete(
-                          {
-                            where: {
-                              id: portionedProduct
-                                .PartitionedProductUsersRecord[0].id,
-                            },
+                        await this.prisma.partitionedProductUsersRecord.delete({
+                          where: {
+                            id: portionedProduct
+                              .PartitionedProductUsersRecord[0].id,
                           },
-                        );
+                        });
                       }
                     });
                   }
@@ -187,15 +183,17 @@ export class ScheduleService {
   }
   // fix: remove 'any' datatype
   async handleAuthorizePayments(payment: any) {
-    return await this.paymentServiceExtension.schedulePaymentAuthorization({
-      stripeDefaultPaymentMethodId: payment.user.stripeDefaultPaymentMethodId,
-      amount: payment.amount,
-      orderId: payment.orderId,
-      stripeCustomerId: payment.user.stripeCustomerId,
-      teamId: payment.order.team.id,
-      paymentId: payment.id,
-    },
-    payment.order.type === 'SUPPLEMENT');
+    return await this.paymentServiceExtension.schedulePaymentAuthorization(
+      {
+        stripeDefaultPaymentMethodId: payment.user.stripeDefaultPaymentMethodId,
+        amount: payment.amount,
+        orderId: payment.orderId,
+        stripeCustomerId: payment.user.stripeCustomerId,
+        teamId: payment.order.team.id,
+        paymentId: payment.id,
+      },
+      payment.order.type === 'SUPPLEMENT',
+    );
   }
 
   async handleNewOrders() {
@@ -238,7 +236,7 @@ export class ScheduleService {
               ) {
                 amountToCapture = new Decimal(
                   +amountToCapture -
-                  +portionedProduct.PartitionedProductUsersRecord[0].amount,
+                    +portionedProduct.PartitionedProductUsersRecord[0].amount,
                 );
 
                 // mark the product as refunded here
@@ -263,7 +261,7 @@ export class ScheduleService {
               {
                 amount_to_capture: +amountToCapture * 100,
               },
-              payment.order.type === 'SUPPLEMENT'
+              payment.order.type === 'SUPPLEMENT',
             );
 
             // check whether capture was successful and send notification if not
@@ -420,7 +418,7 @@ export class ScheduleService {
         }
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 
@@ -547,7 +545,7 @@ export class ScheduleService {
                 (+item.product.wholesalePrice *
                   item.quantity *
                   +item.product.vat) /
-                100,
+                  100,
               );
               totalTax = new Decimal(+totalTax + +retailTax);
               return {
@@ -572,13 +570,13 @@ export class ScheduleService {
               product: JSON.stringify(formattedProducts),
               totalRetailPriceVat: +totalTax,
             },
-            true
+            true,
           );
         });
       }
       return true;
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 

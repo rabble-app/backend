@@ -1,5 +1,12 @@
 import Stripe from 'stripe';
-import { Basket, BasketC, Payment, Prisma, PaymentType, PaymentStatus } from '@prisma/client';
+import {
+  Basket,
+  BasketC,
+  Payment,
+  Prisma,
+  PaymentType,
+  PaymentStatus,
+} from '@prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth } from '../lib/types';
 import { PrismaService } from '../prisma.service';
@@ -25,12 +32,18 @@ export class PaymentServiceExtension {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
-    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    this.supplementStripe = new Stripe(
+      this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY,
+      {
+        apiVersion: '2022-11-15',
+      },
+    );
   }
 
-  async getUserPaymentOptions(id: string, isSupplementApp = false): Promise<object | null> {;
+  async getUserPaymentOptions(
+    id: string,
+    isSupplementApp = false,
+  ): Promise<object | null> {
     const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
     const result = await stripe.customers.listPaymentMethods(id);
 
@@ -40,7 +53,10 @@ export class PaymentServiceExtension {
     return unique;
   }
 
-  async removePaymentOption(id: string, isSupplementApp = false): Promise<object | null> {
+  async removePaymentOption(
+    id: string,
+    isSupplementApp = false,
+  ): Promise<object | null> {
     const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
     return await stripe.paymentMethods.detach(id);
   }
@@ -161,7 +177,7 @@ export class PaymentServiceExtension {
           paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
         },
         true,
-        isSupplementApp
+        isSupplementApp,
       );
 
       if (!paymentIntent || paymentIntent.status != 'requires_capture') {
@@ -213,10 +229,14 @@ export class PaymentServiceExtension {
     const orderId = latestOrder?.id;
 
     // update payment intent
-    await this.updatePaymentIntent(captureIntentDto.paymentIntentId, {
-      order_id: orderId,
-      user_id: captureIntentDto.userId,
-    }, true);
+    await this.updatePaymentIntent(
+      captureIntentDto.paymentIntentId,
+      {
+        order_id: orderId,
+        user_id: captureIntentDto.userId,
+      },
+      true,
+    );
     const applyCouponResult = await this.referralsService.applyCoupon(
       captureIntentDto.userId,
       captureIntentDto.amount * 100,
@@ -243,7 +263,7 @@ export class PaymentServiceExtension {
           ...(amountOff && { amount_off: amountOff }),
         },
       },
-      true
+      true,
     );
     // check if payment was successful
     if (captureResult) {
@@ -310,11 +330,16 @@ export class PaymentServiceExtension {
 
   async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | number> {
     // Check if user has active subscription
-    const hasActiveSubscription = await this.checkUserSubscriptionStatus(topUpDto.userId);
+    const hasActiveSubscription = await this.checkUserSubscriptionStatus(
+      topUpDto.userId,
+    );
     if (!hasActiveSubscription) {
-      this.logger.warn('User does not have an active subscription for top-up payment', {
-        userId: topUpDto.userId
-      });
+      this.logger.warn(
+        'User does not have an active subscription for top-up payment',
+        {
+          userId: topUpDto.userId,
+        },
+      );
       return 1;
     }
 
@@ -324,7 +349,11 @@ export class PaymentServiceExtension {
     );
 
     // capture payment
-    const captureResult = await this.captureFund(topUpDto.paymentIntentId, null, true);
+    const captureResult = await this.captureFund(
+      topUpDto.paymentIntentId,
+      null,
+      true,
+    );
 
     // check if payment was successful
     if (captureResult) {
@@ -337,7 +366,10 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
-          deliveryDate: add(new Date(), { weeks: latestOrder.team.supplementTeamProducts?.product?.leadTime ?? 1 })
+          deliveryDate: add(new Date(), {
+            weeks:
+              latestOrder.team.supplementTeamProducts?.product?.leadTime ?? 1,
+          }),
         },
       });
       // record payment
@@ -359,7 +391,7 @@ export class PaymentServiceExtension {
       // Get user's default payment method
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { stripeDefaultPaymentMethodId: true, stripeCustomerId: true }
+        select: { stripeDefaultPaymentMethodId: true, stripeCustomerId: true },
       });
 
       if (!user?.stripeDefaultPaymentMethodId || !user?.stripeCustomerId) {
@@ -375,7 +407,7 @@ export class PaymentServiceExtension {
           paymentMethodId: user.stripeDefaultPaymentMethodId,
         },
         true,
-        true // isSupplementApp
+        true, // isSupplementApp
       );
 
       if (!paymentIntent || paymentIntent.status !== 'requires_capture') {
@@ -383,7 +415,11 @@ export class PaymentServiceExtension {
       }
 
       // Capture the payment
-      const captureResult = await this.captureFund(paymentIntent.id, null, true);
+      const captureResult = await this.captureFund(
+        paymentIntent.id,
+        null,
+        true,
+      );
       if (!captureResult) {
         return null;
       }
@@ -398,6 +434,12 @@ export class PaymentServiceExtension {
         expiryDate: addYears(new Date(), 1),
       };
 
+      await this.prisma.subscription.create({
+        data: {
+          userId,
+          expiryDate: addYears(new Date(), 1),
+        },
+      });
       return await this.paymentService.recordPayment(paymentData);
     } catch (error) {
       console.error('Error handling yearly subscription:', error);
@@ -412,7 +454,7 @@ export class PaymentServiceExtension {
         userId,
         // status should be captured or intent created
         status: {
-          in: [PaymentStatus.CAPTURED, PaymentStatus.COUPON_USED]
+          in: [PaymentStatus.CAPTURED, PaymentStatus.COUPON_USED],
         },
         type: PaymentType.OTHERS,
       });
@@ -440,7 +482,9 @@ export class PaymentServiceExtension {
     }
   }
 
-  async getSubscriptionStatus(userId: string): Promise<{ hasActiveSubscription: boolean; expiryDate: Date | null }> {
+  async getSubscriptionStatus(
+    userId: string,
+  ): Promise<{ hasActiveSubscription: boolean; expiryDate: Date | null }> {
     try {
       // Get all subscription payments for the user
       const subscriptionPayments = await this.findPayments({
@@ -452,13 +496,14 @@ export class PaymentServiceExtension {
       if (!subscriptionPayments || subscriptionPayments.length === 0) {
         return {
           hasActiveSubscription: false,
-          expiryDate: null
+          expiryDate: null,
         };
       }
 
       // Sort by expiry date to get the most recent subscription
-      const sortedSubscriptions = subscriptionPayments.sort((a, b) => 
-        new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime()
+      const sortedSubscriptions = subscriptionPayments.sort(
+        (a, b) =>
+          new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime(),
       );
 
       const latestSubscription = sortedSubscriptions[0];
@@ -466,13 +511,13 @@ export class PaymentServiceExtension {
 
       return {
         hasActiveSubscription: isActive,
-        expiryDate: latestSubscription.expiryDate
+        expiryDate: latestSubscription.expiryDate,
       };
     } catch (error) {
       this.logger.error('Error getting subscription status:', error);
       return {
         hasActiveSubscription: false,
-        expiryDate: null
+        expiryDate: null,
       };
     }
   }

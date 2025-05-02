@@ -69,7 +69,10 @@ export class PaymentControllerExtension {
     @Query('isSupplementApp') isSupplementApp: boolean,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.getUserPaymentOptions(id, isSupplementApp);
+    const result = await this.paymentServiceExtension.getUserPaymentOptions(
+      id,
+      isSupplementApp,
+    );
     return formatResponse(
       result,
       res,
@@ -136,7 +139,11 @@ export class PaymentControllerExtension {
     @Query('isSupplementApp') isSupplementApp: boolean,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.createIntent(createIntentDto, false, isSupplementApp);
+    const result = await this.paymentService.createIntent(
+      createIntentDto,
+      false,
+      isSupplementApp,
+    );
     return formatResponse(
       {
         paymentIntentId: result?.id,
@@ -263,7 +270,7 @@ export class PaymentControllerExtension {
     const result = await this.paymentServiceExtension.handleTopUpPayment(
       topUpDto,
     );
-    if (result == 1 ) {
+    if (result == 1) {
       return formatResponse(
         'User do not have any active subscription',
         res,
@@ -272,7 +279,7 @@ export class PaymentControllerExtension {
         'No Active Subscription',
       );
     }
-    if (result == 2 ) {
+    if (result == 2) {
       return formatResponse(
         'Subscription top up failed',
         res,
@@ -364,7 +371,9 @@ export class PaymentControllerExtension {
     @Res({ passthrough: true }) res: Response,
     @Body() joinSupplementTeamDto: JoinSupplementTeamDto,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentService.joinSupplementTeam(joinSupplementTeamDto);
+    const result = await this.paymentService.joinSupplementTeam(
+      joinSupplementTeamDto,
+    );
     if (result == 1) {
       return formatResponse(
         'User not found',
@@ -443,8 +452,10 @@ export class PaymentControllerExtension {
     @Param('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.handleYearlySubscription(userId);
-    
+    const result = await this.paymentServiceExtension.handleYearlySubscription(
+      userId,
+    );
+
     if (!result) {
       return formatResponse(
         'Failed to process yearly subscription',
@@ -478,8 +489,10 @@ export class PaymentControllerExtension {
     @Param('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.getSubscriptionStatus(userId);
-    
+    const result = await this.paymentServiceExtension.getSubscriptionStatus(
+      userId,
+    );
+
     return formatResponse(
       result,
       res,

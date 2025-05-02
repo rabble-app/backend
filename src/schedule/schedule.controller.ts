@@ -285,8 +285,7 @@ export class ScheduleController {
   async activatePreOrderTeam(
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result =
-      await this.scheduleServiceExtended.activatePreOrderTeams();
+    const result = await this.scheduleServiceExtended.activatePreOrderTeams();
     return formatResponse(
       result,
       res,
@@ -309,9 +308,8 @@ export class ScheduleController {
   async createSupplementOrders(
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result =
-      await this.scheduleServiceExtended.createSupplementOrders();
-      
+    const result = await this.scheduleServiceExtended.createSupplementOrders();
+
     return formatResponse(
       result,
       res,

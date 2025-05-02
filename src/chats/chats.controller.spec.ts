@@ -35,7 +35,6 @@ describe('ChatsController', () => {
         JwtService,
         ReferralsService,
         PaymentServiceExtension,
-  
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

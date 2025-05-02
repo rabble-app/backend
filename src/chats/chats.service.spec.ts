@@ -31,7 +31,7 @@ describe('ChatsService', () => {
         ProductsService,
         JwtService,
         ReferralsService,
-        PaymentServiceExtension
+        PaymentServiceExtension,
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

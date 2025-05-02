@@ -1,6 +1,5 @@
 import {
   BuyingTeam,
-  MembershipStatus,
   OrderStatus,
   Prisma,
   SupplementTeamProducts,
@@ -37,7 +36,7 @@ export class TeamsService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => TeamsServiceExtension))
     private teamsServiceExtension: TeamsServiceExtension,
-  ) { }
+  ) {}
 
   async createTeam(createTeamDto: CreateTeamDto) {
     const currentDate = new Date();
@@ -64,16 +63,16 @@ export class TeamsService {
         if (typeof teamImages[category] == 'function') {
           imageUrl =
             teamImages[category]()[
-            Math.floor(
-              Math.floor(Math.random() * 10) * teamImages[category]().length,
-            )
+              Math.floor(
+                Math.floor(Math.random() * 10) * teamImages[category]().length,
+              )
             ];
         } else {
           imageUrl =
             teamImages[category][
-            Math.floor(
-              Math.floor(Math.random() * 10) * teamImages[category].length,
-            )
+              Math.floor(
+                Math.floor(Math.random() * 10) * teamImages[category].length,
+              )
             ];
         }
       }
@@ -81,7 +80,7 @@ export class TeamsService {
     if (!imageUrl) {
       imageUrl =
         teamImages.General[
-        Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
+          Math.floor(Math.floor(Math.random() * 10) * teamImages.General.length)
         ];
     }
 
@@ -183,7 +182,12 @@ export class TeamsService {
       teamData.teamId,
     );
     const isSupplementTeam = team.supplementTeamProducts ? true : false;
-    const memberStatus = getTeamMembershipRole(teamMembers.length, isSupplementTeam, team?.supplementTeamProducts?.orderTreashold, teamData.role)
+    const memberStatus = getTeamMembershipRole(
+      teamMembers.length,
+      isSupplementTeam,
+      team?.supplementTeamProducts?.orderTreashold,
+      teamData.role,
+    );
     const result = await this.prisma.teamMember.upsert({
       where: {
         team_unique_user: {
@@ -466,17 +470,17 @@ export class TeamsService {
               select: {
                 leadTime: true,
                 id: true,
-                name: true
-              }
+                name: true,
+              },
             },
             orderTreashold: true,
-          }
+          },
         },
         _count: {
           select: {
             members: true,
           },
-        }
+        },
       },
     });
   }
@@ -486,12 +490,12 @@ export class TeamsService {
     userId: string,
   ): Promise<
     | {
-      id: string;
-      name: string;
-      imageUrl: string;
-      producerId: string;
-      hostId: string;
-    }[]
+        id: string;
+        name: string;
+        imageUrl: string;
+        producerId: string;
+        hostId: string;
+      }[]
     | null
   > {
     return await this.prisma.buyingTeam.findMany({

@@ -14,13 +14,14 @@ import { VerifyOTPDto } from './dto/verify-otp.dto';
 import { courier } from '../../src/utils/mail';
 import { Role, UserWithProducerAndPartnerInfo } from '../../src/lib/types';
 import { ICourierClient } from '@trycourier/courier';
-
+import { ReferralsService } from '../referrals/referrals.service';
 @Injectable()
 export class AuthService {
   private courierClient: ICourierClient;
   private readonly stripe: Stripe;
   constructor(
     private readonly userService: UsersService,
+    private readonly referralsService: ReferralsService,
     private jwtService: JwtService,
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
@@ -156,30 +157,24 @@ export class AuthService {
   async registerUser(createUserDto: CreateUserDto): Promise<Producer | User> {
     let producerRecord: Producer = undefined;
     let stripeCustomerId: string = undefined;
-    let referrerId: string = undefined;
 
     // encrypt password
     const password = await this.encryptPassword(createUserDto.password);
 
     if (createUserDto.role && createUserDto.role == Role.USER) {
       // create user stripe account
-      const stripeResponse = await this.userService.createStripeCustomer({
-        email: createUserDto.email,
-      }, true);
+      const stripeResponse = await this.userService.createStripeCustomer(
+        {
+          email: createUserDto.email,
+        },
+        true,
+      );
       stripeCustomerId = stripeResponse.id;
     }
 
-    // verify referrer
-    if (createUserDto.referralCode) {
-      const referrer = await this.userService.findUser({
-        refCode: createUserDto.referralCode,
-      });
-      referrerId = referrer?.id;
-    }
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
-        referrerId,
         password,
         stripeCustomerId,
         email: createUserDto.email,
@@ -188,6 +183,12 @@ export class AuthService {
         metadata: createUserDto.metadata,
       },
     });
+    if (createUserDto.referralCode) {
+      await this.referralsService.createReferral(
+        userRecord.id,
+        createUserDto.referralCode,
+      );
+    }
 
     if (!createUserDto.role) {
       // save producer record

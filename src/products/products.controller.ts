@@ -372,7 +372,10 @@ export class ProductsController {
     @Query('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.productsService.getSupplementProducts(limit, userId);
+    const result = await this.productsService.getSupplementProducts(
+      limit,
+      userId,
+    );
     return formatResponse(
       result,
       res,

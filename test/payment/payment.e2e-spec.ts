@@ -362,7 +362,7 @@ describe('PaymentController (e2e)', () => {
         },
         testTime,
       );
-     
+
       // remove payment card from user
       it(
         '/payments/remove-card(DELETE) should remove card from user',
@@ -378,8 +378,7 @@ describe('PaymentController (e2e)', () => {
         },
         testTime,
       );
-
-    })
+    });
 
     describe('Basket', () => {
       // add user bulk basket successfully

@@ -32,7 +32,7 @@ describe('AuthController', () => {
         TeamsService,
         ProductsService,
         ReferralsService,
-        PaymentServiceExtension
+        PaymentServiceExtension,
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

@@ -22,6 +22,7 @@ import {
   UserWithProducerAndPartnerInfo,
 } from '../lib/types';
 import { parse } from 'postcode';
+import { differenceInDays } from 'date-fns';
 
 @Injectable()
 export class UsersService {
@@ -35,9 +36,12 @@ export class UsersService {
     this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
       apiVersion: '2022-11-15',
     });
-    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    this.supplementStripe = new Stripe(
+      this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY,
+      {
+        apiVersion: '2022-11-15',
+      },
+    );
   }
 
   async findUser(
@@ -98,9 +102,9 @@ export class UsersService {
         },
         basketsC: {
           select: {
-            productId: true
+            productId: true,
           },
-        }
+        },
       },
     });
   }
@@ -697,13 +701,16 @@ export class UsersService {
     });
   }
 
-  async createStripeCustomer({
-    phone,
-    email,
-  }: {
-    phone?: string;
-    email?: string;
-  }, isSupplementApp = false): Promise<{ id: string } | null> {
+  async createStripeCustomer(
+    {
+      phone,
+      email,
+    }: {
+      phone?: string;
+      email?: string;
+    },
+    isSupplementApp = false,
+  ): Promise<{ id: string } | null> {
     try {
       const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const params: Stripe.CustomerCreateParams = {};
@@ -746,5 +753,31 @@ export class UsersService {
 
   async getStripeProfile(accountId: string): Promise<object> {
     return await this.stripe.accounts.retrieve(accountId);
+  }
+
+  async isEarlyUser(threshold = 100) {
+    const count = await this.prisma.user.count({
+      where: {
+        firstPaymentDate: {
+          not: null,
+        },
+      },
+    });
+    return count < threshold;
+  }
+
+  async isUserFirst30Days(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user?.firstPaymentDate) return false;
+    return differenceInDays(new Date(), new Date(user.firstPaymentDate)) <= 30;
+  }
+
+  async countUserReferrals(userId: string) {
+    const count = await this.prisma.user.count({
+      where: { referrerId: userId },
+    });
+    return count;
   }
 }

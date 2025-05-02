@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
+import { ReferralsService } from '../../src/referrals/referrals.service';
 
 const commonFailureResponse = (response: any) => {
   expect(response.body).toHaveProperty('error');
@@ -13,6 +14,7 @@ const commonFailureResponse = (response: any) => {
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let referralsService: ReferralsService;
   let userId: string;
   let jwtToken: string;
   let userJwtToken: string;
@@ -59,6 +61,7 @@ describe('AppController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    referralsService = app.get<ReferralsService>(ReferralsService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
@@ -168,6 +171,36 @@ describe('AppController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .post('/auth/register')
           .send(supplementUserInfo)
+          .expect(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        userJwtToken = response.body.data.token;
+      },
+      testTime,
+    );
+
+    it(
+      '/auth/register (POST) should register a supplement user with referral code',
+      async () => {
+        const referralCode = await referralsService.generateReferralCode();
+        const sponsorData = {
+          email: 'sponsor@example.com',
+          password: 'password',
+          phone: '1234567890',
+          firstName: 'John',
+          lastName: 'Doe',
+          refCode: referralCode,
+        };
+        const userCode = await referralsService.generateUserCode(
+          sponsorData.firstName,
+        );
+        const response = await request(app.getHttpServer())
+          .post('/auth/register')
+          .send({
+            ...supplementUserInfo,
+            refCode: userCode,
+          })
           .expect(201);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
