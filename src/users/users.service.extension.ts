@@ -265,4 +265,28 @@ export class UsersServiceExtension {
       },
     };
   }
+
+  async hasActiveSupplementTeam(userId: string): Promise<boolean> {
+    const teamMember = await this.prisma.teamMember.findFirst({
+      where: {
+        userId,
+        status: TeamStatus.APPROVED,
+      },
+      select: {
+        team: {
+          select: {
+            supplementTeamProducts: {
+              select: {
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!teamMember) return false;
+
+    return teamMember.team.supplementTeamProducts?.status === 'ACTIVE';
+  }
 }
