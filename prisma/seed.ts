@@ -2971,7 +2971,7 @@ async function main() {
       type: 'SINGLE',
       orderUnit: 'pouch',
       subUnit: 'grams',
-      quantityOfSubUnitPerOrder: 500,
+      quantityOfSubUnitPerOrder: 450,
       unitsOfMeasurePerSubUnit: 'grams',
       measuresPerSubUnit: 5,
       price: 24.04,

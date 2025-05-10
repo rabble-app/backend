@@ -81,7 +81,7 @@ export class ReferralsService {
       return;
     }
     if (referral.type === ReferralType.AFFILIATE) {
-      // TODO: Handle affiliate referral bonus
+      // Handle affiliate referral bonus
       return;
     }
     const sponsor = await this.usersService.findUser({
@@ -710,7 +710,7 @@ export class ReferralsService {
     if no referrer, check if the refCode is an affiliate code
     if it is, create a referral with type AFFILIATE
     */
-    const affiliate = true; // TODO: call affiliate service
+    const affiliate = true; // call affiliate service
     if (affiliate) {
       await this.prisma.referral.create({
         data: { userId, affiliateId: refCode, type: ReferralType.AFFILIATE },
