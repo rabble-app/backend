@@ -64,95 +64,118 @@ describe('PaymentService', () => {
     ...overrides,
   });
 
-  const setupMockSubscriptionPayment = (overrides = {}) => createMockPayment({
-    userId: 'test-user-id',
-    paymentIntentId: 'test-payment-intent',
-    type: PaymentType.YEARLY_SUBSCRIPTION,
-    expiryDate: addYears(new Date(), 1),
-    ...overrides,
-  });
+  const setupMockSubscriptionPayment = (overrides = {}) =>
+    createMockPayment({
+      userId: 'test-user-id',
+      paymentIntentId: 'test-payment-intent',
+      type: PaymentType.YEARLY_SUBSCRIPTION,
+      expiryDate: addYears(new Date(), 1),
+      ...overrides,
+    });
 
   // Helper functions for mocking service methods
-  const mockHandleYearlySubscription = (mockUser: any, mockPaymentIntent: any, mockCaptureResult: any, mockPayment: any) => {
+  const mockHandleYearlySubscription = (
+    mockUser: any,
+    mockPaymentIntent: any,
+    mockCaptureResult: any,
+    mockPayment: any,
+  ) => {
     jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
     mockPaymentService.createIntent.mockResolvedValue(mockPaymentIntent);
-    jest.spyOn(paymentServiceExtension, 'captureFund').mockResolvedValue(mockCaptureResult);
+    jest
+      .spyOn(paymentServiceExtension, 'captureFund')
+      .mockResolvedValue(mockCaptureResult);
     mockPaymentService.recordPayment.mockResolvedValue(mockPayment);
 
-    jest.spyOn(paymentServiceExtension, 'handleYearlySubscription').mockImplementation(async (userId) => {
-      const user = await prismaService.user.findUnique({
-        where: { id: userId },
-        select: { stripeDefaultPaymentMethodId: true, stripeCustomerId: true }
-      });
+    jest
+      .spyOn(paymentServiceExtension, 'handleYearlySubscription')
+      .mockImplementation(async (userId) => {
+        const user = await prismaService.user.findUnique({
+          where: { id: userId },
+          select: {
+            stripeDefaultPaymentMethodId: true,
+            stripeCustomerId: true,
+          },
+        });
 
-      if (!user?.stripeDefaultPaymentMethodId || !user?.stripeCustomerId) {
-        return null;
-      }
+        if (!user?.stripeDefaultPaymentMethodId || !user?.stripeCustomerId) {
+          return null;
+        }
 
-      const paymentIntent = await mockPaymentService.createIntent(
-        {
+        const paymentIntent = await mockPaymentService.createIntent(
+          {
+            amount: 28,
+            currency: 'gbp',
+            customerId: user.stripeCustomerId,
+            paymentMethodId: user.stripeDefaultPaymentMethodId,
+          },
+          true,
+          true,
+        );
+
+        if (!paymentIntent || paymentIntent.status !== 'requires_capture') {
+          return null;
+        }
+
+        const captureResult = await paymentServiceExtension.captureFund(
+          paymentIntent.id,
+          null,
+          true,
+        );
+
+        if (!captureResult) {
+          return null;
+        }
+
+        const paymentData: IPayment = {
+          userId,
           amount: 28,
-          currency: 'gbp',
-          customerId: user.stripeCustomerId,
-          paymentMethodId: user.stripeDefaultPaymentMethodId,
-        },
-        true,
-        true
-      );
+          paymentIntentId: paymentIntent.id,
+          status: PaymentStatus.CAPTURED,
+          type: PaymentType.YEARLY_SUBSCRIPTION,
+          expiryDate: addYears(new Date(), 1),
+          orderId: null,
+          discount: 0,
+          coupons: '',
+        };
 
-      if (!paymentIntent || paymentIntent.status !== 'requires_capture') {
-        return null;
-      }
-
-      const captureResult = await paymentServiceExtension.captureFund(paymentIntent.id, null, true);
-
-      if (!captureResult) {
-        return null;
-      }
-
-      const paymentData: IPayment = {
-        userId,
-        amount: 28,
-        paymentIntentId: paymentIntent.id,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.YEARLY_SUBSCRIPTION,
-        expiryDate: addYears(new Date(), 1),
-        orderId: null,
-        discount: 0,
-        coupons: '',
-      };
-
-      return await mockPaymentService.recordPayment(paymentData);
-    });
+        return await mockPaymentService.recordPayment(paymentData);
+      });
   };
 
-  const mockCheckUserSubscriptionStatus = (successfulPayments: any[], activeSubscription: any[]) => {
-    jest.spyOn(paymentServiceExtension, 'findPayments')
+  const mockCheckUserSubscriptionStatus = (
+    successfulPayments: any[],
+    activeSubscription: any[],
+  ) => {
+    jest
+      .spyOn(paymentServiceExtension, 'findPayments')
       .mockResolvedValueOnce(successfulPayments)
       .mockResolvedValueOnce(activeSubscription);
 
-    jest.spyOn(paymentServiceExtension, 'checkUserSubscriptionStatus').mockImplementation(async (userId) => {
-      const successfulPayments = await paymentServiceExtension.findPayments({
-        userId,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.OTHERS,
+    jest
+      .spyOn(paymentServiceExtension, 'checkUserSubscriptionStatus')
+      .mockImplementation(async (userId) => {
+        const successfulPayments = await paymentServiceExtension.findPayments({
+          userId,
+          status: PaymentStatus.CAPTURED,
+          type: PaymentType.OTHERS,
+        });
+
+        if (!successfulPayments || successfulPayments.length < 2) {
+          return true;
+        }
+
+        const activeSubscription = await paymentServiceExtension.findPayments({
+          userId,
+          status: PaymentStatus.CAPTURED,
+          type: PaymentType.YEARLY_SUBSCRIPTION,
+          expiryDate: {
+            gt: new Date(),
+          },
+        });
+
+        return activeSubscription && activeSubscription.length > 0;
       });
-
-      if (!successfulPayments || successfulPayments.length < 2) {
-        return true;
-      }
-
-      const activeSubscription = await paymentServiceExtension.findPayments({
-        userId,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.YEARLY_SUBSCRIPTION,
-        expiryDate: {
-          gt: new Date(),
-        },
-      });
-
-      return activeSubscription && activeSubscription.length > 0;
-    });
   };
 
   beforeEach(async () => {
@@ -211,7 +234,9 @@ describe('PaymentService', () => {
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);
-    paymentServiceExtension = module.get<PaymentServiceExtension>(PaymentServiceExtension);
+    paymentServiceExtension = module.get<PaymentServiceExtension>(
+      PaymentServiceExtension,
+    );
     prismaService = module.get<PrismaService>(PrismaService);
 
     // Reset all mocks before each test
@@ -231,9 +256,16 @@ describe('PaymentService', () => {
       const mockCaptureResult = setupMockCaptureResult();
       const mockPayment = setupMockSubscriptionPayment();
 
-      mockHandleYearlySubscription(mockUser, mockPaymentIntent, mockCaptureResult, mockPayment);
+      mockHandleYearlySubscription(
+        mockUser,
+        mockPaymentIntent,
+        mockCaptureResult,
+        mockPayment,
+      );
 
-      const result = await paymentServiceExtension.handleYearlySubscription(userId);
+      const result = await paymentServiceExtension.handleYearlySubscription(
+        userId,
+      );
       expect(result).toBeDefined();
       expect(result.status).toBe(PaymentStatus.CAPTURED);
       expect(result.type).toBe(PaymentType.YEARLY_SUBSCRIPTION);
@@ -245,7 +277,7 @@ describe('PaymentService', () => {
           paymentMethodId: mockUser.stripeDefaultPaymentMethodId,
         }),
         true,
-        true
+        true,
       );
     });
 
@@ -253,17 +285,23 @@ describe('PaymentService', () => {
       const mockUser = setupMockUser({ stripeDefaultPaymentMethodId: null });
       mockHandleYearlySubscription(mockUser, null, null, null);
 
-      const result = await paymentServiceExtension.handleYearlySubscription(userId);
+      const result = await paymentServiceExtension.handleYearlySubscription(
+        userId,
+      );
       expect(result).toBeNull();
       expect(mockPaymentService.createIntent).not.toHaveBeenCalled();
     });
 
     it('should return null if payment intent creation fails', async () => {
       const mockUser = setupMockUser();
-      mockPaymentService.createIntent.mockRejectedValue(new Error('Failed to create intent'));
+      mockPaymentService.createIntent.mockRejectedValue(
+        new Error('Failed to create intent'),
+      );
       mockHandleYearlySubscription(mockUser, null, null, null);
 
-      const result = await paymentServiceExtension.handleYearlySubscription(userId);
+      const result = await paymentServiceExtension.handleYearlySubscription(
+        userId,
+      );
       expect(result).toBeNull();
       expect(mockPaymentService.recordPayment).not.toHaveBeenCalled();
     });
@@ -272,7 +310,9 @@ describe('PaymentService', () => {
       const successfulPayments = [createMockPayment()];
       mockCheckUserSubscriptionStatus(successfulPayments, []);
 
-      const result = await paymentServiceExtension.checkUserSubscriptionStatus(userId);
+      const result = await paymentServiceExtension.checkUserSubscriptionStatus(
+        userId,
+      );
       expect(result).toBe(true);
     });
 
@@ -287,7 +327,9 @@ describe('PaymentService', () => {
       ];
       mockCheckUserSubscriptionStatus(successfulPayments, activeSubscription);
 
-      const result = await paymentServiceExtension.checkUserSubscriptionStatus(userId);
+      const result = await paymentServiceExtension.checkUserSubscriptionStatus(
+        userId,
+      );
       expect(result).toBe(true);
     });
 
@@ -299,7 +341,9 @@ describe('PaymentService', () => {
       ];
       mockCheckUserSubscriptionStatus(successfulPayments, []);
 
-      const result = await paymentServiceExtension.checkUserSubscriptionStatus(userId);
+      const result = await paymentServiceExtension.checkUserSubscriptionStatus(
+        userId,
+      );
       expect(result).toBe(false);
     });
 
@@ -311,7 +355,9 @@ describe('PaymentService', () => {
       ];
       mockCheckUserSubscriptionStatus(successfulPayments, []);
 
-      const result = await paymentServiceExtension.checkUserSubscriptionStatus(userId);
+      const result = await paymentServiceExtension.checkUserSubscriptionStatus(
+        userId,
+      );
       expect(result).toBe(false);
     });
   });

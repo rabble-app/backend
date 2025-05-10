@@ -2,21 +2,23 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { BonusDto, ClaimCCDto } from './dto/referrals.dto';
 import { PrismaService } from '../prisma.service';
 import crypto from 'crypto';
-import { BonusType, PaymentStatus } from '@prisma/client';
+import { BonusType, PaymentStatus, ReferralType } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import Rollbar from 'rollbar';
-import Stripe from 'stripe';
 import { Logger } from 'winston';
 import {
   CC_TO_POUNDS_RATE,
   MINIMUM_STRIPE_AMOUNT_IN_PENCE,
   REFERRAL_BONUS_PERCENTAGE,
 } from '../utils/constants';
+import { addMonths, differenceInMonths } from 'date-fns';
+import { StripeService } from '../stripe/stripe.service';
+
 @Injectable()
 export class ReferralsService {
   private static readonly CODE_LENGTH = 6;
+  private static readonly USER_CODE_LENGTH = 3;
   private static readonly CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  private readonly stripe: Stripe;
   private static readonly MINIMUM_CREDIT_AMOUNT = 500; // £5 in pence
 
   constructor(
@@ -25,11 +27,8 @@ export class ReferralsService {
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
     @Inject('LOGGER') private readonly logger: Logger,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
-  ) {
-    this.stripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    private readonly stripeService: StripeService,
+  ) {}
 
   async generateReferralCode() {
     let code = this.generateRandomCode();
@@ -38,9 +37,20 @@ export class ReferralsService {
     }
     return code;
   }
-  private generateRandomCode(): string {
+  async generateUserCode(firstName: string) {
+    let code = this.generateRandomCode(ReferralsService.USER_CODE_LENGTH);
+    let userCode = `${firstName.toUpperCase()}-${code}`;
+    while (await this.prisma.user.findUnique({ where: { userCode } })) {
+      code = this.generateRandomCode(ReferralsService.USER_CODE_LENGTH);
+      userCode = `${firstName.toUpperCase()}-${code}`;
+    }
+    return userCode;
+  }
+  private generateRandomCode(
+    codeLength: number = ReferralsService.CODE_LENGTH,
+  ): string {
     let code = '';
-    for (let i = 0; i < ReferralsService.CODE_LENGTH; i++) {
+    for (let i = 0; i < codeLength; i++) {
       const randomIndex = crypto.randomInt(
         0,
         ReferralsService.CHARACTERS.length,
@@ -49,18 +59,67 @@ export class ReferralsService {
     }
     return code;
   }
-  async handleReferral(metadata: Stripe.Metadata, amount: number) {
+  async handleReferral(metadata: Record<string, any>, amount: number) {
+    this.logger.info('Handling referral %o', { metadata, amount });
     const { order_id, user_id } = metadata;
-    const user = await this.prisma.user.findUnique({
-      where: { id: user_id },
-    });
+    const user = await this.usersService.findUser({ id: user_id });
     if (!user) {
-      this.logger.error('PAYMENT WEBHOOK: User not found: %o', metadata);
-      this.rollbar.error('PAYMENT WEBHOOK: User not found: %o', metadata);
+      this.logger.error('REFERRAL: User not found', { user_id });
+      this.rollbar.error('REFERRAL: User not found', { user_id });
       return;
     }
-    const firstTimePurchase = await this.isFirstTimePurchase(user_id, metadata, amount);
+    const firstTimePurchase = await this.isFirstTimePurchase(
+      user_id,
+      metadata,
+      amount,
+    );
     if (!firstTimePurchase) {
+      return;
+    }
+    const referral = await this.getReferral(user_id);
+    if (!referral) {
+      return;
+    }
+    if (referral.type === ReferralType.AFFILIATE) {
+      // Handle affiliate referral bonus
+      return;
+    }
+    const sponsor = await this.usersService.findUser({
+      id: referral.referrerId,
+    });
+    if (!sponsor) {
+      this.logger.error(
+        'PAYMENT WEBHOOK: User with referrerId %s not found: %o',
+        referral.referrerId,
+        metadata,
+      );
+      this.rollbar.error(
+        'PAYMENT WEBHOOK: User with referrerId %s not found: %o',
+        referral.referrerId,
+        metadata,
+      );
+      return;
+    }
+    const referralCount = await this.countReferrals(sponsor.id);
+    const totalSubscriptionDuration = await this.checkFreeSubscriptionDuration(
+      sponsor.id,
+      user.firstPaymentDate,
+    );
+    const isEarlyUser = await this.usersService.isEarlyUser();
+    const isFirst30Days = await this.usersService.isUserFirst30Days(
+      referral.referrerId,
+    );
+    if (
+      isEarlyUser &&
+      isFirst30Days &&
+      referralCount <= 3 &&
+      totalSubscriptionDuration < 2
+    ) {
+      await this.applyFirst30DaysReferralBonus(
+        referral.referrerId,
+        order_id,
+        referral.userId,
+      );
       return;
     }
     const bonusAmount = this.calculateReferralBonus(+firstTimePurchase);
@@ -69,40 +128,12 @@ export class ReferralsService {
       bonusAmount,
     );
     const bonusAmountInCC = this.poundsToCC(bonusAmount);
-    const referralCode = await this.generateReferralCode();
-    await Promise.all([
-      this.usersService.updateUser({
-        where: { id: user_id },
-        data: { refCode: referralCode },
-      }),
-      this.handleBonus({
-        userId: user_id,
-        amount: bonusAmountInCC,
-        type: BonusType.SIGNUP,
-        orderId: order_id,
-      }),
-    ]);
-
-    if (!user.referrerId) {
-      this.logger.info('PAYMENT WEBHOOK: User has no referrerId: %o', metadata);
-      return;
-    }
-    const sponsor = await this.prisma.user.findUnique({
-      where: { id: user.referrerId },
+    await this.handleBonus({
+      userId: user_id,
+      amount: bonusAmountInCC,
+      type: BonusType.SIGNUP,
+      orderId: order_id,
     });
-    if (!sponsor) {
-      this.logger.error(
-        'PAYMENT WEBHOOK: User with referrerId %s not found: %o',
-        user.referrerId,
-        metadata,
-      );
-      this.rollbar.error(
-        'PAYMENT WEBHOOK: User with referrerId %s not found: %o',
-        user.referrerId,
-        metadata,
-      );
-      return;
-    }
     await this.handleBonus({
       userId: sponsor.id,
       amount: bonusAmountInCC,
@@ -112,6 +143,65 @@ export class ReferralsService {
     });
   }
 
+  async applyFirst30DaysReferralBonus(
+    referrerId: string,
+    order_id: string,
+    userId: string,
+  ) {
+    try {
+      this.logger.info('Applying first 30 days referral bonus %o', {
+        referrerId,
+        order_id,
+      });
+      return await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: referrerId },
+          select: { firstPaymentDate: true },
+        });
+        if (!user?.firstPaymentDate) {
+          this.logger.error('User not found', { referrerId });
+          return;
+        }
+
+        const subscription = await tx.subscription.findFirst({
+          where: { userId: referrerId },
+        });
+        if (!subscription) {
+          this.logger.error('Subscription not found', { referrerId });
+          return;
+        }
+
+        await Promise.all([
+          tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              expiryDate: addMonths(new Date(subscription.expiryDate), 6),
+            },
+          }),
+          tx.bonus.create({
+            data: {
+              userId: referrerId,
+              amount: 0,
+              type: BonusType.REFERRAL,
+              category: '6 months free subscription',
+              orderId: order_id,
+              referralId: userId,
+            },
+          }),
+        ]);
+      });
+    } catch (error) {
+      this.logger.error('Failed to apply referral bonus', {
+        referrerId,
+        order_id,
+        error,
+      });
+      throw new HttpException(
+        'Failed to apply referral bonus',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
   async handleBonus(bonusDto: BonusDto) {
     this.logger.info(
       `PAYMENT WEBHOOK: Creating ${bonusDto.type} bonus: %o`,
@@ -158,7 +248,11 @@ export class ReferralsService {
     );
   }
 
-  async isFirstTimePurchase(userId: string, metadata: Stripe.Metadata, amount: number) {
+  async isFirstTimePurchase(
+    userId: string,
+    metadata: Record<string, any>,
+    amount: number,
+  ) {
     const payments = await this.prisma.payment.findMany({
       where: {
         userId,
@@ -272,6 +366,7 @@ export class ReferralsService {
       where: { id: userId },
       select: {
         refCode: true,
+        userCode: true,
         referrerId: true,
         _count: {
           select: {
@@ -280,7 +375,7 @@ export class ReferralsService {
         },
       },
     });
-    if (!user && !user.refCode) {
+    if (!user?.refCode) {
       this.logger.info('REFERRAL INFO: User has no referral code %o', {
         userId,
       });
@@ -289,7 +384,6 @@ export class ReferralsService {
       });
       return;
     }
-    const code = user.refCode;
     const wallet = await this.prisma.wallet.findUnique({
       where: { userId },
     });
@@ -303,22 +397,16 @@ export class ReferralsService {
         amount: true,
       },
     });
-    const referrer = user.referrerId
-      ? await this.prisma.user.findUnique({
-          where: { id: user.referrerId },
-        })
-      : null;
+    const referrer = await this.getReferrer(userId);
     return {
-      referralCode: code,
+      referralCode: user.refCode,
+      userCode: user.userCode,
       teams: user._count.teams,
       wallet,
       totalSaved: totalSaved._sum.amount,
       claims,
       ...(referrer && {
-        referrer: {
-          id: referrer.id,
-          name: `${referrer.firstName} ${referrer.lastName}`,
-        },
+        referrer,
       }),
     };
   }
@@ -335,14 +423,17 @@ export class ReferralsService {
   }
 
   async createCoupon(userId: string, amount: number) {
-    const coupon = await this.stripe.coupons.create({
-      amount_off: amount * 100,
-      duration: 'once',
-      currency: 'GBP',
-      metadata: {
-        userId,
+    const coupon = await this.stripeService.createCoupon(
+      {
+        amount_off: amount * 100,
+        duration: 'once',
+        currency: 'GBP',
+        metadata: {
+          userId,
+        },
       },
-    });
+      true,
+    );
     this.logger.info('CC CREATE COUPON: Created coupon %s', coupon.id);
     await this.prisma.coupon.create({
       data: {
@@ -439,6 +530,7 @@ export class ReferralsService {
         amount: true,
         referralId: true,
         createdAt: true,
+        category: true,
         order: {
           select: {
             id: true,
@@ -468,6 +560,7 @@ export class ReferralsService {
             type: item.type,
             referralTeam: item.order?.team?.name,
             createdAt: item.createdAt,
+            category: item.category,
           };
         }
         return {
@@ -475,6 +568,7 @@ export class ReferralsService {
           type: item.type,
           userTeam: item.order?.team?.name,
           createdAt: item.createdAt,
+          category: item.category,
         };
       }),
     );
@@ -516,5 +610,164 @@ export class ReferralsService {
       amountToPay: remainingAmount / 100,
       availableCredits: availableCredits / 100,
     };
+  }
+  async handleRefCodeAndFreeTrial(userId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { refCode: true, userCode: true, firstName: true },
+      });
+
+      if (user?.refCode && user?.userCode) {
+        this.logger.info('User already has referral codes', { userId });
+        return;
+      }
+
+      const referralCode = await this.generateReferralCode();
+      const userCode = await this.generateUserCode(user.firstName);
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { refCode: referralCode, userCode },
+      });
+
+      await this.createFreeTrialSubscription(userId);
+    } catch (error) {
+      this.logger.error('Failed to handle referral code and free trial', {
+        userId,
+        error,
+      });
+    }
+  }
+
+  async createFreeTrialSubscription(userId: string) {
+    try {
+      const earlyUser = await this.usersService.isEarlyUser();
+
+      const existingSubscription = await this.prisma.subscription.findUnique({
+        where: { userId },
+      });
+      if (existingSubscription) {
+        this.logger.warn('User already has a subscription', { userId });
+        return;
+      }
+
+      const existingBonus = await this.prisma.bonus.findFirst({
+        where: {
+          userId,
+          type: BonusType.FREE_TRIAL,
+          category: earlyUser
+            ? '1 year free subscription'
+            : '6 months free subscription',
+        },
+      });
+
+      if (existingBonus) {
+        this.logger.warn('User already has a free trial bonus', { userId });
+        return;
+      }
+
+      await this.prisma.subscription.create({
+        data: {
+          userId,
+          expiryDate: addMonths(new Date(), earlyUser ? 12 : 6),
+        },
+      });
+
+      await this.prisma.bonus.create({
+        data: {
+          userId,
+          amount: 0,
+          type: BonusType.FREE_TRIAL,
+          category: earlyUser
+            ? '1 year free subscription'
+            : '6 months free subscription',
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to create free trial subscription', {
+        userId,
+        error,
+      });
+      this.rollbar.error('Failed to create free trial subscription', {
+        userId,
+        error,
+      });
+    }
+  }
+
+  async createReferral(userId: string, refCode: string) {
+    const referrer = await this.prisma.user.findFirst({
+      where: { refCode },
+    });
+    if (referrer) {
+      await this.prisma.referral.create({
+        data: { userId, referrerId: referrer.id },
+      });
+      return;
+    }
+    /*
+    if no referrer, check if the refCode is an affiliate code
+    if it is, create a referral with type AFFILIATE
+    */
+    const affiliate = true; // call affiliate service
+    if (affiliate) {
+      await this.prisma.referral.create({
+        data: { userId, affiliateId: refCode, type: ReferralType.AFFILIATE },
+      });
+    }
+  }
+  async getReferral(userId: string) {
+    return await this.prisma.referral.findFirst({
+      where: { userId },
+    });
+  }
+
+  async getReferrer(userId: string) {
+    const referral = await this.getReferral(userId);
+    if (!referral) {
+      return null;
+    }
+    if (referral.type === ReferralType.AFFILIATE) {
+      return {
+        affiliateId: referral.affiliateId,
+        type: referral.type,
+      };
+    }
+    const referrer = await this.prisma.user.findUnique({
+      where: { id: referral.referrerId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+    return {
+      referrerId: referrer.id,
+      type: referral.type,
+      name: `${referrer.firstName} ${referrer.lastName}`,
+    };
+  }
+
+  async countReferrals(userId: string) {
+    const referrals = await this.prisma.referral.count({
+      where: { referrerId: userId },
+    });
+    return referrals;
+  }
+  async checkFreeSubscriptionDuration(userId: string, firstPaymentDate: Date) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
+    if (!subscription) {
+      this.logger.error('Subscription not found', { userId });
+      return 0;
+    }
+    const totalSubscriptionDuration =
+      differenceInMonths(
+        new Date(subscription.expiryDate),
+        new Date(firstPaymentDate),
+      ) / 12;
+    return totalSubscriptionDuration;
   }
 }

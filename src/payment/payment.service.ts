@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto, IPaymentMethod } from './dto/add-payment-card.dto';
 import {
@@ -7,6 +6,7 @@ import {
   Order,
   Payment,
   PaymentStatus,
+  PaymentType,
   Prisma,
   ProductPaymentStatus,
   SupplementTeamStatus,
@@ -39,11 +39,12 @@ import { TeamsService } from '../teams/teams.service';
 import { add } from 'date-fns';
 import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
+import { ReferralsService } from '../referrals/referrals.service';
+import { StripeService } from '../stripe/stripe.service';
+import Rollbar from 'rollbar';
 
 @Injectable()
 export class PaymentService {
-  private readonly stripe: Stripe;
-  private readonly supplementStripe: Stripe;
   constructor(
     @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
@@ -54,25 +55,20 @@ export class PaymentService {
     @Inject(forwardRef(() => TeamsService))
     private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
+    private readonly referralsService: ReferralsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
     @Inject(forwardRef(() => PaymentServiceExtension))
     private readonly paymentServiceExtension: PaymentServiceExtension,
-  ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-    this.supplementStripe = new Stripe(this.parameters.SUPPLEMENT_STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    private readonly stripeService: StripeService,
+    @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+  ) {}
 
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
     userId: string,
     isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
-    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
     // attach payment method to user
     this.logger.log('info', 'Attaching payment method to user %o', {
       userId,
@@ -80,19 +76,41 @@ export class PaymentService {
       stripeCustomerId: addPaymentCardDto.stripeCustomerId,
     });
 
-    const result = await stripe.paymentMethods.attach(
+    const paymentMethod = await this.stripeService.getPaymentMethod(
       addPaymentCardDto.paymentMethodId,
-      {
-        customer: addPaymentCardDto.stripeCustomerId,
-      },
+      isSupplementApp,
     );
+
+    const existingPaymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: {
+        fingerprint: paymentMethod.card.fingerprint,
+      },
+    });
+
+    if (existingPaymentMethod) {
+      this.logger.log('info', 'Payment method already exists %o', {
+        userId,
+        paymentMethodId: addPaymentCardDto.paymentMethodId,
+      });
+      throw new HttpException(
+        'Payment method already exists in the system',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const result = await this.stripeService.attachPaymentMethod(
+      addPaymentCardDto.paymentMethodId,
+      addPaymentCardDto.stripeCustomerId,
+      isSupplementApp,
+    );
+
     if (result) {
       await this.SavePaymentMethod({
-        cardLastFourDigits: result.card.last4,
+        cardLastFourDigits: paymentMethod.card.last4,
         paymentMethodId: addPaymentCardDto.paymentMethodId,
         userId,
         stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-        fingerprint: result.card.fingerprint,
+        fingerprint: paymentMethod.card.fingerprint,
       });
 
       // make it user default payment method
@@ -115,9 +133,9 @@ export class PaymentService {
     removePaymentCardDto: RemovePaymentCardDto,
     isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
-    const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
-    await stripe.paymentMethods.detach(
+    await this.stripeService.detachPaymentMethod(
       removePaymentCardDto.paymentMethodId,
+      isSupplementApp,
     );
 
     // remove it from our record
@@ -133,11 +151,12 @@ export class PaymentService {
   }
 
   async createIntentForCardSetup(): Promise<object | null> {
-    return await this.supplementStripe.setupIntents.create({
-      payment_method_types: ['card'],
-      // customer: customerId,
-      // confirm: true,
-    });
+    return await this.stripeService.createSetupIntent(
+      {
+        payment_method_types: ['card'],
+      },
+      true,
+    );
   }
 
   async chargeUser(chargeUserDto: ChargeUserDto): Promise<object | null> {
@@ -215,7 +234,9 @@ export class PaymentService {
     return await this.recordPayment(paymentData);
   }
 
-  async getTeamLatestOrder(teamId: string): Promise<OrderWithSupplementPayload | null> {
+  async getTeamLatestOrder(
+    teamId: string,
+  ): Promise<OrderWithSupplementPayload | null> {
     return await this.prisma.order.findFirst({
       where: {
         teamId: teamId,
@@ -238,8 +259,8 @@ export class PaymentService {
               },
             },
           },
-        }
-      }
+        },
+      },
     });
   }
 
@@ -306,10 +327,9 @@ export class PaymentService {
   async createIntent(
     createIntentData: ICreateIntent,
     offline = false,
-    isSupplementApp = false
+    isSupplementApp = false,
   ): Promise<any | null> {
     try {
-      const stripe = isSupplementApp ? this.supplementStripe : this.stripe;
       const parameters = {
         amount: Math.round(createIntentData.amount * 100),
         currency: createIntentData.currency,
@@ -326,28 +346,18 @@ export class PaymentService {
       } else {
         parameters['setup_future_usage'] = 'off_session';
       }
-      const paymentIntent = await stripe.paymentIntents.create({
-        ...parameters,
-        capture_method: 'manual',
-        use_stripe_sdk: true,
-      });
-      return paymentIntent;
-    } catch (e) {
-      console.log(e);
-      // const charge = await this.stripe.charges.retrieve(
-      //   e.payment_intent.latest_charge,
-      // );
-      // if (e.type === 'StripeCardError') {
-      //   if (charge.outcome.type === 'blocked') {
-      //     console.log('Payment blocked for suspected fraud.');
-      //   } else if (e.code === 'card_declined') {
-      //     console.log('Payment declined by the issuer.');
-      //   } else if (e.code === 'expired_card') {
-      //     console.log('Card expired.');
-      //   } else {
-      //     console.log('Other card error.');
-      //   }
-      // }
+
+      return await this.stripeService.createPaymentIntent(
+        {
+          ...parameters,
+          capture_method: 'manual',
+          use_stripe_sdk: true,
+        },
+        isSupplementApp,
+      );
+    } catch (error) {
+      console.log(error);
+      return null;
     }
   }
 
@@ -358,9 +368,55 @@ export class PaymentService {
   }
 
   async recordPayment(paymentData: IPayment): Promise<Payment> {
-    return await this.prisma.payment.create({
-      data: paymentData,
-    });
+    try {
+      if (paymentData?.type !== PaymentType.YEARLY_SUBSCRIPTION) {
+        const hasPreviousPayment = await this.prisma.payment.count({
+          where: {
+            userId: paymentData.userId,
+          },
+        });
+        if (!hasPreviousPayment) {
+          await this.prisma.user.update({
+            where: {
+              id: paymentData.userId,
+            },
+            data: {
+              firstPaymentDate: new Date(),
+            },
+          });
+
+          this.referralsService
+            .handleRefCodeAndFreeTrial(paymentData.userId)
+            .catch((error) => {
+              this.logger.error(
+                'Failed to handle referral code and free trial',
+                {
+                  error,
+                  paymentData,
+                },
+              );
+              this.rollbar.error(
+                'Failed to handle referral code and free trial %o %o',
+                error,
+                paymentData,
+              );
+            });
+        }
+      }
+
+      return await this.prisma.payment.create({
+        data: paymentData,
+      });
+    } catch (error) {
+      this.logger.error('Failed to record payment', {
+        error,
+        paymentData,
+      });
+      throw new HttpException(
+        'Failed to record payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async updatePayment(params: {
@@ -595,7 +651,9 @@ export class PaymentService {
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.price,
             capsulePerDay: addSingleBasketDto.capsulePerDay,
-            deliveryDate: add(new Date(), { weeks: team.supplementTeamProducts.product.leadTime })
+            deliveryDate: add(new Date(), {
+              weeks: team.supplementTeamProducts.product.leadTime,
+            }),
           },
         });
       }
@@ -624,7 +682,7 @@ export class PaymentService {
   }
 
   async returnPaymentIntent(paymentIntentId: string): Promise<any | null> {
-    return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+    return await this.stripeService.retrievePaymentIntent(paymentIntentId);
   }
 
   /**
@@ -666,22 +724,6 @@ export class PaymentService {
   }
 
   async SavePaymentMethod(params: IPaymentMethod) {
-    const paymentMethod = await this.prisma.paymentMethod.findFirst({
-      where: {
-        fingerprint: params.fingerprint,
-      },
-    });
-    if (paymentMethod) {
-      this.logger.info('Payment method already exists %o', {
-        fingerprint: params.fingerprint,
-        userId: params.userId,
-        last4: params.cardLastFourDigits,
-      });
-      throw new HttpException(
-        'Payment method already exists',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
     return await this.prisma.paymentMethod.create({
       data: params,
     });
@@ -698,8 +740,9 @@ export class PaymentService {
       distinct: ['stripeDefaultPaymentMethodId'],
     });
     for (const user of users) {
-      const paymentMethod = await this.supplementStripe.paymentMethods.retrieve(
+      const paymentMethod = await this.stripeService.retrievePaymentMethod(
         user.stripeDefaultPaymentMethodId,
+        true,
       );
       this.logger.info(`Seeding payment method for user ${user.id}`);
       await this.SavePaymentMethod({
@@ -715,30 +758,58 @@ export class PaymentService {
 
   async joinSupplementTeam(joinSupplementTeamDto: JoinSupplementTeamDto) {
     // Check if user has active subscription
-    const hasActiveSubscription = await this.paymentServiceExtension.checkUserSubscriptionStatus(joinSupplementTeamDto.userId);
+    const hasActiveSubscription =
+      await this.paymentServiceExtension.checkUserSubscriptionStatus(
+        joinSupplementTeamDto.userId,
+      );
     if (!hasActiveSubscription) {
-      this.logger.warn('User does not have an active subscription for joining supplement team', {
-        userId: joinSupplementTeamDto.userId
-      });
+      this.logger.warn(
+        'User does not have an active subscription for joining supplement team',
+        {
+          userId: joinSupplementTeamDto.userId,
+        },
+      );
       return 6;
     }
 
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
       // get the user stripe id
-      const userInfo = await this.userService.findUser({ id: joinSupplementTeamDto.userId });
-      if (!userInfo.stripeCustomerId) return 1
+      const userInfo = await this.userService.findUser({
+        id: joinSupplementTeamDto.userId,
+      });
+      if (!userInfo.stripeCustomerId) return 1;
       // create payment intent
-      const paymentIntent = await this.createIntent({ amount: joinSupplementTeamDto.amount, currency: joinSupplementTeamDto.currency, paymentMethodId: joinSupplementTeamDto.paymentMethodId, customerId: userInfo.stripeCustomerId }, false, true)
-      if (!paymentIntent || paymentIntent.status != 'requires_capture') return 2
+      const paymentIntent = await this.createIntent(
+        {
+          amount: joinSupplementTeamDto.amount,
+          currency: joinSupplementTeamDto.currency,
+          paymentMethodId: joinSupplementTeamDto.paymentMethodId,
+          customerId: userInfo.stripeCustomerId,
+        },
+        false,
+        true,
+      );
+      if (!paymentIntent || paymentIntent.status != 'requires_capture')
+        return 2;
       // charge the user
-      const paymentCaptureResult = await this.paymentServiceExtension.handleSupplementPaymentCapture({paymentIntentId: paymentIntent.id, teamId: joinSupplementTeamDto.teamId, userId: joinSupplementTeamDto.userId, amount: joinSupplementTeamDto.amount })
-      if(!paymentCaptureResult) return 3
-      orderId = paymentCaptureResult.orderId
+      const paymentCaptureResult =
+        await this.paymentServiceExtension.handleSupplementPaymentCapture({
+          paymentIntentId: paymentIntent.id,
+          teamId: joinSupplementTeamDto.teamId,
+          userId: joinSupplementTeamDto.userId,
+          amount: joinSupplementTeamDto.amount,
+        });
+      if (!paymentCaptureResult) return 3;
+      orderId = paymentCaptureResult.orderId;
     }
     // add to team --> we need a utility function to get the member status
-    const addToTeam = await this.teamsService.addTeamMember({teamId: joinSupplementTeamDto.teamId, userId: joinSupplementTeamDto.userId, status: Status.APPROVED})
-    if (!addToTeam) return 4
+    const addToTeam = await this.teamsService.addTeamMember({
+      teamId: joinSupplementTeamDto.teamId,
+      userId: joinSupplementTeamDto.userId,
+      status: Status.APPROVED,
+    });
+    if (!addToTeam) return 4;
 
     // store the basket
     const basket = await this.addToBasket({
@@ -751,8 +822,7 @@ export class PaymentService {
       capsulePerDay: joinSupplementTeamDto.capsulePerDay,
       topupQuantity: joinSupplementTeamDto.topupQuantity,
     });
-    if (!basket) return 5
-    return joinSupplementTeamDto
+    if (!basket) return 5;
+    return joinSupplementTeamDto;
   }
-
 }

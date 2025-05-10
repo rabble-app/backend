@@ -1,4 +1,10 @@
-import { OrderType, Prisma, OrderStatus, PaymentStatus, PaymentType } from '@prisma/client';
+import {
+  OrderType,
+  Prisma,
+  OrderStatus,
+  PaymentStatus,
+  PaymentType,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Request } from 'express';
 
@@ -57,7 +63,7 @@ export interface IOrder {
   deadline?: Date;
   type?: OrderType;
   status?: OrderStatus;
-  firstDelivery?: boolean
+  firstDelivery?: boolean;
 }
 export interface IPricePlan {
   percentageDiscount: number;
@@ -366,37 +372,37 @@ export interface IStoreEmployee {
 export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
   include: {
     supplementTeamProducts: {
-      select:{
-        status: true,
-        orderTreashold: true,
-        product:{
-          select:{
-            leadTime: true,
-            id: true,
-            name: true
-          }   
-        }
-      }
-    },
-  },
+      select: {
+        status: true;
+        orderTreashold: true;
+        product: {
+          select: {
+            leadTime: true;
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+  };
 }>;
 
 export type OrderWithSupplementPayload = Prisma.OrderGetPayload<{
-  select:{
-    id: true,
-    deadline: true,
+  select: {
+    id: true;
+    deadline: true;
     team: {
       select: {
         supplementTeamProducts: {
           select: {
             product: {
               select: {
-                leadTime: true,
-              },
-            },
-          },
-        },
-      },
-    }
-  }
+                leadTime: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
 }>;

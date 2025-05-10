@@ -13,4 +13,4 @@ export class SubscriptionStatusDto {
     nullable: true,
   })
   expiryDate: Date | null;
-} 
+}

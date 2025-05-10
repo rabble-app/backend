@@ -34,7 +34,6 @@ describe('NotificationController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
 
     // create dummy user for test
     const user = await prisma.user.create({

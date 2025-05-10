@@ -196,7 +196,7 @@ export class UsersServiceExtension {
             name: true,
             basket: {
               where: {
-                userId
+                userId,
               },
               select: {
                 id: true,
@@ -246,23 +246,23 @@ export class UsersServiceExtension {
 
     const latestOrder = await this.prisma.order.findFirst({
       where: {
-        teamId: teamMember.team.id
+        teamId: teamMember.team.id,
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
       select: {
         id: true,
-        deadline: true
-      }
+        deadline: true,
+      },
     });
 
     return {
       ...teamMember,
       team: {
         ...teamMember.team,
-        latestOrder
-      }
+        latestOrder,
+      },
     };
   }
 }

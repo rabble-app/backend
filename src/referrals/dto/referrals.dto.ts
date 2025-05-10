@@ -9,6 +9,7 @@ export interface BonusDto {
   type: BonusType;
   referralId?: string;
   orderId?: string;
+  category?: string;
 }
 
 export class ClaimCCDto {

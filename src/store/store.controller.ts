@@ -13,7 +13,6 @@ import {
   Query,
   UseFilters,
   UseInterceptors,
-  ParseFilePipeBuilder,
   UploadedFile,
   Put,
   Delete,
@@ -294,21 +293,17 @@ export class StoreController {
   @ApiBadRequestResponse({ description: 'Invalid data sent' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async confirmOrderProductsReceived(
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({
-          fileType: /^image\/(jpeg|png|jpg)$/,
-        })
-        .build({
-          fileIsRequired: true,
-        }),
-    )
+    @UploadedFile()
     file: Express.Multer.File,
     @Body() body: ConfirmOrderDto,
     @Res({ passthrough: true }) res: Response,
     @Request() req,
     @Param('storeId') storeId: string,
   ): Promise<IAPIResponse> {
+    if (!file?.mimetype.startsWith('image/')) {
+      throw new HttpException('File is required', HttpStatus.BAD_REQUEST);
+    }
+
     const confirmOrderDto = {
       ...body,
       products: JSON.parse(body.products as any) as ConfirmOrderDto['products'],

@@ -24,10 +24,7 @@ export class WebhookController {
       throw new BadRequestException('Missing stripe-signature header');
     }
 
-    await this.webhookService.constructEventFromPayload(
-      signature,
-      request.rawBody,
-    );
+    await this.webhookService.handleWebhook(signature, request.rawBody, true);
 
     res.send();
   }

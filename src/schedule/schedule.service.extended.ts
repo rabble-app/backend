@@ -13,16 +13,15 @@ import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { InsightsService } from '../insights/insights.service';
-import {
-  add,
-  differenceInDays,
-  getWeek,
-  subWeeks,
-} from 'date-fns';
+import { add, differenceInDays, getWeek, subWeeks } from 'date-fns';
 import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { setTimeout } from 'timers';
-import { currentDate, targetQuarterDate, upperQuarterDate } from '../utils/date';
+import {
+  currentDate,
+  targetQuarterDate,
+  upperQuarterDate,
+} from '../utils/date';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 
 @Injectable()
@@ -34,7 +33,7 @@ export class ScheduleServiceExtended {
     private productsService: ProductsService,
     private notificationsService: NotificationsService,
     private insightsService: InsightsService,
-    private qRCodeService: QRCodeService, 
+    private qRCodeService: QRCodeService,
     private readonly teamsService: TeamsService,
     private readonly paymentServiceExtension: PaymentServiceExtension,
   ) {}
@@ -51,7 +50,7 @@ export class ScheduleServiceExtended {
             status: 'CAPTURED',
             order: {
               type: 'RABBLE',
-            }
+            },
           },
           _sum: {
             amount: true,
@@ -258,7 +257,7 @@ export class ScheduleServiceExtended {
         status: OrderStatus.PENDING,
         OR: [
           {
-            type:'RABBLE',
+            type: 'RABBLE',
             deadline: {
               lte: new Date(),
             },
@@ -267,10 +266,9 @@ export class ScheduleServiceExtended {
             },
           },
           {
-            type:'SUPPLEMENT'
-          }
+            type: 'SUPPLEMENT',
+          },
         ],
-       
       },
       select: {
         id: true,
@@ -292,7 +290,7 @@ export class ScheduleServiceExtended {
             nextDeliveryDate: null,
           },
         ],
-        supplementTeamProducts: null
+        supplementTeamProducts: null,
       },
       select: {
         id: true,
@@ -316,14 +314,14 @@ export class ScheduleServiceExtended {
               type: 'RABBLE',
               deadline: {
                 gte: new Date(),
-              }
+              },
             },
           },
           // authorize the payment of the supplement first order after activation
           {
             order: {
               type: 'SUPPLEMENT',
-              firstDelivery: true
+              firstDelivery: true,
             },
           },
           // authorize the payment of the supplement order if the deadline has reached
@@ -333,10 +331,10 @@ export class ScheduleServiceExtended {
               firstDelivery: false,
               deadline: {
                 lte: new Date(),
-              }
+              },
             },
           },
-        ]
+        ],
       },
       include: {
         user: {
@@ -607,7 +605,7 @@ export class ScheduleServiceExtended {
         } else if (interval > 7) {
           alignmentDays = numberOfDaysInAQuarter + interval;
         }
-  
+
         // create the order for the team
         const orderData: IOrder = {
           teamId: supplement.teamId,
@@ -617,14 +615,14 @@ export class ScheduleServiceExtended {
           deadline: subWeeks(upperQuarterDate, supplement.product.leadTime + 1),
           firstDelivery: true,
         };
-        const {id} = await this.paymentService.createOrder(orderData);
+        const { id } = await this.paymentService.createOrder(orderData);
 
         // create the basket
         await this.createSupplementUsersBasket(
           supplement.teamId,
           id,
           alignmentDays,
-        );  
+        );
       }
     }
 
@@ -651,17 +649,23 @@ export class ScheduleServiceExtended {
           userId: true,
         },
       });
-  
+
       // get their basket
       for (const member of teamMembers) {
         // Check subscription status
-        const hasActiveSubscription = await this.paymentServiceExtension.checkUserSubscriptionStatus(member.userId);
+        const hasActiveSubscription =
+          await this.paymentServiceExtension.checkUserSubscriptionStatus(
+            member.userId,
+          );
         if (!hasActiveSubscription) {
           // Try to charge for subscription
-          const subscriptionPayment = await this.paymentServiceExtension.handleYearlySubscription(member.userId);
-          
+          const subscriptionPayment =
+            await this.paymentServiceExtension.handleYearlySubscription(
+              member.userId,
+            );
+
           if (!subscriptionPayment) {
-            console.log('we were not able to charge the annual subscription')
+            console.log('we were not able to charge the annual subscription');
             // Skip this user if subscription payment fails
             continue;
           }
@@ -691,7 +695,7 @@ export class ScheduleServiceExtended {
             },
           },
         });
-  
+
         let totalAmount = 0; // amount to be paid by the user
         for (const item of basket) {
           if (item.product.status == 'OUT_OF_STOCK') {
@@ -707,7 +711,7 @@ export class ScheduleServiceExtended {
             ? originalPrice
             : +originalPrice - (+priceDiscount / 100) * +originalPrice;
           const productQuantity = +item.capsulePerDay * duration;
-  
+
           // create the subscription for this user
           let productPrice = +priceWithDiscount * productQuantity;
           let topupQuantity = 0;
@@ -716,13 +720,14 @@ export class ScheduleServiceExtended {
             const topupDuration = duration - 91;
             topupQuantity = +item.capsulePerDay * topupDuration;
           }
-  
+
           // if the user is a founding member, we will give them a discount
           if (member.role === 'FOUNDING_MEMBER') {
             productPrice =
               productPrice -
               (productPrice *
-                +item.product?.supplementTeamProducts?.foundingMembersDiscount) /
+                +item.product?.supplementTeamProducts
+                  ?.foundingMembersDiscount) /
                 100;
           }
 
@@ -733,7 +738,7 @@ export class ScheduleServiceExtended {
                 +item.product?.supplementTeamProducts?.earlyMembersDiscount) /
                 100;
           }
-  
+
           const newProduct = {
             orderId,
             userId: member.userId,
@@ -742,12 +747,12 @@ export class ScheduleServiceExtended {
             price: priceWithDiscount,
             capsulePerDay: item.capsulePerDay,
           };
-  
+
           // add to basket
           await this.prisma.basket.create({
             data: newProduct,
           });
-  
+
           // add alignment record to the basket
           if (topupQuantity > 0) {
             await this.prisma.topUpBasket.create({
@@ -757,11 +762,11 @@ export class ScheduleServiceExtended {
               },
             });
           }
-  
+
           // increment totalAmount
           totalAmount += +productPrice;
         }
-  
+
         // record the payment to be made by the user
         await this.paymentService.recordPayment({
           orderId,
@@ -769,25 +774,25 @@ export class ScheduleServiceExtended {
           amount: totalAmount,
           status: PaymentStatus.PENDING,
         });
-      }    
+      }
       return true;
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 
-  async createSupplementOrders(){
+  async createSupplementOrders() {
     // get all supplement active teams whose last order has expired
     const query = {
       type: OrderType.SUPPLEMENT,
-        status: OrderStatus.PENDING,
-        deadline: {
-          lte: new Date(),
-        },
-    }
+      status: OrderStatus.PENDING,
+      deadline: {
+        lte: new Date(),
+      },
+    };
     const expiredOrders = await this.prisma.order.findMany({
       where: {
-        ...query
+        ...query,
       },
       select: {
         id: true,
@@ -804,32 +809,31 @@ export class ScheduleServiceExtended {
               },
             },
           },
-        }
+        },
       },
     });
 
     for (const order of expiredOrders) {
-       // create the order for the team
-       const orderData: IOrder = {
+      // create the order for the team
+      const orderData: IOrder = {
         teamId: order.teamId,
         status: OrderStatus.PENDING,
         type: OrderType.SUPPLEMENT,
-         // we add 1 week extra to the leadtime for that to the duration for processing their payment
-        deadline: subWeeks(upperQuarterDate, order.team.supplementTeamProducts.product.leadTime + 1),
+        // we add 1 week extra to the leadtime for that to the duration for processing their payment
+        deadline: subWeeks(
+          upperQuarterDate,
+          order.team.supplementTeamProducts.product.leadTime + 1,
+        ),
       };
-      const {id} = await this.paymentService.createOrder(orderData);
+      const { id } = await this.paymentService.createOrder(orderData);
 
       // create the basket
-      await this.createSupplementUsersBasket(
-        order.teamId,
-        id,
-        91,
-      );  
+      await this.createSupplementUsersBasket(order.teamId, id, 91);
     }
     // update the status of the expired orders to pending delivery
     await this.prisma.order.updateMany({
       where: {
-        ...query
+        ...query,
       },
       data: {
         status: OrderStatus.PENDING_DELIVERY,
