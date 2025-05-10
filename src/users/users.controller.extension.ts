@@ -460,6 +460,29 @@ export class UsersControllerExtension {
   }
 
   @UseGuards(AuthGuard)
+  @Get('/:userId/has-active-supplement')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'User supplement team status returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async hasActiveSupplementTeam(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersServiceExtension.hasActiveSupplementTeam(userId);
+    return formatResponse(
+      { hasActiveSupplement: result },
+      res,
+      HttpStatus.OK,
+      false,
+      'User supplement team status returned successfully',
+    );
+  }
+
+  @UseGuards(AuthGuard)
   @Delete('/:userId')
   @ApiParam({
     name: 'userId',
