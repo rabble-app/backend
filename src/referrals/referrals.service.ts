@@ -68,7 +68,7 @@ export class ReferralsService {
       this.rollbar.error('REFERRAL: User not found', { user_id });
       return;
     }
-    const firstTimePurchase = await this.isFirstTimePurchase(
+    const firstTimePurchase = await this.getFirstTimePurchase(
       user_id,
       metadata,
       amount,
@@ -103,7 +103,7 @@ export class ReferralsService {
     const referralCount = await this.countReferrals(sponsor.id);
     const totalSubscriptionDuration = await this.checkFreeSubscriptionDuration(
       sponsor.id,
-      user.firstPaymentDate,
+      sponsor.firstPaymentDate,
     );
     const isEarlyUser = await this.usersService.isEarlyUser();
     const isFirst30Days = await this.usersService.isUserFirst30Days(
@@ -146,7 +146,7 @@ export class ReferralsService {
   async applyFirst30DaysReferralBonus(
     referrerId: string,
     order_id: string,
-    userId: string,
+    referralId: string,
   ) {
     try {
       this.logger.info('Applying first 30 days referral bonus %o', {
@@ -162,7 +162,6 @@ export class ReferralsService {
           this.logger.error('User not found', { referrerId });
           return;
         }
-
         const subscription = await tx.subscription.findFirst({
           where: { userId: referrerId },
         });
@@ -185,7 +184,7 @@ export class ReferralsService {
               type: BonusType.REFERRAL,
               category: '6 months free subscription',
               orderId: order_id,
-              referralId: userId,
+              referralId,
             },
           }),
         ]);
@@ -248,7 +247,7 @@ export class ReferralsService {
     );
   }
 
-  async isFirstTimePurchase(
+  async getFirstTimePurchase(
     userId: string,
     metadata: Record<string, any>,
     amount: number,
@@ -281,6 +280,13 @@ export class ReferralsService {
       return false;
     }
     return payments[0].amount;
+  }
+
+  async isFirstTimePurchase(userId: string) {
+    const payments = await this.prisma.payment.findMany({
+      where: { userId, status: PaymentStatus.CAPTURED },
+    });
+    return payments?.length === 0;
   }
 
   public poundsToCC(pounds: number) {
@@ -769,5 +775,77 @@ export class ReferralsService {
         new Date(firstPaymentDate),
       ) / 12;
     return totalSubscriptionDuration;
+  }
+
+  async applyUserCode(
+    userId: string,
+    userCode: string,
+    purchaseAmount: number,
+  ) {
+    const referral = await this.getReferral(userId);
+    if (referral) {
+      throw new HttpException(
+        'Referral already exists',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const isFirstTimePurchase = await this.isFirstTimePurchase(userId);
+    if (!isFirstTimePurchase) {
+      throw new HttpException(
+        'User has already made a purchase',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const referrer = await this.prisma.user.findUnique({
+      where: { userCode },
+    });
+    if (!referrer) {
+      throw new HttpException('Invalid referral code', HttpStatus.BAD_REQUEST);
+    }
+    await this.prisma.referral.create({
+      data: { userId, referrerId: referrer.id },
+    });
+    return this.getApplicableBonus(userId, purchaseAmount);
+  }
+
+  async getApplicableBonus(userId: string, purchaseAmount: number) {
+    const referral = await this.getReferral(userId);
+    if (!referral) {
+      return null;
+    }
+    const referrer = await this.prisma.user.findUnique({
+      where: { id: referral.referrerId },
+      select: { firstPaymentDate: true },
+    });
+    if (!referrer?.firstPaymentDate) {
+      return null;
+    }
+    const referralCount = await this.countReferrals(referral.referrerId);
+    const totalSubscriptionDuration = await this.checkFreeSubscriptionDuration(
+      referral.referrerId,
+      referrer.firstPaymentDate,
+    );
+    const isEarlyUser = await this.usersService.isEarlyUser();
+    const isFirst30Days = await this.usersService.isUserFirst30Days(
+      referral.referrerId,
+    );
+    if (
+      isEarlyUser &&
+      isFirst30Days &&
+      referralCount <= 3 &&
+      totalSubscriptionDuration < 2
+    ) {
+      return {
+        type: 'free_subscription',
+        duration_in_months: isEarlyUser ? 12 : 6,
+      };
+    }
+    const bonusAmount = this.calculateReferralBonus(purchaseAmount);
+    const bonusAmountInCC = this.poundsToCC(bonusAmount);
+    return {
+      type: 'credits',
+      amount: bonusAmount,
+      amount_in_cc: bonusAmountInCC,
+    };
   }
 }

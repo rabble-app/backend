@@ -231,12 +231,20 @@ describe('ReferralsService', () => {
 
     it('should handle first-time purchase with early user bonus', async () => {
       const mockReferral = {
+        id: 'mock-id',
+        userId: 'user1',
         referrerId: 'sponsor1',
         type: ReferralType.INTERNAL,
-        userId: 'user1',
+        affiliateId: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       const mockUser = {
         id: 'user1',
+        firstPaymentDate: new Date(),
+      };
+      const mockSponsor = {
+        id: 'sponsor1',
         firstPaymentDate: new Date(),
       };
       const mockSubscription = {
@@ -247,19 +255,24 @@ describe('ReferralsService', () => {
       // Mock all the necessary service calls
       mockUsersService.findUser
         .mockResolvedValueOnce(mockUser) // First call for user
-        .mockResolvedValueOnce({ id: 'sponsor1' }); // Second call for sponsor
+        .mockResolvedValueOnce(mockSponsor); // Second call for sponsor
       mockPrismaService.referral.findFirst.mockResolvedValueOnce(mockReferral);
+      jest.spyOn(service, 'getFirstTimePurchase').mockResolvedValueOnce(10000); // Should return the amount
       mockPrismaService.payment.findMany.mockResolvedValueOnce([
         { amount: 10000, status: 'CAPTURED' },
       ]);
       mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
       mockUsersService.isUserFirst30Days.mockResolvedValueOnce(true);
+      jest.spyOn(service, 'countReferrals').mockResolvedValueOnce(3);
+      jest
+        .spyOn(service, 'checkFreeSubscriptionDuration')
+        .mockResolvedValueOnce(1);
       mockPrismaService.user.findUnique
-        .mockResolvedValueOnce(mockUser) // For checkFreeSubscriptionDuration
+        .mockResolvedValueOnce(mockSponsor) // For checkFreeSubscriptionDuration
         .mockResolvedValueOnce({ firstPaymentDate: new Date() }); // For applyFirst30DaysReferralBonus
       mockPrismaService.subscription.findUnique.mockResolvedValueOnce(
         mockSubscription,
-      ); // For checkFreeSubscriptionDuration
+      );
       mockPrismaService.subscription.findFirst.mockResolvedValueOnce(
         mockSubscription,
       ); // For applyFirst30DaysReferralBonus
@@ -633,6 +646,122 @@ describe('ReferralsService', () => {
       const cc = 10000;
       const pounds = service.ccToPounds(cc);
       expect(pounds).toBe(cc / CC_TO_POUNDS_RATE);
+    });
+  });
+
+  describe('getFirstTimePurchase', () => {
+    it('should return the amount if user has no previous payments', async () => {
+      mockPrismaService.payment.findMany.mockResolvedValueOnce([]);
+      const result = await service.getFirstTimePurchase('user1', {}, 12345);
+      expect(result).toBe(12345);
+    });
+    it('should return the payment amount if user has one payment', async () => {
+      mockPrismaService.payment.findMany.mockResolvedValueOnce([
+        { amount: 5000 },
+      ]);
+      const result = await service.getFirstTimePurchase('user1', {}, 12345);
+      expect(result).toBe(5000);
+    });
+    it('should return false if user has more than one payment', async () => {
+      mockPrismaService.payment.findMany.mockResolvedValueOnce([
+        { amount: 5000 },
+        { amount: 6000 },
+      ]);
+      const result = await service.getFirstTimePurchase('user1', {}, 12345);
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getApplicableBonus', () => {
+    const mockReferral = {
+      id: 'mock-id',
+      userId: 'mock-user',
+      referrerId: 'ref1',
+      type: ReferralType.INTERNAL,
+      affiliateId: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    it('should return null if no referral exists', async () => {
+      jest.spyOn(service, 'getReferral').mockResolvedValueOnce(null);
+      const result = await service.getApplicableBonus('user1', 10000);
+      expect(result).toBeNull();
+    });
+    it('should return null if referrer has no firstPaymentDate', async () => {
+      jest.spyOn(service, 'getReferral').mockResolvedValueOnce(mockReferral);
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
+      const result = await service.getApplicableBonus('user1', 10000);
+      expect(result).toBeNull();
+    });
+    it('should return free_subscription if early user, first 30 days, <=3 referrals, <2 years', async () => {
+      jest.spyOn(service, 'getReferral').mockResolvedValueOnce(mockReferral);
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        firstPaymentDate: new Date(),
+      });
+      jest.spyOn(service, 'countReferrals').mockResolvedValueOnce(2);
+      jest
+        .spyOn(service, 'checkFreeSubscriptionDuration')
+        .mockResolvedValueOnce(1);
+      mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockUsersService.isUserFirst30Days.mockResolvedValueOnce(true);
+      const result = await service.getApplicableBonus('user1', 10000);
+      expect(result).toEqual({
+        type: 'free_subscription',
+        duration_in_months: 12,
+      });
+    });
+    it('should return credits if not early user or not first 30 days', async () => {
+      jest.spyOn(service, 'getReferral').mockResolvedValueOnce(mockReferral);
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        firstPaymentDate: new Date(),
+      });
+      jest.spyOn(service, 'countReferrals').mockResolvedValueOnce(4);
+      jest
+        .spyOn(service, 'checkFreeSubscriptionDuration')
+        .mockResolvedValueOnce(3);
+      mockUsersService.isEarlyUser.mockResolvedValueOnce(false);
+      mockUsersService.isUserFirst30Days.mockResolvedValueOnce(false);
+      const result = await service.getApplicableBonus('user1', 10000);
+      expect(result).toHaveProperty('type', 'credits');
+      expect(result).toHaveProperty('amount');
+      expect(result).toHaveProperty('amount_in_cc');
+    });
+  });
+
+  describe('applyUserCode', () => {
+    it('should throw if not first time purchase', async () => {
+      jest.spyOn(service, 'isFirstTimePurchase').mockResolvedValueOnce(false);
+      await expect(
+        service.applyUserCode('user1', 'CODE-123', 10000),
+      ).rejects.toThrow('User has already made a purchase');
+    });
+    it('should throw if user code is invalid', async () => {
+      jest.spyOn(service, 'isFirstTimePurchase').mockResolvedValueOnce(true);
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
+      await expect(
+        service.applyUserCode('user1', 'CODE-123', 10000),
+      ).rejects.toThrow('Invalid referral code');
+    });
+    it('should create referral and return applicable bonus', async () => {
+      jest.spyOn(service, 'isFirstTimePurchase').mockResolvedValueOnce(true);
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'referrer1',
+      });
+      jest.spyOn(service, 'getApplicableBonus').mockResolvedValueOnce({
+        type: 'credits',
+        amount: 100,
+        amount_in_cc: 1000,
+      });
+      mockPrismaService.referral.create.mockResolvedValueOnce({});
+      const result = await service.applyUserCode('user1', 'CODE-123', 10000);
+      expect(mockPrismaService.referral.create).toHaveBeenCalledWith({
+        data: { userId: 'user1', referrerId: 'referrer1' },
+      });
+      expect(result).toEqual({
+        type: 'credits',
+        amount: 100,
+        amount_in_cc: 1000,
+      });
     });
   });
 });
