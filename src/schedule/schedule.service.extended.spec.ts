@@ -375,7 +375,7 @@ describe('ScheduleServiceExtended', () => {
       // Mock createOrder
       mockPaymentService.createOrder.mockResolvedValue(mockNewOrder);
 
-      const result = await service.createSupplementOrders();
+      await service.createSupplementOrders();
 
       // Verify expired orders query
       expect(mockPrismaService.order.findMany).toHaveBeenCalledWith({
@@ -443,7 +443,7 @@ describe('ScheduleServiceExtended', () => {
       mockPrismaService.order.findMany = jest.fn().mockResolvedValue([]);
       mockPrismaService.order.updateMany = jest.fn().mockResolvedValue({});
 
-      const result = await service.createSupplementOrders();
+      await service.createSupplementOrders();
 
       expect(mockPaymentService.createOrder).not.toHaveBeenCalled();
       expect(mockPrismaService.order.updateMany).toHaveBeenCalled();
