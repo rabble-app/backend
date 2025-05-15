@@ -2,7 +2,6 @@ import { FirebaseService } from '../src/notifications/firebase.service';
 import { Stripe } from 'stripe';
 import { StripeService } from '../src/stripe/stripe.service';
 import { CourierService } from '../src/notifications/courier.service';
-import faker from '@faker-js/faker';
 
 export const mockFirebaseService = {
   sendPushNotification: jest.fn(),
@@ -135,7 +134,7 @@ const mockStripeClient = {
     ),
   },
   setupIntents: {
-    create: jest.fn().mockImplementation((params) =>
+    create: jest.fn().mockImplementation((_params) =>
       Promise.resolve({
         id: 'seti_test123',
         client_secret: 'seti_test123_secret',
@@ -158,7 +157,7 @@ const mockStripeClient = {
     ),
   },
   accountLinks: {
-    create: jest.fn().mockImplementation((params) =>
+    create: jest.fn().mockImplementation((_params) =>
       Promise.resolve({
         url: 'https://connect.stripe.com/setup/s/test',
       }),
@@ -175,7 +174,7 @@ const mockStripeClient = {
   webhooks: {
     constructEvent: jest
       .fn()
-      .mockImplementation((payload, signature, secret) => ({
+      .mockImplementation((_payload, _signature, _secret) => ({
         type: 'payment_intent.succeeded',
         data: {
           object: {
@@ -193,69 +192,69 @@ const mockStripeClient = {
 export const mockStripeService = {
   getStripe: jest
     .fn()
-    .mockImplementation((isSupplementApp = false) => mockStripeClient),
+    .mockImplementation((_isSupplementApp = false) => mockStripeClient),
   createCustomer: jest
     .fn()
-    .mockImplementation((params, isSupplementApp = false) =>
+    .mockImplementation((params, _isSupplementApp = false) =>
       mockStripeClient.customers.create(params),
     ),
   updateCustomer: jest
     .fn()
-    .mockImplementation((customerId, params, isSupplementApp = false) =>
+    .mockImplementation((customerId, params, _isSupplementApp = false) =>
       mockStripeClient.customers.update(customerId, params),
     ),
   attachPaymentMethod: jest
     .fn()
     .mockImplementation(
-      (paymentMethodId, customerId, isSupplementApp = false) =>
+      (paymentMethodId, customerId, _isSupplementApp = false) =>
         mockStripeClient.paymentMethods.attach(paymentMethodId, {
           customer: customerId,
         }),
     ),
   detachPaymentMethod: jest
     .fn()
-    .mockImplementation((paymentMethodId, isSupplementApp = false) =>
+    .mockImplementation((paymentMethodId, _isSupplementApp = false) =>
       mockStripeClient.paymentMethods.detach(paymentMethodId),
     ),
   retrievePaymentMethod: jest
     .fn()
-    .mockImplementation((paymentMethodId, isSupplementApp = false) =>
+    .mockImplementation((paymentMethodId, _isSupplementApp = false) =>
       mockStripeClient.paymentMethods.retrieve(paymentMethodId),
     ),
   listPaymentMethods: jest
     .fn()
-    .mockImplementation((customerId, isSupplementApp = false) =>
+    .mockImplementation((customerId, _isSupplementApp = false) =>
       mockStripeClient.customers.listPaymentMethods(customerId),
     ),
   createPaymentIntent: jest
     .fn()
-    .mockImplementation((params, isSupplementApp = false) =>
+    .mockImplementation((params, _isSupplementApp = false) =>
       mockStripeClient.paymentIntents.create(params),
     ),
   capturePaymentIntent: jest
     .fn()
-    .mockImplementation((paymentIntentId, params, isSupplementApp = false) =>
+    .mockImplementation((paymentIntentId, params, _isSupplementApp = false) =>
       mockStripeClient.paymentIntents.capture(paymentIntentId, params),
     ),
   retrievePaymentIntent: jest
     .fn()
-    .mockImplementation((paymentIntentId, isSupplementApp = false) =>
+    .mockImplementation((paymentIntentId, _isSupplementApp = false) =>
       mockStripeClient.paymentIntents.retrieve(paymentIntentId),
     ),
   updatePaymentIntent: jest
     .fn()
-    .mockImplementation((paymentIntentId, params, isSupplementApp = false) =>
+    .mockImplementation((paymentIntentId, params, _isSupplementApp = false) =>
       mockStripeClient.paymentIntents.update(paymentIntentId, params),
     ),
   createCoupon: jest
     .fn()
-    .mockImplementation((params, isSupplementApp = false) =>
+    .mockImplementation((params, _isSupplementApp = false) =>
       mockStripeClient.coupons.create(params),
     ),
   constructWebhookEvent: jest
     .fn()
     .mockImplementation(
-      (payload, signature, webhookSecret, isSupplementApp = false) =>
+      (payload, signature, webhookSecret, _isSupplementApp = false) =>
         mockStripeClient.webhooks.constructEvent(
           payload,
           signature,
@@ -269,22 +268,22 @@ export const mockStripeService = {
     ),
   createAccount: jest
     .fn()
-    .mockImplementation((params, isSupplementApp = false) =>
+    .mockImplementation((params, _isSupplementApp = false) =>
       mockStripeClient.accounts.create(params),
     ),
   retrieveAccount: jest
     .fn()
-    .mockImplementation((accountId, isSupplementApp = false) =>
+    .mockImplementation((accountId, _isSupplementApp = false) =>
       mockStripeClient.accounts.retrieve(accountId),
     ),
   createSetupIntent: jest
     .fn()
-    .mockImplementation((params, isSupplementApp = false) =>
+    .mockImplementation((params, _isSupplementApp = false) =>
       mockStripeClient.setupIntents.create(params),
     ),
   getPaymentMethod: jest
     .fn()
-    .mockImplementation((paymentMethodId, isSupplementApp = false) =>
+    .mockImplementation((paymentMethodId, _isSupplementApp = false) =>
       mockStripeClient.paymentMethods.retrieve(paymentMethodId),
     ),
 } as unknown as StripeService;
