@@ -64,6 +64,7 @@ export interface IOrder {
   type?: OrderType;
   status?: OrderStatus;
   firstDelivery?: boolean;
+  deliveryDate?: Date;
 }
 export interface IPricePlan {
   percentageDiscount: number;

@@ -632,7 +632,7 @@ export class PaymentService {
           userId: addSingleBasketDto.userId,
           orderId: addSingleBasketDto.orderId,
           quantity:
-            addSingleBasketDto.quantity - addSingleBasketDto.topupQuantity,
+            addSingleBasketDto.quantity,
           price: addSingleBasketDto.price,
           capsulePerDay: addSingleBasketDto.capsulePerDay,
           paymentStatus: ProductPaymentStatus.CAPTURED,
