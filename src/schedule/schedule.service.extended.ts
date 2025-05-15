@@ -571,8 +571,8 @@ export class ScheduleServiceExtended {
 
     // check whether they have reached the threshold
     for (const supplement of preOrderSupplements) {
-      // check if the prodcut has reached the threshold
-      if (supplement.team._count.members >= supplement.orderTreashold) {
+      // check if the product pre orders has reached the  20% of the threshold(which is the limit for founding members)
+      if (supplement.team._count.members >= supplement.orderTreashold * 0.2) {
         // update the product status to active
         await this.teamsService.updateSupplementProductTeam({
           where: { id: supplement.id },
@@ -614,6 +614,7 @@ export class ScheduleServiceExtended {
           // we add 1 week extra to the leadtime for that to the duration for processing their payment
           deadline: subWeeks(upperQuarterDate, supplement.product.leadTime + 1),
           firstDelivery: true,
+          deliveryDate: upperQuarterDate,
         };
         const { id } = await this.paymentService.createOrder(orderData);
 
@@ -685,6 +686,7 @@ export class ScheduleServiceExtended {
                 priceInfo: true,
                 price: true,
                 status: true,
+                subUnit: true,
                 supplementTeamProducts: {
                   select: {
                     foundingMembersDiscount: true,
@@ -710,15 +712,21 @@ export class ScheduleServiceExtended {
           const priceWithDiscount = !priceDiscount
             ? originalPrice
             : +originalPrice - (+priceDiscount / 100) * +originalPrice;
-          const productQuantity = +item.capsulePerDay * duration;
+          // a quarter is 90 days,  a single package we have is for 30 days, 
+          // so we get the number of 30 days in a quarter, 3 pouches for a quarter 
+          // for a user that takes 1 capsule per day
+          // what if the product is measured in grams? 
+          // i need to get the number of grams for 1month
+          const productQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/5) * 3 : +item.capsulePerDay * 3;
 
           // create the subscription for this user
           let productPrice = +priceWithDiscount * productQuantity;
           let topupQuantity = 0;
-          // calculate topup quantity
+          // check if there is alignment package
           if (duration > 91) {
             const topupDuration = duration - 91;
-            topupQuantity = +item.capsulePerDay * topupDuration;
+            topupQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/5) * Math.ceil(topupDuration / 30) : +item.capsulePerDay * Math.ceil(topupDuration / 30);
+            productPrice += +priceWithDiscount * topupQuantity;
           }
 
           // if the user is a founding member, we will give them a discount
@@ -743,8 +751,8 @@ export class ScheduleServiceExtended {
             orderId,
             userId: member.userId,
             productId: item.productId,
-            quantity: productQuantity - topupQuantity,
-            price: priceWithDiscount,
+            quantity: productQuantity,
+            price: productPrice,
             capsulePerDay: item.capsulePerDay,
           };
 
@@ -786,7 +794,8 @@ export class ScheduleServiceExtended {
     const query = {
       type: OrderType.SUPPLEMENT,
       status: OrderStatus.PENDING,
-      deadline: {
+      deliveryDate: {
+        not: null,
         lte: new Date(),
       },
     };
@@ -824,6 +833,7 @@ export class ScheduleServiceExtended {
           upperQuarterDate,
           order.team.supplementTeamProducts.product.leadTime + 1,
         ),
+        deliveryDate: upperQuarterDate,
       };
       const { id } = await this.paymentService.createOrder(orderData);
 
