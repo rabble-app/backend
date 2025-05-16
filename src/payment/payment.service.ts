@@ -582,6 +582,7 @@ export class PaymentService {
       }
     } else {
       // get product info
+      console.log({ productId });
       const product = await this.productsService.getProduct(productId);
 
       // create new record

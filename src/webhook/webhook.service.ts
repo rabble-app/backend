@@ -41,8 +41,6 @@ export class WebhookService {
         webhookSecret,
         isSupplementApp,
       );
-
-      this.logger.info('Event: %o', event);
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         this.logger.info('Payment intent succeeded: %o', paymentIntent);

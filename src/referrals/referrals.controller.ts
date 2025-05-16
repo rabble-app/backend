@@ -17,9 +17,14 @@ import { IAPIResponse } from '../lib/types';
 import { HttpExceptionFilter } from '../middlewares/http-exception.filters';
 import { Response } from 'express';
 import {
+  ApplyUserCodeDto,
+  ApplyUserCodeResponseDto,
   ClaimCCDto,
   CreditInfoDto,
   CreditInfoResponseDto,
+  GetApplicableBonusDto,
+  ReferralInfoResponseDto,
+  ReferralTrackingResponseDto,
 } from './dto/referrals.dto';
 import { ApiTags, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 
@@ -69,6 +74,7 @@ export class ReferralsController {
   @Get('tracking')
   @UseGuards(AuthGuard)
   @UseFilters(HttpExceptionFilter)
+  @ApiResponse(ReferralTrackingResponseDto)
   async tracking(
     @Request() req,
     @Res({ passthrough: true }) res: Response,
@@ -93,6 +99,7 @@ export class ReferralsController {
   @Get('info')
   @UseGuards(AuthGuard)
   @UseFilters(HttpExceptionFilter)
+  @ApiResponse(ReferralInfoResponseDto)
   async info(
     @Request() req,
     @Res({ passthrough: true }) res: Response,
@@ -148,6 +155,53 @@ export class ReferralsController {
       HttpStatus.OK,
       false,
       'Available credits info',
+    );
+  }
+
+  @Post('apply-user-code')
+  @UseGuards(AuthGuard)
+  @UseFilters(HttpExceptionFilter)
+  @ApiResponse(ApplyUserCodeResponseDto)
+  async applyUserCode(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+    @Body() payload: ApplyUserCodeDto,
+  ): Promise<IAPIResponse> {
+    const userId = req.user?.id ?? req.user?.userId;
+    const result = await this.referralsService.applyUserCode(
+      userId,
+      payload.userCode,
+      payload.purchaseAmount,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'User code applied',
+    );
+  }
+
+  @Post('applicable-bonus')
+  @UseGuards(AuthGuard)
+  @UseFilters(HttpExceptionFilter)
+  @ApiResponse(ApplyUserCodeResponseDto)
+  async getApplicableBonus(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+    @Body() payload: GetApplicableBonusDto,
+  ): Promise<IAPIResponse> {
+    const userId = req.user?.id ?? req.user?.userId;
+    const result = await this.referralsService.getApplicableBonus(
+      userId,
+      payload.purchaseAmount,
+    );
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Applicable bonus',
     );
   }
 }
