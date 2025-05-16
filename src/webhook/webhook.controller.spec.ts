@@ -7,6 +7,8 @@ import { ReferralsService } from '../referrals/referrals.service';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { RollbarModule } from '../utils/rollbar.module';
+import { StripeService } from '../stripe/stripe.service';
+import { mockStripeService } from '../../test/mocks';
 
 describe('WebhookController', () => {
   let controller: WebhookController;
@@ -19,6 +21,10 @@ describe('WebhookController', () => {
         WebhookService,
         ReferralsService,
         UsersService,
+        {
+          provide: StripeService,
+          useValue: mockStripeService,
+        },
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

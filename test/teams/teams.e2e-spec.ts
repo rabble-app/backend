@@ -7,6 +7,8 @@ import { faker } from '@faker-js/faker';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
+import { StripeService } from '../../src/stripe/stripe.service';
+import { mockStripeService } from '../mocks';
 
 describe('TeamsController (e2e)', () => {
   let app: INestApplication;
@@ -29,6 +31,7 @@ describe('TeamsController (e2e)', () => {
   let userId: string;
   let jwtToken: string;
   let stripe: Stripe;
+  let stripeService: StripeService;
   const testTime = 120000;
 
   const buyingTeam = {
@@ -93,19 +96,18 @@ describe('TeamsController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(mockStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
-    const params = app.get('AWS_PARAMETERS');
-
     await app.init();
-    await app.listen(process.env.PORT);
-    stripe = new Stripe(params.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    stripeService = app.get<StripeService>(StripeService);
+    stripe = stripeService.getStripe();
     // create dummy stripe user for test
     const stripeUser = await stripe.customers.create({
       phone,

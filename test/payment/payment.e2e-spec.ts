@@ -6,17 +6,16 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
-
+import { StripeService } from '../../src/stripe/stripe.service';
+import { mockStripeService } from '../mocks';
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let authService: AuthService;
-
   const phone = faker.phone.number('501-###-###');
   let customerId: string;
   let paymentIntentId: string;
-  let paymentIntentId2: string;
-  let paymentMethodId: string;
+  let paymentMethodId = 'pm_card_mastercard';
   let userId: string;
   let userId2: string;
   let producerId: string;
@@ -41,19 +40,20 @@ describe('PaymentController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(mockStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
     authService = app.get<AuthService>(AuthService);
     app.useGlobalPipes(new ValidationPipe());
-    const params = app.get('AWS_PARAMETERS');
     await app.init();
-    await app.listen(process.env.PORT);
+    // await app.listen(process.env.PORT);
 
-    stripe = new Stripe(params.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
+    const stripeService = app.get<StripeService>(StripeService);
+    stripe = stripeService.getStripe();
     // create dummy stripe user for test
     const stripeUser = await stripe.customers.create({
       phone,
@@ -91,9 +91,9 @@ describe('PaymentController (e2e)', () => {
       type: 'card',
       card: {
         number: '4242424242424242',
-        exp_month: 8,
-        exp_year: 2026,
-        cvc: '314',
+        exp_month: 5,
+        exp_year: 2028,
+        cvc: '123',
       },
     });
     paymentMethodId = paymentMethod.id;
@@ -103,7 +103,7 @@ describe('PaymentController (e2e)', () => {
       data: {
         producerId,
         name: faker.internet.userName(),
-
+        leadTime: 2,
         price: 200,
       },
     });
@@ -114,7 +114,7 @@ describe('PaymentController (e2e)', () => {
       data: {
         producerId,
         name: faker.internet.userName(),
-
+        leadTime: 2,
         price: 200,
       },
     });
@@ -161,276 +161,226 @@ describe('PaymentController (e2e)', () => {
         id: userId,
       },
     });
+    await prisma.paymentMethod.deleteMany();
     await app.close();
   });
 
   describe('PaymentController (e2e)', () => {
-    // add payment card to user
-    it(
-      '/payments/add-card(POST) should add card to user account',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/add-card')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentMethodId, stripeCustomerId: customerId })
-          .expect(201);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-        const paymentMethod = await prisma.paymentMethod.findFirst({
-          where: {
-            userId,
-            stripeCustomerId: customerId,
-          },
-        });
-        expect(paymentMethod).toBeDefined();
-      },
-      testTime,
-    );
-    it(
-      '/payments/add-card(POST) should not add card to user account if payment method is already added',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/add-card')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentMethodId, stripeCustomerId: customerId })
-          .expect(400);
-        expect(response.body.message).toBe('Payment method already exists');
-        const paymentMethod = await prisma.paymentMethod.findFirst({
-          where: {
-            userId,
-            stripeCustomerId: customerId,
-          },
-        });
-        expect(paymentMethod).toBeDefined();
-      },
-      testTime,
-    );
+    describe('PaymentController (e2e)', () => {
+      // add payment card to user
+      it(
+        '/payments/add-card(POST) should add card to user account',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/add-card')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ paymentMethodId, stripeCustomerId: customerId })
+            .expect(201);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+          const paymentMethod = await prisma.paymentMethod.findFirst({
+            where: {
+              userId,
+              stripeCustomerId: customerId,
+            },
+          });
+          expect(paymentMethod).toBeDefined();
+        },
+        testTime,
+      );
 
-    // add default card for payments
-    it(
-      '/payments/default-card(POST) should make card default for payment',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/default-card')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            paymentMethodId,
-            lastFourDigits: '2332',
-            stripeCustomerId: customerId,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
+      it(
+        '/payments/add-card(POST) should not add card to user account if payment method is already added',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/add-card')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ paymentMethodId, stripeCustomerId: customerId });
+          expect(response.status).toBe(400);
+          expect(response.body.message).toBe(
+            'Payment method already exists in the system',
+          );
+          const paymentMethod = await prisma.paymentMethod.findFirst({
+            where: {
+              userId,
+              stripeCustomerId: customerId,
+            },
+          });
+          expect(paymentMethod).toBeDefined();
+        },
+        testTime,
+      );
+      // add default card for payments
+      it(
+        '/payments/default-card(POST) should make card default for payment',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/default-card')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+              paymentMethodId,
+              lastFourDigits: '2332',
+              stripeCustomerId: customerId,
+            })
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+      it(
+        '/payments/default-card(POST) should not make card default if uncompleted data is supplied',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/default-card')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ stripeCustomerId: customerId })
+            .expect(400);
+          expect(response.body).toHaveProperty('error');
+          expect(typeof response.body.error).toBe('string');
+        },
+        testTime,
+      );
+      // charge user successfully
+      it(
+        '/payments/charge(POST) should charge a user',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/charge')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ ...chargeInfo, customerId, paymentMethodId, userId })
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+      it(
+        '/payments/charge(POST) should not charge a user if uncompleted data is supplied',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/charge')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ ...chargeInfo })
+            .expect(400);
+          expect(response.body).toHaveProperty('error');
+          expect(typeof response.body.error).toBe('string');
+        },
+        testTime,
+      );
+      it(
+        '/payments/charge(POST) should not charge a user if wrong data is supplied',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/charge')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+              ...chargeInfo,
+              customerId: 'cus_NtREO3efDC5Mv',
+              paymentMethodId,
+            })
+            .expect(400);
+          expect(response.body).toHaveProperty('error');
+          expect(typeof response.body.error).toBe('string');
+        },
+        testTime,
+      );
+      // create payment intent
+      it(
+        '/payments/intent(POST) should create payment intent',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/intent')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+              amount: 1000,
+              currency: 'gbp',
+              customerId,
+              paymentMethodId,
+            })
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+          paymentIntentId = response.body.data.paymentIntentId;
+        },
+        testTime,
+      );
 
-    it(
-      '/payments/default-card(POST) should not make card default if uncompleted data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/default-card')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ stripeCustomerId: customerId })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
+      it(
+        '/payments/charge(POST) should not create payment intent if uncompleted data is supplied',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/intent')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ ...chargeInfo })
+            .expect(400);
+          expect(response.body).toHaveProperty('error');
+          expect(typeof response.body.error).toBe('string');
+        },
+        testTime,
+      );
+      // retrieve payment intent
+      it(
+        '/payments/retrieve-intent(POST) should return payment intent',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/retrieve-intent')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ paymentIntentId })
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+      it(
+        '/payments/retrieve-intent(POST) should not return payment intent if incomplete data is supplied',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .post('/payments/retrieve-intent')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .expect(400);
+          expect(response.body).toHaveProperty('error');
+          expect(typeof response.body.error).toBe('string');
+        },
+        testTime,
+      );
+      // return users payment options
+      it(
+        '/payments/options/:id(GET) should return user payment options',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .get(`/payments/options/${customerId}`)
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
 
-    // charge user successfully
-    it(
-      '/payments/charge(POST) should charge a user',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/charge')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ ...chargeInfo, customerId, paymentMethodId, userId })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
-    it(
-      '/payments/charge(POST) should not charge a user if uncompleted data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/charge')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ ...chargeInfo })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    it(
-      '/payments/charge(POST) should not charge a user if wrong data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/charge')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            ...chargeInfo,
-            customerId: 'cus_NtREO3efDC5Mv',
-            paymentMethodId,
-          })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    // create payment intent
-    it(
-      '/payments/intent(POST) should create payment intent',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/intent')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            amount: 1000,
-            currency: 'gbp',
-            customerId,
-            paymentMethodId,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-        paymentIntentId = response.body.data.paymentIntentId;
-      },
-      testTime,
-    );
-
-    // create payment intent 2
-    it(
-      '/payments/intent(POST) should create payment intent',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/intent')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            amount: 1000,
-            currency: 'gbp',
-            customerId,
-            paymentMethodId,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-        paymentIntentId2 = response.body.data.paymentIntentId;
-      },
-      testTime,
-    );
-
-    it(
-      '/payments/charge(POST) should not create payment intent if uncompleted data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/intent')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ ...chargeInfo })
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    // retrieve payment intent
-    it(
-      '/payments/retrieve-intent(POST) should return payment intent',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/retrieve-intent')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentIntentId })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
-    it(
-      '/payments/retrieve-intent(POST) should not return payment intent if incomplete data is supplied',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/retrieve-intent')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .expect(400);
-        expect(response.body).toHaveProperty('error');
-        expect(typeof response.body.error).toBe('string');
-      },
-      testTime,
-    );
-
-    // return users payment options
-    it(
-      '/payments/options/:id(GET) should return user payment options',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .get(`/payments/options/${customerId}`)
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
-    // capture payment intent
-    it(
-      '/payments/intent/capture(POST) should capture payment intent for supplement customers',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/intent/capture')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentIntentId, teamId, userId, amount: 1000 })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
-
-    // top up payment
-    it(
-      '/payments/supplement/topup(POST) should process payment for supplement topup',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post('/payments/supplement/topup')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({
-            paymentIntentId: paymentIntentId2,
-            teamId,
-            userId,
-            amount: 1000,
-            productId: productId2,
-            quantity: 2,
-            price: 2,
-            capsulePerDay: 1,
-          })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
+      // remove payment card from user
+      it(
+        '/payments/remove-card(DELETE) should remove card from user',
+        async () => {
+          const response = await request(app.getHttpServer())
+            .delete('/payments/remove-card')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({ paymentMethodId })
+            .expect(200);
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.error).toBeUndefined();
+          expect(typeof response.body.data).toBe('object');
+        },
+        testTime,
+      );
+    });
 
     describe('Basket', () => {
       // add user bulk basket successfully
@@ -602,21 +552,5 @@ describe('PaymentController (e2e)', () => {
         testTime,
       );
     });
-
-    // remove payment card from user
-    it(
-      '/payments/remove-card(DELETE) should remove card from user',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .delete('/payments/remove-card')
-          .set('Authorization', `Bearer ${jwtToken}`)
-          .send({ paymentMethodId })
-          .expect(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.error).toBeUndefined();
-        expect(typeof response.body.data).toBe('object');
-      },
-      testTime,
-    );
   });
 });

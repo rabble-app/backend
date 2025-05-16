@@ -13,10 +13,18 @@ import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
 import { ReferralsService } from '../referrals/referrals.service';
 import { RollbarModule } from '../utils/rollbar.module';
-
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
+import { StripeService } from '../stripe/stripe.service';
+import { FirebaseService } from '../notifications/firebase.service';
+import {
+  mockStripeService,
+  mockFirebaseService,
+  mockAwsParameters,
+  mockCourierService,
+} from '../../test/mocks';
+import { CourierService } from '../notifications/courier.service';
 describe('AuthController', () => {
   let controller: AuthController;
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -31,6 +39,23 @@ describe('AuthController', () => {
         TeamsService,
         ProductsService,
         ReferralsService,
+        PaymentServiceExtension,
+        {
+          provide: StripeService,
+          useValue: mockStripeService,
+        },
+        {
+          provide: FirebaseService,
+          useValue: mockFirebaseService,
+        },
+        {
+          provide: 'AWS_PARAMETERS',
+          useValue: mockAwsParameters,
+        },
+        {
+          provide: CourierService,
+          useValue: mockCourierService,
+        },
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

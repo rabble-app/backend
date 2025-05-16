@@ -33,10 +33,12 @@ export class ProductsService {
 
   async getProduct(id: string, teamId = ''): Promise<Product | null> {
     let orderId = '';
+    let orderDeadline: Date;
     // get team latest order id
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
+      orderDeadline = result.deadline;
     }
     const result = await this.prisma.product.findFirst({
       where: {
@@ -75,6 +77,7 @@ export class ProductsService {
           select: {
             orderTreashold: true,
             foundingMembersDiscount: true,
+            earlyMembersDiscount: true,
             status: true,
             team: {
               select: {
@@ -91,6 +94,7 @@ export class ProductsService {
       },
     });
     result['orderId'] = orderId;
+    result['orderDeadline'] = orderDeadline;
     return result;
   }
 
@@ -365,8 +369,21 @@ export class ProductsService {
 
   async getSupplementProducts(
     limit: number,
+    userId: string = null,
   ): Promise<Partial<SupplementTeamProducts>[] | null> {
-    return await this.prisma.supplementTeamProducts.findMany({
+    let userPurchasedProducts = [];
+    if (userId) {
+      userPurchasedProducts = await this.prisma.basketC.findMany({
+        where: {
+          userId,
+        },
+        select: {
+          productId: true,
+        },
+      });
+    }
+
+    const allProducts = await this.prisma.supplementTeamProducts.findMany({
       orderBy: {
         createdAt: 'desc',
       },
@@ -376,6 +393,7 @@ export class ProductsService {
         status: true,
         orderTreashold: true,
         foundingMembersDiscount: true,
+        earlyMembersDiscount: true,
         product: {
           select: {
             id: true,
@@ -412,6 +430,14 @@ export class ProductsService {
       },
       ...(limit && { take: +limit }),
     });
+
+    // return unpurchased products
+    const unpurchasedProducts = allProducts.filter(
+      (product) =>
+        !userPurchasedProducts.some((p) => p.productId === product.productId),
+    );
+
+    return unpurchasedProducts;
   }
 
   async getSupplementProductsTags(): Promise<Partial<SupplementTags>[] | null> {

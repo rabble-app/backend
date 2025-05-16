@@ -1,4 +1,10 @@
-import { OrderType, Prisma, OrderStatus } from '@prisma/client';
+import {
+  OrderType,
+  Prisma,
+  OrderStatus,
+  PaymentStatus,
+  PaymentType,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Request } from 'express';
 
@@ -38,14 +44,6 @@ export enum ProductType {
   PORTIONED_DYNAMIC_PRODUCT = 'PORTIONED_DYNAMIC_PRODUCT',
 }
 
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  INTENT_CREATED = 'INTENT_CREATED',
-  CAPTURED = 'CAPTURED',
-  FAILED = 'FAILED',
-  COUPON_USED = 'COUPON_USED',
-}
-
 export enum Role {
   USER = 'USER',
   PRODUCER = 'PRODUCER',
@@ -65,6 +63,8 @@ export interface IOrder {
   deadline?: Date;
   type?: OrderType;
   status?: OrderStatus;
+  firstDelivery?: boolean;
+  deliveryDate?: Date;
 }
 export interface IPricePlan {
   percentageDiscount: number;
@@ -76,6 +76,10 @@ export interface IPayment {
   amount: number;
   paymentIntentId?: string;
   status: PaymentStatus;
+  type?: PaymentType;
+  expiryDate?: Date;
+  discount?: number;
+  coupons?: string;
 }
 
 export enum TeamMemberShip {
@@ -368,6 +372,38 @@ export interface IStoreEmployee {
 
 export type BuyingTeamsWithSupplementProduct = Prisma.BuyingTeamGetPayload<{
   include: {
-    supplementTeamProducts: true;
+    supplementTeamProducts: {
+      select: {
+        status: true;
+        orderTreashold: true;
+        product: {
+          select: {
+            leadTime: true;
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type OrderWithSupplementPayload = Prisma.OrderGetPayload<{
+  select: {
+    id: true;
+    deadline: true;
+    team: {
+      select: {
+        supplementTeamProducts: {
+          select: {
+            product: {
+              select: {
+                leadTime: true;
+              };
+            };
+          };
+        };
+      };
+    };
   };
 }>;

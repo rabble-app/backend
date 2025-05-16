@@ -8,6 +8,8 @@ import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 import { UploadsService } from '../../src/uploads/uploads.service';
 import { UploadsService as MockedUploadsService } from '../../__mocks__/uploads.service';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const commonSuccessResponse = (response: any) => {
   expect(response.body).toHaveProperty('data');
@@ -32,6 +34,7 @@ describe('StoreController (e2e)', () => {
   let orderCollection: Collection;
   let openHourId: string;
   let employeeId: string;
+  let testImageBuffer: Buffer;
 
   const store = {
     name: faker.internet.userName(),
@@ -66,7 +69,12 @@ describe('StoreController (e2e)', () => {
       imports: [AppModule],
     })
       .overrideProvider(UploadsService)
-      .useValue(MockedUploadsService)
+      .useValue({
+        uploadFile: jest.fn().mockResolvedValue({
+          Location: 'https://example.com/mock-image.jpg',
+          Key: 'mock-image-key',
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -161,6 +169,9 @@ describe('StoreController (e2e)', () => {
 
     // create dummy token
     jwtToken = authService.generateToken({ userId });
+
+    // Read test image file
+    testImageBuffer = readFileSync(join(__dirname, '..', 'testImage.jpg'));
   });
 
   afterAll(async () => {
@@ -408,7 +419,10 @@ describe('StoreController (e2e)', () => {
         .set('Content-Type', 'multipart/form-data')
         .field('orderId', order.id)
         .field('products', JSON.stringify(confirmOrderDto.products))
-        .attach('file', './test/testImage.jpg');
+        .attach('file', testImageBuffer, {
+          filename: 'testImage.jpg',
+          contentType: 'image/jpeg',
+        });
       expect(response.body).toHaveProperty('data');
       expect(response.body.error).toBeUndefined();
     });
@@ -429,7 +443,10 @@ describe('StoreController (e2e)', () => {
         .set('Content-Type', 'multipart/form-data')
         .field('orderId', order.id)
         .field('products', JSON.stringify(confirmOrderDto.products))
-        .attach('file', './test/testImage.jpg');
+        .attach('file', testImageBuffer, {
+          filename: 'testImage.jpg',
+          contentType: 'image/jpeg',
+        });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
         'One of the order products has insufficient quantity, please add a note',
@@ -452,7 +469,10 @@ describe('StoreController (e2e)', () => {
         .field('orderId', order.id)
         .field('note', 'test note')
         .field('products', JSON.stringify(confirmOrderDto.products))
-        .attach('file', './test/testImage.jpg');
+        .attach('file', testImageBuffer, {
+          filename: 'testImage.jpg',
+          contentType: 'image/jpeg',
+        });
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe('PARTIAL');
     });

@@ -362,11 +362,20 @@ export class ProductsController {
     required: false,
     description: 'The limit of the records to be returned',
   })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description: 'The id of the user making the request',
+  })
   async supplementProducts(
     @Query('limit') limit: number,
+    @Query('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.productsService.getSupplementProducts(limit);
+    const result = await this.productsService.getSupplementProducts(
+      limit,
+      userId,
+    );
     return formatResponse(
       result,
       res,

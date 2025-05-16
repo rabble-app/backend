@@ -13,7 +13,7 @@ describe('InsightsController (e2e)', () => {
   let userId: string;
   let jwtToken: string;
   const testTime = 120000;
-  const phone = faker.phone.number();
+  const phone = `+44${faker.phone.number()}22`;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,7 +26,6 @@ describe('InsightsController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
 
     // create dummy user for test
     const user = await prisma.user.create({
@@ -46,7 +45,7 @@ describe('InsightsController (e2e)', () => {
         id: userId,
       },
     });
-    // await app.close();
+    await app.close();
   });
 
   describe('InsightsController (e2e)', () => {

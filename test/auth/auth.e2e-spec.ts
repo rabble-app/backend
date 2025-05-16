@@ -4,6 +4,9 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
+import { ReferralsService } from '../../src/referrals/referrals.service';
+import { StripeService } from '../../src/stripe/stripe.service';
+import { mockStripeService } from '../mocks';
 
 const commonFailureResponse = (response: any) => {
   expect(response.body).toHaveProperty('error');
@@ -13,17 +16,24 @@ const commonFailureResponse = (response: any) => {
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let referralsService: ReferralsService;
   let userId: string;
   let jwtToken: string;
   let userJwtToken: string;
   let accountId: string;
   let producerId: string;
+  let sponsorId: string;
+  let sponsorReferralCode: string;
   const testTime = 120000;
 
   const phone = faker.phone.number('501-###-###');
   const producerPhone = faker.phone.number('201-###-###');
   const email = faker.internet.email();
   const email2 = faker.internet.email() + `144`;
+  const email3 = faker.internet.email(
+    faker.name.firstName(),
+    new Date().getTime().toString(),
+  );
   const password = 'passwordd';
 
   const producerInfo = {
@@ -51,18 +61,28 @@ describe('AppController (e2e)', () => {
     newPassword: 'linkdedinuser',
     channel: 'PASSWORD_RESET',
   };
+  const sponsorData = {
+    email: faker.internet.email(faker.name.firstName(), faker.name.lastName()),
+    password: 'password',
+    phone: faker.phone.number('212-###-###'),
+    firstName: faker.name.firstName(),
+    lastName: faker.name.lastName(),
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(StripeService)
+      .useValue(mockStripeService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     prisma = app.get<PrismaService>(PrismaService);
+    referralsService = app.get<ReferralsService>(ReferralsService);
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
 
     // create dummy user for test
     const user = await prisma.user.create({
@@ -70,6 +90,19 @@ describe('AppController (e2e)', () => {
         phone,
       },
     });
+    const referralCode = await referralsService.generateReferralCode();
+    const userCode = await referralsService.generateUserCode(
+      sponsorData.firstName,
+    );
+    const sponsor = await prisma.user.create({
+      data: {
+        ...sponsorData,
+        userCode,
+        refCode: referralCode,
+      },
+    });
+    sponsorId = sponsor.id;
+    sponsorReferralCode = referralCode;
     userId = user.id;
   }, testTime);
 
@@ -77,6 +110,11 @@ describe('AppController (e2e)', () => {
     await prisma.producer.delete({
       where: {
         id: producerId,
+      },
+    });
+    await prisma.user.delete({
+      where: {
+        id: sponsorId,
       },
     });
     await app.close();
@@ -177,6 +215,26 @@ describe('AppController (e2e)', () => {
       testTime,
     );
 
+    it(
+      '/auth/register (POST) should register a supplement user with referral code',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/register')
+          .send({
+            ...supplementUserInfo,
+            email: email3,
+            referralCode: sponsorReferralCode,
+            phone: faker.phone.number('224-###-###'),
+          });
+        expect(response.status).toBe(201);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(typeof response.body.data).toBe('object');
+        userJwtToken = response.body.data.token;
+      },
+      testTime,
+    );
+
     // Email Verification
     it('/auth/email-verification (POST) should not verify email if email verification token is invalid/expired', async () => {
       const response = await request(app.getHttpServer())
@@ -255,7 +313,7 @@ describe('AppController (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post('/auth/login')
-          .send({ email: email2, password, role: 'USER' })
+          .send({ email: email3, password, role: 'USER' })
           .expect(200);
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();

@@ -1,6 +1,5 @@
 import {
   BuyingTeam,
-  MembershipStatus,
   OrderStatus,
   Prisma,
   SupplementTeamProducts,
@@ -21,7 +20,7 @@ import {
 import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
 import { PrismaService } from '../prisma.service';
-import { teamImages } from '../../src/utils';
+import { getTeamMembershipRole, teamImages } from '../../src/utils';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../../src/notifications/notifications.service';
 import { TeamsServiceExtension } from './teams.service.extension';
@@ -178,12 +177,17 @@ export class TeamsService {
     // get the team info
     const team = await this.findBuyingTeam({ id: teamData.teamId });
 
-    const memberStatus = teamData.role
-      ? teamData.role
-      : team.supplementTeamProducts?.status == 'PREORDER'
-      ? MembershipStatus.FOUNDING_MEMBER
-      : MembershipStatus.MEMBER;
-
+    // get team members
+    const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
+      teamData.teamId,
+    );
+    const isSupplementTeam = team.supplementTeamProducts ? true : false;
+    const memberStatus = getTeamMembershipRole(
+      teamMembers.length,
+      isSupplementTeam,
+      team?.supplementTeamProducts?.orderTreashold,
+      teamData.role,
+    );
     const result = await this.prisma.teamMember.upsert({
       where: {
         team_unique_user: {
@@ -197,11 +201,6 @@ export class TeamsService {
 
     // get the sender info
     const sender = await this.userService.findUser({ id: teamData.userId });
-
-    // get team members
-    const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
-      teamData.teamId,
-    );
 
     if (teamMembers.length > 0) {
       teamMembers.forEach(async (admin) => {
@@ -464,7 +463,24 @@ export class TeamsService {
     return await this.prisma.buyingTeam.findUnique({
       where: buyingTeamWhereUniqueInput,
       include: {
-        supplementTeamProducts: true,
+        supplementTeamProducts: {
+          select: {
+            status: true,
+            product: {
+              select: {
+                leadTime: true,
+                id: true,
+                name: true,
+              },
+            },
+            orderTreashold: true,
+          },
+        },
+        _count: {
+          select: {
+            members: true,
+          },
+        },
       },
     });
   }

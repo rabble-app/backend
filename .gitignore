@@ -52,3 +52,5 @@ tf/*/terraform.tfvars
 tf/*/terraform.tfstate.d
 public/pdfs/*
 !public/pdfs/.gitkeep 
+
+.vscode

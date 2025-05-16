@@ -412,10 +412,13 @@ export class UsersControllerExtension {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async userSingleSupplementPlan(
     @Param('id') id: string,
+    @Request() req,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
+    const userId = req.user.userId;
     const result = await this.usersServiceExtension.getSingleSupplementPlans(
       id,
+      userId,
     );
     return formatResponse(
       result,
@@ -453,6 +456,52 @@ export class UsersControllerExtension {
       HttpStatus.OK,
       false,
       'Users profile returned successfully',
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/:userId/has-active-supplement')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'User supplement team status returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async hasActiveSupplementTeam(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersServiceExtension.hasActiveSupplementTeam(userId);
+    return formatResponse(
+      { hasActiveSupplement: result },
+      res,
+      HttpStatus.OK,
+      false,
+      'User supplement team status returned successfully',
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('/:userId')
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The id of the user',
+  })
+  @ApiOkResponse({ description: 'User deleted successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async deleteUser(
+    @Param('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    await this.usersService.removeUser(userId);
+    return formatResponse(
+      'User deleted successfully',
+      res,
+      HttpStatus.OK,
+      false,
+      'User deleted successfully',
     );
   }
 }

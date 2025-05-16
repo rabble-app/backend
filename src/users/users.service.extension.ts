@@ -159,6 +159,7 @@ export class UsersServiceExtension {
             supplementTeamProducts: {
               select: {
                 foundingMembersDiscount: true,
+                earlyMembersDiscount: true,
                 status: true,
                 orderTreashold: true,
               },
@@ -177,8 +178,8 @@ export class UsersServiceExtension {
     });
   }
 
-  async getSingleSupplementPlans(id: string) {
-    return await this.prisma.teamMember.findFirst({
+  async getSingleSupplementPlans(id: string, userId: string) {
+    const teamMember = await this.prisma.teamMember.findFirst({
       where: {
         id,
         status: TeamStatus.APPROVED,
@@ -187,12 +188,16 @@ export class UsersServiceExtension {
         id: true,
         subscriptionStatus: true,
         skipNextDelivery: true,
+        userId: true,
         role: true,
         team: {
           select: {
             id: true,
             name: true,
             basket: {
+              where: {
+                userId,
+              },
               select: {
                 id: true,
                 quantity: true,
@@ -219,6 +224,7 @@ export class UsersServiceExtension {
             supplementTeamProducts: {
               select: {
                 foundingMembersDiscount: true,
+                earlyMembersDiscount: true,
                 status: true,
                 orderTreashold: true,
               },
@@ -235,5 +241,46 @@ export class UsersServiceExtension {
         createdAt: 'desc',
       },
     });
+
+    if (!teamMember) return null;
+
+    const latestOrder = await this.prisma.order.findFirst({
+      where: {
+        teamId: teamMember.team.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        deadline: true,
+      },
+    });
+
+    return {
+      ...teamMember,
+      team: {
+        ...teamMember.team,
+        latestOrder,
+      },
+    };
+  }
+
+  async hasActiveSupplementTeam(userId: string): Promise<boolean> {
+    const teamRecord = await this.prisma.teamMember.findFirst({
+      where: {
+        userId,
+        status: TeamStatus.APPROVED,
+        team: {
+          supplementTeamProducts: {
+            status: 'ACTIVE'
+          },
+        },
+      },
+    });
+
+    if (!teamRecord) return false;
+
+    return true;
   }
 }

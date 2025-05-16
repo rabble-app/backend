@@ -19,7 +19,15 @@ import { UploadsService } from '../uploads/uploads.service';
 import { LoggerModule } from '../utils/logger.module';
 import { RollbarModule } from '../utils/rollbar.module';
 import { ReferralsService } from '../referrals/referrals.service';
-
+import { StripeService } from '../stripe/stripe.service';
+import { FirebaseService } from '../notifications/firebase.service';
+import {
+  mockStripeService,
+  mockFirebaseService,
+  mockAwsParameters,
+  mockCourierService,
+} from '../../test/mocks';
+import { CourierService } from '../notifications/courier.service';
 describe('ScheduleController', () => {
   let controller: ScheduleController;
 
@@ -46,6 +54,23 @@ describe('ScheduleController', () => {
         QRCodeService,
         UploadsService,
         ReferralsService,
+        PaymentServiceExtension,
+        {
+          provide: StripeService,
+          useValue: mockStripeService,
+        },
+        {
+          provide: FirebaseService,
+          useValue: mockFirebaseService,
+        },
+        {
+          provide: 'AWS_PARAMETERS',
+          useValue: mockAwsParameters,
+        },
+        {
+          provide: CourierService,
+          useValue: mockCourierService,
+        },
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],
     }).compile();

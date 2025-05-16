@@ -5,10 +5,16 @@ import { PrismaService } from '../prisma.service';
 import { UsersControllerExtension } from './users.controller.extension';
 import { JwtService } from '@nestjs/jwt';
 import { UsersServiceExtension } from './users.service.extension';
-
+import { StripeService } from '../stripe/stripe.service';
 @Module({
   controllers: [UsersController, UsersControllerExtension],
-  providers: [UsersService, UsersServiceExtension, PrismaService, JwtService],
+  providers: [
+    UsersService,
+    UsersServiceExtension,
+    PrismaService,
+    JwtService,
+    StripeService,
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}

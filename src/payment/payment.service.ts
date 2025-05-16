@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import { AddBulkBasketDto, AddToBasket } from './dto/add-bulk-basket.dto';
 import { AddPaymentCardDto, IPaymentMethod } from './dto/add-payment-card.dto';
 import {
@@ -6,8 +5,11 @@ import {
   BasketC,
   Order,
   Payment,
+  PaymentStatus,
+  PaymentType,
   Prisma,
   ProductPaymentStatus,
+  SupplementTeamStatus,
 } from '@prisma/client';
 import {
   HttpException,
@@ -21,7 +23,8 @@ import {
   ICreateIntent,
   IOrder,
   IPayment,
-  PaymentStatus,
+  OrderWithSupplementPayload,
+  Status,
   notificationType,
 } from '../lib/types';
 import { PrismaService } from '../prisma.service';
@@ -33,10 +36,15 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
+import { add } from 'date-fns';
+import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
+import { PaymentServiceExtension } from './payment.service.extension';
+import { ReferralsService } from '../referrals/referrals.service';
+import { StripeService } from '../stripe/stripe.service';
+import Rollbar from 'rollbar';
 
 @Injectable()
 export class PaymentService {
-  private readonly stripe: Stripe;
   constructor(
     @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
@@ -47,17 +55,19 @@ export class PaymentService {
     @Inject(forwardRef(() => TeamsService))
     private readonly teamsService: TeamsService,
     private readonly productsService: ProductsService,
+    private readonly referralsService: ReferralsService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     @Inject('LOGGER') private readonly logger: Logger,
-  ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    @Inject(forwardRef(() => PaymentServiceExtension))
+    private readonly paymentServiceExtension: PaymentServiceExtension,
+    private readonly stripeService: StripeService,
+    @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+  ) {}
 
   async addCustomerCard(
     addPaymentCardDto: AddPaymentCardDto,
     userId: string,
+    isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
     // attach payment method to user
     this.logger.log('info', 'Attaching payment method to user %o', {
@@ -66,19 +76,41 @@ export class PaymentService {
       stripeCustomerId: addPaymentCardDto.stripeCustomerId,
     });
 
-    const result = await this.stripe.paymentMethods.attach(
+    const paymentMethod = await this.stripeService.getPaymentMethod(
       addPaymentCardDto.paymentMethodId,
-      {
-        customer: addPaymentCardDto.stripeCustomerId,
-      },
+      isSupplementApp,
     );
+
+    const existingPaymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: {
+        fingerprint: paymentMethod.card.fingerprint,
+      },
+    });
+
+    if (existingPaymentMethod) {
+      this.logger.log('info', 'Payment method already exists %o', {
+        userId,
+        paymentMethodId: addPaymentCardDto.paymentMethodId,
+      });
+      throw new HttpException(
+        'Payment method already exists in the system',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const result = await this.stripeService.attachPaymentMethod(
+      addPaymentCardDto.paymentMethodId,
+      addPaymentCardDto.stripeCustomerId,
+      isSupplementApp,
+    );
+
     if (result) {
       await this.SavePaymentMethod({
-        cardLastFourDigits: result.card.last4,
+        cardLastFourDigits: paymentMethod.card.last4,
         paymentMethodId: addPaymentCardDto.paymentMethodId,
         userId,
         stripeCustomerId: addPaymentCardDto.stripeCustomerId,
-        fingerprint: result.card.fingerprint,
+        fingerprint: paymentMethod.card.fingerprint,
       });
 
       // make it user default payment method
@@ -99,9 +131,11 @@ export class PaymentService {
 
   async removeCustomerCard(
     removePaymentCardDto: RemovePaymentCardDto,
+    isSupplementApp = false,
   ): Promise<{ paymentMethodId: string } | null> {
-    await this.stripe.paymentMethods.detach(
+    await this.stripeService.detachPaymentMethod(
       removePaymentCardDto.paymentMethodId,
+      isSupplementApp,
     );
 
     // remove it from our record
@@ -117,11 +151,12 @@ export class PaymentService {
   }
 
   async createIntentForCardSetup(): Promise<object | null> {
-    return await this.stripe.setupIntents.create({
-      payment_method_types: ['card'],
-      // customer: customerId,
-      // confirm: true,
-    });
+    return await this.stripeService.createSetupIntent(
+      {
+        payment_method_types: ['card'],
+      },
+      true,
+    );
   }
 
   async chargeUser(chargeUserDto: ChargeUserDto): Promise<object | null> {
@@ -199,13 +234,32 @@ export class PaymentService {
     return await this.recordPayment(paymentData);
   }
 
-  async getTeamLatestOrder(teamId: string): Promise<Order | null> {
+  async getTeamLatestOrder(
+    teamId: string,
+  ): Promise<OrderWithSupplementPayload | null> {
     return await this.prisma.order.findFirst({
       where: {
         teamId: teamId,
       },
       orderBy: {
         createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        deadline: true,
+        team: {
+          select: {
+            supplementTeamProducts: {
+              select: {
+                product: {
+                  select: {
+                    leadTime: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -248,7 +302,7 @@ export class PaymentService {
         // send notification
         await this.notificationService.createNotification({
           title: 'Threshold Reached 👏',
-          text: `Congratulations! Your buying team ${member.team.name} have collectively reached the suppliers’s minimum threshold for a new shipment. You have 24 hours to add to it or invite others to join the team before the order is shipped`,
+          text: `Congratulations! Your buying team ${member.team.name} have collectively reached the suppliers's minimum threshold for a new shipment. You have 24 hours to add to it or invite others to join the team before the order is shipped`,
           userId: member.userId,
           teamId: member.teamId,
           notficationToken: member.user.notificationToken,
@@ -273,6 +327,7 @@ export class PaymentService {
   async createIntent(
     createIntentData: ICreateIntent,
     offline = false,
+    isSupplementApp = false,
   ): Promise<any | null> {
     try {
       const parameters = {
@@ -291,28 +346,18 @@ export class PaymentService {
       } else {
         parameters['setup_future_usage'] = 'off_session';
       }
-      const paymentIntent = await this.stripe.paymentIntents.create({
-        ...parameters,
-        capture_method: 'manual',
-        use_stripe_sdk: true,
-      });
-      return paymentIntent;
-    } catch (e) {
-      console.log(e);
-      // const charge = await this.stripe.charges.retrieve(
-      //   e.payment_intent.latest_charge,
-      // );
-      // if (e.type === 'StripeCardError') {
-      //   if (charge.outcome.type === 'blocked') {
-      //     console.log('Payment blocked for suspected fraud.');
-      //   } else if (e.code === 'card_declined') {
-      //     console.log('Payment declined by the issuer.');
-      //   } else if (e.code === 'expired_card') {
-      //     console.log('Card expired.');
-      //   } else {
-      //     console.log('Other card error.');
-      //   }
-      // }
+
+      return await this.stripeService.createPaymentIntent(
+        {
+          ...parameters,
+          capture_method: 'manual',
+          use_stripe_sdk: true,
+        },
+        isSupplementApp,
+      );
+    } catch (error) {
+      console.log(error);
+      return null;
     }
   }
 
@@ -323,9 +368,55 @@ export class PaymentService {
   }
 
   async recordPayment(paymentData: IPayment): Promise<Payment> {
-    return await this.prisma.payment.create({
-      data: paymentData,
-    });
+    try {
+      if (paymentData?.type !== PaymentType.YEARLY_SUBSCRIPTION) {
+        const hasPreviousPayment = await this.prisma.payment.count({
+          where: {
+            userId: paymentData.userId,
+          },
+        });
+        if (!hasPreviousPayment) {
+          await this.prisma.user.update({
+            where: {
+              id: paymentData.userId,
+            },
+            data: {
+              firstPaymentDate: new Date(),
+            },
+          });
+
+          this.referralsService
+            .handleRefCodeAndFreeTrial(paymentData.userId)
+            .catch((error) => {
+              this.logger.error(
+                'Failed to handle referral code and free trial',
+                {
+                  error,
+                  paymentData,
+                },
+              );
+              this.rollbar.error(
+                'Failed to handle referral code and free trial %o %o',
+                error,
+                paymentData,
+              );
+            });
+        }
+      }
+
+      return await this.prisma.payment.create({
+        data: paymentData,
+      });
+    } catch (error) {
+      this.logger.error('Failed to record payment', {
+        error,
+        paymentData,
+      });
+      throw new HttpException(
+        'Failed to record payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async updatePayment(params: {
@@ -491,6 +582,7 @@ export class PaymentService {
       }
     } else {
       // get product info
+      console.log({ productId });
       const product = await this.productsService.getProduct(productId);
 
       // create new record
@@ -541,7 +633,7 @@ export class PaymentService {
           userId: addSingleBasketDto.userId,
           orderId: addSingleBasketDto.orderId,
           quantity:
-            addSingleBasketDto.quantity - addSingleBasketDto.topupQuantity,
+            addSingleBasketDto.quantity,
           price: addSingleBasketDto.price,
           capsulePerDay: addSingleBasketDto.capsulePerDay,
           paymentStatus: ProductPaymentStatus.CAPTURED,
@@ -559,7 +651,10 @@ export class PaymentService {
             orderId: addSingleBasketDto.orderId,
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.price,
-            // capsulePerDay: addSingleBasketDto.capsulePerDay,
+            capsulePerDay: addSingleBasketDto.capsulePerDay,
+            deliveryDate: add(new Date(), {
+              weeks: team.supplementTeamProducts.product.leadTime,
+            }),
           },
         });
       }
@@ -588,7 +683,7 @@ export class PaymentService {
   }
 
   async returnPaymentIntent(paymentIntentId: string): Promise<any | null> {
-    return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+    return await this.stripeService.retrievePaymentIntent(paymentIntentId);
   }
 
   /**
@@ -630,22 +725,6 @@ export class PaymentService {
   }
 
   async SavePaymentMethod(params: IPaymentMethod) {
-    const paymentMethod = await this.prisma.paymentMethod.findFirst({
-      where: {
-        fingerprint: params.fingerprint,
-      },
-    });
-    if (paymentMethod) {
-      this.logger.info('Payment method already exists %o', {
-        fingerprint: params.fingerprint,
-        userId: params.userId,
-        last4: params.cardLastFourDigits,
-      });
-      throw new HttpException(
-        'Payment method already exists',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
     return await this.prisma.paymentMethod.create({
       data: params,
     });
@@ -662,8 +741,9 @@ export class PaymentService {
       distinct: ['stripeDefaultPaymentMethodId'],
     });
     for (const user of users) {
-      const paymentMethod = await this.stripe.paymentMethods.retrieve(
+      const paymentMethod = await this.stripeService.retrievePaymentMethod(
         user.stripeDefaultPaymentMethodId,
+        true,
       );
       this.logger.info(`Seeding payment method for user ${user.id}`);
       await this.SavePaymentMethod({
@@ -675,5 +755,75 @@ export class PaymentService {
         fingerprint: paymentMethod.card.fingerprint,
       });
     }
+  }
+
+  async joinSupplementTeam(joinSupplementTeamDto: JoinSupplementTeamDto) {
+    // Check if user has active subscription
+    const hasActiveSubscription =
+      await this.paymentServiceExtension.checkUserSubscriptionStatus(
+        joinSupplementTeamDto.userId,
+      );
+    if (!hasActiveSubscription) {
+      this.logger.warn(
+        'User does not have an active subscription for joining supplement team',
+        {
+          userId: joinSupplementTeamDto.userId,
+        },
+      );
+      return 6;
+    }
+
+    let orderId = '';
+    if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
+      // get the user stripe id
+      const userInfo = await this.userService.findUser({
+        id: joinSupplementTeamDto.userId,
+      });
+      if (!userInfo.stripeCustomerId) return 1;
+      // create payment intent
+      const paymentIntent = await this.createIntent(
+        {
+          amount: joinSupplementTeamDto.amount,
+          currency: joinSupplementTeamDto.currency,
+          paymentMethodId: joinSupplementTeamDto.paymentMethodId,
+          customerId: userInfo.stripeCustomerId,
+        },
+        false,
+        true,
+      );
+      if (!paymentIntent || paymentIntent.status != 'requires_capture')
+        return 2;
+      // charge the user
+      const paymentCaptureResult =
+        await this.paymentServiceExtension.handleSupplementPaymentCapture({
+          paymentIntentId: paymentIntent.id,
+          teamId: joinSupplementTeamDto.teamId,
+          userId: joinSupplementTeamDto.userId,
+          amount: joinSupplementTeamDto.amount,
+        });
+      if (!paymentCaptureResult) return 3;
+      orderId = paymentCaptureResult.orderId;
+    }
+    // add to team --> we need a utility function to get the member status
+    const addToTeam = await this.teamsService.addTeamMember({
+      teamId: joinSupplementTeamDto.teamId,
+      userId: joinSupplementTeamDto.userId,
+      status: Status.APPROVED,
+    });
+    if (!addToTeam) return 4;
+
+    // store the basket
+    const basket = await this.addToBasket({
+      orderId,
+      teamId: joinSupplementTeamDto.teamId,
+      userId: joinSupplementTeamDto.userId,
+      productId: joinSupplementTeamDto.productId,
+      quantity: joinSupplementTeamDto.quantity,
+      price: joinSupplementTeamDto.price,
+      capsulePerDay: joinSupplementTeamDto.capsulePerDay,
+      topupQuantity: joinSupplementTeamDto.topupQuantity,
+    });
+    if (!basket) return 5;
+    return joinSupplementTeamDto;
   }
 }

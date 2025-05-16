@@ -1,7 +1,5 @@
 import * as bcrypt from 'bcrypt';
 import twilio from 'twilio';
-import Stripe from 'stripe';
-import ChangePasswordDto from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -11,25 +9,23 @@ import { Producer, User } from '@prisma/client';
 import { SendOTPDto } from './dto/send-otp.dto';
 import { UsersService } from '../users/users.service';
 import { VerifyOTPDto } from './dto/verify-otp.dto';
-import { courier } from '../../src/utils/mail';
 import { Role, UserWithProducerAndPartnerInfo } from '../../src/lib/types';
-import { ICourierClient } from '@trycourier/courier';
+import { ReferralsService } from '../referrals/referrals.service';
+import { StripeService } from '../stripe/stripe.service';
+import { CourierService } from '../notifications/courier.service';
+import ChangePasswordDto from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
-  private courierClient: ICourierClient;
-  private readonly stripe: Stripe;
   constructor(
     private readonly userService: UsersService,
+    private readonly referralsService: ReferralsService,
     private jwtService: JwtService,
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
-  ) {
-    this.courierClient = courier(this.parameters.COURIER_API);
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    private readonly stripeService: StripeService,
+    private readonly courierService: CourierService,
+  ) {}
 
   async sendOTP(sendOTPDto: SendOTPDto): Promise<string> {
     try {
@@ -156,30 +152,23 @@ export class AuthService {
   async registerUser(createUserDto: CreateUserDto): Promise<Producer | User> {
     let producerRecord: Producer = undefined;
     let stripeCustomerId: string = undefined;
-    let referrerId: string = undefined;
-
     // encrypt password
     const password = await this.encryptPassword(createUserDto.password);
 
     if (createUserDto.role && createUserDto.role == Role.USER) {
       // create user stripe account
-      const stripeResponse = await this.userService.createStripeCustomer({
-        email: createUserDto.email,
-      });
+      const stripeResponse = await this.userService.createStripeCustomer(
+        {
+          email: createUserDto.email,
+        },
+        true,
+      );
       stripeCustomerId = stripeResponse.id;
     }
 
-    // verify referrer
-    if (createUserDto.referralCode) {
-      const referrer = await this.userService.findUser({
-        refCode: createUserDto.referralCode,
-      });
-      referrerId = referrer?.id;
-    }
     // save user record
     const userRecord = await this.prisma.user.create({
       data: {
-        referrerId,
         password,
         stripeCustomerId,
         email: createUserDto.email,
@@ -188,6 +177,12 @@ export class AuthService {
         metadata: createUserDto.metadata,
       },
     });
+    if (createUserDto.referralCode) {
+      await this.referralsService.createReferral(
+        userRecord.id,
+        createUserDto.referralCode,
+      );
+    }
 
     if (!createUserDto.role) {
       // save producer record
@@ -216,17 +211,8 @@ export class AuthService {
     const url = !createUserDto.role
       ? `${this.parameters.EMAIL_URL}${this.parameters.CONFIRM_ACCOUNT_URL}?token=${token}`
       : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_CONFIRM_ACCOUNT_URL}?token=${token}`;
-    await this.courierClient.send({
-      message: {
-        to: {
-          email: userRecord.email,
-        },
-        template: `${this.parameters.EMAIL_VERIFICATION_TEMPLATE}`,
-        data: {
-          url,
-        },
-      },
-    });
+
+    await this.courierService.sendEmailVerification(userRecord.email, url);
 
     if (!createUserDto.role) return producerRecord;
     else return userRecord;
@@ -380,7 +366,7 @@ export class AuthService {
   async stripeOnboard(
     isPartner = false,
   ): Promise<{ url: string; accountId: string }> {
-    const account = await this.stripe.accounts.create({
+    const account = await this.stripeService.createAccount({
       type: 'express',
       country: 'GB',
       capabilities: {
@@ -421,21 +407,19 @@ export class AuthService {
     accountId: string,
     isPartner: boolean,
   ): Promise<string> {
-    return this.stripe.accountLinks
-      .create({
-        type: 'account_onboarding',
-        account: accountId,
-        refresh_url: `${
-          isPartner
-            ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
-            : this.parameters.STRIPE_REFRESH_URL
-        }`,
-        return_url: `${
-          isPartner
-            ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
-            : this.parameters.STRIPE_RETURN_URL
-        }`,
-      })
-      .then((link) => link.url);
+    return await this.stripeService.createAccountLink({
+      type: 'account_onboarding',
+      account: accountId,
+      refresh_url: `${
+        isPartner
+          ? this.parameters.STRIPE_REFRESH_URL_PARTNER_HUB
+          : this.parameters.STRIPE_REFRESH_URL
+      }`,
+      return_url: `${
+        isPartner
+          ? this.parameters.STRIPE_RETURN_URL_PARTNER_HUB
+          : this.parameters.STRIPE_RETURN_URL
+      }`,
+    });
   }
 }

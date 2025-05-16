@@ -1,7 +1,13 @@
-import Stripe from 'stripe';
-import { Basket, BasketC, Payment, Prisma } from '@prisma/client';
-import { Inject, Injectable } from '@nestjs/common';
-import { IPaymentAuth, PaymentStatus } from '../lib/types';
+import {
+  Basket,
+  BasketC,
+  Payment,
+  Prisma,
+  PaymentType,
+  PaymentStatus,
+} from '@prisma/client';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { IPaymentAuth } from '../lib/types';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from './payment.service';
 import { UpdateBasketBulkDto } from './dto/update-basket-bulk.dto';
@@ -9,45 +15,57 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
+import { add, addYears } from 'date-fns';
+import { StripeService } from '../stripe/stripe.service';
+import Rollbar from 'rollbar';
 @Injectable()
 export class PaymentServiceExtension {
-  private readonly stripe: Stripe;
   constructor(
+    @Inject(forwardRef(() => PaymentService))
     private readonly paymentService: PaymentService,
     private prisma: PrismaService,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     private readonly referralsService: ReferralsService,
     @Inject('LOGGER') private readonly logger: Logger,
-  ) {
-    this.stripe = new Stripe(this.parameters.STRIPE_SECRET_KEY, {
-      apiVersion: '2022-11-15',
-    });
-  }
+    private readonly stripeService: StripeService,
+    @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+  ) {}
 
-  async getUserPaymentOptions(id: string): Promise<object | null> {
-    const result = await this.stripe.customers.listPaymentMethods(id);
+  async getUserPaymentOptions(
+    id: string,
+    isSupplementApp = false,
+  ): Promise<object | null> {
+    const result = await this.stripeService.listPaymentMethods(
+      id,
+      isSupplementApp,
+    );
     const unique = [
       ...new Map(result.data.map((m) => [m.card.last4, m])).values(),
     ];
     return unique;
   }
 
-  async removePaymentOption(id: string): Promise<object | null> {
-    return await this.stripe.paymentMethods.detach(id);
+  async removePaymentOption(
+    id: string,
+    isSupplementApp = false,
+  ): Promise<object | null> {
+    return await this.stripeService.detachPaymentMethod(id, isSupplementApp);
   }
 
   async captureFund(
     paymentIntentId: string,
-    options: Stripe.PaymentIntentCaptureParams = null,
+    options: any = null,
+    isSupplementApp = false,
   ): Promise<object | null> {
     try {
-      const result = await this.stripe.paymentIntents.capture(
+      return await this.stripeService.capturePaymentIntent(
         paymentIntentId,
         options,
+        isSupplementApp,
       );
-      return result;
     } catch (error) {
       console.log(error);
+      return null;
     }
   }
 
@@ -139,6 +157,7 @@ export class PaymentServiceExtension {
 
   async schedulePaymentAuthorization(
     iPaymentAuth: IPaymentAuth,
+    isSupplementApp = false,
   ): Promise<Payment> {
     try {
       const paymentIntent = await this.paymentService.createIntent(
@@ -149,6 +168,7 @@ export class PaymentServiceExtension {
           paymentMethodId: iPaymentAuth.stripeDefaultPaymentMethodId,
         },
         true,
+        isSupplementApp,
       );
 
       if (!paymentIntent || paymentIntent.status != 'requires_capture') {
@@ -181,11 +201,14 @@ export class PaymentServiceExtension {
 
   async updatePaymentIntent(
     paymentIntentId: string,
-    metadata: Stripe.MetadataParam,
+    metadata: any,
+    isSupplementApp = false,
   ): Promise<object | null> {
-    return await this.stripe.paymentIntents.update(paymentIntentId, {
-      metadata,
-    });
+    return await this.stripeService.updatePaymentIntent(
+      paymentIntentId,
+      { metadata },
+      isSupplementApp,
+    );
   }
 
   async handleSupplementPaymentCapture(
@@ -198,10 +221,14 @@ export class PaymentServiceExtension {
     const orderId = latestOrder?.id;
 
     // update payment intent
-    await this.updatePaymentIntent(captureIntentDto.paymentIntentId, {
-      order_id: orderId,
-      user_id: captureIntentDto.userId,
-    });
+    await this.updatePaymentIntent(
+      captureIntentDto.paymentIntentId,
+      {
+        order_id: orderId,
+        user_id: captureIntentDto.userId,
+      },
+      true,
+    );
     const applyCouponResult = await this.referralsService.applyCoupon(
       captureIntentDto.userId,
       captureIntentDto.amount * 100,
@@ -228,6 +255,7 @@ export class PaymentServiceExtension {
           ...(amountOff && { amount_off: amountOff }),
         },
       },
+      true,
     );
     // check if payment was successful
     if (captureResult) {
@@ -292,14 +320,32 @@ export class PaymentServiceExtension {
     });
   }
 
-  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | null> {
+  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | number> {
+    // Check if user has active subscription
+    const hasActiveSubscription = await this.checkUserSubscriptionStatus(
+      topUpDto.userId,
+    );
+    if (!hasActiveSubscription) {
+      this.logger.warn(
+        'User does not have an active subscription for top-up payment',
+        {
+          userId: topUpDto.userId,
+        },
+      );
+      return 1;
+    }
+
     // get team latestOrder
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       topUpDto.teamId,
     );
 
     // capture payment
-    const captureResult = await this.captureFund(topUpDto.paymentIntentId);
+    const captureResult = await this.captureFund(
+      topUpDto.paymentIntentId,
+      null,
+      true,
+    );
 
     // check if payment was successful
     if (captureResult) {
@@ -312,6 +358,10 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
+          deliveryDate: add(new Date(), {
+            weeks:
+              latestOrder.team.supplementTeamProducts?.product?.leadTime ?? 1,
+          }),
         },
       });
       // record payment
@@ -324,7 +374,137 @@ export class PaymentServiceExtension {
       };
       return await this.paymentService.recordPayment(paymentData);
     } else {
+      return 2;
+    }
+  }
+
+  async handleYearlySubscription(userId: string): Promise<Payment | null> {
+    try {
+      // Get user's default payment method
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { stripeDefaultPaymentMethodId: true, stripeCustomerId: true },
+      });
+
+      if (!user?.stripeDefaultPaymentMethodId || !user?.stripeCustomerId) {
+        return null;
+      }
+
+      // Create payment intent for subscription
+      const paymentIntent = await this.paymentService.createIntent(
+        {
+          amount: 28, // £28 yearly subscription
+          currency: 'gbp',
+          customerId: user.stripeCustomerId,
+          paymentMethodId: user.stripeDefaultPaymentMethodId,
+        },
+        true,
+        true, // isSupplementApp
+      );
+      if (!paymentIntent || paymentIntent.status !== 'requires_capture') {
+        return null;
+      }
+
+      // Capture the payment
+      const captureResult = await this.captureFund(
+        paymentIntent.id,
+        null,
+        true,
+      );
+      if (!captureResult) {
+        return null;
+      }
+
+      // Record the subscription payment
+      const paymentData = {
+        userId,
+        amount: 28,
+        paymentIntentId: paymentIntent.id,
+        status: PaymentStatus.CAPTURED,
+        type: PaymentType.YEARLY_SUBSCRIPTION,
+        expiryDate: addYears(new Date(), 1),
+      };
+
+      return await this.paymentService.recordPayment(paymentData);
+    } catch (error) {
+      this.rollbar.error('Error handling yearly subscription:', error);
+      console.error('Error handling yearly subscription:', error);
       return null;
+    }
+  }
+
+  async checkUserSubscriptionStatus(userId: string): Promise<boolean> {
+    try {
+      // Get user's successful payments count
+      const successfulPayments = await this.findPayments({
+        userId,
+        // status should be captured or intent created
+        status: {
+          in: [PaymentStatus.CAPTURED, PaymentStatus.COUPON_USED],
+        },
+        type: PaymentType.OTHERS,
+      });
+
+      // If user has less than 2 successful payments, no subscription needed
+      if (!successfulPayments || successfulPayments.length < 2) {
+        return true;
+      }
+
+      // Check for active subscription
+      const activeSubscription = await this.findPayments({
+        userId,
+        status: PaymentStatus.CAPTURED,
+        type: PaymentType.YEARLY_SUBSCRIPTION,
+        expiryDate: {
+          gt: new Date(),
+        },
+      });
+
+      // Return true only if there is an active subscription
+      return activeSubscription && activeSubscription.length > 0;
+    } catch (error) {
+      this.logger.error('Error checking subscription status:', error);
+      return false;
+    }
+  }
+
+  async getSubscriptionStatus(
+    userId: string,
+  ): Promise<{ hasActiveSubscription: boolean; expiryDate: Date | null }> {
+    try {
+      // Get all subscription payments for the user
+      const subscriptionPayments = await this.findPayments({
+        userId,
+        status: PaymentStatus.CAPTURED,
+        type: PaymentType.YEARLY_SUBSCRIPTION,
+      });
+
+      if (!subscriptionPayments || subscriptionPayments.length === 0) {
+        return {
+          hasActiveSubscription: false,
+          expiryDate: null,
+        };
+      }
+
+      // Sort by expiry date to get the most recent subscription
+      const sortedSubscriptions = subscriptionPayments.sort(
+        (a, b) =>
+          new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime(),
+      );
+
+      const latestSubscription = sortedSubscriptions[0];
+      const isActive = new Date(latestSubscription.expiryDate) > new Date();
+
+      return {
+        hasActiveSubscription: isActive,
+        expiryDate: latestSubscription.expiryDate,
+      };
+    } catch (error) {
+      this.logger.error('Error getting subscription status:', error);
+      return {
+        hasActiveSubscription: false,
+        expiryDate: null,
+      };
     }
   }
 }

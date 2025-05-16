@@ -10,7 +10,7 @@ import { TeamsModule } from '../teams/teams.module';
 import { ProductsModule } from '../../src/products/products.module';
 import { JwtService } from '@nestjs/jwt';
 import { ReferralsService } from '../referrals/referrals.service';
-
+import { StripeService } from '../stripe/stripe.service';
 @Module({
   imports: [
     forwardRef(() => UsersModule),
@@ -25,6 +25,7 @@ import { ReferralsService } from '../referrals/referrals.service';
     PaymentServiceExtension,
     JwtService,
     ReferralsService,
+    StripeService,
   ],
   exports: [PaymentService, PaymentServiceExtension],
 })

@@ -67,7 +67,6 @@ describe('UserController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
 
     await app.init();
-    await app.listen(process.env.PORT);
 
     // create dummy user for test
     user = await prisma.user.create({
@@ -663,4 +662,110 @@ describe('UserController (e2e)', () => {
     },
     testTime,
   );
+
+  // check if user has active supplement team
+  describe('Check if user has active supplement team', () => {
+    let productId: string;
+    let supplementTeamProductId: string;
+
+    beforeEach(async () => {
+      // Create a product
+      const product = await prisma.product.create({
+        data: {
+          name: faker.commerce.productName(),
+          producerId,
+          price: 10,
+        },
+      });
+      productId = product.id;
+
+      // Create supplement team product
+      const supplementTeamProduct = await prisma.supplementTeamProducts.create({
+        data: {
+          teamId,
+          productId,
+          status: 'ACTIVE',
+        },
+      });
+      supplementTeamProductId = supplementTeamProduct.id;
+    });
+
+    afterEach(async () => {
+      // Clean up
+      await prisma.supplementTeamProducts.delete({
+        where: { id: supplementTeamProductId },
+      });
+      await prisma.product.delete({
+        where: { id: productId },
+      });
+    });
+
+    it(
+      '/users/:userId/has-active-supplement(GET) should return true when user has active supplement team',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/${userId}/has-active-supplement`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(response.body.data).toHaveProperty('hasActiveSupplement');
+        expect(response.body.data.hasActiveSupplement).toBe(true);
+      },
+      testTime,
+    );
+
+    it(
+      '/users/:userId/has-active-supplement(GET) should return false when user has no active supplement team',
+      async () => {
+        // Update supplement team product to PREORDER status
+        await prisma.supplementTeamProducts.update({
+          where: { id: supplementTeamProductId },
+          data: { status: 'PREORDER' },
+        });
+
+        const response = await request(app.getHttpServer())
+          .get(`/users/${userId}/has-active-supplement`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(response.body.data).toHaveProperty('hasActiveSupplement');
+        expect(response.body.data.hasActiveSupplement).toBe(false);
+      },
+      testTime,
+    );
+
+    it(
+      '/users/:userId/has-active-supplement(GET) should return false for non-existent user',
+      async () => {
+        const nonExistentUserId = faker.datatype.uuid();
+        const response = await request(app.getHttpServer())
+          .get(`/users/${nonExistentUserId}/has-active-supplement`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+        
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(response.body.data).toHaveProperty('hasActiveSupplement');
+        expect(response.body.data.hasActiveSupplement).toBe(false);
+      },
+      testTime,
+    );
+
+    it(
+      '/users/:userId/has-active-supplement(GET) should return 401 when not authenticated',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/${userId}/has-active-supplement`)
+          .expect(401);
+        
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      },
+      testTime,
+    );
+  });
 });
