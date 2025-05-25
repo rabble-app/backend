@@ -16,6 +16,8 @@ import {
 } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
 import { UpdateProductStatusDto } from './dto/update-product-status';
+import { Decimal } from '@prisma/client/runtime/library';
+import { differenceInDays } from 'date-fns';
 
 @Injectable()
 export class ProductsService {
@@ -34,11 +36,15 @@ export class ProductsService {
   async getProduct(id: string, teamId = ''): Promise<Product | null> {
     let orderId = '';
     let orderDeadline: Date;
+    let deliveryDate: Date;
+    let activePercentageDiscount = 0;
+    let teamMemberCount = 0;
     // get team latest order id
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
       orderId = result.id;
       orderDeadline = result.deadline;
+      deliveryDate = result.deliveryDate;
     }
     const result = await this.prisma.product.findFirst({
       where: {
@@ -84,7 +90,11 @@ export class ProductsService {
                 id: true,
                 _count: {
                   select: {
-                    members: true,
+                    members: {
+                      where: {
+                        status: 'APPROVED',
+                      },
+                    },
                   },
                 },
               },
@@ -93,8 +103,38 @@ export class ProductsService {
         },
       },
     });
-    result['orderId'] = orderId;
-    result['orderDeadline'] = orderDeadline;
+
+    teamMemberCount = result.supplementTeamProducts.team._count.members;
+    if (teamId) {
+      const priceInfo = result.priceInfo as unknown as IPricePlan[];
+      activePercentageDiscount = this.getPriceDiscount(priceInfo as unknown as IPricePlan[], teamMemberCount);
+      const priceWithDiscount = !activePercentageDiscount
+      ? result.price
+      : Number((+result.price - (+activePercentageDiscount / 100) * +result.price).toFixed(2));
+      result['orderId'] = orderId;
+      result['orderDeadline'] = orderDeadline;
+      result['deliveryDate'] = deliveryDate;
+      result['activePercentageDiscount'] = activePercentageDiscount;
+      result['price'] = new Decimal(priceWithDiscount);
+      result['pricePerCount'] = Number((+result.price / 90).toFixed(2));
+      result['rrpPerCount'] = Number((+result.rrp / 90).toFixed(2));
+      result['discount'] = Math.abs(Number((((+result.price/+result.rrp - 1) * 100).toFixed(2))));
+      if (deliveryDate) {
+        result['daysUntilNextDrop'] = differenceInDays(deliveryDate, new Date());
+        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] / +result.alignmentPoucheSize);
+        result['pricePerPoche'] = Number((+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(2));
+      }
+
+      // Calculate next discount level
+      const nextDiscountLevel = priceInfo
+        .sort((a, b) => (a.teamMemberCount > b.teamMemberCount ? 1 : -1))
+        .find(plan => plan.teamMemberCount > teamMemberCount);
+
+      result['nextPriceDiscountLevel'] = nextDiscountLevel ? {
+        membersNeeded: nextDiscountLevel.teamMemberCount - teamMemberCount,
+        expectedDiscount: nextDiscountLevel.percentageDiscount
+      } : null;
+    }
     return result;
   }
 

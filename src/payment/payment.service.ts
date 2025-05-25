@@ -247,6 +247,7 @@ export class PaymentService {
       select: {
         id: true,
         deadline: true,
+        deliveryDate: true,
         team: {
           select: {
             supplementTeamProducts: {
