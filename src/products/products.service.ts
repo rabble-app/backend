@@ -104,7 +104,7 @@ export class ProductsService {
       },
     });
 
-    teamMemberCount = result.supplementTeamProducts.team._count.members;
+    teamMemberCount = result?.supplementTeamProducts?.team?._count.members;
     if (teamId) {
       const priceInfo = result.priceInfo as unknown as IPricePlan[];
       activePercentageDiscount = this.getPriceDiscount(priceInfo as unknown as IPricePlan[], teamMemberCount);
