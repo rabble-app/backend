@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // // create supplement tags
+  // create supplement tags
   await prisma.supplementTags.createMany({
     data: [
       {
@@ -964,7 +964,7 @@ async function main() {
     ],
   });
 
-  // // add producer categories
+  // add producer categories
   const producerCategories = [
     'Alcohol',
     'Bakery',
@@ -988,7 +988,7 @@ async function main() {
     });
   }
 
-  // // add product categories
+  // add product categories
   const productCategories = [
     'Fresh Fruits',
     'Meat & Poultry',
@@ -1010,7 +1010,7 @@ async function main() {
     });
   }
 
-  // // save user record
+  // save user record
   const userRecord = await prisma.user.upsert({
     where: { email: 'info@flyinghorsecoffee.com' },
     update: {},
@@ -1022,7 +1022,7 @@ async function main() {
     },
   });
 
-  // // save producer record
+  // save producer record
   const producerRecord = await prisma.producer.upsert({
     where: { userId: userRecord.id },
     update: {},
@@ -1042,7 +1042,7 @@ async function main() {
     },
   });
 
-  // // get producer category id
+  // get producer category id
   const producerCategoryOption = await prisma.producerCategoryOption.findFirst({
     where: {
       name: 'Coffee and Tea',
@@ -1052,7 +1052,7 @@ async function main() {
     },
   });
 
-  // // add category id to the producer
+  // add category id to the producer
   await prisma.producerCategory.upsert({
     where: {
       producer_unique_category_option: {
@@ -1067,7 +1067,7 @@ async function main() {
     },
   });
 
-  // // get producer product id
+  // get producer product id
   const productCategoryA = await prisma.productCategory.findFirst({
     where: {
       name: 'Coffee',
@@ -1077,7 +1077,7 @@ async function main() {
     },
   });
 
-  // // add product A
+  // add product A
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -1112,7 +1112,7 @@ async function main() {
     },
   });
 
-  // // add product B
+  // add product B
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -1147,8 +1147,8 @@ async function main() {
     },
   });
 
-  // // producer B
-  // // save user record
+  // producer B
+  // save user record
   const userRecordB = await prisma.user.upsert({
     where: { email: 'claire@cacklebean.com' },
     update: {},
@@ -1160,7 +1160,7 @@ async function main() {
     },
   });
 
-  // // save producer record
+  // save producer record
   const producerRecordB = await prisma.producer.upsert({
     where: { userId: userRecordB.id },
     update: {},
@@ -1181,7 +1181,7 @@ async function main() {
     },
   });
 
-  // // get producer category id
+  // get producer category id
   const producerCategoryOptionB = await prisma.producerCategoryOption.findFirst(
     {
       where: {
@@ -1193,7 +1193,7 @@ async function main() {
     },
   );
 
-  // // add category id to the producer
+  // add category id to the producer
   await prisma.producerCategory.upsert({
     where: {
       producer_unique_category_option: {
@@ -1208,7 +1208,7 @@ async function main() {
     },
   });
 
-  // // get producer product id
+  // get producer product id
   const productCategoryAA = await prisma.productCategory.findFirst({
     where: {
       name: 'Eggs',
@@ -1218,7 +1218,7 @@ async function main() {
     },
   });
 
-  // // add product AA
+  // add product AA
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -1255,8 +1255,8 @@ async function main() {
     },
   });
 
-  // // producer C
-  // // save user record
+  // producer C
+  // save user record
   const userRecordC = await prisma.user.upsert({
     where: { email: 'www.fossemeadows.co.uk' },
     update: {},
@@ -1268,7 +1268,7 @@ async function main() {
     },
   });
 
-  // // save producer record
+  // save producer record
   const producerRecordC = await prisma.producer.upsert({
     where: { userId: userRecordC.id },
     update: {},
@@ -1289,7 +1289,7 @@ async function main() {
     },
   });
 
-  // // get producer category id
+  // get producer category id
   const producerCategoryOptionC = await prisma.producerCategoryOption.findFirst(
     {
       where: {
@@ -1301,7 +1301,7 @@ async function main() {
     },
   );
 
-  // // add category id to the producer
+  // add category id to the producer
   await prisma.producerCategory.upsert({
     where: {
       producer_unique_category_option: {
@@ -2256,7 +2256,7 @@ async function main() {
     },
   });
 
-  // // add product 27
+  // add product 27
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -2286,7 +2286,7 @@ async function main() {
     },
   });
 
-  // // add product 28
+  // add product 28
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -2316,7 +2316,7 @@ async function main() {
     },
   });
 
-  // // add product 29
+  // add product 29
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -2346,7 +2346,7 @@ async function main() {
     },
   });
 
-  // // add product 30
+  // add product 30
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -2406,7 +2406,7 @@ async function main() {
     },
   });
 
-  // // add product 32
+  // add product 32
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -2436,7 +2436,7 @@ async function main() {
     },
   });
 
-  // // add product 33
+  // add product 33
   await prisma.product.upsert({
     where: {
       name_unique_producer: {
@@ -2466,8 +2466,8 @@ async function main() {
     },
   });
 
-  // // producer E
-  // // save user record
+  // producer E
+  // save user record
   const userRecordE = await prisma.user.upsert({
     where: { email: 'info@herbfed.co.uk' },
     update: {},
@@ -2479,7 +2479,7 @@ async function main() {
     },
   });
 
-  // // save producer record
+  // save producer record
   const producerRecordE = await prisma.producer.upsert({
     where: { userId: userRecordE.id },
     update: {},
@@ -2499,7 +2499,7 @@ async function main() {
     },
   });
 
-  // // get producer category id
+  // get producer category id
   const producerCategoryOptionE = await prisma.producerCategoryOption.findFirst(
     {
       where: {
@@ -2511,7 +2511,7 @@ async function main() {
     },
   );
 
-  // // add category id to the producer
+  // add category id to the producer
   await prisma.producerCategory.upsert({
     where: {
       producer_unique_category_option: {
@@ -2749,6 +2749,189 @@ async function main() {
   const supplementProduct1 = await prisma.product.upsert({
     where: {
       name_unique_producer: {
+        name: 'KANEKA UBIQUINOL',
+        producerId: supplememtProducer1.id,
+      },
+    },
+    update: {},
+    create: {
+      name: 'KANEKA UBIQUINOL',
+      imageUrl:
+        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/CO+without+Shadow.png',
+      description:
+        'Kaneka Ubiquinol is the active and bioavailable form of Coenzyme Q10 (CoQ10), directly sourced from Kaneka, the global leader in CoQ10 science. Essential for mitochondrial energy production, cardiovascular health, and cognitive function, Kaneka Ubiquinol offers superior absorption compared to standard CoQ10.',
+      producerId: supplememtProducer1.id,
+      categoryId: productCategoryEE.id,
+      type: 'SINGLE',
+      orderUnit: 'capsule',
+      subUnit: 'pouche',
+      quantityOfSubUnitPerOrder: 180,
+      unitsOfMeasurePerSubUnit: 'capsules',
+      measuresPerSubUnit: 100,
+      price: 90.53,
+      wholesalePrice: 41.91,
+      approvalStatus: 'APPROVED',
+      rrp: 105.60,
+      vat: 20,
+      rabbleMarkUp: 80,
+      tags: [
+        "Heart Health",
+        "Energy",
+        "Longevity",
+        "Brain Health"
+      ],
+      priceInfo: [
+        {
+          "percentageDiscount": 14.27,
+          "teamMemberCount": 67
+        },
+        {
+          "percentageDiscount": 18.27,
+          "teamMemberCount": 167
+        },
+        {
+          "percentageDiscount": 22.27,
+          "teamMemberCount": 333
+        },
+        {
+          "percentageDiscount": 26.27,
+          "teamMemberCount": 667
+        }
+      ],
+      capsuleInfo: [
+        {
+          "capsuleCount": 1,
+          "title1": "General Wellness",
+          "description1": "Heart health, energy, 40+.",
+          "title2": "Early Fertility",
+          "description2": "Mitochondrial support for egg/sperm quality.",
+          "others": "One capsule provides essential CoQ10 support for mitochondrial function and cardiovascular health. Beneficial for adults looking to maintain energy levels and long-term cellular function."
+        },
+        {
+          "capsuleCount": 2,
+          "title1": "Mild Fatigue",
+          "description1": "Energy, cardio boost, active individuals.",
+          "title2": "Anti-Aging",
+          "description2": "Mitochondrial function, antioxidant support.",
+          "others": "Two capsules enhance mitochondrial energy production, supporting cardiovascular function and active recovery. Ideal for individuals seeking longevity and sustained daily energy."
+        },
+        {
+          "capsuleCount": 3,
+          "title1": "Moderate Fatigue",
+          "description1": "Recovery, athletes, physical training.",
+          "title2": "Advanced Fertility",
+          "description2": "Energy support during IVF.",
+          "others": "Three capsules optimize cellular energy for endurance and recovery. Recommended for athletes, individuals with moderate fatigue, and those supporting reproductive health during fertility treatments."
+        },
+        {
+          "capsuleCount": 4,
+          "title1": "Therapeutic Dose",
+          "description1": "Heart health, weightlifting recovery.",
+          "title2": "Advanced Anti-Aging",
+          "description2": "High-dose longevity support.",
+          "others": "Four capsules provide maximum Ubiquinol support for cardiovascular resilience, mitochondrial longevity, and high-performance physical recovery. Ideal for those on targeted longevity protocols."
+        }
+      ],
+      formulationSummary: [
+        "100% Kaneka Ubiquinol",
+        "Superior bioavailability compared to CoQ10",
+        "Clinically researched for heart and brain health"
+      ],
+      leadTime: 6,
+      productBenefits: [
+        {
+          "benefit": "Boosts Cellular Energy",
+          "whyItMatters": "Ubiquinol is essential for ATP production, the body's primary energy source. Without sufficient ATP, cells can't function optimally, leading to fatigue and decreased performance."
+        },
+        {
+          "benefit": "Protects Against Free Radicals",
+          "whyItMatters": "Ubiquinol acts as a potent antioxidant, neutralizing free radicals that cause oxidative stress, which can damage cells and accelerate aging."
+        },
+        {
+          "benefit": "Supports Healthy Aging",
+          "whyItMatters": "As you age, Ubiquinol levels decline, leading to decreased energy production and increased oxidative damage. Supplementing helps replenish levels to support longevity."
+        },
+        {
+          "benefit": "Improves Heart Function",
+          "whyItMatters": "The heart requires high energy levels to function efficiently. Ubiquinol supports mitochondrial energy production in heart cells, promoting cardiovascular health."
+        },
+        {
+          "benefit": "Enhances Brain Health",
+          "whyItMatters": "Ubiquinol supports brain function by improving mitochondrial efficiency and reducing oxidative stress, which can help with cognitive performance and neuroprotection."
+        }
+      ],
+      healthCategories: [
+        {
+          "category": "Aging (40+)",
+          "whyItMatters": "As you age, your body produces less Ubiquinol, reducing ATP production and antioxidant levels. This leads to fatigue, slower recovery, and reduced heart function.",
+          "benefits": [
+            "Increased energy levels",
+            "Improved heart health",
+            "Slows down aging by reducing oxidative damage"
+          ]
+        },
+        {
+          "category": "Heart Health",
+          "whyItMatters": "Ubiquinol plays a vital role in mitochondrial function, supporting the heart's energy needs and reducing oxidative stress.",
+          "benefits": [
+            "Enhances cardiovascular function",
+            "Improves circulation and oxygen delivery",
+            "Protects against heart disease"
+          ]
+        },
+        {
+          "category": "Training/Athletics",
+          "whyItMatters": "Exercise increases oxidative stress and energy demands. Ubiquinol helps optimize ATP production, supporting endurance and muscle recovery.",
+          "benefits": [
+            "Boosts endurance and physical performance",
+            "Enhances muscle recovery",
+            "Reduces exercise-induced fatigue"
+          ]
+        },
+        {
+          "category": "Anti-Aging",
+          "whyItMatters": "Oxidative damage accelerates aging at a cellular level. Ubiquinol acts as an antioxidant, reducing cellular damage and supporting longevity.",
+          "benefits": [
+            "Reduces oxidative stress",
+            "Supports mitochondrial health",
+            "Promotes youthful energy levels"
+          ]
+        },
+        {
+          "category": "Fertility",
+          "whyItMatters": "Mitochondrial energy is critical for egg and sperm quality. Ubiquinol enhances cellular energy production to support reproductive health.",
+          "benefits": [
+            "Supports egg and sperm mitochondrial function",
+            "Improves reproductive health",
+            "May enhance fertility outcomes"
+          ]
+        },
+        {
+          "category": "Energy & Fatigue",
+          "whyItMatters": "ATP is the body's primary energy source. Ubiquinol helps fuel energy production at a cellular level, reducing fatigue and improving vitality.",
+          "benefits": [
+            "Increases ATP production",
+            "Combats chronic fatigue",
+            "Enhances mental and physical energy"
+          ]
+        },
+        {
+          "category": "Brain Health",
+          "whyItMatters": "The brain requires high amounts of energy and antioxidant protection. Ubiquinol supports cognitive function and neurological health.",
+          "benefits": [
+            "Enhances mental clarity and focus",
+            "Protects against neurodegeneration",
+            "Supports overall cognitive function"
+          ]
+        }
+      ]
+    },
+  });
+ 
+  // add product 2
+  const supplementProduct2 = await prisma.product.upsert({
+    where: {
+      name_unique_producer: {
         name: 'TRAACS MAGNESIUM BISGLYCINATE',
         producerId: supplememtProducer2.id,
       },
@@ -2971,8 +3154,8 @@ async function main() {
     },
   });
 
-  // add product 2
-  const supplementProduct2 = await prisma.product.upsert({
+  // add product 3
+  const supplementProduct3 = await prisma.product.upsert({
     where: {
       name_unique_producer: {
         name: 'CREAPURE CREATINE MONOHYDRATE',
@@ -3179,200 +3362,6 @@ async function main() {
     },
   });
 
-  // add product 3
-  const supplementProduct3 = await prisma.product.upsert({
-    where: {
-      name_unique_producer: {
-        name: 'KANEKA UBIQUINOL',
-        producerId: supplememtProducer1.id,
-      },
-    },
-    update: {},
-    create: {
-      name: 'KANEKA UBIQUINOL',
-      imageUrl:
-        'https://rabble-dev1.s3.us-east-2.amazonaws.com/products/CO+without+Shadow.png',
-      description:
-        'Kaneka Ubiquinol is the active and bioavailable form of Coenzyme Q10 (CoQ10), directly sourced from Kaneka, the global leader in CoQ10 science. Essential for mitochondrial energy production, cardiovascular health, and cognitive function, Kaneka Ubiquinol offers superior absorption compared to standard CoQ10.',
-      producerId: supplememtProducer1.id,
-      categoryId: productCategoryEE.id,
-      type: 'SINGLE',
-      orderUnit: 'capsule',
-      subUnit: 'pouche',
-      quantityOfSubUnitPerOrder: 180,
-      unitsOfMeasurePerSubUnit: 'capsules',
-      measuresPerSubUnit: 100,
-      price: 90.53,
-      wholesalePrice: 41.91,
-      approvalStatus: 'APPROVED',
-      rrp: 105.6,
-      vat: 20,
-      rabbleMarkUp: 80,
-      tags: ['Heart Health', 'Energy', 'Longevity', 'Brain Health'],
-      priceInfo: [
-        {
-          percentageDiscount: 14.27,
-          teamMemberCount: 67,
-        },
-        {
-          percentageDiscount: 18.27,
-          teamMemberCount: 167,
-        },
-        {
-          percentageDiscount: 22.27,
-          teamMemberCount: 333,
-        },
-        {
-          percentageDiscount: 26.27,
-          teamMemberCount: 667,
-        },
-      ],
-      capsuleInfo: [
-        {
-          capsuleCount: 1,
-          title1: 'General Wellness',
-          description1: 'Heart health, energy, 40+.',
-          title2: 'Early Fertility',
-          description2: 'Mitochondrial support for egg/sperm quality.',
-          others:
-            'One capsule provides essential CoQ10 support for mitochondrial function and cardiovascular health. Beneficial for adults looking to maintain energy levels and long-term cellular function.',
-        },
-        {
-          capsuleCount: 2,
-          title1: 'Mild Fatigue',
-          description1: 'Energy, cardio boost, active individuals.',
-          title2: 'Anti-Aging',
-          description2: 'Mitochondrial function, antioxidant support.',
-          others:
-            'Two capsules enhance mitochondrial energy production, supporting cardiovascular function and active recovery. Ideal for individuals seeking longevity and sustained daily energy.',
-        },
-        {
-          capsuleCount: 3,
-          title1: 'Moderate Fatigue',
-          description1: 'Recovery, athletes, physical training.',
-          title2: 'Advanced Fertility',
-          description2: 'Energy support during IVF.',
-          others:
-            'Three capsules optimize cellular energy for endurance and recovery. Recommended for athletes, individuals with moderate fatigue, and those supporting reproductive health during fertility treatments.',
-        },
-        {
-          capsuleCount: 4,
-          title1: 'Therapeutic Dose',
-          description1: 'Heart health, weightlifting recovery.',
-          title2: 'Advanced Anti-Aging',
-          description2: 'High-dose longevity support.',
-          others:
-            'Four capsules provide maximum Ubiquinol support for cardiovascular resilience, mitochondrial longevity, and high-performance physical recovery. Ideal for those on targeted longevity protocols.',
-        },
-      ],
-      formulationSummary: [
-        '100% Kaneka Ubiquinol',
-        'Superior bioavailability compared to CoQ10',
-        'Clinically researched for heart and brain health',
-      ],
-      leadTime: 6,
-      productBenefits: [
-        {
-          benefit: 'Boosts Cellular Energy',
-          whyItMatters:
-            "Ubiquinol is essential for ATP production, the body's primary energy source. Without sufficient ATP, cells can't function optimally, leading to fatigue and decreased performance.",
-        },
-        {
-          benefit: 'Protects Against Free Radicals',
-          whyItMatters:
-            'Ubiquinol acts as a potent antioxidant, neutralizing free radicals that cause oxidative stress, which can damage cells and accelerate aging.',
-        },
-        {
-          benefit: 'Supports Healthy Aging',
-          whyItMatters:
-            'As you age, Ubiquinol levels decline, leading to decreased energy production and increased oxidative damage. Supplementing helps replenish levels to support longevity.',
-        },
-        {
-          benefit: 'Improves Heart Function',
-          whyItMatters:
-            'The heart requires high energy levels to function efficiently. Ubiquinol supports mitochondrial energy production in heart cells, promoting cardiovascular health.',
-        },
-        {
-          benefit: 'Enhances Brain Health',
-          whyItMatters:
-            'Ubiquinol supports brain function by improving mitochondrial efficiency and reducing oxidative stress, which can help with cognitive performance and neuroprotection.',
-        },
-      ],
-      healthCategories: [
-        {
-          category: 'Aging (40+)',
-          whyItMatters:
-            'As you age, your body produces less Ubiquinol, reducing ATP production and antioxidant levels. This leads to fatigue, slower recovery, and reduced heart function.',
-          benefits: [
-            'Increased energy levels',
-            'Improved heart health',
-            'Slows down aging by reducing oxidative damage',
-          ],
-        },
-        {
-          category: 'Heart Health',
-          whyItMatters:
-            "Ubiquinol plays a vital role in mitochondrial function, supporting the heart's energy needs and reducing oxidative stress.",
-          benefits: [
-            'Enhances cardiovascular function',
-            'Improves circulation and oxygen delivery',
-            'Protects against heart disease',
-          ],
-        },
-        {
-          category: 'Training/Athletics',
-          whyItMatters:
-            'Exercise increases oxidative stress and energy demands. Ubiquinol helps optimize ATP production, supporting endurance and muscle recovery.',
-          benefits: [
-            'Boosts endurance and physical performance',
-            'Enhances muscle recovery',
-            'Reduces exercise-induced fatigue',
-          ],
-        },
-        {
-          category: 'Anti-Aging',
-          whyItMatters:
-            'Oxidative damage accelerates aging at a cellular level. Ubiquinol acts as an antioxidant, reducing cellular damage and supporting longevity.',
-          benefits: [
-            'Reduces oxidative stress',
-            'Supports mitochondrial health',
-            'Promotes youthful energy levels',
-          ],
-        },
-        {
-          category: 'Fertility',
-          whyItMatters:
-            'Mitochondrial energy is critical for egg and sperm quality. Ubiquinol enhances cellular energy production to support reproductive health.',
-          benefits: [
-            'Supports egg and sperm mitochondrial function',
-            'Improves reproductive health',
-            'May enhance fertility outcomes',
-          ],
-        },
-        {
-          category: 'Energy & Fatigue',
-          whyItMatters:
-            "ATP is the body's primary energy source. Ubiquinol helps fuel energy production at a cellular level, reducing fatigue and improving vitality.",
-          benefits: [
-            'Increases ATP production',
-            'Combats chronic fatigue',
-            'Enhances mental and physical energy',
-          ],
-        },
-        {
-          category: 'Brain Health',
-          whyItMatters:
-            'The brain requires high amounts of energy and antioxidant protection. Ubiquinol supports cognitive function and neurological health.',
-          benefits: [
-            'Enhances mental clarity and focus',
-            'Protects against neurodegeneration',
-            'Supports overall cognitive function',
-          ],
-        },
-      ],
-    },
-  });
-
   // create supplement team 1
   await prisma.buyingTeam.upsert({
     where: {
@@ -3435,10 +3424,10 @@ async function main() {
         create: {
           productId: supplementProduct3.id,
           orderTreashold: 67,
-          status: 'PREORDER',
-          foundingMembersDiscount: 10,
-        },
-      },
+          status: 'ACTIVE',
+          foundingMembersDiscount: 10
+        }
+      }
     },
   });
 }
