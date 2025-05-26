@@ -5,6 +5,8 @@ import {
   Prisma,
   PaymentType,
   PaymentStatus,
+  SubscriptionStatus,
+  Subscription,
 } from '@prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth } from '../lib/types';
@@ -18,6 +20,7 @@ import { Logger } from 'winston';
 import { add, addYears } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
+import { ANNUAL_SUBSCRIPTION_AMOUNT, ANNUAL_SUBSCRIPTION_DISCOUNT, ANNUAL_SUBSCRIPTION_RRP } from '../utils/constants';
 @Injectable()
 export class PaymentServiceExtension {
   constructor(
@@ -29,7 +32,7 @@ export class PaymentServiceExtension {
     @Inject('LOGGER') private readonly logger: Logger,
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
-  ) {}
+  ) { }
 
   async getUserPaymentOptions(
     id: string,
@@ -393,7 +396,7 @@ export class PaymentServiceExtension {
       // Create payment intent for subscription
       const paymentIntent = await this.paymentService.createIntent(
         {
-          amount: 28, // £28 yearly subscription
+          amount: ANNUAL_SUBSCRIPTION_AMOUNT, // £28 yearly subscription
           currency: 'gbp',
           customerId: user.stripeCustomerId,
           paymentMethodId: user.stripeDefaultPaymentMethodId,
@@ -418,12 +421,20 @@ export class PaymentServiceExtension {
       // Record the subscription payment
       const paymentData = {
         userId,
-        amount: 28,
+        amount: ANNUAL_SUBSCRIPTION_AMOUNT,
         paymentIntentId: paymentIntent.id,
         status: PaymentStatus.CAPTURED,
         type: PaymentType.YEARLY_SUBSCRIPTION,
         expiryDate: addYears(new Date(), 1),
       };
+
+      // record in subscription table
+      await this.prisma.subscription.update({
+        where: { userId },
+        data: {
+          expiryDate: addYears(new Date(), 1),
+        },
+      });
 
       return await this.paymentService.recordPayment(paymentData);
     } catch (error) {
@@ -450,61 +461,37 @@ export class PaymentServiceExtension {
         return true;
       }
 
-      // Check for active subscription
-      const activeSubscription = await this.findPayments({
-        userId,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.YEARLY_SUBSCRIPTION,
-        expiryDate: {
-          gt: new Date(),
-        },
-      });
+      // check subscription table for active subscription
+      const record = await this.getSubscriptionRecord(userId);
+      // check if expiry date is in the future
+      if (record && new Date(record.expiryDate) > new Date() && record.status === SubscriptionStatus.ACTIVE) {
+        return true;
+      }
 
-      // Return true only if there is an active subscription
-      return activeSubscription && activeSubscription.length > 0;
+      return false;
     } catch (error) {
       this.logger.error('Error checking subscription status:', error);
       return false;
     }
   }
 
-  async getSubscriptionStatus(
+  async getSubscriptionRecord(
     userId: string,
-  ): Promise<{ hasActiveSubscription: boolean; expiryDate: Date | null }> {
+  ): Promise<Subscription | null> {
     try {
-      // Get all subscription payments for the user
-      const subscriptionPayments = await this.findPayments({
-        userId,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.YEARLY_SUBSCRIPTION,
+      const result = await this.prisma.subscription.findFirst({
+        where: {
+          userId
+        },
       });
+      result['subscriptionAmount'] = ANNUAL_SUBSCRIPTION_AMOUNT;
+      result['subscriptionRRP'] = ANNUAL_SUBSCRIPTION_RRP;
+      result['subscriptionDiscount'] = ANNUAL_SUBSCRIPTION_DISCOUNT;
+      return result;
 
-      if (!subscriptionPayments || subscriptionPayments.length === 0) {
-        return {
-          hasActiveSubscription: false,
-          expiryDate: null,
-        };
-      }
-
-      // Sort by expiry date to get the most recent subscription
-      const sortedSubscriptions = subscriptionPayments.sort(
-        (a, b) =>
-          new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime(),
-      );
-
-      const latestSubscription = sortedSubscriptions[0];
-      const isActive = new Date(latestSubscription.expiryDate) > new Date();
-
-      return {
-        hasActiveSubscription: isActive,
-        expiryDate: latestSubscription.expiryDate,
-      };
     } catch (error) {
       this.logger.error('Error getting subscription status:', error);
-      return {
-        hasActiveSubscription: false,
-        expiryDate: null,
-      };
+      return null;
     }
   }
 }

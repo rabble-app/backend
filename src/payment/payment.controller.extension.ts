@@ -489,7 +489,7 @@ export class PaymentControllerExtension {
     @Param('userId') userId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.paymentServiceExtension.getSubscriptionStatus(
+    const result = await this.paymentServiceExtension.getSubscriptionRecord(
       userId,
     );
 

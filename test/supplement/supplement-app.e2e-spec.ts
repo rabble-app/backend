@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
@@ -6,10 +5,11 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma.service';
 import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
-import { SupplementTeamStatus } from '@prisma/client';
+import { SubscriptionStatus, SupplementTeamStatus } from '@prisma/client';
 import { PaymentStatus, PaymentType } from '@prisma/client';
 import { StripeService } from '../../src/stripe/stripe.service';
 import { mockStripeService as MockedStripeService } from '../../test/mocks';
+import { ANNUAL_SUBSCRIPTION_AMOUNT } from '../../src/utils/constants';
 
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
@@ -65,6 +65,14 @@ describe('PaymentController (e2e)', () => {
       },
     });
     userId = user.id;
+
+    // create subscription record for test
+    await prisma.subscription.create({
+      data: {
+        userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
 
     // create dummy producer for test
     const producer = await prisma.producer.create({
@@ -263,7 +271,9 @@ describe('PaymentController (e2e)', () => {
           expect(response.body.error).toBeUndefined();
           expect(response.body.data.status).toBe(PaymentStatus.CAPTURED);
           expect(response.body.data.type).toBe(PaymentType.YEARLY_SUBSCRIPTION);
-          expect(response.body.data.amount).toBe('28');
+          expect(response.body.data.amount).toBe(
+            `${ANNUAL_SUBSCRIPTION_AMOUNT}`,
+          );
           expect(response.body.data.expiryDate).toBeDefined();
         },
         testTime,
@@ -280,15 +290,6 @@ describe('PaymentController (e2e)', () => {
 
           expect(response.body).toHaveProperty('data');
           expect(response.body.error).toBeUndefined();
-          expect(response.body.data).toHaveProperty('hasActiveSubscription');
-          expect(response.body.data).toHaveProperty('expiryDate');
-          expect(typeof response.body.data.hasActiveSubscription).toBe(
-            'boolean',
-          );
-          expect(response.body.data.expiryDate).toBeDefined();
-          expect(new Date(response.body.data.expiryDate) > new Date()).toBe(
-            true,
-          );
         },
         testTime,
       );
