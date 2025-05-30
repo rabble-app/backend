@@ -111,13 +111,29 @@ export class ProductsService {
       const priceWithDiscount = !activePercentageDiscount
       ? result.price
       : Number((+result.price - (+activePercentageDiscount / 100) * +result.price).toFixed(2));
+      
+      // Add actual discounted value to each price plan
+      if (priceInfo) {
+        priceInfo.forEach(plan => {
+          const discountedValue = Number((+result.price - (plan.percentageDiscount / 100) * +result.price).toFixed(2));
+          plan['actualDiscountedValue'] = discountedValue;
+        });
+      }
+
       result['orderId'] = orderId;
       result['orderDeadline'] = orderDeadline;
       result['deliveryDate'] = deliveryDate;
       result['activePercentageDiscount'] = activePercentageDiscount;
       result['price'] = new Decimal(priceWithDiscount);
-      result['pricePerCount'] = Number((+result.price / 90).toFixed(2));
-      result['rrpPerCount'] = Number((+result.rrp / 90).toFixed(2));
+      result['pricePerCount'] = Number((+result.price / 90).toFixed(3));
+      result['rrpPerCount'] = Number((+result.rrp / 90).toFixed(3));
+      
+      // Adjust pricePerCount and rrpPerCount for grams if applicable
+      if (result.unitsOfMeasurePerSubUnit === 'grams' && result.gramsPerCount) {
+        result['pricePerCount'] = Number((result['pricePerCount'] / Number(result.gramsPerCount)).toFixed(3));
+        result['rrpPerCount'] = Number((result['rrpPerCount'] / Number(result.gramsPerCount)).toFixed(3));
+      }
+      
       result['discount'] = Math.abs(Number((((+result.price/+result.rrp - 1) * 100).toFixed(2))));
       if (deliveryDate) {
         result['daysUntilNextDrop'] = differenceInDays(deliveryDate, new Date());
