@@ -78,10 +78,11 @@ export class ProductsController {
   })
   async getProduct(
     @Query('teamId') teamId: string,
+    @Query('userId') userId: string,
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
-    const result = await this.productsService.getProduct(id, teamId);
+    const result = await this.productsService.getProduct(id, teamId, userId);
     return formatResponse(
       result,
       res,
