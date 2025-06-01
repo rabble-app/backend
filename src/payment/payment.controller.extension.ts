@@ -32,6 +32,7 @@ import { AuthGuard } from '../../src/auth/auth.guard';
 import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
+import { SubscriptionStatusDto } from './dto/subscription-status.dto';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -499,6 +500,45 @@ export class PaymentControllerExtension {
       HttpStatus.OK,
       false,
       'Subscription status retrieved successfully',
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('subscription/status/:userId')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Subscription status updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'The ID of the user to update subscription status for',
+  })
+  async updateSubscriptionStatus(
+    @Param('userId') userId: string,
+    @Body() subscriptionStatusDto: SubscriptionStatusDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.paymentServiceExtension.updateSubscriptionStatus(
+      userId,
+      subscriptionStatusDto.status,
+    );
+
+    if (!result) {
+      return formatResponse(
+        'Failed to update subscription status',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Subscription status update failed',
+      );
+    }
+
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Subscription status updated successfully',
     );
   }
 }

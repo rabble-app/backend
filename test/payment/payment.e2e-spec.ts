@@ -8,6 +8,9 @@ import { faker } from '@faker-js/faker';
 import { AuthService } from '../../src/auth/auth.service';
 import { StripeService } from '../../src/stripe/stripe.service';
 import { mockStripeService } from '../mocks';
+import { SubscriptionStatus } from '@prisma/client';
+import { addYears } from 'date-fns';
+
 describe('PaymentController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -380,6 +383,63 @@ describe('PaymentController (e2e)', () => {
         },
         testTime,
       );
+
+      describe('Subscription Status', () => {
+        it(
+          '/payments/subscription/status/:userId (PATCH) should update subscription status',
+          async () => {
+            // First create a subscription record for the user
+            await prisma.subscription.create({
+              data: {
+                userId,
+                status: SubscriptionStatus.ACTIVE,
+                expiryDate: addYears(new Date(), 1),
+              },
+            });
+
+            const response = await request(app.getHttpServer())
+              .patch(`/payments/subscription/status/${userId}`)
+              .set('Authorization', `Bearer ${jwtToken}`)
+              .send({ status: SubscriptionStatus.CANCELED })
+              .expect(200);
+
+            expect(response.body).toHaveProperty('data');
+            expect(response.body.error).toBeUndefined();
+            expect(response.body.data.status).toBe(SubscriptionStatus.CANCELED);
+          },
+          testTime,
+        );
+
+        it(
+          '/payments/subscription/status/:userId (PATCH) should return 400 if user has no subscription',
+          async () => {
+            const response = await request(app.getHttpServer())
+              .patch(`/payments/subscription/status/${userId2}`)
+              .set('Authorization', `Bearer ${jwtToken}`)
+              .send({ status: SubscriptionStatus.CANCELED })
+              .expect(400);
+
+            expect(response.body).toHaveProperty('error');
+            expect(response.body.error).toBe('Failed to update subscription status');
+          },
+          testTime,
+        );
+
+        it(
+          '/payments/subscription/status/:userId (PATCH) should return 400 if invalid status is provided',
+          async () => {
+            const response = await request(app.getHttpServer())
+              .patch(`/payments/subscription/status/${userId}`)
+              .set('Authorization', `Bearer ${jwtToken}`)
+              .send({ status: 'INVALID_STATUS' })
+              .expect(400);
+
+            expect(response.body).toHaveProperty('error');
+            expect(response.body.error).toBe('Bad Request');
+          },
+          testTime,
+        );
+      });
     });
 
     describe('Basket', () => {
