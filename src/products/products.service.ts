@@ -33,7 +33,7 @@ export class ProductsService {
     });
   }
 
-  async getProduct(id: string, teamId = ''): Promise<Product | null> {
+  async getProduct(id: string, teamId = '', userId = ''): Promise<Product | null> {
     let orderId = '';
     let orderDeadline: Date;
     let deliveryDate: Date;
@@ -97,6 +97,12 @@ export class ProductsService {
                     },
                   },
                 },
+                // user basket if userId is provided
+                basket: userId ? {
+                  where: {
+                    userId,
+                  },
+                } : undefined,
               },
             },
           },
@@ -137,7 +143,7 @@ export class ProductsService {
       result['discount'] = Math.abs(Number((((+result.price/+result.rrp - 1) * 100).toFixed(2))));
       if (deliveryDate) {
         result['daysUntilNextDrop'] = differenceInDays(deliveryDate, new Date());
-        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] / +result.alignmentPoucheSize);
+        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] / +result.alignmentPoucheSize); // Todo: check if this is correct
         result['pricePerPoche'] = Number((+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(2));
       }
 
