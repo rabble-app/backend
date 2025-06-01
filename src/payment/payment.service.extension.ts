@@ -7,6 +7,7 @@ import {
   PaymentStatus,
   SubscriptionStatus,
   Subscription,
+  MembershipStatus,
 } from '@prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth } from '../lib/types';
@@ -491,6 +492,47 @@ export class PaymentServiceExtension {
 
     } catch (error) {
       this.logger.error('Error getting subscription status:', error);
+      return null;
+    }
+  }
+
+  async updateSubscriptionStatus(
+    userId: string,
+    status: SubscriptionStatus,
+  ): Promise<Subscription | null> {
+    try {
+      const result = await this.prisma.subscription.update({
+        where: {
+          userId,
+        },
+        data: {
+          status,
+        },
+      });
+
+      // if the status is canceled, check the team members table for where the user has founding member or early member role and update that to member role
+      if (status === SubscriptionStatus.CANCELED) {
+        await this.prisma.teamMember.updateMany({
+          where: {
+            userId,
+            role: {
+              in: [MembershipStatus.FOUNDING_MEMBER, MembershipStatus.EARLY_MEMBER],
+            },
+          },
+          data: {
+            role: MembershipStatus.MEMBER,
+          },
+        });
+      }
+
+      this.logger.info('Subscription status updated successfully', {
+        userId,
+        status,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Error updating subscription status:', error);
       return null;
     }
   }

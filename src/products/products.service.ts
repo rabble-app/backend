@@ -96,7 +96,7 @@ export class ProductsService {
                       },
                     },
                   },
-                },
+                },          
                 // user basket if userId is provided
                 basket: userId ? {
                   where: {
