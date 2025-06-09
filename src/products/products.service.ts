@@ -131,20 +131,20 @@ export class ProductsService {
       result['deliveryDate'] = deliveryDate;
       result['activePercentageDiscount'] = activePercentageDiscount;
       result['price'] = new Decimal(priceWithDiscount);
-      result['pricePerCount'] = Number((+result.price / 90).toFixed(3));
-      result['rrpPerCount'] = Number((+result.rrp / 90).toFixed(3));
+      result['pricePerCount'] = Number((+result.price / 90).toFixed(4));
+      result['rrpPerCount'] = Number((+result.rrp / 90).toFixed(4));
       
       // Adjust pricePerCount and rrpPerCount for grams if applicable
       if (result.unitsOfMeasurePerSubUnit === 'grams' && result.gramsPerCount) {
-        result['pricePerCount'] = Number((result['pricePerCount'] / Number(result.gramsPerCount)).toFixed(3));
-        result['rrpPerCount'] = Number((result['rrpPerCount'] / Number(result.gramsPerCount)).toFixed(3));
+        result['pricePerCount'] = Number((result['pricePerCount'] / Number(result.gramsPerCount)).toFixed(4));
+        result['rrpPerCount'] = Number((result['rrpPerCount'] / Number(result.gramsPerCount)).toFixed(4));
       }
       
       result['discount'] = Math.abs(Number((((+result.price/+result.rrp - 1) * 100).toFixed(2))));
       if (deliveryDate) {
         result['daysUntilNextDrop'] = differenceInDays(deliveryDate, new Date());
-        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] / +result.alignmentPoucheSize); // Todo: check if this is correct
-        result['pricePerPoche'] = Number((+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(2));
+        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] * (result.unitsOfMeasurePerSubUnit === 'grams'? +result.gramsPerCount : 1) / +result.alignmentPoucheSize); // Todo: check if this is correct, if grams mutiple by gramsPerCount
+        result['pricePerPoche'] = Number((+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(4));
       }
 
       // Calculate next discount level
