@@ -18,10 +18,12 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
-import { add, addYears } from 'date-fns';
+import { add, addYears, format } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
 import { ANNUAL_SUBSCRIPTION_AMOUNT, ANNUAL_SUBSCRIPTION_DISCOUNT, ANNUAL_SUBSCRIPTION_RRP } from '../utils/constants';
+import { CourierService } from '../notifications/courier.service';
+import { targetQuarterDate } from '../utils/date';
 @Injectable()
 export class PaymentServiceExtension {
   constructor(
@@ -33,6 +35,7 @@ export class PaymentServiceExtension {
     @Inject('LOGGER') private readonly logger: Logger,
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+    private readonly courierService: CourierService,
   ) { }
 
   async getUserPaymentOptions(
@@ -78,10 +81,34 @@ export class PaymentServiceExtension {
     data: Prisma.BasketCUpdateInput;
   }): Promise<BasketC> {
     const { where, data } = params;
-    return await this.prisma.basketC.update({
+    const result = await this.prisma.basketC.update({
       data,
       where,
+      include: {
+        user: true,
+        product: true,
+      },
     });
+
+    // Send email notification for subscription update
+    if (result.user?.email && result.product) {
+      try {
+        await this.courierService.sendSubscriptionUpdateEmail(
+          result.user.email,
+          result.user.firstName || '',
+          result.product.name,
+          result.quantity * +result.product.poucheSize,
+          result.product.subUnit,
+          `£${+result.price * result.quantity}`,
+          `${format(targetQuarterDate, 'dd/MM/yyyy')}`,
+          `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+        );
+      } catch (error) {
+        this.logger.error('Failed to send subscription update email:', error);
+      }
+    }
+
+    return result;
   }
 
   async updateCurrentBasketItem(params: {
@@ -508,6 +535,13 @@ export class PaymentServiceExtension {
         data: {
           status,
         },
+        include: {
+          user: {
+            include: {
+              subscription: true,
+            }
+          },
+        },
       });
 
       // if the status is canceled, check the team members table for where the user has founding member or early member role and update that to member role
@@ -523,6 +557,23 @@ export class PaymentServiceExtension {
             role: MembershipStatus.MEMBER,
           },
         });
+      }
+
+      // send email to user for membership cancellation
+      if (result.user?.email) {
+        try {
+          const effectiveCancellationDate = format(result.user.subscription.expiryDate, 'dd/MM/yyyy');
+          const reactivateMembershipUrl = `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`;
+
+          await this.courierService.sendMembershipCancelledEmail(
+            result.user.email,
+            result.user.firstName || '',
+            effectiveCancellationDate,
+            reactivateMembershipUrl,
+          );
+        } catch (error) {
+          this.logger.error('Failed to send membership cancellation email:', error);
+        }
       }
 
       this.logger.info('Subscription status updated successfully', {
