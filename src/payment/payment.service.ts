@@ -42,9 +42,11 @@ import { PaymentServiceExtension } from './payment.service.extension';
 import { ReferralsService } from '../referrals/referrals.service';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
+import { CourierService } from '../notifications/courier.service';
 
 @Injectable()
 export class PaymentService {
+
   constructor(
     @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
@@ -62,6 +64,7 @@ export class PaymentService {
     private readonly paymentServiceExtension: PaymentServiceExtension,
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+    private readonly courierService: CourierService,
   ) {}
 
   async addCustomerCard(
@@ -583,7 +586,6 @@ export class PaymentService {
       }
     } else {
       // get product info
-      console.log({ productId });
       const product = await this.productsService.getProduct(productId);
 
       // create new record
@@ -774,12 +776,17 @@ export class PaymentService {
       return 6;
     }
 
+     // get the user stripe id
+    const userInfo = await this.userService.findUser({
+      id: joinSupplementTeamDto.userId,
+    });
+
+    // get the product info
+    const productInfo = await this.productsService.getProduct(joinSupplementTeamDto.productId);
+
+
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
-      // get the user stripe id
-      const userInfo = await this.userService.findUser({
-        id: joinSupplementTeamDto.userId,
-      });
       if (!userInfo.stripeCustomerId) return 1;
       // create payment intent
       const paymentIntent = await this.createIntent(
@@ -825,6 +832,18 @@ export class PaymentService {
       topupQuantity: joinSupplementTeamDto.topupQuantity,
     });
     if (!basket) return 5;
+    // send email to user
+    await this.courierService.sendWelcomeEmail(
+      userInfo.email,
+      userInfo.firstName,
+      productInfo.name,
+      joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+      productInfo.subUnit,
+      `£${joinSupplementTeamDto.amount}`,
+      `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${userInfo.refCode}`,
+      userInfo.userCode,
+      `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+    );
     return joinSupplementTeamDto;
   }
 }

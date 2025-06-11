@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
@@ -10,6 +10,8 @@ import {
   TeamMember,
 } from '@prisma/client';
 import { ProductsService } from '../../src/products/products.service';
+import { CourierService } from '../notifications/courier.service';
+import { format } from 'date-fns';
 
 @Injectable()
 export class TeamsServiceExtension2 {
@@ -18,6 +20,8 @@ export class TeamsServiceExtension2 {
     private readonly authService: AuthService,
     private readonly userService: UsersService,
     private readonly productsService: ProductsService,
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
+    private readonly courierService: CourierService,
   ) {}
 
   async verifyInvite(token: string): Promise<boolean | object> {
@@ -113,14 +117,48 @@ export class TeamsServiceExtension2 {
     id: string,
     subscriptionStatus: SubscriptionStatus,
   ): Promise<TeamMember> {
-    return await this.prisma.teamMember.update({
+    const result = await this.prisma.teamMember.update({
       where: {
         id,
       },
       data: {
         subscriptionStatus,
       },
+      include: {
+        user: true,
+        team: {
+          include: {
+            supplementTeamProducts: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+      },
     });
+
+    // Send email notification for subscription cancellation
+    if (subscriptionStatus === SubscriptionStatus.CANCELED && result.user?.email) {
+      try {
+        const effectiveCancellationDate = format(new Date(), 'dd/MM/yyyy');
+        const productsUrl = `${this.parameters.SUPPLEMENT_EMAIL_URL}/products`;
+        const productUrl = `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`;
+
+        await this.courierService.sendSubscriptionCancelledEmail(
+          result.user.email,
+          result.user.firstName || '',
+          result.team.supplementTeamProducts.product.name,
+          effectiveCancellationDate,
+          productsUrl,
+          productUrl,
+        );
+      } catch (error) {
+        console.error('Failed to send subscription cancellation email:', error);
+      }
+    }
+
+    return result;
   }
 
   async getAllBuyingTeamSubscription(offset = 0): Promise<object> {

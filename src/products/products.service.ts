@@ -115,13 +115,13 @@ export class ProductsService {
       const priceInfo = result.priceInfo as unknown as IPricePlan[];
       activePercentageDiscount = this.getPriceDiscount(priceInfo as unknown as IPricePlan[], teamMemberCount);
       const priceWithDiscount = !activePercentageDiscount
-      ? result.price
-      : Number((+result.price - (+activePercentageDiscount / 100) * +result.price).toFixed(2));
+      ? result.rrp
+      : Number((+result.rrp - (+activePercentageDiscount / 100) * +result.rrp).toFixed(2));
       
       // Add actual discounted value to each price plan
       if (priceInfo) {
         priceInfo.forEach(plan => {
-          const discountedValue = Number((+result.price - (plan.percentageDiscount / 100) * +result.price).toFixed(2));
+          const discountedValue = Number((+result.rrp - (plan.percentageDiscount / 100) * +result.rrp).toFixed(2));
           plan['actualDiscountedValue'] = discountedValue;
         });
       }

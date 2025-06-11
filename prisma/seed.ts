@@ -3192,19 +3192,19 @@ async function main() {
       ],
       priceInfo: [
         {
-          percentageDiscount: 24.92,
-          teamMemberCount: 444,
+          percentageDiscount: 18.39,
+          teamMemberCount: 0,
         },
         {
-          percentageDiscount: 28.92,
+          percentageDiscount: 22.39,
           teamMemberCount: 1111,
         },
         {
-          percentageDiscount: 32.92,
+          percentageDiscount: 26.39,
           teamMemberCount: 2222,
         },
         {
-          percentageDiscount: 36.92,
+          percentageDiscount: 30.39,
           teamMemberCount: 4444,
         },
       ],
