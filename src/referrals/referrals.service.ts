@@ -723,6 +723,7 @@ export class ReferralsService {
       });
     }
   }
+  
   async getReferral(userId: string) {
     return await this.prisma.referral.findFirst({
       where: { userId },
