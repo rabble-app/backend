@@ -21,7 +21,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "dotenv -e .env.test -- npx prisma migrate deploy && dotenv -e .env.test -- jest --config ./test/jest-e2e.json --detectOpenHandles",
     "test:e2e:watch": "dotenv -e .env.test -- npx prisma migrate deploy && dotenv -e .env.test -- jest --config ./test/jest-e2e.json --watch --detectOpenHandles",
-    "test:e2e:github": "set NODE_ENV=test && jest --config ./test/jest-e2e.json",
+    "test:e2e:github": "set NODE_ENV=test && jest --config ./test/jest-e2e.json --maxWorkers=1 --detectOpenHandles",
     "test:clear-cache": "jest --clearCache",
     "deploy": "npm ci && npm run build && npm run start:prod",
     "migration:generate": "npx prisma migrate dev --name",
@@ -112,7 +112,7 @@
     "ts-loader": "^9.4.2",
     "ts-node": "^10.0.0",
     "tsconfig-paths": "4.1.1",
-    "typescript": "^5.8.3",
+    "typescript": "~4.9.5",
     "webpack": "^5.79.0",
     "webpack-node-externals": "^3.0.0"
   },

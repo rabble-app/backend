@@ -93,6 +93,17 @@ jobs:
         run: npm test
 
       - name: Run tests (e2e) ⚙️
-        run: ${{ github.ref == 'refs/heads/production' && 'echo production' || 'npm run test:e2e:github'  }}
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/production" ]; then
+            echo "Skipping e2e tests in production"
+          else
+            # Clean up any existing test database
+            npx prisma migrate reset --force
+            # Run e2e tests with increased memory limit
+            NODE_OPTIONS="--max-old-space-size=4096" npm run test:e2e:github
+          fi
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
   
