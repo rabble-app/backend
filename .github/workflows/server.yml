@@ -97,9 +97,9 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/production" ]; then
             echo "Skipping e2e tests in production"
           else
-            # Clean up any existing test database
-            npx prisma migrate reset --force
-            # Run e2e tests with increased memory limit
+            # Ensure database is ready
+            npx prisma generate
+            # Run e2e tests with increased memory limit and proper cleanup
             NODE_OPTIONS="--max-old-space-size=4096" npm run test:e2e:github
           fi
         env:
