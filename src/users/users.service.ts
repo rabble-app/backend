@@ -25,6 +25,7 @@ import {
 import { parse } from 'postcode';
 import { differenceInDays } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
+import { BillingAddressDto } from './dto/billing-address.dto';
 
 @Injectable()
 export class UsersService {
@@ -790,5 +791,35 @@ export class UsersService {
         where: { id: userId },
       });
     }
+  }
+
+  async storeBillingAddress(userId: string, billingAddressDto: BillingAddressDto) {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        billingAddress: {
+          create: {
+            postCode: billingAddressDto.postCode,
+            addressLine1: billingAddressDto.addressLine1,
+            addressLine2: billingAddressDto.addressLine2,
+            city: billingAddressDto.city,
+            country: billingAddressDto.country,
+          },
+        },
+      },
+      include: {
+        billingAddress: true,
+      },
+    });
+  }
+
+  async getBillingAddress(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        billingAddress: true,
+      },
+    });
+    return user?.billingAddress || null;
   }
 }
