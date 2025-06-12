@@ -30,6 +30,7 @@ import { DeliveryAddressDto } from './dto/delivery-address.dto';
 import { UpdateDeliveryAddressDto } from './dto/update-delivery-address.dto';
 import { UpdateProducerDto } from './dto/update-producer.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { BillingAddressDto } from './dto/billing-address.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -419,6 +420,64 @@ export class UsersController {
       HttpStatus.OK,
       false,
       'Users teams returned successfully',
+    );
+  }
+
+  /**
+   * store user billing address.
+   * @param {Body} billingAddressDto - Request body object.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Patch('billing-address')
+  @ApiBadRequestResponse({ description: 'Invalid data sent' })
+  @ApiOkResponse({ description: 'Billing address updated successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async storeBillingAddress(
+    @Body() billingAddressDto: BillingAddressDto,
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const userId = req.user.id ? req.user.id : req.user.userId;
+    const result = await this.usersService.storeBillingAddress(userId, billingAddressDto);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Billing address updated successfully',
+    );
+  }
+
+  /**
+   * return user billing address.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @UseGuards(AuthGuard)
+  @Get('billing-address/:id')
+  @ApiOkResponse({ description: 'Billing address returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The id of the user',
+  })
+  async getBillingAddress(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.getBillingAddress(id);
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Billing address returned successfully',
     );
   }
 }
