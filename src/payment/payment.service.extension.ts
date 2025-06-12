@@ -65,6 +65,9 @@ export class PaymentServiceExtension {
     isSupplementApp = false,
   ): Promise<object | null> {
     try {
+      if (options.amount_to_capture) {
+        options.amount_to_capture = Math.round(options.amount_to_capture);
+      }
       return await this.stripeService.capturePaymentIntent(
         paymentIntentId,
         options,
