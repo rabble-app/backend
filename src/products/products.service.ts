@@ -468,6 +468,7 @@ export class ProductsService {
             rabbleMarkUp: true,
             status: true,
             rrp: true,
+            priceInfo: true,
             tags: true,
             producer: {
               select: {
@@ -484,7 +485,11 @@ export class ProductsService {
             name: true,
             _count: {
               select: {
-                members: true,
+                members: {
+                  where: {
+                    status: 'APPROVED',
+                  },
+                },
               },
             },
           },
@@ -493,8 +498,29 @@ export class ProductsService {
       ...(limit && { take: +limit }),
     });
 
+    // Process each product to add discount information
+    const processedProducts = allProducts.map(product => {
+      const teamMemberCount = product.team?._count?.members || 0;
+      const priceInfo = product.product.priceInfo as unknown as IPricePlan[];
+      const activePercentageDiscount = this.getPriceDiscount(priceInfo, teamMemberCount);
+      
+      const priceWithDiscount = !activePercentageDiscount
+        ? product.product.rrp
+        : Number((+product.product.rrp - (+activePercentageDiscount / 100) * +product.product.rrp).toFixed(2));
+
+
+      return {
+        ...product,
+        product: {
+          ...product.product,
+          price: new Decimal(priceWithDiscount),
+          activePercentageDiscount,
+        },
+      };
+    });
+
     // return unpurchased products
-    const unpurchasedProducts = allProducts.filter(
+    const unpurchasedProducts = processedProducts.filter(
       (product) =>
         !userPurchasedProducts.some((p) => p.productId === product.productId),
     );
