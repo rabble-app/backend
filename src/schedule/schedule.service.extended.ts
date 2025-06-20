@@ -7,7 +7,7 @@ import {
   IScheduleTeam,
   notificationType,
 } from '../lib/types';
-import { OrderStatus, OrderType, PaymentStatus } from '@prisma/client';
+import { OrderStatus, OrderType, PaymentStatus, SupplementTeamStatus } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -691,6 +691,7 @@ export class ScheduleServiceExtended {
                   select: {
                     foundingMembersDiscount: true,
                     earlyMembersDiscount: true,
+                    status: true,
                   },
                 },
               },
@@ -707,6 +708,7 @@ export class ScheduleServiceExtended {
           const priceDiscount = this.productsService.getPriceDiscount(
             item.product.priceInfo as unknown as IPricePlan[],
             teamMembers.length,
+            item.product.supplementTeamProducts?.status ?? SupplementTeamStatus.ACTIVE,
           );
           const originalPrice = item.product.price;
           const priceWithDiscount = !priceDiscount

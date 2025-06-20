@@ -154,6 +154,9 @@ export class UsersServiceExtension {
                   },
                 },
                 capsulePerDay: true,
+                price: true,
+                pricePerCount: true,
+                discount: true,
               },
             },
             supplementTeamProducts: {
@@ -219,6 +222,9 @@ export class UsersServiceExtension {
                   },
                 },
                 capsulePerDay: true,
+                price: true,
+                pricePerCount: true,
+                discount: true,
               },
             },
             supplementTeamProducts: {
