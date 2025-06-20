@@ -6,6 +6,7 @@ import {
   IsNumber,
   ValidateIf,
   IsEnum,
+  IsOptional,
 } from 'class-validator';
 
 export class JoinSupplementTeamDto {
@@ -110,4 +111,22 @@ export class JoinSupplementTeamDto {
   @IsNotEmpty()
   @IsNumber()
   amount: number;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'This holds the discount amount',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  discount?: number;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'This holds the price per count',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  pricePerCount?: number;
 }

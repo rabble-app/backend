@@ -62,6 +62,7 @@ model User {
   claims                        Claim[]
   coupons                       Coupon[]
   subscription                  Subscription?
+
   @@index([id])
   @@map("users")
 }
@@ -571,6 +572,8 @@ model Basket {
   quantity      Int
   price         Decimal              @default(0) @db.Decimal(9, 2)
   capsulePerDay Decimal              @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  pricePerCount Decimal              @default(0) @map("price_per_count") @db.Decimal(9, 2)
+  discount      Decimal              @default(0) @map("discount") @db.Decimal(9, 2)
   paymentStatus ProductPaymentStatus @default(PENDING) @map("payment_status")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
@@ -589,6 +592,8 @@ model BasketC {
   userId        String     @map("user_id")
   productId     String     @map("product_id")
   capsulePerDay Decimal    @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  pricePerCount Decimal    @default(0) @map("price_per_count") @db.Decimal(9, 2)
+  discount      Decimal    @default(0) @map("discount") @db.Decimal(9, 2)
   quantity      Int
   price         Decimal    @default(0) @db.Decimal(9, 2)
   createdAt     DateTime   @default(now()) @map("created_at")
@@ -876,7 +881,7 @@ model Bonus {
   userId     String    @map("user_id")
   amount     Decimal
   type       BonusType
-  category   String?    @default("credit")
+  category   String?   @default("credit")
   referralId String?   @map("referral_id")
   orderId    String?   @map("order_id")
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -887,28 +892,28 @@ model Bonus {
   @@index([id, userId])
   @@map("bonuses")
 }
+
 model Subscription {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id") @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  status    SubscriptionStatus @default(ACTIVE)
-  expiryDate DateTime? @map("expiry_date")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String             @id @default(uuid())
+  userId     String             @unique @map("user_id")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  status     SubscriptionStatus @default(ACTIVE)
+  expiryDate DateTime?          @map("expiry_date")
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([id, userId])
   @@map("subscriptions")
 }
 
-
 model Referral {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  referrerId String?   @map("referrer_id")
-  type       ReferralType @default(INTERNAL)
-  affiliateId String? @map("affiliate_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String       @id @default(uuid())
+  userId      String       @map("user_id")
+  referrerId  String?      @map("referrer_id")
+  type        ReferralType @default(INTERNAL)
+  affiliateId String?      @map("affiliate_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
 
   @@index([id, userId])
   @@map("referrals")
@@ -924,7 +929,6 @@ enum BonusType {
   SIGNUP
   FREE_TRIAL
 }
-
 
 enum OrderStatus {
   PENDING

@@ -264,6 +264,7 @@ export class PaymentService {
             },
           },
         },
+        firstDelivery: true,
       },
     });
   }
@@ -639,6 +640,8 @@ export class PaymentService {
             addSingleBasketDto.quantity,
           price: addSingleBasketDto.price,
           capsulePerDay: addSingleBasketDto.capsulePerDay,
+          discount: addSingleBasketDto.discount || 0,
+          pricePerCount: addSingleBasketDto.pricePerCount || 0,
           paymentStatus: ProductPaymentStatus.CAPTURED,
         },
       });
@@ -671,6 +674,8 @@ export class PaymentService {
         quantity: addSingleBasketDto.quantity,
         price: addSingleBasketDto.price,
         capsulePerDay: addSingleBasketDto.capsulePerDay,
+        discount: addSingleBasketDto.discount || 0,
+        pricePerCount: addSingleBasketDto.pricePerCount || 0,
       },
     });
 
@@ -830,6 +835,8 @@ export class PaymentService {
       price: joinSupplementTeamDto.price,
       capsulePerDay: joinSupplementTeamDto.capsulePerDay,
       topupQuantity: joinSupplementTeamDto.topupQuantity,
+      discount: joinSupplementTeamDto.discount || 0,
+      pricePerCount: joinSupplementTeamDto.pricePerCount || 0,
     });
     if (!basket) return 5;
     // send email to user

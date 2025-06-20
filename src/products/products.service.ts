@@ -6,6 +6,7 @@ import {
   RecentlyViewed,
   SupplementTags,
   SupplementTeamProducts,
+  SupplementTeamStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RecentlyViewedProductDto } from './dto/recently-viewed-product.dto';
@@ -96,7 +97,18 @@ export class ProductsService {
                       },
                     },
                   },
-                },          
+                },  
+                members: userId ? {
+                  where: {
+                    status: 'APPROVED',
+                    userId,
+                  },
+                  take: 1,
+                  select: {
+                    id: true,
+                    role: true,
+                  },
+                } : undefined,
                 // user basket if userId is provided
                 basket: userId ? {
                   where: {
@@ -113,7 +125,8 @@ export class ProductsService {
     teamMemberCount = result?.supplementTeamProducts?.team?._count.members;
     if (teamId) {
       const priceInfo = result.priceInfo as unknown as IPricePlan[];
-      activePercentageDiscount = this.getPriceDiscount(priceInfo as unknown as IPricePlan[], teamMemberCount);
+      const teamStatus = result?.supplementTeamProducts?.status ?? SupplementTeamStatus.ACTIVE;
+      activePercentageDiscount = this.getPriceDiscount(priceInfo as unknown as IPricePlan[], teamMemberCount, teamStatus);
       const priceWithDiscount = !activePercentageDiscount
       ? result.rrp
       : Number((+result.rrp - (+activePercentageDiscount / 100) * +result.rrp).toFixed(2));
@@ -502,7 +515,8 @@ export class ProductsService {
     const processedProducts = allProducts.map(product => {
       const teamMemberCount = product.team?._count?.members || 0;
       const priceInfo = product.product.priceInfo as unknown as IPricePlan[];
-      const activePercentageDiscount = this.getPriceDiscount(priceInfo, teamMemberCount);
+      const teamStatus = product.status ?? SupplementTeamStatus.ACTIVE;
+      const activePercentageDiscount = this.getPriceDiscount(priceInfo, teamMemberCount, teamStatus);
       
       const priceWithDiscount = !activePercentageDiscount
         ? product.product.rrp
@@ -540,7 +554,19 @@ export class ProductsService {
   getPriceDiscount(
     pricePlan: IPricePlan[],
     teamMemberCount: number,
+    teamStatus: SupplementTeamStatus = SupplementTeamStatus.ACTIVE,
   ): number | null {
+    if (!pricePlan || pricePlan.length === 0) {
+      return null;
+    }
+
+    // If status is PREORDER, return the lowest discount available
+    if (teamStatus === SupplementTeamStatus.PREORDER) {
+      const sortedPlans = [...pricePlan].sort((a, b) => a.percentageDiscount - b.percentageDiscount);
+      return sortedPlans[0].percentageDiscount;
+    }
+
+    // For ACTIVE status, use the original logic
     pricePlan?.sort((a, b) => (a.teamMemberCount > b.teamMemberCount ? 1 : -1));
     let discount = null;
     for (const plan of pricePlan) {

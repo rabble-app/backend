@@ -3377,7 +3377,7 @@ async function main() {
       supplementTeamProducts: {
         create: {
           productId: supplementProduct1.id,
-          orderTreashold: 60,
+          orderTreashold: 333,
           status: 'PREORDER',
           foundingMembersDiscount: 10,
         },

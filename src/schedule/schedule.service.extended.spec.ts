@@ -212,6 +212,7 @@ describe('ScheduleServiceExtended', () => {
           supplementTeamProducts: {
             foundingMembersDiscount: 10,
             earlyMembersDiscount: 5,
+            status: 'ACTIVE',
           },
         },
       }];
@@ -239,6 +240,13 @@ describe('ScheduleServiceExtended', () => {
           userId: true,
         },
       });
+
+      // Verify getPriceDiscount was called with correct parameters
+      expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
+        [],
+        1, // teamMembers.length
+        'ACTIVE' // status from mock data
+      );
 
       // Calculate expected values based on the actual implementation
       const basePrice = 100; // Original price
@@ -315,6 +323,7 @@ describe('ScheduleServiceExtended', () => {
           supplementTeamProducts: {
             foundingMembersDiscount: 0,
             earlyMembersDiscount: 0,
+            status: 'ACTIVE',
           },
         },
       }];
@@ -338,6 +347,68 @@ describe('ScheduleServiceExtended', () => {
           price: 300,
         }),
       });
+
+      // Verify getPriceDiscount was called with correct parameters
+      expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
+        [],
+        1, // teamMembers.length
+        'ACTIVE' // status from mock data
+      );
+    });
+
+    it('should use lowest discount for PREORDER status', async () => {
+      const teamId = 'team1';
+      const orderId = 'order1';
+      const duration = 91;
+
+      const mockTeamMembers = [{
+        id: 'member1',
+        role: 'MEMBER',
+        userId: 'user1',
+      }];
+
+      const mockBasket = [{
+        capsulePerDay: 2,
+        productId: 'product1',
+        product: {
+          id: 'product1',
+          priceInfo: [
+            { teamMemberCount: 5, percentageDiscount: 10 },
+            { teamMemberCount: 10, percentageDiscount: 15 },
+            { teamMemberCount: 20, percentageDiscount: 20 }
+          ],
+          price: 100,
+          status: 'ACTIVE',
+          subUnit: 'capsules',
+          supplementTeamProducts: {
+            foundingMembersDiscount: 0,
+            earlyMembersDiscount: 0,
+            status: 'PREORDER',
+          },
+        },
+      }];
+
+      mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
+      mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
+      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(true);
+      mockProductsService.getPriceDiscount.mockReturnValue(10); // Lowest discount
+      mockPrismaService.basket.create.mockResolvedValue({});
+      mockPaymentService.recordPayment.mockResolvedValue({});
+
+      const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
+
+      expect(result).toBe(true);
+      
+      // Verify getPriceDiscount was called with PREORDER status
+      expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
+        [
+          { teamMemberCount: 5, percentageDiscount: 10 },
+          { teamMemberCount: 10, percentageDiscount: 15 },
+          { teamMemberCount: 20, percentageDiscount: 20 }
+        ],
+        1, // teamMembers.length
+        'PREORDER' // status from mock data
+      );
     });
   });
 
