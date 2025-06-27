@@ -10,6 +10,7 @@ import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { OrderStatus, OrderType, PaymentStatus } from '@prisma/client';
+import { CourierService } from '../notifications/courier.service';
 
 describe('ScheduleServiceExtended', () => {
   let service: ScheduleServiceExtended;
@@ -55,6 +56,11 @@ describe('ScheduleServiceExtended', () => {
     getPriceDiscount: jest.fn(),
   };
 
+  const mockCourierService = {
+    sendCoinEarnedMail: jest.fn(),
+    sendReferralFreeMonthMail: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -94,6 +100,17 @@ describe('ScheduleServiceExtended', () => {
         {
           provide: QRCodeService,
           useValue: {},
+        },
+        {
+          provide: CourierService,
+          useValue: mockCourierService,
+        },
+        {
+          provide: 'AWS_PARAMETERS',
+          useValue: {
+            SUPPLEMENT_EMAIL_URL: 'https://test.com',
+            SUPPLEMENT_DASHBOARD_URL: 'https://test.com',
+          },
         },
       ],
     }).compile();
