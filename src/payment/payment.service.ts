@@ -840,15 +840,19 @@ export class PaymentService {
     });
     if (!basket) return 5;
     // send email to user
+    // get updated user info so that you can access the user code and ref code
+    const updatedUserInfo = await this.userService.findUser({
+      id: joinSupplementTeamDto.userId,
+    });
     await this.courierService.sendWelcomeEmail(
-      userInfo.email,
-      userInfo.firstName,
+      updatedUserInfo.email,
+      updatedUserInfo.firstName,
       productInfo.name,
       joinSupplementTeamDto.quantity * +productInfo.poucheSize,
       productInfo.subUnit,
       `£${joinSupplementTeamDto.amount}`,
-      `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${userInfo.refCode}`,
-      `${userInfo.userCode}`,
+      `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+      `${updatedUserInfo.userCode}`,
       `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
     );
     return joinSupplementTeamDto;

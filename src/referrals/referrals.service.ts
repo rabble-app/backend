@@ -926,7 +926,7 @@ export class ReferralsService {
 
       // Create referral link
       const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${sponsor.refCode}`;
-      const dashboardLink = `${this.parameters.SUPPLEMENT_DASHBOARD_URL}/dashboard`;
+      const dashboardLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`;
 
       // Send the email
       await this.courierService.sendCoinEarnedMail(

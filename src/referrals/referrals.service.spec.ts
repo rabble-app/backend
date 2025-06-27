@@ -120,7 +120,6 @@ describe('ReferralsService', () => {
           useValue: { 
             SUPPLEMENT_STRIPE_SECRET_KEY: 'test_key',
             SUPPLEMENT_EMAIL_URL: 'https://test.com',
-            SUPPLEMENT_DASHBOARD_URL: 'https://test.com'
           },
         },
       ],
