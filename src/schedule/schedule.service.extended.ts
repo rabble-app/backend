@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
 import {
@@ -23,6 +23,7 @@ import {
   upperQuarterDate,
 } from '../utils/date';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
+import { CourierService } from '../notifications/courier.service';
 
 @Injectable()
 export class ScheduleServiceExtended {
@@ -36,6 +37,8 @@ export class ScheduleServiceExtended {
     private qRCodeService: QRCodeService,
     private readonly teamsService: TeamsService,
     private readonly paymentServiceExtension: PaymentServiceExtension,
+    private readonly courierService: CourierService,
+    @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
   ) {}
 
   async processCompleteOrders(
@@ -851,5 +854,146 @@ export class ScheduleServiceExtended {
         status: OrderStatus.PENDING_DELIVERY,
       },
     });
+  }
+
+  async handleLastDayFreeMembershipBonus(): Promise<boolean> {
+    try {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      // Get users whose firstPaymentDate is exactly 30 days ago
+      const users = await this.prisma.user.findMany({
+        where: {
+          firstPaymentDate: {
+            not: null,
+            gte: new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate()),
+            lt: new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate() + 1),
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          refCode: true,
+          userCode: true,
+          firstPaymentDate: true,
+        },
+      });
+
+      // Send emails to eligible users
+      for (const user of users) {
+        try {
+          const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
+          
+          await this.courierService.sendLastDayOfFreeMembershipBonus(
+            user.email,
+            user.firstName,
+            referralLink,
+            user.userCode,
+          );
+        } catch (error) {
+          console.error(`Failed to send email to user ${user.id}:`, error);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in handleLastDayFreeMembershipBonus:', error);
+      return false;
+    }
+  }
+
+  async handle15thDayFreeMembershipBonus(): Promise<boolean> {
+    try {
+      const today = new Date();
+      const fifteenDaysAgo = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
+
+      // Get users whose firstPaymentDate is exactly 15 days ago
+      const users = await this.prisma.user.findMany({
+        where: {
+          firstPaymentDate: {
+            not: null,
+            gte: new Date(fifteenDaysAgo.getFullYear(), fifteenDaysAgo.getMonth(), fifteenDaysAgo.getDate()),
+            lt: new Date(fifteenDaysAgo.getFullYear(), fifteenDaysAgo.getMonth(), fifteenDaysAgo.getDate() + 1),
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          refCode: true,
+          userCode: true,
+          firstPaymentDate: true,
+        },
+      });
+
+      // Send emails to eligible users
+      for (const user of users) {
+        try {
+          const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
+          
+          await this.courierService.send30DaysMidWayReminder(
+            user.email,
+            user.firstName,
+            referralLink,
+            user.userCode,
+          );
+        } catch (error) {
+          console.error(`Failed to send 15th day email to user ${user.id}:`, error);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in handle15thDayFreeMembershipBonus:', error);
+      return false;
+    }
+  }
+
+  async handleLast3DaysFreeMembershipBonus(): Promise<boolean> {
+    try {
+      const today = new Date();
+      const twentySevenDaysAgo = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
+
+      // Get users whose firstPaymentDate is exactly 27 days ago
+      const users = await this.prisma.user.findMany({
+        where: {
+          firstPaymentDate: {
+            not: null,
+            gte: new Date(twentySevenDaysAgo.getFullYear(), twentySevenDaysAgo.getMonth(), twentySevenDaysAgo.getDate()),
+            lt: new Date(twentySevenDaysAgo.getFullYear(), twentySevenDaysAgo.getMonth(), twentySevenDaysAgo.getDate() + 1),
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          refCode: true,
+          userCode: true,
+          firstPaymentDate: true,
+        },
+      });
+
+      // Send emails to eligible users
+      for (const user of users) {
+        try {
+          const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
+          
+          await this.courierService.sendLast3DaysOf30DaysReminder(
+            user.email,
+            user.firstName,
+            referralLink,
+            user.userCode,
+          );
+        } catch (error) {
+          console.error(`Failed to send last 3 days email to user ${user.id}:`, error);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in handleLast3DaysFreeMembershipBonus:', error);
+      return false;
+    }
   }
 }

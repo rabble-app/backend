@@ -11,8 +11,9 @@ import {
   MINIMUM_STRIPE_AMOUNT_IN_PENCE,
   REFERRAL_BONUS_PERCENTAGE,
 } from '../utils/constants';
-import { addMonths, differenceInMonths } from 'date-fns';
+import { addMonths, differenceInMonths, differenceInDays } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
+import { CourierService } from '../notifications/courier.service';
 
 @Injectable()
 export class ReferralsService {
@@ -28,7 +29,8 @@ export class ReferralsService {
     @Inject('LOGGER') private readonly logger: Logger,
     @Inject('AWS_PARAMETERS') private readonly parameters: Record<string, any>,
     private readonly stripeService: StripeService,
-  ) {}
+    private readonly courierService: CourierService,
+  ) { }
 
   async generateReferralCode() {
     let code = this.generateRandomCode();
@@ -37,6 +39,7 @@ export class ReferralsService {
     }
     return code;
   }
+
   async generateUserCode(firstName: string) {
     let code = this.generateRandomCode(ReferralsService.USER_CODE_LENGTH);
     let userCode = `${firstName.toUpperCase()}-${code}`;
@@ -46,6 +49,7 @@ export class ReferralsService {
     }
     return userCode;
   }
+
   private generateRandomCode(
     codeLength: number = ReferralsService.CODE_LENGTH,
   ): string {
@@ -59,6 +63,7 @@ export class ReferralsService {
     }
     return code;
   }
+
   async handleReferral(metadata: Record<string, any>, amount: number) {
     this.logger.info('Handling referral %o', { metadata, amount });
     const { order_id, user_id } = metadata;
@@ -141,6 +146,9 @@ export class ReferralsService {
       referralId: user_id,
       orderId: order_id,
     });
+
+    // Send email to sponsor about earned coins
+    await this.sendCoinEarnedEmail(sponsor, bonusAmountInCC);
   }
 
   async applyFirst30DaysReferralBonus(
@@ -156,7 +164,14 @@ export class ReferralsService {
       return await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({
           where: { id: referrerId },
-          select: { firstPaymentDate: true },
+          select: {
+            firstPaymentDate: true, 
+            email: true,
+            firstName: true,
+            refCode: true,
+            userCode: true, 
+            id: true
+          },
         });
         if (!user?.firstPaymentDate) {
           this.logger.error('User not found', { referrerId });
@@ -188,6 +203,11 @@ export class ReferralsService {
             },
           }),
         ]);
+
+        // Send email to the referral after successful subscription update
+        if (user) {
+          await this.sendReferralFreeMonthEmail(user);
+        }
       });
     } catch (error) {
       this.logger.error('Failed to apply referral bonus', {
@@ -201,6 +221,43 @@ export class ReferralsService {
       );
     }
   }
+
+  private async sendReferralFreeMonthEmail(user: {
+    id: string;
+    email: string;
+    firstName: string;
+    refCode: string;
+    userCode: string;
+    firstPaymentDate: Date;
+  }) {
+    try {
+      // Calculate days left (30 days - days since firstPaymentDate)
+      const today = new Date();
+      const daysSinceFirstPayment = differenceInDays(today, user.firstPaymentDate);
+      const daysLeft = Math.max(0, 30 - daysSinceFirstPayment);
+
+      // Create referral link
+      const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
+      const dashboardLink = `${this.parameters.SUPPLEMENT_DASHBOARD_URL}/dashboard`;
+
+      // Send the email
+      await this.courierService.sendReferralFreeMonthMail(
+        user.email,
+        user.firstName,
+        `${daysLeft}`,
+        user.userCode,
+        referralLink,
+        dashboardLink,
+      );
+    } catch (error) {
+      this.logger.error('Failed to send referral free month email', {
+        userId: user.id,
+        error,
+      });
+      // Don't throw the error to avoid breaking the main transaction
+    }
+  }
+
   async handleBonus(bonusDto: BonusDto) {
     this.logger.info(
       `PAYMENT WEBHOOK: Creating ${bonusDto.type} bonus: %o`,
@@ -520,6 +577,7 @@ export class ReferralsService {
       fullCouponCoverage: fullCoverage,
     };
   }
+
   async getReferralTracking(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -606,6 +664,7 @@ export class ReferralsService {
       availableCredits,
     };
   }
+
   async getApplicableCredits(userId: string, captureAmount: number) {
     const captureAmountInPence = captureAmount * 100;
     const { creditBalance, couponValue, remainingAmount, availableCredits } =
@@ -617,6 +676,7 @@ export class ReferralsService {
       availableCredits: availableCredits / 100,
     };
   }
+
   async handleRefCodeAndFreeTrial(userId: string) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -723,7 +783,7 @@ export class ReferralsService {
       });
     }
   }
-  
+
   async getReferral(userId: string) {
     return await this.prisma.referral.findFirst({
       where: { userId },
@@ -762,6 +822,7 @@ export class ReferralsService {
     });
     return referrals;
   }
+
   async checkFreeSubscriptionDuration(userId: string, firstPaymentDate: Date) {
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
@@ -848,5 +909,40 @@ export class ReferralsService {
       amount: bonusAmount,
       amount_in_cc: bonusAmountInCC,
     };
+  }
+
+  private async sendCoinEarnedEmail(
+    sponsor: { id: string; email: string; firstName: string; refCode: string; userCode: string },
+    bonusAmountInCC: number,
+  ) {
+    try {
+      // Get sponsor's wallet balance for totalCoins
+      const wallet = await this.prisma.wallet.findUnique({
+        where: { userId: sponsor.id },
+      });
+      const totalCoins = +(wallet?.balance || 0);
+
+      // Create referral link
+      const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${sponsor.refCode}`;
+      const dashboardLink = `${this.parameters.SUPPLEMENT_DASHBOARD_URL}/dashboard`;
+
+      // Send the email
+      await this.courierService.sendCoinEarnedMail(
+        sponsor.email,
+        sponsor.firstName,
+        referralLink,
+        sponsor.userCode,
+        bonusAmountInCC,
+        totalCoins,
+        this.ccToPounds(totalCoins),
+        dashboardLink,
+      );
+    } catch (error) {
+      this.logger.error('Failed to send coin earned email to sponsor', {
+        sponsorId: sponsor.id,
+        error,
+      });
+      // Don't throw the error to avoid breaking the main referral flow
+    }
   }
 }
