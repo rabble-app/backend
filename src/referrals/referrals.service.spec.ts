@@ -7,6 +7,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import Stripe from 'stripe';
 import { CC_TO_POUNDS_RATE } from '../utils/constants';
 import { BonusType, ReferralType } from '@prisma/client';
+import { CourierService } from '../notifications/courier.service';
 
 describe('ReferralsService', () => {
   let service: ReferralsService;
@@ -15,6 +16,7 @@ describe('ReferralsService', () => {
   let mockLogger: any;
   let mockRollbar: any;
   let mockStripeService: any;
+  let mockCourierService: any;
 
   beforeEach(async () => {
     mockPrismaService = {
@@ -77,8 +79,13 @@ describe('ReferralsService', () => {
     };
 
     mockRollbar = {
-      info: jest.fn(),
       error: jest.fn(),
+      info: jest.fn(),
+    };
+
+    mockCourierService = {
+      sendCoinEarnedMail: jest.fn(),
+      sendReferralFreeMonthMail: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -97,6 +104,10 @@ describe('ReferralsService', () => {
           useValue: mockStripeService,
         },
         {
+          provide: CourierService,
+          useValue: mockCourierService,
+        },
+        {
           provide: 'LOGGER',
           useValue: mockLogger,
         },
@@ -106,7 +117,11 @@ describe('ReferralsService', () => {
         },
         {
           provide: 'AWS_PARAMETERS',
-          useValue: { SUPPLEMENT_STRIPE_SECRET_KEY: 'test_key' },
+          useValue: { 
+            SUPPLEMENT_STRIPE_SECRET_KEY: 'test_key',
+            SUPPLEMENT_EMAIL_URL: 'https://test.com',
+            SUPPLEMENT_DASHBOARD_URL: 'https://test.com'
+          },
         },
       ],
     }).compile();

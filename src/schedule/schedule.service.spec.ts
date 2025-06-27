@@ -27,8 +27,10 @@ import {
   mockCourierService,
 } from '../../test/mocks';
 import { CourierService } from '../notifications/courier.service';
+
 describe('ScheduleService', () => {
   let service: ScheduleService;
+  let scheduleServiceExtended: ScheduleServiceExtended;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -74,9 +76,31 @@ describe('ScheduleService', () => {
     }).compile();
 
     service = module.get<ScheduleService>(ScheduleService);
+    scheduleServiceExtended = module.get<ScheduleServiceExtended>(ScheduleServiceExtended);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('handleLastDayFreeMembershipBonus', () => {
+    it('should handle last day free membership bonus emails', async () => {
+      const result = await scheduleServiceExtended.handleLastDayFreeMembershipBonus();
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('handle15thDayFreeMembershipBonus', () => {
+    it('should handle 15th day free membership bonus emails', async () => {
+      const result = await scheduleServiceExtended.handle15thDayFreeMembershipBonus();
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('handleLast3DaysFreeMembershipBonus', () => {
+    it('should handle last 3 days free membership bonus emails', async () => {
+      const result = await scheduleServiceExtended.handleLast3DaysFreeMembershipBonus();
+      expect(result).toBe(true);
+    });
   });
 });
