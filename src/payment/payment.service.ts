@@ -390,7 +390,7 @@ export class PaymentService {
             },
           });
 
-          this.referralsService
+          await this.referralsService
             .handleRefCodeAndFreeTrial(paymentData.userId)
             .catch((error) => {
               this.logger.error(
@@ -848,7 +848,7 @@ export class PaymentService {
       productInfo.subUnit,
       `£${joinSupplementTeamDto.amount}`,
       `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${userInfo.refCode}`,
-      userInfo.userCode,
+      `${userInfo.userCode}`,
       `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
     );
     return joinSupplementTeamDto;

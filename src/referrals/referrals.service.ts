@@ -238,7 +238,7 @@ export class ReferralsService {
 
       // Create referral link
       const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
-      const dashboardLink = `${this.parameters.SUPPLEMENT_DASHBOARD_URL}/dashboard`;
+      const dashboardLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`;
 
       // Send the email
       await this.courierService.sendReferralFreeMonthMail(
@@ -691,11 +691,13 @@ export class ReferralsService {
 
       const referralCode = await this.generateReferralCode();
       const userCode = await this.generateUserCode(user.firstName);
-
+      
       await this.prisma.user.update({
         where: { id: userId },
         data: { refCode: referralCode, userCode },
       });
+
+      this.logger.info('Referral code and user code generated %o', { userId, referralCode, userCode });
 
       await this.createFreeTrialSubscription(userId);
     } catch (error) {
