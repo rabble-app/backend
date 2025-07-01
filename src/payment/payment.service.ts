@@ -835,8 +835,8 @@ export class PaymentService {
       price: joinSupplementTeamDto.price,
       capsulePerDay: joinSupplementTeamDto.capsulePerDay,
       topupQuantity: joinSupplementTeamDto.topupQuantity,
-      discount: joinSupplementTeamDto.discount || 0,
-      pricePerCount: joinSupplementTeamDto.pricePerCount || 0,
+      discount: +joinSupplementTeamDto.discount || 0,
+      pricePerCount: +joinSupplementTeamDto.pricePerCount || 0,
     });
     if (!basket) return 5;
     // send email to user

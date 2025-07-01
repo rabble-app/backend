@@ -118,8 +118,8 @@ export class JoinSupplementTeamDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  discount?: number;
+  @IsString()
+  discount?: string;
 
   @ApiProperty({
     type: 'number',
@@ -127,6 +127,6 @@ export class JoinSupplementTeamDto {
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  pricePerCount?: number;
+  @IsString()
+  pricePerCount?: string;
 }
