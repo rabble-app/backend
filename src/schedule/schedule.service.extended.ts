@@ -690,6 +690,9 @@ export class ScheduleServiceExtended {
                 price: true,
                 status: true,
                 subUnit: true,
+                rrp: true,
+                gramsPerCount: true,
+                unitsOfMeasurePerSubUnit: true,
                 supplementTeamProducts: {
                   select: {
                     foundingMembersDiscount: true,
@@ -713,25 +716,27 @@ export class ScheduleServiceExtended {
             teamMembers.length,
             item.product.supplementTeamProducts?.status ?? SupplementTeamStatus.ACTIVE,
           );
-          const originalPrice = item.product.price;
+          const originalPrice = item.product.rrp;
           const priceWithDiscount = !priceDiscount
             ? originalPrice
             : +originalPrice - (+priceDiscount / 100) * +originalPrice;
           // a quarter is 90 days,  a single package we have is for 30 days, 
-          // so we get the number of 30 days in a quarter, 3 pouches for a quarter 
+          // so we get the number of 30 days in a quarter, 1 pouches for a quarter 
           // for a user that takes 1 capsule per day
           // what if the product is measured in grams? 
           // i need to get the number of grams for 1month
-          const productQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/5) * 3 : +item.capsulePerDay * 3;
+          const productQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/+item.product.gramsPerCount) : +item.capsulePerDay;
 
           // create the subscription for this user
           let productPrice = +priceWithDiscount * productQuantity;
           let topupQuantity = 0;
+          let topUpPrice = 0;
           // check if there is alignment package
           if (duration > 91) {
             const topupDuration = duration - 91;
-            topupQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/5) * Math.ceil(topupDuration / 30) : +item.capsulePerDay * Math.ceil(topupDuration / 30);
-            productPrice += +priceWithDiscount * topupQuantity;
+            topupQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/+item.product.gramsPerCount) * Math.ceil(topupDuration / 30) : +item.capsulePerDay * Math.ceil(topupDuration / 30);
+            topUpPrice = +priceWithDiscount * topupQuantity;
+            productPrice += topUpPrice;
           }
 
           // if the user is a founding member, we will give them a discount
@@ -752,13 +757,30 @@ export class ScheduleServiceExtended {
                 100;
           }
 
+          // Calculate total discount percentage
+          let totalDiscount = priceDiscount || 0;
+          if (member.role === 'FOUNDING_MEMBER') {
+            totalDiscount += +item.product?.supplementTeamProducts?.foundingMembersDiscount || 0;
+          } else if (member.role === 'EARLY_MEMBER') {
+            totalDiscount += +item.product?.supplementTeamProducts?.earlyMembersDiscount || 0;
+          }
+          // calculate the price per count
+
+          let pricePerCount = Number((+priceWithDiscount / 90).toFixed(4));
+          // Adjust pricePerCount and rrpPerCount for grams if applicable
+          if (item.product.unitsOfMeasurePerSubUnit === 'grams' && item.product.gramsPerCount) {
+            pricePerCount = Number((pricePerCount / Number(item.product.gramsPerCount)).toFixed(4));
+          }
+
           const newProduct = {
+            pricePerCount,
             orderId,
             userId: member.userId,
             productId: item.productId,
             quantity: productQuantity,
-            price: productPrice,
+            price: productPrice - topUpPrice,
             capsulePerDay: item.capsulePerDay,
+            discount: totalDiscount,  
           };
 
           // add to basket
@@ -772,6 +794,7 @@ export class ScheduleServiceExtended {
               data: {
                 ...newProduct,
                 quantity: topupQuantity,
+                price: topUpPrice,
               },
             });
           }

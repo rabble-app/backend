@@ -93,4 +93,13 @@ export class AddSingleBasketDto {
   @IsOptional()
   @IsNumber()
   pricePerCount?: number;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'The top up price',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  topUpPrice?: number;
 }
