@@ -44,10 +44,10 @@ export class ProductsService {
     // get team latest order id
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
-      orderId = result.id;
-      orderDeadline = result.deadline;
-      deliveryDate = result.deliveryDate;
-      firstDelivery = result.firstDelivery;
+      orderId = result?.id;
+      orderDeadline = result?.deadline;
+      deliveryDate = result?.deliveryDate;
+      firstDelivery = result?.firstDelivery;
     }
     const result = await this.prisma.product.findFirst({
       where: {
