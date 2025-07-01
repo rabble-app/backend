@@ -656,7 +656,7 @@ export class PaymentService {
             userId: addSingleBasketDto.userId,
             orderId: addSingleBasketDto.orderId,
             quantity: addSingleBasketDto.topupQuantity,
-            price: addSingleBasketDto.price,
+            price: addSingleBasketDto.topUpPrice,
             capsulePerDay: addSingleBasketDto.capsulePerDay,
             deliveryDate: add(new Date(), {
               weeks: team.supplementTeamProducts.product.leadTime,
@@ -837,6 +837,7 @@ export class PaymentService {
       topupQuantity: joinSupplementTeamDto.topupQuantity,
       discount: +joinSupplementTeamDto.discount || 0,
       pricePerCount: +joinSupplementTeamDto.pricePerCount || 0,
+      topUpPrice: joinSupplementTeamDto.amount - joinSupplementTeamDto.price || 0,
     });
     if (!basket) return 5;
     // send email to user
