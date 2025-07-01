@@ -371,7 +371,7 @@ describe('ScheduleServiceExtended', () => {
       
       // Calculate expected values for grams
       const basePrice = 100; // rrp
-      const productQuantity = 5 / 5; // capsulePerDay / gramsPerCount = 1
+      const productQuantity = 1; // capsulePerDay / gramsPerCount = 1
       const priceWithDiscount = basePrice; // No discount
       const productPrice = priceWithDiscount * productQuantity; // 100 * 1 = 100
       const pricePerCount = Number((priceWithDiscount / 90 / 5).toFixed(4)); // (100 / 90) / 5 = 0.2222
