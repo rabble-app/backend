@@ -154,13 +154,35 @@ export class TeamsServiceExtension {
         },
       },
     });
+    
+    // Delete user's basket records for this team
+    await this.prisma.basketC.deleteMany({
+      where: {
+        teamId: record.teamId,
+        userId: record.userId,
+      },
+    });
+
+    // Delete user's basket records for this team (from active orders)
+    await this.prisma.basket.deleteMany({
+      where: {
+        order: {
+          teamId: record.teamId,
+        },
+        userId: record.userId,
+      },
+    });
+
     const result = await this.prisma.teamMember.delete({
       where,
     });
+    
     if (record.team.hostId == record.userId) {
       // delete the buying team
       await this.teamsService.deleteTeam({ id: record.teamId });
     }
+   
+
     return result;
   }
 
