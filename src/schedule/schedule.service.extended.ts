@@ -615,9 +615,9 @@ export class ScheduleServiceExtended {
           status: OrderStatus.PENDING,
           type: OrderType.SUPPLEMENT,
           // we add 1 week extra to the leadtime for that to the duration for processing their payment
-          deadline: subWeeks(upperQuarterDate, supplement.product.leadTime + 1),
+          deadline: subWeeks(interval < 0 ? upperQuarterDate : targetQuarterDate, supplement.product.leadTime + 1),
           firstDelivery: true,
-          deliveryDate: upperQuarterDate,
+          deliveryDate: interval < 0 ? upperQuarterDate : targetQuarterDate,
         };
         const { id } = await this.paymentService.createOrder(orderData);
 
@@ -858,10 +858,10 @@ export class ScheduleServiceExtended {
         type: OrderType.SUPPLEMENT,
         // we add 1 week extra to the leadtime for that to the duration for processing their payment
         deadline: subWeeks(
-          upperQuarterDate,
+          targetQuarterDate,
           order.team.supplementTeamProducts.product.leadTime + 1,
         ),
-        deliveryDate: upperQuarterDate,
+        deliveryDate: targetQuarterDate,
       };
       const { id } = await this.paymentService.createOrder(orderData);
 

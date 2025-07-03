@@ -845,17 +845,19 @@ export class PaymentService {
     const updatedUserInfo = await this.userService.findUser({
       id: joinSupplementTeamDto.userId,
     });
-    await this.courierService.sendWelcomeEmail(
-      updatedUserInfo.email,
-      updatedUserInfo.firstName,
-      productInfo.name,
-      joinSupplementTeamDto.quantity * +productInfo.poucheSize,
-      productInfo.subUnit,
-      `£${joinSupplementTeamDto.amount}`,
-      `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
-      `${updatedUserInfo.userCode}`,
-      `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
-    );
+    if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
+      await this.courierService.sendWelcomeEmail(
+        updatedUserInfo.email,
+        updatedUserInfo.firstName,
+        productInfo.name,
+        joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+        productInfo.subUnit,
+        `£${joinSupplementTeamDto.amount}`,
+        `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+        `${updatedUserInfo.userCode}`,
+        `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+      );
+    }
     return joinSupplementTeamDto;
   }
 }
