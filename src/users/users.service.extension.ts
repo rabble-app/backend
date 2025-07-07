@@ -71,6 +71,12 @@ export class UsersServiceExtension {
         deliveryDate: true,
         team: {
           select: {
+            name: true,
+            producer: {
+              select: {
+                businessName: true,
+              },
+            },        
             members: {
               where: {
                 userId,
