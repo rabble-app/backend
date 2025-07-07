@@ -798,12 +798,24 @@ export class UsersService {
       where: { id: userId },
       data: {
         billingAddress: {
-          create: {
-            postCode: billingAddressDto.postCode,
-            addressLine1: billingAddressDto.addressLine1,
-            addressLine2: billingAddressDto.addressLine2,
-            city: billingAddressDto.city,
-            country: billingAddressDto.country,
+          upsert: {
+            where: {
+              userId: userId,
+            },
+            update: {
+              postCode: billingAddressDto.postCode,
+              addressLine1: billingAddressDto.addressLine1,
+              addressLine2: billingAddressDto.addressLine2,
+              city: billingAddressDto.city,
+              country: billingAddressDto.country,
+            },
+            create: {
+              postCode: billingAddressDto.postCode,
+              addressLine1: billingAddressDto.addressLine1,
+              addressLine2: billingAddressDto.addressLine2,
+              city: billingAddressDto.city,
+              country: billingAddressDto.country,
+            },
           },
         },
       },

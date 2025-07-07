@@ -241,7 +241,7 @@ model Product {
   rabbleMarkUp              Decimal?              @default(0) @map("rabble_mark_up") @db.Decimal(9, 2)
   rrp                       Decimal?              @default(0) @db.Decimal(9, 2)
   gramsPerCount             Decimal?              @default(5) @map("grams_per_count")
-  poucheSize                Decimal?              @default(90) @map("pouche_size")
+  poucheSize                Decimal?              @default(90) @map("pouche_size") // same as quantityOfSubUnitPerOrder, so remove this
   alignmentPoucheSize       Decimal?              @default(30) @map("alignment_pouche_size")
   status                    ProductStatus         @default(IN_STOCK)
   orderUnit                 String                @default("Box") @map("order_unit")
