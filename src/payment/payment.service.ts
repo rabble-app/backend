@@ -265,6 +265,7 @@ export class PaymentService {
           },
         },
         firstDelivery: true,
+        createdAt: true,
       },
     });
   }

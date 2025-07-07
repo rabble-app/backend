@@ -394,6 +394,7 @@ export type OrderWithSupplementPayload = Prisma.OrderGetPayload<{
     deadline: true;
     deliveryDate: true;
     firstDelivery: true;
+    createdAt: true;
     team: {
       select: {
         supplementTeamProducts: {

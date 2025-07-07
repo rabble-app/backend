@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IProducerOrder } from '../lib/types';
-import { endOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 import { TeamStatus } from '@prisma/client';
 
 @Injectable()
@@ -45,7 +45,7 @@ export class UsersServiceExtension {
   }
 
   async getSupplementUserUpcomingDeliveries(userId: string) {
-    const endOfToday = endOfDay(new Date());
+    const startOfToday = startOfDay(new Date());
 
     return await this.prisma.order.findMany({
       where: {
@@ -60,7 +60,7 @@ export class UsersServiceExtension {
           },
         },
         deliveryDate: {
-          gt: endOfToday,
+          gte: startOfToday,
         },
         status: {
           in: ['PENDING', 'PENDING_DELIVERY'],
@@ -76,7 +76,7 @@ export class UsersServiceExtension {
               select: {
                 businessName: true,
               },
-            },
+            },        
             members: {
               where: {
                 userId,
@@ -98,12 +98,14 @@ export class UsersServiceExtension {
           },
           select: {
             quantity: true,
+            price: true,
             product: {
               select: {
                 id: true,
                 name: true,
                 price: true,
                 unitsOfMeasurePerSubUnit: true,
+                imageUrl: true,
               },
             },
           },

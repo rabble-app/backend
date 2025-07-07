@@ -41,6 +41,7 @@ export class ProductsService {
     let activePercentageDiscount = 0;
     let teamMemberCount = 0;
     let firstDelivery = false;
+    let orderDate: Date;
     // get team latest order id
     if (teamId) {
       const result = await this.paymentService.getTeamLatestOrder(teamId);
@@ -48,6 +49,7 @@ export class ProductsService {
       orderDeadline = result?.deadline;
       deliveryDate = result?.deliveryDate;
       firstDelivery = result?.firstDelivery;
+      orderDate = result?.createdAt;
     }
     const result = await this.prisma.product.findFirst({
       where: {
@@ -145,6 +147,7 @@ export class ProductsService {
       result['firstDelivery'] = firstDelivery;
       result['orderDeadline'] = orderDeadline;
       result['deliveryDate'] = deliveryDate;
+      result['orderDate'] = orderDate;
       result['activePercentageDiscount'] = activePercentageDiscount;
       result['price'] = new Decimal(priceWithDiscount);
       result['pricePerCount'] = Number((+result.price / 90).toFixed(4));
