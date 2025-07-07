@@ -106,6 +106,7 @@ export class UsersServiceExtension {
                 price: true,
                 unitsOfMeasurePerSubUnit: true,
                 imageUrl: true,
+                poucheSize: true,
               },
             },
           },
