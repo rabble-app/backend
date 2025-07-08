@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IProducerOrder } from '../lib/types';
 import { startOfDay } from 'date-fns';
-import { TeamStatus } from '@prisma/client';
+import { TeamStatus, TopUpType } from '@prisma/client';
 
 @Injectable()
 export class UsersServiceExtension {
@@ -47,7 +47,7 @@ export class UsersServiceExtension {
   async getSupplementUserUpcomingDeliveries(userId: string) {
     const startOfToday = startOfDay(new Date());
 
-    return await this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where: {
         team: {
           members: {
@@ -85,7 +85,15 @@ export class UsersServiceExtension {
                 user: {
                   select: {
                     postalCode: true,
-                    shipping: true,
+                    shipping: {
+                      select: {
+                        buildingNo: true,
+                        address: true,
+                        address2: true,
+                        city: true,
+                        country: true,
+                      },
+                    },
                   },
                 },
               },
@@ -111,11 +119,128 @@ export class UsersServiceExtension {
             },
           },
         },
+        topUpBasket: {
+          where: {
+            userId,
+          },
+          select: {
+            quantity: true,
+            price: true,
+            deliveryDate: true,
+            type: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                unitsOfMeasurePerSubUnit: true,
+                imageUrl: true,
+                poucheSize: true,
+                alignmentPoucheSize: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    // Transform the response to the desired format
+    const transformedOrders = [];
+    
+    for (const order of orders) {
+      const user = order.team.members[0]?.user;
+      const shipping = user?.shipping;
+      
+      // Add regular basket items
+      for (const basketItem of order.basket) {
+        transformedOrders.push({
+          orderId: order.id,
+          type: 'Drop',
+          deliveryDate: order.deliveryDate,
+          user: {
+            postalCode: user?.postalCode || null,
+            buildingNo: shipping?.buildingNo || null,
+            address: shipping?.address || null,
+            address2: shipping?.address2 || null,
+            city: shipping?.city || null,
+            country: shipping?.country || null,
+          },
+          product: {
+            name: basketItem.product.name,
+            quantity: basketItem.quantity,
+            price: basketItem.price,
+            unitsOfMeasurePerSubUnit: basketItem.product.unitsOfMeasurePerSubUnit,
+            imageUrl: basketItem.product.imageUrl,
+            poucheSize: basketItem.product.poucheSize,
+          },
+        });
+      }
+
+      // Add top-up basket items
+      for (const topUpItem of order.topUpBasket) {
+        transformedOrders.push({
+          orderId: order.id,
+          type: topUpItem.type === TopUpType.ALIGNMENT ? 'Alignment' : 'Top-Up',
+          deliveryDate: topUpItem.deliveryDate,
+          user: {
+            postalCode: user?.postalCode || null,
+            buildingNo: shipping?.buildingNo || null,
+            address: shipping?.address || null,
+            address2: shipping?.address2 || null,
+            city: shipping?.city || null,
+            country: shipping?.country || null,
+          },
+          product: {
+            name: topUpItem.product.name,
+            quantity: topUpItem.quantity,
+            price: topUpItem.price,
+            unitsOfMeasurePerSubUnit: topUpItem.product.unitsOfMeasurePerSubUnit,
+            imageUrl: topUpItem.product.imageUrl,
+            poucheSize: topUpItem.product.alignmentPoucheSize,
+          },
+        });
+      }
+    }
+
+    // Group by delivery date
+    const groupedDeliveries: Record<string, { 
+      deliveryDate: string; 
+      user: {
+        postalCode: string | null;
+        buildingNo: string | null;
+        address: string | null;
+        address2: string | null;
+        city: string | null;
+        country: string | null;
+      };
+      deliveries: any[] 
+    }> = {};
+    
+    for (const delivery of transformedOrders) {
+      const deliveryDateKey = delivery.deliveryDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      
+      if (!groupedDeliveries[deliveryDateKey]) {
+        groupedDeliveries[deliveryDateKey] = {
+          deliveryDate: deliveryDateKey,
+          user: delivery.user,
+          deliveries: []
+        };
+      }
+      
+      // Remove user object from individual delivery since it's now at the group level
+      const { user, ...deliveryWithoutUser } = delivery;
+      groupedDeliveries[deliveryDateKey].deliveries.push(deliveryWithoutUser);
+    }
+
+    // Convert to array and sort by delivery date
+    const result = Object.values(groupedDeliveries).sort((a, b) => 
+      new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime()
+    );
+
+    return result;
   }
 
   async getUserSupplementPlans(userId: string) {

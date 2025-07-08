@@ -36,7 +36,7 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
-import { add } from 'date-fns';
+import { addBusinessDays } from 'date-fns';
 import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
 import { ReferralsService } from '../referrals/referrals.service';
@@ -651,6 +651,7 @@ export class PaymentService {
         addSingleBasketDto.topupQuantity &&
         addSingleBasketDto.topupQuantity > 0
       ) {
+        const latestOrder = await this.getTeamLatestOrder(addSingleBasketDto.teamId);
         await this.prisma.topUpBasket.create({
           data: {
             productId: addSingleBasketDto.productId,
@@ -659,9 +660,8 @@ export class PaymentService {
             quantity: addSingleBasketDto.topupQuantity,
             price: addSingleBasketDto.topUpPrice,
             capsulePerDay: addSingleBasketDto.capsulePerDay,
-            deliveryDate: add(new Date(), {
-              weeks: team.supplementTeamProducts.product.leadTime,
-            }),
+            deliveryDate: latestOrder.firstDelivery ? latestOrder.deliveryDate : addBusinessDays(new Date(), 3),
+            type: 'ALIGNMENT'
           },
         });
       }
