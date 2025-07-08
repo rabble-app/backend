@@ -617,6 +617,7 @@ model TopUpBasket {
   capsulePerDay  Decimal             @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
   deliveryDate   DateTime?           @map("delivery_date")
   deliveryStatus TopUpDeliveryStatus @default(PENDING) @map("delivery_status")
+  type           TopUpType           @default(ALIGNMENT) @map("type")
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")
   order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -1070,6 +1071,11 @@ enum TopUpDeliveryStatus {
 enum PaymentType {
   YEARLY_SUBSCRIPTION
   OTHERS
+}
+
+enum TopUpType {
+  ALIGNMENT
+  TOPUP
 }
 
 model BillingAddress {

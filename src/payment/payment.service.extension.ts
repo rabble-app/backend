@@ -8,6 +8,7 @@ import {
   SubscriptionStatus,
   Subscription,
   MembershipStatus,
+  TopUpBasket,
 } from '@prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth } from '../lib/types';
@@ -18,7 +19,7 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
-import { add, addYears, format } from 'date-fns';
+import { add, addBusinessDays, addYears, format } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
 import { ANNUAL_SUBSCRIPTION_AMOUNT, ANNUAL_SUBSCRIPTION_DISCOUNT, ANNUAL_SUBSCRIPTION_RRP } from '../utils/constants';
@@ -351,7 +352,7 @@ export class PaymentServiceExtension {
     });
   }
 
-  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | number> {
+  async handleTopUpPayment(topUpDto: TopUpDto): Promise<TopUpBasket | number> {
     // Check if user has active subscription
     const hasActiveSubscription = await this.checkUserSubscriptionStatus(
       topUpDto.userId,
@@ -381,7 +382,7 @@ export class PaymentServiceExtension {
     // check if payment was successful
     if (captureResult) {
       // save the top up basket
-      await this.prisma.topUpBasket.create({
+     const result = await this.prisma.topUpBasket.create({
         data: {
           productId: topUpDto.productId,
           userId: topUpDto.userId,
@@ -389,10 +390,8 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
-          deliveryDate: add(new Date(), {
-            weeks:
-              latestOrder.team.supplementTeamProducts?.product?.leadTime ?? 1,
-          }),
+          deliveryDate: latestOrder.firstDelivery ? latestOrder.deliveryDate : addBusinessDays(new Date(), 3),
+          type: 'TOPUP',
         },
       });
       // record payment
@@ -403,7 +402,8 @@ export class PaymentServiceExtension {
         status: PaymentStatus.CAPTURED,
         userId: topUpDto.userId,
       };
-      return await this.paymentService.recordPayment(paymentData);
+      await this.paymentService.recordPayment(paymentData);
+      return result;
     } else {
       return 2;
     }
