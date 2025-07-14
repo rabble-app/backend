@@ -18,7 +18,7 @@ import {
 import { PaymentService } from '../../src/payment/payment.service';
 import { UpdateProductStatusDto } from './dto/update-product-status';
 import { Decimal } from '@prisma/client/runtime/library';
-import { differenceInDays } from 'date-fns';
+import { addQuarters, addWeeks, differenceInDays } from 'date-fns';
 
 @Injectable()
 export class ProductsService {
@@ -162,8 +162,15 @@ export class ProductsService {
       result['discount'] = Math.abs(Number((((+result.price/+result.rrp - 1) * 100).toFixed(2))));
       if (deliveryDate) {
         result['daysUntilNextDrop'] = differenceInDays(deliveryDate, new Date());
-        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] * (result.unitsOfMeasurePerSubUnit === 'grams'? +result.gramsPerCount : 1) / +result.alignmentPoucheSize); // Todo: check if this is correct, if grams mutiple by gramsPerCount
+           // Check if firstDelivery is true but deliveryDate is in the past
+        if (firstDelivery && deliveryDate < new Date()) {
+          result['firstDelivery'] = false;
+          result['deliveryDate'] = addWeeks(orderDeadline, result.leadTime + 1);
+          result['daysUntilNextDrop'] = differenceInDays(result['deliveryDate'], new Date());
+        }
+        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] * (result.unitsOfMeasurePerSubUnit === 'grams'? +result.gramsPerCount : 1) / +result.alignmentPoucheSize); 
         result['pricePerPoche'] = Number((+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(4));
+        result['nextEditableDate'] = addQuarters(orderDeadline,1);
       }
 
       // Calculate next discount level

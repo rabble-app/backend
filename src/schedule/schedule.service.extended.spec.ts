@@ -495,6 +495,9 @@ describe('ScheduleServiceExtended', () => {
             not: null,
             lte: expect.any(Date),
           },
+          deadline: {
+            lte: expect.any(Date),
+          },
         },
         select: {
           id: true,
@@ -538,6 +541,9 @@ describe('ScheduleServiceExtended', () => {
           status: OrderStatus.PENDING,
           deliveryDate: {
             not: null,
+            lte: expect.any(Date),
+          },
+          deadline: {
             lte: expect.any(Date),
           },
         },

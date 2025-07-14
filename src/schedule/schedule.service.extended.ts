@@ -600,7 +600,7 @@ export class ScheduleServiceExtended {
           alignmentDays = differenceInDays(
             upperQuarterDate,
             add(currentDate, { weeks: supplement.product.leadTime }),
-          );
+          ) + numberOfDaysInAQuarter;
           // case 2: if the interval is less than 7, we charge them for the next quarter only, no aligment
         } else if (interval < 7) {
           alignmentDays = numberOfDaysInAQuarter;
@@ -826,6 +826,9 @@ export class ScheduleServiceExtended {
         not: null,
         lte: new Date(),
       },
+      deadline: {
+        lte: new Date(),
+      }
     };
     const expiredOrders = await this.prisma.order.findMany({
       where: {
