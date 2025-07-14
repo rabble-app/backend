@@ -827,9 +827,8 @@ export class ScheduleServiceExtended {
         lte: new Date(),
       },
       deadline: {
-        not: null,
         lte: new Date(),
-      },
+      }
     };
     const expiredOrders = await this.prisma.order.findMany({
       where: {
