@@ -235,12 +235,47 @@ export class UsersServiceExtension {
       groupedDeliveries[deliveryDateKey].deliveries.push(deliveryWithoutUser);
     }
 
-    // Convert to array and sort by delivery date
-    const result = Object.values(groupedDeliveries).sort((a, b) => 
+    // Split deliveries when there are more than 2 for a date
+    const result: Array<{
+      deliveryDate: string;
+      user: {
+        postalCode: string | null;
+        buildingNo: string | null;
+        address: string | null;
+        address2: string | null;
+        city: string | null;
+        country: string | null;
+      };
+      deliveries: any[];
+    }> = [];
+
+    for (const [dateKey, group] of Object.entries(groupedDeliveries)) {
+      const deliveries = group.deliveries;
+      
+      // If there are 2 or fewer deliveries, keep as is
+      if (deliveries.length <= 2) {
+        result.push({
+          deliveryDate: group.deliveryDate,
+          user: group.user,
+          deliveries: deliveries
+        });
+      } else {
+        // Split deliveries into chunks of 2
+        for (let i = 0; i < deliveries.length; i += 2) {
+          const chunk = deliveries.slice(i, i + 2);
+          result.push({
+            deliveryDate: group.deliveryDate,
+            user: group.user,
+            deliveries: chunk
+          });
+        }
+      }
+    }
+
+    // Sort by delivery date
+    return result.sort((a, b) => 
       new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime()
     );
-
-    return result;
   }
 
   async getUserSupplementPlans(userId: string) {

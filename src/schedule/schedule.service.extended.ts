@@ -13,7 +13,7 @@ import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { InsightsService } from '../insights/insights.service';
-import { add, differenceInDays, getWeek, subWeeks } from 'date-fns';
+import { add, addWeeks, differenceInDays, getWeek, subWeeks } from 'date-fns';
 import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { setTimeout } from 'timers';
@@ -617,7 +617,7 @@ export class ScheduleServiceExtended {
           // we add 1 week extra to the leadtime for that to the duration for processing their payment
           deadline: subWeeks(interval < 0 ? upperQuarterDate : targetQuarterDate, supplement.product.leadTime + 1),
           firstDelivery: true,
-          deliveryDate: interval < 0 ? upperQuarterDate : targetQuarterDate,
+          deliveryDate: addWeeks(currentDate, supplement.product.leadTime),
         };
         const { id } = await this.paymentService.createOrder(orderData);
 

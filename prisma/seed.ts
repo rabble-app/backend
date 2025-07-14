@@ -2763,7 +2763,7 @@ async function main() {
       producerId: supplememtProducer1.id,
       categoryId: productCategoryEE.id,
       type: 'SINGLE',
-      orderUnit: 'pouche',
+      orderUnit: 'pouch',
       subUnit: 'capsules',
       quantityOfSubUnitPerOrder: 90,
       poucheSize: 90,
