@@ -496,7 +496,6 @@ describe('ScheduleServiceExtended', () => {
             lte: expect.any(Date),
           },
           deadline: {
-            not: null,
             lte: expect.any(Date),
           },
         },
@@ -545,7 +544,6 @@ describe('ScheduleServiceExtended', () => {
             lte: expect.any(Date),
           },
           deadline: {
-            not: null,
             lte: expect.any(Date),
           },
         },
