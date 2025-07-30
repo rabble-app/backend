@@ -41,7 +41,7 @@ export class CourierService {
           first_name: firstName,
           product_name: productName,
           product_quarter_amount: `${quarterAmount} ${unitOfMeasure}`,
-          price: parseFloat(price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          price,
           referral_link: referralLink,
           discount_code: discountCode,
           dashboard_link: dashboardUrl,
