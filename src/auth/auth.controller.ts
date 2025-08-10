@@ -386,7 +386,7 @@ export class AuthController {
       ? `${this.parameters.EMAIL_URL}${this.parameters.RESET_PASSWORD_URL}?token=${token}`
       : `${this.parameters.SUPPLEMENT_EMAIL_URL}${this.parameters.SUPPLEMENT_RESET_PASSWORD_URL}?token=${token}`;
 
-    await this.courierService.sendPasswordReset(user.email, url);
+    await this.courierService.sendPasswordReset(user.email, user.firstName??'', url);
 
     return formatResponse(
       user,

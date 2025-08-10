@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, ValidateIf, IsOptional } from 'class-validator';
 
 export class AddSingleBasketDto {
   @ApiProperty({
@@ -75,4 +75,31 @@ export class AddSingleBasketDto {
   @IsNotEmpty()
   @IsNumber()
   topupQuantity = 0;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'The discount amount',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  discount?: number;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'The price per count',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  pricePerCount?: number;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'The top up price',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  topUpPrice?: number;
 }

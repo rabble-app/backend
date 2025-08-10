@@ -5,6 +5,10 @@ import {
   Prisma,
   PaymentType,
   PaymentStatus,
+  SubscriptionStatus,
+  Subscription,
+  MembershipStatus,
+  TopUpBasket,
 } from '@prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { IPaymentAuth } from '../lib/types';
@@ -15,9 +19,12 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
-import { add, addYears } from 'date-fns';
+import {  addBusinessDays, addYears, format } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
+import { ANNUAL_SUBSCRIPTION_AMOUNT, ANNUAL_SUBSCRIPTION_DISCOUNT, ANNUAL_SUBSCRIPTION_RRP } from '../utils/constants';
+import { CourierService } from '../notifications/courier.service';
+import { targetQuarterDate } from '../utils/date';
 @Injectable()
 export class PaymentServiceExtension {
   constructor(
@@ -29,7 +36,8 @@ export class PaymentServiceExtension {
     @Inject('LOGGER') private readonly logger: Logger,
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
-  ) {}
+    private readonly courierService: CourierService,
+  ) { }
 
   async getUserPaymentOptions(
     id: string,
@@ -74,10 +82,34 @@ export class PaymentServiceExtension {
     data: Prisma.BasketCUpdateInput;
   }): Promise<BasketC> {
     const { where, data } = params;
-    return await this.prisma.basketC.update({
+    const result = await this.prisma.basketC.update({
       data,
       where,
+      include: {
+        user: true,
+        product: true,
+      },
     });
+
+    // Send email notification for subscription update
+    if (result.user?.email && result.product) {
+      try {
+        await this.courierService.sendSubscriptionUpdateEmail(
+          result.user.email,
+          result.user.firstName || '',
+          result.product.name,
+          result.quantity * +result.product.poucheSize,
+          result.product.subUnit,
+          `£${+result.price * result.quantity}`,
+          `${format(targetQuarterDate, 'dd/MM/yyyy')}`,
+          `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+        );
+      } catch (error) {
+        this.logger.error('Failed to send subscription update email:', error);
+      }
+    }
+
+    return result;
   }
 
   async updateCurrentBasketItem(params: {
@@ -249,7 +281,7 @@ export class PaymentServiceExtension {
     const captureResult = await this.captureFund(
       captureIntentDto.paymentIntentId,
       {
-        amount_to_capture: amount,
+        amount_to_capture: Math.round(amount),
         metadata: {
           ...(couponId && { coupons: couponId }),
           ...(amountOff && { amount_off: amountOff }),
@@ -320,7 +352,7 @@ export class PaymentServiceExtension {
     });
   }
 
-  async handleTopUpPayment(topUpDto: TopUpDto): Promise<Payment | number> {
+  async handleTopUpPayment(topUpDto: TopUpDto): Promise<TopUpBasket | number> {
     // Check if user has active subscription
     const hasActiveSubscription = await this.checkUserSubscriptionStatus(
       topUpDto.userId,
@@ -350,7 +382,7 @@ export class PaymentServiceExtension {
     // check if payment was successful
     if (captureResult) {
       // save the top up basket
-      await this.prisma.topUpBasket.create({
+     const result = await this.prisma.topUpBasket.create({
         data: {
           productId: topUpDto.productId,
           userId: topUpDto.userId,
@@ -358,10 +390,8 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
-          deliveryDate: add(new Date(), {
-            weeks:
-              latestOrder.team.supplementTeamProducts?.product?.leadTime ?? 1,
-          }),
+          deliveryDate: latestOrder.firstDelivery ? latestOrder.deliveryDate : addBusinessDays(new Date(), 3),
+          type: 'TOPUP',
         },
       });
       // record payment
@@ -372,7 +402,8 @@ export class PaymentServiceExtension {
         status: PaymentStatus.CAPTURED,
         userId: topUpDto.userId,
       };
-      return await this.paymentService.recordPayment(paymentData);
+      await this.paymentService.recordPayment(paymentData);
+      return result;
     } else {
       return 2;
     }
@@ -393,7 +424,7 @@ export class PaymentServiceExtension {
       // Create payment intent for subscription
       const paymentIntent = await this.paymentService.createIntent(
         {
-          amount: 28, // £28 yearly subscription
+          amount: ANNUAL_SUBSCRIPTION_AMOUNT, // £28 yearly subscription
           currency: 'gbp',
           customerId: user.stripeCustomerId,
           paymentMethodId: user.stripeDefaultPaymentMethodId,
@@ -418,12 +449,20 @@ export class PaymentServiceExtension {
       // Record the subscription payment
       const paymentData = {
         userId,
-        amount: 28,
+        amount: ANNUAL_SUBSCRIPTION_AMOUNT,
         paymentIntentId: paymentIntent.id,
         status: PaymentStatus.CAPTURED,
         type: PaymentType.YEARLY_SUBSCRIPTION,
         expiryDate: addYears(new Date(), 1),
       };
+
+      // record in subscription table
+      await this.prisma.subscription.update({
+        where: { userId },
+        data: {
+          expiryDate: addYears(new Date(), 1),
+        },
+      });
 
       return await this.paymentService.recordPayment(paymentData);
     } catch (error) {
@@ -450,61 +489,102 @@ export class PaymentServiceExtension {
         return true;
       }
 
-      // Check for active subscription
-      const activeSubscription = await this.findPayments({
-        userId,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.YEARLY_SUBSCRIPTION,
-        expiryDate: {
-          gt: new Date(),
-        },
-      });
+      // check subscription table for active subscription
+      const record = await this.getSubscriptionRecord(userId);
+      // check if expiry date is in the future
+      if (record && new Date(record.expiryDate) > new Date() && record.status === SubscriptionStatus.ACTIVE) {
+        return true;
+      }
 
-      // Return true only if there is an active subscription
-      return activeSubscription && activeSubscription.length > 0;
+      return false;
     } catch (error) {
       this.logger.error('Error checking subscription status:', error);
       return false;
     }
   }
 
-  async getSubscriptionStatus(
+  async getSubscriptionRecord(
     userId: string,
-  ): Promise<{ hasActiveSubscription: boolean; expiryDate: Date | null }> {
+  ): Promise<Subscription | null> {
     try {
-      // Get all subscription payments for the user
-      const subscriptionPayments = await this.findPayments({
-        userId,
-        status: PaymentStatus.CAPTURED,
-        type: PaymentType.YEARLY_SUBSCRIPTION,
+      const result = await this.prisma.subscription.findFirst({
+        where: {
+          userId
+        },
       });
+      result['subscriptionAmount'] = ANNUAL_SUBSCRIPTION_AMOUNT;
+      result['subscriptionRRP'] = ANNUAL_SUBSCRIPTION_RRP;
+      result['subscriptionDiscount'] = ANNUAL_SUBSCRIPTION_DISCOUNT;
+      return result;
 
-      if (!subscriptionPayments || subscriptionPayments.length === 0) {
-        return {
-          hasActiveSubscription: false,
-          expiryDate: null,
-        };
-      }
-
-      // Sort by expiry date to get the most recent subscription
-      const sortedSubscriptions = subscriptionPayments.sort(
-        (a, b) =>
-          new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime(),
-      );
-
-      const latestSubscription = sortedSubscriptions[0];
-      const isActive = new Date(latestSubscription.expiryDate) > new Date();
-
-      return {
-        hasActiveSubscription: isActive,
-        expiryDate: latestSubscription.expiryDate,
-      };
     } catch (error) {
       this.logger.error('Error getting subscription status:', error);
-      return {
-        hasActiveSubscription: false,
-        expiryDate: null,
-      };
+      return null;
+    }
+  }
+
+  async updateSubscriptionStatus(
+    userId: string,
+    status: SubscriptionStatus,
+  ): Promise<Subscription | null> {
+    try {
+      const result = await this.prisma.subscription.update({
+        where: {
+          userId,
+        },
+        data: {
+          status,
+        },
+        include: {
+          user: {
+            include: {
+              subscription: true,
+            }
+          },
+        },
+      });
+
+      // if the status is canceled, check the team members table for where the user has founding member or early member role and update that to member role
+      if (status === SubscriptionStatus.CANCELED) {
+        await this.prisma.teamMember.updateMany({
+          where: {
+            userId,
+            role: {
+              in: [MembershipStatus.FOUNDING_MEMBER, MembershipStatus.EARLY_MEMBER],
+            },
+          },
+          data: {
+            role: MembershipStatus.MEMBER,
+          },
+        });
+      }
+
+      // send email to user for membership cancellation
+      if (result.user?.email) {
+        try {
+          const effectiveCancellationDate = format(result.user.subscription.expiryDate, 'dd/MM/yyyy');
+          const reactivateMembershipUrl = `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`;
+
+          await this.courierService.sendMembershipCancelledEmail(
+            result.user.email,
+            result.user.firstName || '',
+            effectiveCancellationDate,
+            reactivateMembershipUrl,
+          );
+        } catch (error) {
+          this.logger.error('Failed to send membership cancellation email:', error);
+        }
+      }
+
+      this.logger.info('Subscription status updated successfully', {
+        userId,
+        status,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Error updating subscription status:', error);
+      return null;
     }
   }
 }

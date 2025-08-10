@@ -10,6 +10,7 @@ import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { OrderStatus, OrderType, PaymentStatus } from '@prisma/client';
+import { CourierService } from '../notifications/courier.service';
 
 describe('ScheduleServiceExtended', () => {
   let service: ScheduleServiceExtended;
@@ -55,6 +56,11 @@ describe('ScheduleServiceExtended', () => {
     getPriceDiscount: jest.fn(),
   };
 
+  const mockCourierService = {
+    sendCoinEarnedMail: jest.fn(),
+    sendReferralFreeMonthMail: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -94,6 +100,16 @@ describe('ScheduleServiceExtended', () => {
         {
           provide: QRCodeService,
           useValue: {},
+        },
+        {
+          provide: CourierService,
+          useValue: mockCourierService,
+        },
+        {
+          provide: 'AWS_PARAMETERS',
+          useValue: {
+            SUPPLEMENT_EMAIL_URL: 'https://test.com',
+          },
         },
       ],
     }).compile();
@@ -207,11 +223,16 @@ describe('ScheduleServiceExtended', () => {
           id: 'product1',
           priceInfo: [],
           price: 100,
+          rrp: 100,
           status: 'ACTIVE',
           subUnit: 'capsules',
+          gramsPerCount: 1,
+          unitsOfMeasurePerSubUnit: 'capsules',
+          poucheSize: 30,
           supplementTeamProducts: {
             foundingMembersDiscount: 10,
             earlyMembersDiscount: 5,
+            status: 'ACTIVE',
           },
         },
       }];
@@ -240,23 +261,36 @@ describe('ScheduleServiceExtended', () => {
         },
       });
 
+      // Verify getPriceDiscount was called with correct parameters
+      expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
+        [],
+        1, // teamMembers.length
+        'ACTIVE' // status from mock data
+      );
+
       // Calculate expected values based on the actual implementation
-      const basePrice = 100; // Original price
-      const expectedQuantity = 2 * 3; // capsulePerDay * 3 (for quarter)
+      const basePrice = 100; // Original price (rrp)
+      const expectedQuantity = 2; // capsulePerDay (for quarter calculation)
       const priceWithDiscount = basePrice; // No dynamic price discount in this case
-      let productPrice = priceWithDiscount * expectedQuantity; // 100 * 6 = 600
+      let productPrice = priceWithDiscount * expectedQuantity; // 100 * 2 = 200
       
       // Apply founding member discount
-      productPrice = productPrice - (productPrice * 10 / 100); // 10% founding member discount
+      productPrice = productPrice - (productPrice * 10 / 100); // 10% founding member discount = 180
+      
+      // Calculate pricePerCount
+      const pricePerCount = Number((priceWithDiscount / 90).toFixed(4)); // 100 / 90 = 1.1111
+      
       // Verify basket creation with correct quantity calculation
       expect(mockPrismaService.basket.create).toHaveBeenCalledWith({
         data: {
+          pricePerCount,
           orderId,
           userId: 'user1',
           productId: 'product1',
           quantity: expectedQuantity,
           price: productPrice,
-          capsulePerDay: 2
+          capsulePerDay: 2,
+          discount: 10, // founding member discount
         },
       });
 
@@ -310,11 +344,16 @@ describe('ScheduleServiceExtended', () => {
           id: 'product1',
           priceInfo: [],
           price: 100,
+          rrp: 100,
           status: 'ACTIVE',
           subUnit: 'grams',
+          gramsPerCount: 5,
+          unitsOfMeasurePerSubUnit: 'grams',
+          poucheSize: 30,
           supplementTeamProducts: {
             foundingMembersDiscount: 0,
             earlyMembersDiscount: 0,
+            status: 'ACTIVE',
           },
         },
       }];
@@ -329,15 +368,85 @@ describe('ScheduleServiceExtended', () => {
       const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
 
       expect(result).toBe(true);
+      
+      // Calculate expected values for grams
+      const basePrice = 100; // rrp
+      const productQuantity = 1; // capsulePerDay / gramsPerCount = 1
+      const priceWithDiscount = basePrice; // No discount
+      const productPrice = priceWithDiscount * productQuantity; // 100 * 1 = 100
+      const pricePerCount = Number((priceWithDiscount / 90 / 5).toFixed(4)); // (100 / 90) / 5 = 0.2222
+      
       expect(mockPrismaService.basket.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+        data: {
+          pricePerCount,
           orderId,
           userId: 'user1',
           productId: 'product1',
-          quantity: 3, // (5 capsules per day / 5) * 3 (for quarter)
-          price: 300,
-        }),
+          quantity: productQuantity,
+          price: productPrice,
+          capsulePerDay: 5,
+          discount: 0,
+        },
       });
+    });
+
+    it('should use lowest discount for PREORDER status', async () => {
+      const teamId = 'team1';
+      const orderId = 'order1';
+      const duration = 91;
+
+      const mockTeamMembers = [{
+        id: 'member1',
+        role: 'MEMBER',
+        userId: 'user1',
+      }];
+
+      const mockBasket = [{
+        capsulePerDay: 2,
+        productId: 'product1',
+        product: {
+          id: 'product1',
+          priceInfo: [
+            { teamMemberCount: 5, percentageDiscount: 10 },
+            { teamMemberCount: 10, percentageDiscount: 15 },
+            { teamMemberCount: 20, percentageDiscount: 20 }
+          ],
+          price: 100,
+          rrp: 100,
+          status: 'ACTIVE',
+          subUnit: 'capsules',
+          gramsPerCount: 1,
+          unitsOfMeasurePerSubUnit: 'capsules',
+          poucheSize: 30,
+          supplementTeamProducts: {
+            foundingMembersDiscount: 0,
+            earlyMembersDiscount: 0,
+            status: 'PREORDER',
+          },
+        },
+      }];
+
+      mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
+      mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
+      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(true);
+      mockProductsService.getPriceDiscount.mockReturnValue(10); // Lowest discount
+      mockPrismaService.basket.create.mockResolvedValue({});
+      mockPaymentService.recordPayment.mockResolvedValue({});
+
+      const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
+
+      expect(result).toBe(true);
+      
+      // Verify getPriceDiscount was called with PREORDER status
+      expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
+        [
+          { teamMemberCount: 5, percentageDiscount: 10 },
+          { teamMemberCount: 10, percentageDiscount: 15 },
+          { teamMemberCount: 20, percentageDiscount: 20 }
+        ],
+        1, // teamMembers.length
+        'PREORDER' // status from mock data
+      );
     });
   });
 
@@ -386,6 +495,9 @@ describe('ScheduleServiceExtended', () => {
             not: null,
             lte: expect.any(Date),
           },
+          deadline: {
+            lte: expect.any(Date),
+          },
         },
         select: {
           id: true,
@@ -429,6 +541,9 @@ describe('ScheduleServiceExtended', () => {
           status: OrderStatus.PENDING,
           deliveryDate: {
             not: null,
+            lte: expect.any(Date),
+          },
+          deadline: {
             lte: expect.any(Date),
           },
         },

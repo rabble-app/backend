@@ -47,6 +47,7 @@ model User {
   reviews                       Review[]
   searches                      Search[]
   shipping                      Shipping?
+  billingAddress                BillingAddress?
   teams                         TeamMember[]
   requests                      TeamRequest[]
   chats                         Chat[]
@@ -61,6 +62,7 @@ model User {
   claims                        Claim[]
   coupons                       Coupon[]
   subscription                  Subscription?
+
   @@index([id])
   @@map("users")
 }
@@ -239,7 +241,7 @@ model Product {
   rabbleMarkUp              Decimal?              @default(0) @map("rabble_mark_up") @db.Decimal(9, 2)
   rrp                       Decimal?              @default(0) @db.Decimal(9, 2)
   gramsPerCount             Decimal?              @default(5) @map("grams_per_count")
-  poucheSize                Decimal?              @default(90) @map("pouche_size")
+  poucheSize                Decimal?              @default(90) @map("pouche_size") // same as quantityOfSubUnitPerOrder, so remove this
   alignmentPoucheSize       Decimal?              @default(30) @map("alignment_pouche_size")
   status                    ProductStatus         @default(IN_STOCK)
   orderUnit                 String                @default("Box") @map("order_unit")
@@ -570,6 +572,8 @@ model Basket {
   quantity      Int
   price         Decimal              @default(0) @db.Decimal(9, 2)
   capsulePerDay Decimal              @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  pricePerCount Decimal              @default(0) @map("price_per_count") @db.Decimal(9, 2)
+  discount      Decimal              @default(0) @map("discount") @db.Decimal(9, 2)
   paymentStatus ProductPaymentStatus @default(PENDING) @map("payment_status")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
@@ -588,6 +592,8 @@ model BasketC {
   userId        String     @map("user_id")
   productId     String     @map("product_id")
   capsulePerDay Decimal    @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
+  pricePerCount Decimal    @default(0) @map("price_per_count") @db.Decimal(9, 2)
+  discount      Decimal    @default(0) @map("discount") @db.Decimal(9, 2)
   quantity      Int
   price         Decimal    @default(0) @db.Decimal(9, 2)
   createdAt     DateTime   @default(now()) @map("created_at")
@@ -611,6 +617,7 @@ model TopUpBasket {
   capsulePerDay  Decimal             @default(0) @map("capsule_per_day") @db.Decimal(9, 2)
   deliveryDate   DateTime?           @map("delivery_date")
   deliveryStatus TopUpDeliveryStatus @default(PENDING) @map("delivery_status")
+  type           TopUpType           @default(ALIGNMENT) @map("type")
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")
   order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -875,7 +882,7 @@ model Bonus {
   userId     String    @map("user_id")
   amount     Decimal
   type       BonusType
-  category   String?    @default("credit")
+  category   String?   @default("credit")
   referralId String?   @map("referral_id")
   orderId    String?   @map("order_id")
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -886,28 +893,28 @@ model Bonus {
   @@index([id, userId])
   @@map("bonuses")
 }
+
 model Subscription {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id") @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  status    SubscriptionStatus @default(ACTIVE)
-  expiryDate DateTime? @map("expiry_date")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String             @id @default(uuid())
+  userId     String             @unique @map("user_id")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  status     SubscriptionStatus @default(ACTIVE)
+  expiryDate DateTime?          @map("expiry_date")
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([id, userId])
   @@map("subscriptions")
 }
 
-
 model Referral {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  referrerId String?   @map("referrer_id")
-  type       ReferralType @default(INTERNAL)
-  affiliateId String? @map("affiliate_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String       @id @default(uuid())
+  userId      String       @map("user_id")
+  referrerId  String?      @map("referrer_id")
+  type        ReferralType @default(INTERNAL)
+  affiliateId String?      @map("affiliate_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
 
   @@index([id, userId])
   @@map("referrals")
@@ -923,7 +930,6 @@ enum BonusType {
   SIGNUP
   FREE_TRIAL
 }
-
 
 enum OrderStatus {
   PENDING
@@ -1065,4 +1071,25 @@ enum TopUpDeliveryStatus {
 enum PaymentType {
   YEARLY_SUBSCRIPTION
   OTHERS
+}
+
+enum TopUpType {
+  ALIGNMENT
+  TOPUP
+}
+
+model BillingAddress {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  postCode     String   @map("post_code")
+  addressLine1 String   @map("address_line1")
+  addressLine2 String?  @map("address_line2")
+  city         String
+  country      String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id, userId])
+  @@map("billing_addresses")
 }

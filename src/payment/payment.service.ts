@@ -36,12 +36,13 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
-import { add } from 'date-fns';
+import { addBusinessDays } from 'date-fns';
 import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
 import { ReferralsService } from '../referrals/referrals.service';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
+import { CourierService } from '../notifications/courier.service';
 
 @Injectable()
 export class PaymentService {
@@ -62,6 +63,7 @@ export class PaymentService {
     private readonly paymentServiceExtension: PaymentServiceExtension,
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
+    private readonly courierService: CourierService,
   ) {}
 
   async addCustomerCard(
@@ -261,6 +263,8 @@ export class PaymentService {
             },
           },
         },
+        firstDelivery: true,
+        createdAt: true,
       },
     });
   }
@@ -386,7 +390,7 @@ export class PaymentService {
             },
           });
 
-          this.referralsService
+          await this.referralsService
             .handleRefCodeAndFreeTrial(paymentData.userId)
             .catch((error) => {
               this.logger.error(
@@ -583,7 +587,6 @@ export class PaymentService {
       }
     } else {
       // get product info
-      console.log({ productId });
       const product = await this.productsService.getProduct(productId);
 
       // create new record
@@ -633,10 +636,11 @@ export class PaymentService {
           productId: addSingleBasketDto.productId,
           userId: addSingleBasketDto.userId,
           orderId: addSingleBasketDto.orderId,
-          quantity:
-            addSingleBasketDto.quantity,
+          quantity: addSingleBasketDto.quantity,
           price: addSingleBasketDto.price,
           capsulePerDay: addSingleBasketDto.capsulePerDay,
+          discount: addSingleBasketDto.discount || 0,
+          pricePerCount: addSingleBasketDto.pricePerCount || 0,
           paymentStatus: ProductPaymentStatus.CAPTURED,
         },
       });
@@ -645,17 +649,21 @@ export class PaymentService {
         addSingleBasketDto.topupQuantity &&
         addSingleBasketDto.topupQuantity > 0
       ) {
+        const latestOrder = await this.getTeamLatestOrder(
+          addSingleBasketDto.teamId,
+        );
         await this.prisma.topUpBasket.create({
           data: {
             productId: addSingleBasketDto.productId,
             userId: addSingleBasketDto.userId,
             orderId: addSingleBasketDto.orderId,
             quantity: addSingleBasketDto.topupQuantity,
-            price: addSingleBasketDto.price,
+            price: addSingleBasketDto.topUpPrice,
             capsulePerDay: addSingleBasketDto.capsulePerDay,
-            deliveryDate: add(new Date(), {
-              weeks: team.supplementTeamProducts.product.leadTime,
-            }),
+            deliveryDate: latestOrder.firstDelivery
+              ? latestOrder.deliveryDate
+              : addBusinessDays(new Date(), 3),
+            type: 'ALIGNMENT',
           },
         });
       }
@@ -669,6 +677,8 @@ export class PaymentService {
         quantity: addSingleBasketDto.quantity,
         price: addSingleBasketDto.price,
         capsulePerDay: addSingleBasketDto.capsulePerDay,
+        discount: addSingleBasketDto.discount || 0,
+        pricePerCount: addSingleBasketDto.pricePerCount || 0,
       },
     });
 
@@ -774,12 +784,18 @@ export class PaymentService {
       return 6;
     }
 
+    // get the user stripe id
+    const userInfo = await this.userService.findUser({
+      id: joinSupplementTeamDto.userId,
+    });
+
+    // get the product info
+    const productInfo = await this.productsService.getProduct(
+      joinSupplementTeamDto.productId,
+    );
+
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
-      // get the user stripe id
-      const userInfo = await this.userService.findUser({
-        id: joinSupplementTeamDto.userId,
-      });
       if (!userInfo.stripeCustomerId) return 1;
       // create payment intent
       const paymentIntent = await this.createIntent(
@@ -823,8 +839,33 @@ export class PaymentService {
       price: joinSupplementTeamDto.price,
       capsulePerDay: joinSupplementTeamDto.capsulePerDay,
       topupQuantity: joinSupplementTeamDto.topupQuantity,
+      discount: +joinSupplementTeamDto.discount || 0,
+      pricePerCount: +joinSupplementTeamDto.pricePerCount || 0,
+      topUpPrice:
+        joinSupplementTeamDto.amount - joinSupplementTeamDto.price || 0,
     });
     if (!basket) return 5;
+    // send email to user
+    // get updated user info so that you can access the user code and ref code
+    const updatedUserInfo = await this.userService.findUser({
+      id: joinSupplementTeamDto.userId,
+    });
+    if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
+      await this.courierService.sendWelcomeEmail(
+        updatedUserInfo.email,
+        updatedUserInfo.firstName,
+        productInfo.name,
+        joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+        productInfo.subUnit,
+        `£${parseFloat(joinSupplementTeamDto.amount.toString()).toLocaleString(
+          'en-US',
+          { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+        )}`,
+        `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+        `${updatedUserInfo.userCode}`,
+        `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+      );
+    }
     return joinSupplementTeamDto;
   }
 }

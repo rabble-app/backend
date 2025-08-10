@@ -1,16 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum } from 'class-validator';
+import { SubscriptionStatus } from '@prisma/client';
 
 export class SubscriptionStatusDto {
   @ApiProperty({
-    description: 'Whether the user has an active subscription',
-    example: true,
+    enum: SubscriptionStatus,
+    description: 'The new subscription status',
   })
-  hasActiveSubscription: boolean;
-
-  @ApiProperty({
-    description: 'The expiry date of the subscription if it exists',
-    example: '2024-12-31T23:59:59.999Z',
-    nullable: true,
-  })
-  expiryDate: Date | null;
+  @IsEnum(SubscriptionStatus)
+  status: SubscriptionStatus;
 }

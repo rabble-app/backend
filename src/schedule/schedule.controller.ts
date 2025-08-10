@@ -318,4 +318,76 @@ export class ScheduleController {
       'Supplement orders created successfully',
     );
   }
+
+  /**
+   * Send emails to users on the last day of their free membership bonus.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('send-last-day-free-membership-bonus')
+  @ApiOkResponse({
+    description: 'Last day free membership bonus emails sent successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async sendLastDayFreeMembershipBonus(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleServiceExtended.handleLastDayFreeMembershipBonus();
+
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Last day free membership bonus emails sent successfully',
+    );
+  }
+
+  /**
+   * Send emails to users on the 15th day of their free membership bonus.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('send-15th-day-free-membership-bonus')
+  @ApiOkResponse({
+    description: '15th day free membership bonus emails sent successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async send15thDayFreeMembershipBonus(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleServiceExtended.handle15thDayFreeMembershipBonus();
+
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      '15th day free membership bonus emails sent successfully',
+    );
+  }
+
+  /**
+   * Send emails to users on the last 3 days of their free membership bonus.
+   * @memberof ScheduleController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('send-last-3-days-free-membership-bonus')
+  @ApiOkResponse({
+    description: 'Last 3 days free membership bonus emails sent successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async sendLast3DaysFreeMembershipBonus(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.scheduleServiceExtended.handleLast3DaysFreeMembershipBonus();
+
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Last 3 days free membership bonus emails sent successfully',
+    );
+  }
 }

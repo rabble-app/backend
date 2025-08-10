@@ -8,12 +8,18 @@ import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { RollbarModule } from '../utils/rollbar.module';
 import { StripeService } from '../stripe/stripe.service';
+import { CourierService } from '../notifications/courier.service';
 import { mockStripeService } from '../../test/mocks';
 
 describe('WebhookController', () => {
   let controller: WebhookController;
 
   beforeEach(async () => {
+    const mockCourierService = {
+      sendCoinEarnedMail: jest.fn(),
+      sendReferralFreeMonthMail: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WebhookController],
       providers: [
@@ -24,6 +30,10 @@ describe('WebhookController', () => {
         {
           provide: StripeService,
           useValue: mockStripeService,
+        },
+        {
+          provide: CourierService,
+          useValue: mockCourierService,
         },
       ],
       imports: [ParametersModule, LoggerModule, RollbarModule],

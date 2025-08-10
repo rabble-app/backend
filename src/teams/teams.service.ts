@@ -5,6 +5,8 @@ import {
   SupplementTeamProducts,
   TeamMember,
   TeamRequest,
+  MembershipStatus,
+  SupplementTeamStatus,
 } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
@@ -20,7 +22,7 @@ import {
 import { JoinTeamDto } from './dto/join-team.dto';
 import { PaymentService } from '../payment/payment.service';
 import { PrismaService } from '../prisma.service';
-import { getTeamMembershipRole, teamImages } from '../../src/utils';
+import { teamImages } from '../../src/utils';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../../src/notifications/notifications.service';
 import { TeamsServiceExtension } from './teams.service.extension';
@@ -181,13 +183,13 @@ export class TeamsService {
     const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
       teamData.teamId,
     );
-    const isSupplementTeam = team.supplementTeamProducts ? true : false;
-    const memberStatus = getTeamMembershipRole(
-      teamMembers.length,
-      isSupplementTeam,
-      team?.supplementTeamProducts?.orderTreashold,
-      teamData.role,
+    
+    // Use the new function to determine membership role
+    const memberStatus = await this.determineTeamMembershipRole(
+      team,
+      teamData.role as MembershipStatus,
     );
+    
     const result = await this.prisma.teamMember.upsert({
       where: {
         team_unique_user: {
@@ -550,5 +552,38 @@ export class TeamsService {
         },
       },
     });
+  }
+
+  async determineTeamMembershipRole(
+    team: BuyingTeamsWithSupplementProduct,
+    assignedRole?: MembershipStatus,
+  ): Promise<MembershipStatus> {
+    // If a role was passed, return it
+    if (assignedRole) {
+      return assignedRole;
+    }
+
+    // Check if the team has supplement products
+    if (team.supplementTeamProducts) {
+      const supplementStatus = team.supplementTeamProducts.status;
+      
+      // If supplement product status is PREORDER, return FOUNDING_MEMBER
+      if (supplementStatus === SupplementTeamStatus.PREORDER) {
+        return MembershipStatus.FOUNDING_MEMBER;
+      }
+      
+      // If supplement product status is ACTIVE, check the latest order
+      if (supplementStatus === SupplementTeamStatus.ACTIVE) {
+        const latestOrder = await this.paymentService.getTeamLatestOrder(team.id);
+         
+        // If firstDelivery is true, return EARLY_MEMBER, otherwise return MEMBER
+        if (latestOrder?.firstDelivery) {
+          return MembershipStatus.EARLY_MEMBER;
+        } 
+      }
+    }
+    
+    // Default case: return MEMBER
+    return MembershipStatus.MEMBER;
   }
 }

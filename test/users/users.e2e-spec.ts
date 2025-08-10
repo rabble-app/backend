@@ -768,4 +768,87 @@ describe('UserController (e2e)', () => {
       testTime,
     );
   });
+
+  describe('Billing Address', () => {
+    const billingAddressData = {
+      postCode: 'SW1A 1AA',
+      addressLine1: '123 Main Street',
+      addressLine2: 'Apt 4B',
+      city: 'London',
+      country: 'United Kingdom',
+    };
+
+    it(
+      '/users/billing-address (PATCH) should store user billing address',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/users/billing-address')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .send(billingAddressData)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(response.body.data.billingAddress).toMatchObject(billingAddressData);
+      },
+      testTime,
+    );
+
+    it(
+      '/users/billing-address (PATCH) should not store billing address if user is not authenticated',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .patch('/users/billing-address')
+          .send(billingAddressData)
+          .expect(401);
+
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      },
+      testTime,
+    );
+
+    it(
+      '/users/billing-address/:id (GET) should return user billing address',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/billing-address/${userId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+      },
+      testTime,
+    );
+
+    it(
+      '/users/billing-address/:id (GET) should not return billing address if user is not authenticated',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/billing-address/${userId}`)
+          .expect(401);
+
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      },
+      testTime,
+    );
+
+    it(
+      '/users/billing-address/:id (GET) should return 404 for non-existent user',
+      async () => {
+        const nonExistentUserId = faker.datatype.uuid();
+        const response = await request(app.getHttpServer())
+          .get(`/users/billing-address/${nonExistentUserId}`)
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(response.body.data).toBeNull();
+      },
+      testTime,
+    );
+  });
 });
