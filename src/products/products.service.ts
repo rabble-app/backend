@@ -34,7 +34,11 @@ export class ProductsService {
     });
   }
 
-  async getProduct(id: string, teamId = '', userId = ''): Promise<Product | null> {
+  async getProduct(
+    id: string,
+    teamId = '',
+    userId = '',
+  ): Promise<Product | null> {
     let orderId = '';
     let orderDeadline: Date;
     let deliveryDate: Date;
@@ -101,24 +105,28 @@ export class ProductsService {
                       },
                     },
                   },
-                },  
-                members: userId ? {
-                  where: {
-                    status: 'APPROVED',
-                    userId,
-                  },
-                  take: 1,
-                  select: {
-                    id: true,
-                    role: true,
-                  },
-                } : undefined,
+                },
+                members: userId
+                  ? {
+                      where: {
+                        status: 'APPROVED',
+                        userId,
+                      },
+                      take: 1,
+                      select: {
+                        id: true,
+                        role: true,
+                      },
+                    }
+                  : undefined,
                 // user basket if userId is provided
-                basket: userId ? {
-                  where: {
-                    userId,
-                  },
-                } : undefined,
+                basket: userId
+                  ? {
+                      where: {
+                        userId,
+                      },
+                    }
+                  : undefined,
               },
             },
           },
@@ -129,16 +137,31 @@ export class ProductsService {
     teamMemberCount = result?.supplementTeamProducts?.team?._count.members;
     if (teamId) {
       const priceInfo = result.priceInfo as unknown as IPricePlan[];
-      const teamStatus = result?.supplementTeamProducts?.status ?? SupplementTeamStatus.ACTIVE;
-      activePercentageDiscount = this.getPriceDiscount(priceInfo as unknown as IPricePlan[], teamMemberCount, teamStatus);
+      const teamStatus =
+        result?.supplementTeamProducts?.status ?? SupplementTeamStatus.ACTIVE;
+      activePercentageDiscount = this.getPriceDiscount(
+        priceInfo as unknown as IPricePlan[],
+        teamMemberCount,
+        teamStatus,
+      );
       const priceWithDiscount = !activePercentageDiscount
-      ? result.rrp
-      : Number((+result.rrp - (+activePercentageDiscount / 100) * +result.rrp).toFixed(2));
-      
+        ? result.rrp
+        : Number(
+            (
+              +result.rrp -
+              (+activePercentageDiscount / 100) * +result.rrp
+            ).toFixed(2),
+          );
+
       // Add actual discounted value to each price plan
       if (priceInfo) {
-        priceInfo.forEach(plan => {
-          const discountedValue = Number((+result.rrp - (plan.percentageDiscount / 100) * +result.rrp).toFixed(2));
+        priceInfo.forEach((plan) => {
+          const discountedValue = Number(
+            (
+              +result.rrp -
+              (plan.percentageDiscount / 100) * +result.rrp
+            ).toFixed(2),
+          );
           plan['actualDiscountedValue'] = discountedValue;
         });
       }
@@ -152,36 +175,58 @@ export class ProductsService {
       result['price'] = new Decimal(priceWithDiscount);
       result['pricePerCount'] = Number((+result.price / 90).toFixed(4));
       result['rrpPerCount'] = Number((+result.rrp / 90).toFixed(4));
-      
+
       // Adjust pricePerCount and rrpPerCount for grams if applicable
       if (result.unitsOfMeasurePerSubUnit === 'grams' && result.gramsPerCount) {
-        result['pricePerCount'] = Number((result['pricePerCount'] / Number(result.gramsPerCount)).toFixed(4));
-        result['rrpPerCount'] = Number((result['rrpPerCount'] / Number(result.gramsPerCount)).toFixed(4));
+        result['pricePerCount'] = Number(
+          (result['pricePerCount'] / Number(result.gramsPerCount)).toFixed(4),
+        );
+        result['rrpPerCount'] = Number(
+          (result['rrpPerCount'] / Number(result.gramsPerCount)).toFixed(4),
+        );
       }
-      
-      result['discount'] = Math.abs(Number((((+result.price/+result.rrp - 1) * 100).toFixed(2))));
+
+      result['discount'] = Math.abs(
+        Number(((+result.price / +result.rrp - 1) * 100).toFixed(2)),
+      );
       if (deliveryDate) {
-        result['daysUntilNextDrop'] = differenceInDays(deliveryDate, new Date());
-           // Check if firstDelivery is true but deliveryDate is in the past
+        result['daysUntilNextDrop'] = differenceInDays(
+          deliveryDate,
+          new Date(),
+        );
+        // Check if firstDelivery is true but deliveryDate is in the past
         if (firstDelivery && deliveryDate < new Date()) {
           result['firstDelivery'] = false;
           result['deliveryDate'] = addWeeks(orderDeadline, result.leadTime + 1);
-          result['daysUntilNextDrop'] = differenceInDays(result['deliveryDate'], new Date());
+          result['daysUntilNextDrop'] = differenceInDays(
+            result['deliveryDate'],
+            new Date(),
+          );
         }
-        result['pochesRequired'] = Math.ceil(result['daysUntilNextDrop'] * (result.unitsOfMeasurePerSubUnit === 'grams'? +result.gramsPerCount : 1) / +result.alignmentPoucheSize); 
-        result['pricePerPoche'] = Number((+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(4));
-        result['nextEditableDate'] = addQuarters(orderDeadline,1);
+        result['pochesRequired'] = Math.ceil(
+          (result['daysUntilNextDrop'] *
+            (result.unitsOfMeasurePerSubUnit === 'grams'
+              ? +result.gramsPerCount
+              : 1)) /
+            +result.alignmentPoucheSize,
+        );
+        result['pricePerPoche'] = Number(
+          (+result['pricePerCount'] * +result.alignmentPoucheSize).toFixed(4),
+        );
+        result['nextEditableDate'] = addQuarters(orderDeadline, 1);
       }
 
       // Calculate next discount level
       const nextDiscountLevel = priceInfo
         .sort((a, b) => (a.teamMemberCount > b.teamMemberCount ? 1 : -1))
-        .find(plan => plan.teamMemberCount > teamMemberCount);
+        .find((plan) => plan.teamMemberCount > teamMemberCount);
 
-      result['nextPriceDiscountLevel'] = nextDiscountLevel ? {
-        membersNeeded: nextDiscountLevel.teamMemberCount - teamMemberCount,
-        expectedDiscount: nextDiscountLevel.percentageDiscount
-      } : null;
+      result['nextPriceDiscountLevel'] = nextDiscountLevel
+        ? {
+            membersNeeded: nextDiscountLevel.teamMemberCount - teamMemberCount,
+            expectedDiscount: nextDiscountLevel.percentageDiscount,
+          }
+        : null;
     }
     return result;
   }
@@ -524,27 +569,43 @@ export class ProductsService {
       ...(limit && { take: +limit }),
     });
 
-    // Process each product to add discount information
-    const processedProducts = allProducts.map(product => {
-      const teamMemberCount = product.team?._count?.members || 0;
-      const priceInfo = product.product.priceInfo as unknown as IPricePlan[];
-      const teamStatus = product.status ?? SupplementTeamStatus.ACTIVE;
-      const activePercentageDiscount = this.getPriceDiscount(priceInfo, teamMemberCount, teamStatus);
-      
-      const priceWithDiscount = !activePercentageDiscount
-        ? product.product.rrp
-        : Number((+product.product.rrp - (+activePercentageDiscount / 100) * +product.product.rrp).toFixed(2));
+    // Process each product to add discount information and teamLatestOrder
+    const processedProducts = await Promise.all(
+      allProducts.map(async (product) => {
+        const teamMemberCount = product.team?._count?.members || 0;
+        const priceInfo = product.product.priceInfo as unknown as IPricePlan[];
+        const teamStatus = product.status ?? SupplementTeamStatus.ACTIVE;
+        const activePercentageDiscount = this.getPriceDiscount(
+          priceInfo,
+          teamMemberCount,
+          teamStatus,
+        );
 
+        const priceWithDiscount = !activePercentageDiscount
+          ? product.product.rrp
+          : Number(
+              (
+                +product.product.rrp -
+                (+activePercentageDiscount / 100) * +product.product.rrp
+              ).toFixed(2),
+            );
 
-      return {
-        ...product,
-        product: {
-          ...product.product,
-          price: new Decimal(priceWithDiscount),
-          activePercentageDiscount,
-        },
-      };
-    });
+        // Get teamLatestOrder information
+        const teamLatestOrder = await this.paymentService.getTeamLatestOrder(
+          product.teamId,
+        );
+
+        return {
+          ...product,
+          product: {
+            ...product.product,
+            price: new Decimal(priceWithDiscount),
+            activePercentageDiscount,
+          },
+          firstDelivery: teamLatestOrder?.firstDelivery || false,
+        };
+      }),
+    );
 
     // return unpurchased products
     const unpurchasedProducts = processedProducts.filter(
@@ -575,7 +636,9 @@ export class ProductsService {
 
     // If status is PREORDER, return the lowest discount available
     if (teamStatus === SupplementTeamStatus.PREORDER) {
-      const sortedPlans = [...pricePlan].sort((a, b) => a.percentageDiscount - b.percentageDiscount);
+      const sortedPlans = [...pricePlan].sort(
+        (a, b) => a.percentageDiscount - b.percentageDiscount,
+      );
       return sortedPlans[0].percentageDiscount;
     }
 
