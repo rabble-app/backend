@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "BonusType" ADD VALUE 'AFFILIATE_REFERRAL';

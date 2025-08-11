@@ -275,6 +275,8 @@ export class PaymentService {
     teamId: string,
   ): Promise<void> {
     // get previous accumalated value so that we will not keep sending notification that threshold has been met
+
+    console.log({ orderId });
     const orderRecord = await this.prisma.order.findFirst({
       where: { id: orderId },
     });

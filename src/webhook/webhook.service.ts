@@ -32,7 +32,6 @@ export class WebhookService {
     const webhookSecret = isSupplementApp
       ? this.parameters.SUPPLEMENT_STRIPE_WEBHOOK_SECRET
       : this.parameters.STRIPE_WEBHOOK_SECRET;
-    this.logger.info('Webhook secret: %o', webhookSecret);
 
     try {
       const event = await this.stripeService.constructWebhookEvent(
@@ -41,9 +40,18 @@ export class WebhookService {
         webhookSecret,
         isSupplementApp,
       );
+
+      this.logger.info('Webhook event received: %o', {
+        signature,
+        event: event.type,
+        application: isSupplementApp ? 'Supplement Club' : 'Rabble',
+      });
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        this.logger.info('Payment intent succeeded: %o', paymentIntent);
+        this.logger.info('Payment intent succeeded: %o', {
+          metadata: paymentIntent?.metadata,
+          amount: paymentIntent.amount,
+        });
         await this.referralsService.handleReferral(
           paymentIntent.metadata,
           paymentIntent.amount_received / 100,
