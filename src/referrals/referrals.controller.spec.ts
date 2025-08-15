@@ -137,13 +137,5 @@ describe('ReferralsController', () => {
       expect(result.data).toEqual(mockReferralInfo);
       expect(result.message).toBe('Referral info');
     });
-
-    it('should throw bad request when no record is found', async () => {
-      mockReferralsService.getReferralInfo.mockResolvedValue(null);
-
-      await expect(controller.info(mockRequest, mockResponse)).rejects.toThrow(
-        HttpException,
-      );
-    });
   });
 });

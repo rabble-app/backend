@@ -82,9 +82,12 @@ export class ReferralsController {
     const userId = req.user?.id ?? req.user?.userId;
     const result = await this.referralsService.getReferralTracking(userId);
     if (!result) {
-      throw new HttpException(
+      return formatResponse(
+        null,
+        res,
+        HttpStatus.OK,
+        false,
         'No record found for user',
-        HttpStatus.BAD_REQUEST,
       );
     }
     return formatResponse(
@@ -107,9 +110,12 @@ export class ReferralsController {
     const userId = req.user?.id ?? req.user?.userId;
     const result = await this.referralsService.getReferralInfo(userId);
     if (!result) {
-      throw new HttpException(
+      return formatResponse(
+        null,
+        res,
+        HttpStatus.OK,
+        false,
         'No record found for user',
-        HttpStatus.BAD_REQUEST,
       );
     }
     return formatResponse(result, res, HttpStatus.OK, false, 'Referral info');

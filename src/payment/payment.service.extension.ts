@@ -19,10 +19,14 @@ import { CaptureIntentDto } from './dto/capture-intent.dto';
 import { TopUpDto } from './dto/topup.dto';
 import { ReferralsService } from '../referrals/referrals.service';
 import { Logger } from 'winston';
-import {  addBusinessDays, addYears, format } from 'date-fns';
+import { addBusinessDays, addYears, format } from 'date-fns';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
-import { ANNUAL_SUBSCRIPTION_AMOUNT, ANNUAL_SUBSCRIPTION_DISCOUNT, ANNUAL_SUBSCRIPTION_RRP } from '../utils/constants';
+import {
+  ANNUAL_SUBSCRIPTION_AMOUNT,
+  ANNUAL_SUBSCRIPTION_DISCOUNT,
+  ANNUAL_SUBSCRIPTION_RRP,
+} from '../utils/constants';
 import { CourierService } from '../notifications/courier.service';
 import { targetQuarterDate } from '../utils/date';
 @Injectable()
@@ -37,7 +41,7 @@ export class PaymentServiceExtension {
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
     private readonly courierService: CourierService,
-  ) { }
+  ) {}
 
   async getUserPaymentOptions(
     id: string,
@@ -250,6 +254,7 @@ export class PaymentServiceExtension {
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       captureIntentDto.teamId,
     );
+    console.log({ latestOrder });
     const orderId = latestOrder?.id;
 
     // update payment intent
@@ -382,7 +387,7 @@ export class PaymentServiceExtension {
     // check if payment was successful
     if (captureResult) {
       // save the top up basket
-     const result = await this.prisma.topUpBasket.create({
+      const result = await this.prisma.topUpBasket.create({
         data: {
           productId: topUpDto.productId,
           userId: topUpDto.userId,
@@ -390,7 +395,9 @@ export class PaymentServiceExtension {
           quantity: topUpDto.quantity,
           price: topUpDto.price,
           capsulePerDay: topUpDto.capsulePerDay,
-          deliveryDate: latestOrder.firstDelivery ? latestOrder.deliveryDate : addBusinessDays(new Date(), 3),
+          deliveryDate: latestOrder.firstDelivery
+            ? latestOrder.deliveryDate
+            : addBusinessDays(new Date(), 3),
           type: 'TOPUP',
         },
       });
@@ -492,7 +499,11 @@ export class PaymentServiceExtension {
       // check subscription table for active subscription
       const record = await this.getSubscriptionRecord(userId);
       // check if expiry date is in the future
-      if (record && new Date(record.expiryDate) > new Date() && record.status === SubscriptionStatus.ACTIVE) {
+      if (
+        record &&
+        new Date(record.expiryDate) > new Date() &&
+        record.status === SubscriptionStatus.ACTIVE
+      ) {
         return true;
       }
 
@@ -503,20 +514,17 @@ export class PaymentServiceExtension {
     }
   }
 
-  async getSubscriptionRecord(
-    userId: string,
-  ): Promise<Subscription | null> {
+  async getSubscriptionRecord(userId: string): Promise<Subscription | null> {
     try {
       const result = await this.prisma.subscription.findFirst({
         where: {
-          userId
+          userId,
         },
       });
       result['subscriptionAmount'] = ANNUAL_SUBSCRIPTION_AMOUNT;
       result['subscriptionRRP'] = ANNUAL_SUBSCRIPTION_RRP;
       result['subscriptionDiscount'] = ANNUAL_SUBSCRIPTION_DISCOUNT;
       return result;
-
     } catch (error) {
       this.logger.error('Error getting subscription status:', error);
       return null;
@@ -539,7 +547,7 @@ export class PaymentServiceExtension {
           user: {
             include: {
               subscription: true,
-            }
+            },
           },
         },
       });
@@ -550,7 +558,10 @@ export class PaymentServiceExtension {
           where: {
             userId,
             role: {
-              in: [MembershipStatus.FOUNDING_MEMBER, MembershipStatus.EARLY_MEMBER],
+              in: [
+                MembershipStatus.FOUNDING_MEMBER,
+                MembershipStatus.EARLY_MEMBER,
+              ],
             },
           },
           data: {
@@ -562,7 +573,10 @@ export class PaymentServiceExtension {
       // send email to user for membership cancellation
       if (result.user?.email) {
         try {
-          const effectiveCancellationDate = format(result.user.subscription.expiryDate, 'dd/MM/yyyy');
+          const effectiveCancellationDate = format(
+            result.user.subscription.expiryDate,
+            'dd/MM/yyyy',
+          );
           const reactivateMembershipUrl = `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`;
 
           await this.courierService.sendMembershipCancelledEmail(
@@ -572,7 +586,10 @@ export class PaymentServiceExtension {
             reactivateMembershipUrl,
           );
         } catch (error) {
-          this.logger.error('Failed to send membership cancellation email:', error);
+          this.logger.error(
+            'Failed to send membership cancellation email:',
+            error,
+          );
         }
       }
 
