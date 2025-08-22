@@ -15,6 +15,6 @@ import { StripeService } from '../stripe/stripe.service';
     JwtService,
     StripeService,
   ],
-  exports: [UsersService],
+  exports: [UsersService, UsersServiceExtension],
 })
 export class UsersModule {}

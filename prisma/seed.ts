@@ -2773,163 +2773,174 @@ async function main() {
       price: 90.53,
       wholesalePrice: 41.91,
       approvalStatus: 'APPROVED',
-      rrp: 105.60,
+      rrp: 105.6,
       vat: 20,
       rabbleMarkUp: 80,
-      tags: [
-        "Heart Health",
-        "Energy",
-        "Longevity",
-        "Brain Health"
-      ],
+      tags: ['Heart Health', 'Energy', 'Longevity', 'Brain Health'],
       priceInfo: [
         {
-          "percentageDiscount": 14.27,
-          "teamMemberCount": 67
+          percentageDiscount: 14.27,
+          teamMemberCount: 67,
         },
         {
-          "percentageDiscount": 18.27,
-          "teamMemberCount": 167
+          percentageDiscount: 18.27,
+          teamMemberCount: 167,
         },
         {
-          "percentageDiscount": 22.27,
-          "teamMemberCount": 333
+          percentageDiscount: 22.27,
+          teamMemberCount: 333,
         },
         {
-          "percentageDiscount": 26.27,
-          "teamMemberCount": 667
-        }
+          percentageDiscount: 26.27,
+          teamMemberCount: 667,
+        },
       ],
       capsuleInfo: [
         {
-          "capsuleCount": 1,
-          "title1": "General Wellness",
-          "description1": "Heart health, energy, 40+.",
-          "title2": "Early Fertility",
-          "description2": "Mitochondrial support for egg/sperm quality.",
-          "others": "One capsule provides essential CoQ10 support for mitochondrial function and cardiovascular health. Beneficial for adults looking to maintain energy levels and long-term cellular function."
+          capsuleCount: 1,
+          title1: 'General Wellness',
+          description1: 'Heart health, energy, 40+.',
+          title2: 'Early Fertility',
+          description2: 'Mitochondrial support for egg/sperm quality.',
+          others:
+            'One capsule provides essential CoQ10 support for mitochondrial function and cardiovascular health. Beneficial for adults looking to maintain energy levels and long-term cellular function.',
         },
         {
-          "capsuleCount": 2,
-          "title1": "Mild Fatigue",
-          "description1": "Energy, cardio boost, active individuals.",
-          "title2": "Anti-Aging",
-          "description2": "Mitochondrial function, antioxidant support.",
-          "others": "Two capsules enhance mitochondrial energy production, supporting cardiovascular function and active recovery. Ideal for individuals seeking longevity and sustained daily energy."
+          capsuleCount: 2,
+          title1: 'Mild Fatigue',
+          description1: 'Energy, cardio boost, active individuals.',
+          title2: 'Anti-Aging',
+          description2: 'Mitochondrial function, antioxidant support.',
+          others:
+            'Two capsules enhance mitochondrial energy production, supporting cardiovascular function and active recovery. Ideal for individuals seeking longevity and sustained daily energy.',
         },
         {
-          "capsuleCount": 3,
-          "title1": "Moderate Fatigue",
-          "description1": "Recovery, athletes, physical training.",
-          "title2": "Advanced Fertility",
-          "description2": "Energy support during IVF.",
-          "others": "Three capsules optimize cellular energy for endurance and recovery. Recommended for athletes, individuals with moderate fatigue, and those supporting reproductive health during fertility treatments."
+          capsuleCount: 3,
+          title1: 'Moderate Fatigue',
+          description1: 'Recovery, athletes, physical training.',
+          title2: 'Advanced Fertility',
+          description2: 'Energy support during IVF.',
+          others:
+            'Three capsules optimize cellular energy for endurance and recovery. Recommended for athletes, individuals with moderate fatigue, and those supporting reproductive health during fertility treatments.',
         },
         {
-          "capsuleCount": 4,
-          "title1": "Therapeutic Dose",
-          "description1": "Heart health, weightlifting recovery.",
-          "title2": "Advanced Anti-Aging",
-          "description2": "High-dose longevity support.",
-          "others": "Four capsules provide maximum Ubiquinol support for cardiovascular resilience, mitochondrial longevity, and high-performance physical recovery. Ideal for those on targeted longevity protocols."
-        }
+          capsuleCount: 4,
+          title1: 'Therapeutic Dose',
+          description1: 'Heart health, weightlifting recovery.',
+          title2: 'Advanced Anti-Aging',
+          description2: 'High-dose longevity support.',
+          others:
+            'Four capsules provide maximum Ubiquinol support for cardiovascular resilience, mitochondrial longevity, and high-performance physical recovery. Ideal for those on targeted longevity protocols.',
+        },
       ],
       formulationSummary: [
-        "100% Kaneka Ubiquinol",
-        "Superior bioavailability compared to CoQ10",
-        "Clinically researched for heart and brain health"
+        '100% Kaneka Ubiquinol',
+        'Superior bioavailability compared to CoQ10',
+        'Clinically researched for heart and brain health',
       ],
       leadTime: 6,
       productBenefits: [
         {
-          "benefit": "Boosts Cellular Energy",
-          "whyItMatters": "Ubiquinol is essential for ATP production, the body's primary energy source. Without sufficient ATP, cells can't function optimally, leading to fatigue and decreased performance."
+          benefit: 'Boosts Cellular Energy',
+          whyItMatters:
+            "Ubiquinol is essential for ATP production, the body's primary energy source. Without sufficient ATP, cells can't function optimally, leading to fatigue and decreased performance.",
         },
         {
-          "benefit": "Protects Against Free Radicals",
-          "whyItMatters": "Ubiquinol acts as a potent antioxidant, neutralizing free radicals that cause oxidative stress, which can damage cells and accelerate aging."
+          benefit: 'Protects Against Free Radicals',
+          whyItMatters:
+            'Ubiquinol acts as a potent antioxidant, neutralizing free radicals that cause oxidative stress, which can damage cells and accelerate aging.',
         },
         {
-          "benefit": "Supports Healthy Aging",
-          "whyItMatters": "As you age, Ubiquinol levels decline, leading to decreased energy production and increased oxidative damage. Supplementing helps replenish levels to support longevity."
+          benefit: 'Supports Healthy Aging',
+          whyItMatters:
+            'As you age, Ubiquinol levels decline, leading to decreased energy production and increased oxidative damage. Supplementing helps replenish levels to support longevity.',
         },
         {
-          "benefit": "Improves Heart Function",
-          "whyItMatters": "The heart requires high energy levels to function efficiently. Ubiquinol supports mitochondrial energy production in heart cells, promoting cardiovascular health."
+          benefit: 'Improves Heart Function',
+          whyItMatters:
+            'The heart requires high energy levels to function efficiently. Ubiquinol supports mitochondrial energy production in heart cells, promoting cardiovascular health.',
         },
         {
-          "benefit": "Enhances Brain Health",
-          "whyItMatters": "Ubiquinol supports brain function by improving mitochondrial efficiency and reducing oxidative stress, which can help with cognitive performance and neuroprotection."
-        }
+          benefit: 'Enhances Brain Health',
+          whyItMatters:
+            'Ubiquinol supports brain function by improving mitochondrial efficiency and reducing oxidative stress, which can help with cognitive performance and neuroprotection.',
+        },
       ],
       healthCategories: [
         {
-          "category": "Aging (40+)",
-          "whyItMatters": "As you age, your body produces less Ubiquinol, reducing ATP production and antioxidant levels. This leads to fatigue, slower recovery, and reduced heart function.",
-          "benefits": [
-            "Increased energy levels",
-            "Improved heart health",
-            "Slows down aging by reducing oxidative damage"
-          ]
+          category: 'Aging (40+)',
+          whyItMatters:
+            'As you age, your body produces less Ubiquinol, reducing ATP production and antioxidant levels. This leads to fatigue, slower recovery, and reduced heart function.',
+          benefits: [
+            'Increased energy levels',
+            'Improved heart health',
+            'Slows down aging by reducing oxidative damage',
+          ],
         },
         {
-          "category": "Heart Health",
-          "whyItMatters": "Ubiquinol plays a vital role in mitochondrial function, supporting the heart's energy needs and reducing oxidative stress.",
-          "benefits": [
-            "Enhances cardiovascular function",
-            "Improves circulation and oxygen delivery",
-            "Protects against heart disease"
-          ]
+          category: 'Heart Health',
+          whyItMatters:
+            "Ubiquinol plays a vital role in mitochondrial function, supporting the heart's energy needs and reducing oxidative stress.",
+          benefits: [
+            'Enhances cardiovascular function',
+            'Improves circulation and oxygen delivery',
+            'Protects against heart disease',
+          ],
         },
         {
-          "category": "Training/Athletics",
-          "whyItMatters": "Exercise increases oxidative stress and energy demands. Ubiquinol helps optimize ATP production, supporting endurance and muscle recovery.",
-          "benefits": [
-            "Boosts endurance and physical performance",
-            "Enhances muscle recovery",
-            "Reduces exercise-induced fatigue"
-          ]
+          category: 'Training/Athletics',
+          whyItMatters:
+            'Exercise increases oxidative stress and energy demands. Ubiquinol helps optimize ATP production, supporting endurance and muscle recovery.',
+          benefits: [
+            'Boosts endurance and physical performance',
+            'Enhances muscle recovery',
+            'Reduces exercise-induced fatigue',
+          ],
         },
         {
-          "category": "Anti-Aging",
-          "whyItMatters": "Oxidative damage accelerates aging at a cellular level. Ubiquinol acts as an antioxidant, reducing cellular damage and supporting longevity.",
-          "benefits": [
-            "Reduces oxidative stress",
-            "Supports mitochondrial health",
-            "Promotes youthful energy levels"
-          ]
+          category: 'Anti-Aging',
+          whyItMatters:
+            'Oxidative damage accelerates aging at a cellular level. Ubiquinol acts as an antioxidant, reducing cellular damage and supporting longevity.',
+          benefits: [
+            'Reduces oxidative stress',
+            'Supports mitochondrial health',
+            'Promotes youthful energy levels',
+          ],
         },
         {
-          "category": "Fertility",
-          "whyItMatters": "Mitochondrial energy is critical for egg and sperm quality. Ubiquinol enhances cellular energy production to support reproductive health.",
-          "benefits": [
-            "Supports egg and sperm mitochondrial function",
-            "Improves reproductive health",
-            "May enhance fertility outcomes"
-          ]
+          category: 'Fertility',
+          whyItMatters:
+            'Mitochondrial energy is critical for egg and sperm quality. Ubiquinol enhances cellular energy production to support reproductive health.',
+          benefits: [
+            'Supports egg and sperm mitochondrial function',
+            'Improves reproductive health',
+            'May enhance fertility outcomes',
+          ],
         },
         {
-          "category": "Energy & Fatigue",
-          "whyItMatters": "ATP is the body's primary energy source. Ubiquinol helps fuel energy production at a cellular level, reducing fatigue and improving vitality.",
-          "benefits": [
-            "Increases ATP production",
-            "Combats chronic fatigue",
-            "Enhances mental and physical energy"
-          ]
+          category: 'Energy & Fatigue',
+          whyItMatters:
+            "ATP is the body's primary energy source. Ubiquinol helps fuel energy production at a cellular level, reducing fatigue and improving vitality.",
+          benefits: [
+            'Increases ATP production',
+            'Combats chronic fatigue',
+            'Enhances mental and physical energy',
+          ],
         },
         {
-          "category": "Brain Health",
-          "whyItMatters": "The brain requires high amounts of energy and antioxidant protection. Ubiquinol supports cognitive function and neurological health.",
-          "benefits": [
-            "Enhances mental clarity and focus",
-            "Protects against neurodegeneration",
-            "Supports overall cognitive function"
-          ]
-        }
-      ]
+          category: 'Brain Health',
+          whyItMatters:
+            'The brain requires high amounts of energy and antioxidant protection. Ubiquinol supports cognitive function and neurological health.',
+          benefits: [
+            'Enhances mental clarity and focus',
+            'Protects against neurodegeneration',
+            'Supports overall cognitive function',
+          ],
+        },
+      ],
     },
   });
- 
+
   // add product 2
   const supplementProduct2 = await prisma.product.upsert({
     where: {
@@ -3199,19 +3210,19 @@ async function main() {
       ],
       priceInfo: [
         {
-          percentageDiscount: 18.39,
+          percentageDiscount: 28.08,
           teamMemberCount: 0,
         },
         {
-          percentageDiscount: 22.39,
+          percentageDiscount: 31.08,
           teamMemberCount: 1111,
         },
         {
-          percentageDiscount: 26.39,
+          percentageDiscount: 34.08,
           teamMemberCount: 2222,
         },
         {
-          percentageDiscount: 30.39,
+          percentageDiscount: 37.08,
           teamMemberCount: 4444,
         },
       ],
@@ -3432,9 +3443,9 @@ async function main() {
           productId: supplementProduct3.id,
           orderTreashold: 67,
           status: 'ACTIVE',
-          foundingMembersDiscount: 10
-        }
-      }
+          foundingMembersDiscount: 10,
+        },
+      },
     },
   });
 }

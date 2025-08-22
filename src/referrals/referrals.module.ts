@@ -17,5 +17,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
     JwtService,
     StripeService,
   ],
+  exports: [ReferralsService],
 })
 export class ReferralsModule {}

@@ -14,6 +14,7 @@ import {
   IPricePlan,
   ITeamWithOtherInfo,
   ProductApprovalStatus,
+  ProductWithSupplementPayload,
 } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
 import { UpdateProductStatusDto } from './dto/update-product-status';
@@ -38,7 +39,7 @@ export class ProductsService {
     id: string,
     teamId = '',
     userId = '',
-  ): Promise<Product | null> {
+  ): Promise<ProductWithSupplementPayload | null> {
     let orderId = '';
     let orderDeadline: Date;
     let deliveryDate: Date;
