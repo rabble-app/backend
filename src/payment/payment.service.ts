@@ -966,7 +966,7 @@ export class PaymentService {
           productName: productInfo?.name,
           capsulePerQuarter:
             joinSupplementTeamDto.quantity * +productInfo.poucheSize,
-          price: joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
+          price: joinSupplementTeamDto.price,
           membersNeeded: productInfo['nextPriceDiscountLevel']?.membersNeeded,
           dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
           referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
@@ -982,7 +982,7 @@ export class PaymentService {
           productName: productInfo?.name,
           capsulePerQuarter:
             joinSupplementTeamDto.quantity * +productInfo?.poucheSize,
-          price: joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
+          price: joinSupplementTeamDto.price,
           membersNeeded: productInfo['nextPriceDiscountLevel']?.membersNeeded,
           dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
           subscriptionLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}dashboard/manage-plans`,
