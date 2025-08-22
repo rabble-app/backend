@@ -854,7 +854,8 @@ export class PaymentService {
       discount: +joinSupplementTeamDto.discount || 0,
       pricePerCount: +joinSupplementTeamDto.pricePerCount || 0,
       topUpPrice:
-        joinSupplementTeamDto.amount - joinSupplementTeamDto.price || 0,
+        (joinSupplementTeamDto.topupQuantity * joinSupplementTeamDto.price) /
+          3 || 0,
     });
     if (!basket) return 5;
 
@@ -879,15 +880,13 @@ export class PaymentService {
             arrivalDate: format(lastOrder.deliveryDate, 'dd MMM yyyy'),
             productName: productInfo?.name,
             capsulePerQuarter:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +productInfo.poucheSize,
-            price:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +joinSupplementTeamDto.price,
-            capsuleTotal:
               joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+            price:
+              joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
+            capsuleTotal:
+              joinSupplementTeamDto.quantity * +productInfo.poucheSize +
+              joinSupplementTeamDto.topupQuantity *
+                +productInfo.alignmentPoucheSize,
             nextDrop: format(upperQuarterDate, 'dd MMM yyyy'),
             dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
             referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
@@ -903,15 +902,13 @@ export class PaymentService {
             arrivalDate: format(lastOrder.deliveryDate, 'dd MMM yyyy'),
             productName: productInfo?.name,
             capsulePerQuarter:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +productInfo.poucheSize,
-            price:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +joinSupplementTeamDto.price,
-            capsuleTotal:
               joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+            price:
+              joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
+            capsuleTotal:
+              joinSupplementTeamDto.quantity * +productInfo.poucheSize +
+              joinSupplementTeamDto.topupQuantity *
+                +productInfo.alignmentPoucheSize,
             nextDrop: format(upperQuarterDate, 'dd MMM yyyy'),
             dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
             referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
@@ -928,13 +925,9 @@ export class PaymentService {
             firstName: updatedUserInfo.firstName,
             productName: productInfo.name,
             capsulePerQuarter:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +productInfo.poucheSize,
+              joinSupplementTeamDto.quantity * +productInfo.poucheSize,
             price:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +joinSupplementTeamDto.price,
+              joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
             alignmentCapsules:
               joinSupplementTeamDto.topupQuantity *
               +productInfo.alignmentPoucheSize,
@@ -951,13 +944,9 @@ export class PaymentService {
             firstName: updatedUserInfo.firstName,
             productName: productInfo?.name,
             capsulePerQuarter:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +productInfo.poucheSize,
+              joinSupplementTeamDto.quantity * +productInfo.poucheSize,
             price:
-              (joinSupplementTeamDto.quantity -
-                joinSupplementTeamDto.topupQuantity) *
-              +joinSupplementTeamDto.price,
+              joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
             alignmentCapsules:
               joinSupplementTeamDto.topupQuantity *
               +productInfo.alignmentPoucheSize,
