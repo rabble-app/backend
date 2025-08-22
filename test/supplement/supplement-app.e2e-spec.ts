@@ -155,7 +155,7 @@ describe('PaymentController (e2e)', () => {
         id: userId,
       },
     });
-    await prisma.paymentMethod.deleteMany();
+    // await prisma.paymentMethod.deleteMany();
     await app.close();
   });
 
@@ -349,7 +349,7 @@ describe('PaymentController (e2e)', () => {
 
       // process joining pre order supplement team
       it(
-        '/payments/supplement/join-team(POST) should process payment for supplement active team',
+        '/payments/supplement/join-team(POST) should process payment for supplement pre order team',
         async () => {
           const response = await request(app.getHttpServer())
             .post('/payments/supplement/join-team')
