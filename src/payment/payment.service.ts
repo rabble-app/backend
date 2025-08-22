@@ -36,13 +36,15 @@ import { TeamsServiceExtension } from '../teams/teams.service.extension';
 import { ProductsService } from '../../src/products/products.service';
 import { RemovePaymentCardDto } from './dto/remove-payment-card.dto';
 import { TeamsService } from '../teams/teams.service';
-import { addBusinessDays } from 'date-fns';
+import { addBusinessDays, format } from 'date-fns';
 import { JoinSupplementTeamDto } from './dto/join-supplement-team.dto';
 import { PaymentServiceExtension } from './payment.service.extension';
 import { ReferralsService } from '../referrals/referrals.service';
 import { StripeService } from '../stripe/stripe.service';
 import Rollbar from 'rollbar';
 import { CourierService } from '../notifications/courier.service';
+import { UsersServiceExtension } from '../users/users.service.extension';
+import { upperQuarterDate } from '../utils/date';
 
 @Injectable()
 export class PaymentService {
@@ -64,6 +66,7 @@ export class PaymentService {
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
     private readonly courierService: CourierService,
+    private readonly usersServiceExtension: UsersServiceExtension,
   ) {}
 
   async addCustomerCard(
@@ -794,7 +797,13 @@ export class PaymentService {
     // get the product info
     const productInfo = await this.productsService.getProduct(
       joinSupplementTeamDto.productId,
+      joinSupplementTeamDto.teamId,
     );
+
+    const hasActiveSupplementTeam =
+      await this.usersServiceExtension.hasActiveSupplementTeam(
+        joinSupplementTeamDto.userId,
+      );
 
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
@@ -823,6 +832,7 @@ export class PaymentService {
       if (!paymentCaptureResult) return 3;
       orderId = paymentCaptureResult.orderId;
     }
+
     // add to team --> we need a utility function to get the member status
     const addToTeam = await this.teamsService.addTeamMember({
       teamId: joinSupplementTeamDto.teamId,
@@ -847,26 +857,151 @@ export class PaymentService {
         joinSupplementTeamDto.amount - joinSupplementTeamDto.price || 0,
     });
     if (!basket) return 5;
+
     // send email to user
     // get updated user info so that you can access the user code and ref code
     const updatedUserInfo = await this.userService.findUser({
       id: joinSupplementTeamDto.userId,
     });
+
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
-      await this.courierService.sendWelcomeEmail(
-        updatedUserInfo.email,
-        updatedUserInfo.firstName,
-        productInfo.name,
-        joinSupplementTeamDto.quantity * +productInfo.poucheSize,
-        productInfo.subUnit,
-        `£${parseFloat(joinSupplementTeamDto.amount.toString()).toLocaleString(
-          'en-US',
-          { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-        )}`,
-        `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
-        `${updatedUserInfo.userCode}`,
-        `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+      const lastOrder = await this.getTeamLatestOrder(
+        joinSupplementTeamDto.teamId,
       );
+      // handle early members
+      if (lastOrder.firstDelivery) {
+        if (hasActiveSupplementTeam) {
+          // early member active
+          await this.courierService.sendWelcomeEmailEarlyMemberActive({
+            email: updatedUserInfo.email,
+            firstName: updatedUserInfo.firstName,
+            supplierName: productInfo.producer.businessName,
+            arrivalDate: format(lastOrder.deliveryDate, 'dd MMM yyyy'),
+            productName: productInfo?.name,
+            capsulePerQuarter:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +productInfo.poucheSize,
+            price:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +joinSupplementTeamDto.price,
+            capsuleTotal:
+              joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+            nextDrop: format(upperQuarterDate, 'dd MMM yyyy'),
+            dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+            referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+            discountCode: updatedUserInfo.userCode,
+            unitOfMeasure: productInfo.subUnit,
+          });
+        } else {
+          // early member new
+          await this.courierService.sendWelcomeEmailEarlyMemberNew({
+            email: updatedUserInfo.email,
+            firstName: updatedUserInfo.firstName,
+            supplierName: productInfo.producer.businessName,
+            arrivalDate: format(lastOrder.deliveryDate, 'dd MMM yyyy'),
+            productName: productInfo?.name,
+            capsulePerQuarter:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +productInfo.poucheSize,
+            price:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +joinSupplementTeamDto.price,
+            capsuleTotal:
+              joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+            nextDrop: format(upperQuarterDate, 'dd MMM yyyy'),
+            dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+            referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+            discountCode: updatedUserInfo.userCode,
+            unitOfMeasure: productInfo.subUnit,
+          });
+        }
+      } else {
+        // ordinary member new, ordinary member active,
+        if (hasActiveSupplementTeam) {
+          // early member active
+          await this.courierService.sendWelcomeEmailOrdinaryMemberActive({
+            email: updatedUserInfo.email,
+            firstName: updatedUserInfo.firstName,
+            productName: productInfo.name,
+            capsulePerQuarter:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +productInfo.poucheSize,
+            price:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +joinSupplementTeamDto.price,
+            alignmentCapsules:
+              joinSupplementTeamDto.topupQuantity *
+              +productInfo.alignmentPoucheSize,
+            nextDrop: format(upperQuarterDate, 'dd MMM yyyy'),
+            dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+            referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+            discountCode: updatedUserInfo.userCode,
+            unitOfMeasure: productInfo.subUnit,
+          });
+        } else {
+          // early member new
+          await this.courierService.sendWelcomeEmailOrdinaryMemberNew({
+            email: updatedUserInfo.email,
+            firstName: updatedUserInfo.firstName,
+            productName: productInfo?.name,
+            capsulePerQuarter:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +productInfo.poucheSize,
+            price:
+              (joinSupplementTeamDto.quantity -
+                joinSupplementTeamDto.topupQuantity) *
+              +joinSupplementTeamDto.price,
+            alignmentCapsules:
+              joinSupplementTeamDto.topupQuantity *
+              +productInfo.alignmentPoucheSize,
+            nextDrop: format(upperQuarterDate, 'dd MMM yyyy'),
+            dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+            referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+            discountCode: updatedUserInfo.userCode,
+            unitOfMeasure: productInfo.subUnit,
+          });
+        }
+      }
+    } else {
+      // for pre order teams founding members
+      if (hasActiveSupplementTeam) {
+        // early member active
+        await this.courierService.sendWelcomeEmailFoundingMemberActive({
+          email: updatedUserInfo.email,
+          firstName: updatedUserInfo.firstName,
+          productName: productInfo?.name,
+          capsulePerQuarter:
+            joinSupplementTeamDto.quantity * +productInfo.poucheSize,
+          price: joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
+          membersNeeded: productInfo['nextPriceDiscountLevel']?.membersNeeded,
+          dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+          referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${updatedUserInfo.refCode}`,
+          subscriptionLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}dashboard/manage-plans`,
+          unitOfMeasure: productInfo.subUnit,
+          referralCode: updatedUserInfo.userCode,
+        });
+      } else {
+        // early member new
+        await this.courierService.sendWelcomeEmailFoundingMemberNew({
+          email: updatedUserInfo.email,
+          firstName: updatedUserInfo.firstName,
+          productName: productInfo?.name,
+          capsulePerQuarter:
+            joinSupplementTeamDto.quantity * +productInfo?.poucheSize,
+          price: joinSupplementTeamDto.quantity * +joinSupplementTeamDto.price,
+          membersNeeded: productInfo['nextPriceDiscountLevel']?.membersNeeded,
+          dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+          subscriptionLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}dashboard/manage-plans`,
+          unitOfMeasure: productInfo.subUnit,
+        });
+      }
     }
     return joinSupplementTeamDto;
   }

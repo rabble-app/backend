@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ScheduleController } from './schedule.controller';
 import { ScheduleService } from './schedule.service';
-import { UsersService } from '../../src/users/users.service';
-import { PaymentService } from '../../src/payment/payment.service';
-import { NotificationsService } from '../../src/notifications/notifications.service';
-import { PrismaService } from '../../src/prisma.service';
-import { ProductsService } from '../../src/products/products.service';
-import { PaymentServiceExtension } from '../../src/payment/payment.service.extension';
+import { UsersService } from '../users/users.service';
+import { PaymentService } from '../payment/payment.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PrismaService } from '../prisma.service';
+import { ProductsService } from '../products/products.service';
+import { PaymentServiceExtension } from '../payment/payment.service.extension';
 import { ScheduleServiceExtended } from './schedule.service.extended';
-import { TeamsService } from '../../src/teams/teams.service';
-import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
-import { AuthService } from '../../src/auth/auth.service';
+import { TeamsService } from '../teams/teams.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
+import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
 import { InsightsService } from '../insights/insights.service';
@@ -36,25 +36,76 @@ describe('ScheduleController', () => {
       controllers: [ScheduleController],
       providers: [
         ScheduleService,
-        UsersService,
-        PaymentService,
-        NotificationsService,
-        PrismaService,
-        ProductsService,
-        PaymentServiceExtension,
+        {
+          provide: UsersService,
+          useValue: {
+            /* mock UsersService */
+          },
+        },
+        {
+          provide: PaymentService,
+          useValue: {
+            /* mock PaymentService */
+          },
+        },
+        {
+          provide: NotificationsService,
+          useValue: {
+            /* mock NotificationsService */
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            /* mock PrismaService */
+          },
+        },
+        {
+          provide: ProductsService,
+          useValue: {
+            /* mock ProductsService */
+          },
+        },
+        {
+          provide: PaymentServiceExtension,
+          useValue: {
+            /* mock PaymentServiceExtension */
+          },
+        },
         ScheduleServiceExtended,
-        UsersService,
-        NotificationsService,
-        TeamsServiceExtension,
-        TeamsService,
-        ProductsService,
-        AuthService,
-        JwtService,
+        {
+          provide: TeamsServiceExtension,
+          useValue: {
+            /* mock TeamsServiceExtension */
+          },
+        },
+        {
+          provide: TeamsService,
+          useValue: {
+            /* mock TeamsService */
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            /* mock AuthService */
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            /* mock JwtService */
+          },
+        },
         InsightsService,
         QRCodeService,
         UploadsService,
-        ReferralsService,
-        PaymentServiceExtension,
+        {
+          provide: ReferralsService,
+          useValue: {
+            /* mock ReferralsService */
+          },
+        },
         {
           provide: StripeService,
           useValue: mockStripeService,

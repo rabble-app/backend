@@ -76,7 +76,7 @@ export class UsersServiceExtension {
               select: {
                 businessName: true,
               },
-            },        
+            },
             members: {
               where: {
                 userId,
@@ -149,11 +149,11 @@ export class UsersServiceExtension {
 
     // Transform the response to the desired format
     const transformedOrders = [];
-    
+
     for (const order of orders) {
       const user = order.team.members[0]?.user;
       const shipping = user?.shipping;
-      
+
       // Add regular basket items
       for (const basketItem of order.basket) {
         transformedOrders.push({
@@ -172,7 +172,8 @@ export class UsersServiceExtension {
             name: basketItem.product.name,
             quantity: basketItem.quantity,
             price: basketItem.price,
-            unitsOfMeasurePerSubUnit: basketItem.product.unitsOfMeasurePerSubUnit,
+            unitsOfMeasurePerSubUnit:
+              basketItem.product.unitsOfMeasurePerSubUnit,
             imageUrl: basketItem.product.imageUrl,
             poucheSize: basketItem.product.poucheSize,
           },
@@ -197,7 +198,8 @@ export class UsersServiceExtension {
             name: topUpItem.product.name,
             quantity: topUpItem.quantity,
             price: topUpItem.price,
-            unitsOfMeasurePerSubUnit: topUpItem.product.unitsOfMeasurePerSubUnit,
+            unitsOfMeasurePerSubUnit:
+              topUpItem.product.unitsOfMeasurePerSubUnit,
             imageUrl: topUpItem.product.imageUrl,
             poucheSize: topUpItem.product.alignmentPoucheSize,
           },
@@ -206,30 +208,33 @@ export class UsersServiceExtension {
     }
 
     // Group by delivery date
-    const groupedDeliveries: Record<string, { 
-      deliveryDate: string; 
-      user: {
-        postalCode: string | null;
-        buildingNo: string | null;
-        address: string | null;
-        address2: string | null;
-        city: string | null;
-        country: string | null;
-      };
-      deliveries: any[] 
-    }> = {};
-    
+    const groupedDeliveries: Record<
+      string,
+      {
+        deliveryDate: string;
+        user: {
+          postalCode: string | null;
+          buildingNo: string | null;
+          address: string | null;
+          address2: string | null;
+          city: string | null;
+          country: string | null;
+        };
+        deliveries: any[];
+      }
+    > = {};
+
     for (const delivery of transformedOrders) {
       const deliveryDateKey = delivery.deliveryDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-      
+
       if (!groupedDeliveries[deliveryDateKey]) {
         groupedDeliveries[deliveryDateKey] = {
           deliveryDate: deliveryDateKey,
           user: delivery.user,
-          deliveries: []
+          deliveries: [],
         };
       }
-      
+
       // Remove user object from individual delivery since it's now at the group level
       const { user, ...deliveryWithoutUser } = delivery;
       groupedDeliveries[deliveryDateKey].deliveries.push(deliveryWithoutUser);
@@ -251,13 +256,13 @@ export class UsersServiceExtension {
 
     for (const [dateKey, group] of Object.entries(groupedDeliveries)) {
       const deliveries = group.deliveries;
-      
+
       // If there are 2 or fewer deliveries, keep as is
       if (deliveries.length <= 2) {
         result.push({
           deliveryDate: group.deliveryDate,
           user: group.user,
-          deliveries: deliveries
+          deliveries: deliveries,
         });
       } else {
         // Split deliveries into chunks of 2
@@ -266,15 +271,16 @@ export class UsersServiceExtension {
           result.push({
             deliveryDate: group.deliveryDate,
             user: group.user,
-            deliveries: chunk
+            deliveries: chunk,
           });
         }
       }
     }
 
     // Sort by delivery date
-    return result.sort((a, b) => 
-      new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime()
+    return result.sort(
+      (a, b) =>
+        new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime(),
     );
   }
 
@@ -442,7 +448,7 @@ export class UsersServiceExtension {
         status: TeamStatus.APPROVED,
         team: {
           supplementTeamProducts: {
-            status: 'ACTIVE'
+            status: 'ACTIVE',
           },
         },
       },
