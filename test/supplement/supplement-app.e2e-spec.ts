@@ -155,7 +155,7 @@ describe('PaymentController (e2e)', () => {
         id: userId,
       },
     });
-    // await prisma.paymentMethod.deleteMany();
+    await prisma.paymentMethod.deleteMany();
     await app.close();
   });
 
