@@ -410,3 +410,54 @@ export type OrderWithSupplementPayload = Prisma.OrderGetPayload<{
     };
   };
 }>;
+
+// NOTE: The following type was invalid because `select` and `include` cannot be used together in Prisma GetPayload.
+// Also, variables like `teamId`, `orderId`, and `userId` are not available in type definitions.
+// Instead, define a type with the correct structure and use parameters in your query code, not in the type.
+
+export type ProductWithSupplementPayload = Prisma.ProductGetPayload<{
+  include: {
+    producer: true;
+    partionedProducts: {
+      select: {
+        accumulator: true;
+        threshold: true;
+        PartitionedProductUsersRecord: {
+          select: {
+            id: true;
+            // amount: true, // removed as per comment
+            quantity: true;
+            owner: {
+              select: {
+                firstName: true;
+                lastName: true;
+              };
+            };
+          };
+        };
+      };
+      // Filtering by teamId/orderId should be done in the query, not in the type
+      // where, take, orderBy are not part of the type definition
+    };
+    supplementTeamProducts: {
+      select: {
+        orderTreashold: true;
+        foundingMembersDiscount: true;
+        earlyMembersDiscount: true;
+        status: true;
+        team: {
+          select: {
+            id: true;
+            _count: {
+              select: {
+                members: true; // Filtering by status should be done in the query
+              };
+            };
+            members: true; // Filtering by userId/status should be done in the query
+            basket: true; // Filtering by userId should be done in the query
+          };
+        };
+      };
+    };
+  };
+}>;

@@ -420,7 +420,9 @@ describe('PaymentController (e2e)', () => {
               .expect(400);
 
             expect(response.body).toHaveProperty('error');
-            expect(response.body.error).toBe('Failed to update subscription status');
+            expect(response.body.error).toBe(
+              'Failed to update subscription status',
+            );
           },
           testTime,
         );

@@ -5,10 +5,10 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma.service';
 import { PaymentService } from '../payment/payment.service';
-import { NotificationsService } from '../../src/notifications/notifications.service';
-import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
-import { TeamsService } from '../../src/teams/teams.service';
-import { ProductsService } from '../../src/products/products.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
+import { TeamsService } from '../teams/teams.service';
+import { ProductsService } from '../products/products.service';
 import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
 import { ReferralsService } from '../referrals/referrals.service';
@@ -30,16 +30,46 @@ describe('AuthController', () => {
       controllers: [AuthController],
       providers: [
         AuthService,
-        UsersService,
-        JwtService,
-        PrismaService,
-        PaymentService,
-        NotificationsService,
-        TeamsServiceExtension,
-        TeamsService,
-        ProductsService,
-        ReferralsService,
-        PaymentServiceExtension,
+        {
+          provide: UsersService,
+          useValue: { /* mock UsersService */ },
+        },
+        {
+          provide: JwtService,
+          useValue: { /* mock JwtService */ },
+        },
+        {
+          provide: PrismaService,
+          useValue: { /* mock PrismaService */ },
+        },
+        {
+          provide: PaymentService,
+          useValue: { /* mock PaymentService */ },
+        },
+        {
+          provide: NotificationsService,
+          useValue: { /* mock NotificationsService */ },
+        },
+        {
+          provide: TeamsServiceExtension,
+          useValue: { /* mock TeamsServiceExtension */ },
+        },
+        {
+          provide: TeamsService,
+          useValue: { /* mock TeamsService */ },
+        },
+        {
+          provide: ProductsService,
+          useValue: { /* mock ProductsService */ },
+        },
+        {
+          provide: ReferralsService,
+          useValue: { /* mock ReferralsService */ },
+        },
+        {
+          provide: PaymentServiceExtension,
+          useValue: { /* mock PaymentServiceExtension */ },
+        },
         {
           provide: StripeService,
           useValue: mockStripeService,

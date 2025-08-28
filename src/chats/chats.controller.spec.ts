@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
-import { PrismaService } from '../../src/prisma.service';
-import { NotificationsService } from '../../src/notifications/notifications.service';
-import { TeamsServiceExtension } from '../../src/teams/teams.service.extension';
-import { TeamsService } from '../../src/teams/teams.service';
-import { AuthService } from '../../src/auth/auth.service';
-import { UsersService } from '../../src/users/users.service';
-import { PaymentService } from '../../src/payment/payment.service';
-import { ProductsService } from '../../src/products/products.service';
+import { PrismaService } from '../prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TeamsServiceExtension } from '../teams/teams.service.extension';
+import { TeamsService } from '../teams/teams.service';
+import { AuthService } from '../auth/auth.service';
+import { UsersService } from '../users/users.service';
+import { PaymentService } from '../payment/payment.service';
+import { ProductsService } from '../products/products.service';
 import { JwtService } from '@nestjs/jwt';
 import { ParametersModule } from '../config/config.module';
 import { LoggerModule } from '../utils/logger.module';
@@ -31,17 +31,50 @@ describe('ChatsController', () => {
       controllers: [ChatsController],
       providers: [
         ChatsService,
-        PrismaService,
-        NotificationsService,
-        TeamsServiceExtension,
-        TeamsService,
-        AuthService,
-        UsersService,
-        PaymentService,
-        ProductsService,
-        JwtService,
-        ReferralsService,
-        PaymentServiceExtension,
+        {
+          provide: PrismaService,
+          useValue: { /* mock PrismaService */ },
+        },
+        {
+          provide: NotificationsService,
+          useValue: { /* mock NotificationsService */ },
+        },
+        {
+          provide: TeamsServiceExtension,
+          useValue: { /* mock TeamsServiceExtension */ },
+        },
+        {
+          provide: TeamsService,
+          useValue: { /* mock TeamsService */ },
+        },
+        {
+          provide: AuthService,
+          useValue: { /* mock AuthService */ },
+        },
+        {
+          provide: UsersService,
+          useValue: { /* mock UsersService */ },
+        },
+        {
+          provide: PaymentService,
+          useValue: { /* mock PaymentService */ },
+        },
+        {
+          provide: ProductsService,
+          useValue: { /* mock ProductsService */ },
+        },
+        {
+          provide: JwtService,
+          useValue: { /* mock JwtService */ },
+        },
+        {
+          provide: ReferralsService,
+          useValue: { /* mock ReferralsService */ },
+        },
+        {
+          provide: PaymentServiceExtension,
+          useValue: { /* mock PaymentServiceExtension */ },
+        },
         {
           provide: StripeService,
           useValue: mockStripeService,

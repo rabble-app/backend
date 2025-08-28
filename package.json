@@ -32,9 +32,6 @@
     "db:reset": "npx prisma migrate reset",
     "studio": "npx prisma studio"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.341.0",
     "@aws-sdk/client-ses": "^3.515.0",
@@ -63,6 +60,7 @@
     "passport-jwt": "^4.0.1",
     "pdfmake": "^0.2.9",
     "postcode": "^5.1.0",
+    "prisma": "^6.13.0",
     "pusher": "^5.2.0",
     "qrcode": "^1.5.3",
     "reflect-metadata": "^0.1.13",
@@ -95,6 +93,7 @@
     "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
+    "dotenv-cli": "^10.0.0",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",

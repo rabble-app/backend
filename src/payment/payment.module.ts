@@ -7,16 +7,18 @@ import { PaymentControllerExtension } from './payment.controller.extension';
 import { PaymentServiceExtension } from './payment.service.extension';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TeamsModule } from '../teams/teams.module';
-import { ProductsModule } from '../../src/products/products.module';
+import { ProductsModule } from '../products/products.module';
 import { JwtService } from '@nestjs/jwt';
-import { ReferralsService } from '../referrals/referrals.service';
-import { StripeService } from '../stripe/stripe.service';
+import { ReferralsModule } from '../referrals/referrals.module';
+import { StripeModule } from '../stripe/stripe.module';
 @Module({
   imports: [
     forwardRef(() => UsersModule),
     NotificationsModule,
     forwardRef(() => TeamsModule),
     ProductsModule,
+    ReferralsModule,
+    StripeModule,
   ],
   controllers: [PaymentController, PaymentControllerExtension],
   providers: [
@@ -24,8 +26,6 @@ import { StripeService } from '../stripe/stripe.service';
     PrismaService,
     PaymentServiceExtension,
     JwtService,
-    ReferralsService,
-    StripeService,
   ],
   exports: [PaymentService, PaymentServiceExtension],
 })

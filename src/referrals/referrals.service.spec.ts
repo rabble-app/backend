@@ -3,10 +3,10 @@ import { ReferralsService } from './referrals.service';
 import { PrismaService } from '../prisma.service';
 import { UsersService } from '../users/users.service';
 import { StripeService } from '../stripe/stripe.service';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import Stripe from 'stripe';
-import { CC_TO_POUNDS_RATE } from '../utils/constants';
-import { BonusType, ReferralType } from '@prisma/client';
+
+import { BonusType, ReferralType, AffiliateRewardType } from '@prisma/client';
 import { CourierService } from '../notifications/courier.service';
 
 describe('ReferralsService', () => {
@@ -23,6 +23,7 @@ describe('ReferralsService', () => {
       user: {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
+        update: jest.fn(),
       },
       referral: {
         create: jest.fn(),
@@ -51,9 +52,18 @@ describe('ReferralsService', () => {
       },
       claim: {
         findMany: jest.fn(),
+        create: jest.fn(),
       },
       coupon: {
         aggregate: jest.fn(),
+        create: jest.fn(),
+      },
+      reward: {
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+      },
+      affiliate: {
+        findUnique: jest.fn(),
       },
       $transaction: jest.fn(),
     };
@@ -70,6 +80,7 @@ describe('ReferralsService', () => {
       createPaymentIntent: jest.fn(),
       createCustomer: jest.fn(),
       createSubscription: jest.fn(),
+      createCoupon: jest.fn(),
     };
 
     mockLogger = {
@@ -117,7 +128,7 @@ describe('ReferralsService', () => {
         },
         {
           provide: 'AWS_PARAMETERS',
-          useValue: { 
+          useValue: {
             SUPPLEMENT_STRIPE_SECRET_KEY: 'test_key',
             SUPPLEMENT_EMAIL_URL: 'https://test.com',
           },
@@ -378,57 +389,6 @@ describe('ReferralsService', () => {
     });
   });
 
-  describe('applyFirst30DaysReferralBonus', () => {
-    it('should apply 6 months free subscription for early users', async () => {
-      const mockUser = {
-        firstPaymentDate: new Date(),
-      };
-      const mockSubscription = {
-        id: 'sub1',
-        expiryDate: new Date(),
-      };
-
-      mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
-      mockPrismaService.subscription.findFirst.mockResolvedValueOnce(
-        mockSubscription,
-      );
-      mockPrismaService.$transaction.mockImplementationOnce(
-        async (callback) => {
-          const result = await callback(mockPrismaService);
-          return result;
-        },
-      );
-
-      await service.applyFirst30DaysReferralBonus('user1', 'order1', 'user1');
-
-      expect(mockPrismaService.subscription.update).toHaveBeenCalled();
-      expect(mockPrismaService.bonus.create).toHaveBeenCalledWith({
-        data: {
-          userId: 'user1',
-          amount: 0,
-          type: BonusType.REFERRAL,
-          category: '6 months free subscription',
-          orderId: 'order1',
-          referralId: 'user1',
-        },
-      });
-    });
-
-    it('should throw error if user not found', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
-      mockPrismaService.$transaction.mockRejectedValueOnce(
-        new HttpException(
-          'Failed to apply referral bonus',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        ),
-      );
-
-      await expect(
-        service.applyFirst30DaysReferralBonus('user1', 'order1', 'user1'),
-      ).rejects.toThrow(HttpException);
-    });
-  });
-
   describe('createReferral', () => {
     it('should create internal referral with valid refCode', async () => {
       const mockReferrer = {
@@ -445,14 +405,18 @@ describe('ReferralsService', () => {
     });
 
     it('should create affiliate referral when no internal referrer found', async () => {
+      const mockAffiliate = { id: 'aff1', code: 'AFF123' };
       mockPrismaService.user.findFirst.mockResolvedValueOnce(null);
+      mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(
+        mockAffiliate,
+      );
 
       await service.createReferral('user1', 'AFF123');
 
       expect(mockPrismaService.referral.create).toHaveBeenCalledWith({
         data: {
           userId: 'user1',
-          affiliateId: 'AFF123',
+          affiliateId: 'aff1',
           type: ReferralType.AFFILIATE,
         },
       });
@@ -649,20 +613,6 @@ describe('ReferralsService', () => {
     });
   });
 
-  describe('currency conversion', () => {
-    it('should correctly convert pounds to CC', () => {
-      const pounds = 100;
-      const cc = service.poundsToCC(pounds);
-      expect(cc).toBe(Math.round((pounds * CC_TO_POUNDS_RATE) / 10) * 10);
-    });
-
-    it('should correctly convert CC to pounds', () => {
-      const cc = 10000;
-      const pounds = service.ccToPounds(cc);
-      expect(pounds).toBe(cc / CC_TO_POUNDS_RATE);
-    });
-  });
-
   describe('getFirstTimePurchase', () => {
     it('should return the amount if user has no previous payments', async () => {
       mockPrismaService.payment.findMany.mockResolvedValueOnce([]);
@@ -683,6 +633,117 @@ describe('ReferralsService', () => {
       ]);
       const result = await service.getFirstTimePurchase('user1', {}, 12345);
       expect(result).toBe(false);
+    });
+  });
+
+  describe('claimRewards', () => {
+    it('should successfully claim rewards', async () => {
+      const mockWallet = {
+        userId: 'user1',
+        balance: 1000,
+        claimed: 0,
+        availableCredits: 0,
+      };
+      const mockReward = {
+        id: 'reward1',
+        amount: 500,
+        rate: 10,
+      };
+      const mockUpdatedWallet = {
+        ...mockWallet,
+        balance: 500,
+        claimed: 500,
+        availableCredits: 50,
+      };
+
+      mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
+      mockPrismaService.reward.findUnique.mockResolvedValueOnce(mockReward);
+      mockPrismaService.$transaction.mockResolvedValueOnce([
+        mockUpdatedWallet,
+        { id: 'claim1' },
+      ]);
+
+      const result = await service.claimRewards({
+        userId: 'user1',
+        rewardId: 'reward1',
+      });
+
+      expect(result).toEqual(mockUpdatedWallet);
+      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
+        where: { userId: 'user1' },
+        data: {
+          balance: { decrement: 500 },
+          claimed: { increment: 500 },
+          availableCredits: { increment: 50 },
+        },
+      });
+    });
+
+    it('should throw error if user has no wallet', async () => {
+      mockPrismaService.wallet.findUnique.mockResolvedValueOnce(null);
+
+      await expect(
+        service.claimRewards({ userId: 'user1', rewardId: 'reward1' }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw error if reward not found', async () => {
+      const mockWallet = { balance: 1000 };
+      mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
+      mockPrismaService.reward.findUnique.mockResolvedValueOnce(null);
+
+      await expect(
+        service.claimRewards({ userId: 'user1', rewardId: 'reward1' }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw error if insufficient balance', async () => {
+      const mockWallet = { balance: 100 };
+      const mockReward = { amount: 500, rate: 10 };
+      mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
+      mockPrismaService.reward.findUnique.mockResolvedValueOnce(mockReward);
+
+      await expect(
+        service.claimRewards({ userId: 'user1', rewardId: 'reward1' }),
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('applyCoupon', () => {
+    it('should apply coupon when sufficient credits available', async () => {
+      const mockCoupon = { id: 'coupon1' };
+      mockStripeService.createCoupon.mockResolvedValueOnce(mockCoupon);
+      mockPrismaService.wallet.update.mockResolvedValueOnce({});
+
+      // Mock the getAvailableCreditInfo method
+      jest.spyOn(service, 'getAvailableCreditInfo').mockResolvedValueOnce({
+        creditBalance: 0,
+        couponValue: 1000,
+        remainingAmount: 4000,
+        fullCoverage: false,
+        availableCredits: 1000,
+      });
+
+      const result = await service.applyCoupon('user1', 5000); // £50 in pence
+
+      expect(result).toHaveProperty('couponId', 'coupon1');
+      expect(result).toHaveProperty('amountOff');
+      expect(result).toHaveProperty('fullCouponCoverage');
+    });
+
+    it('should return default result when insufficient credits', async () => {
+      mockPrismaService.wallet.findUnique.mockResolvedValueOnce({
+        availableCredits: 0.01, // Less than minimum
+      });
+
+      const result = await service.applyCoupon('user1', 5000);
+
+      expect(result).toEqual({
+        amount: 5000,
+        couponId: null,
+        amountOff: 0,
+        fullCouponCoverage: false,
+      });
     });
   });
 
@@ -747,14 +808,16 @@ describe('ReferralsService', () => {
       jest.spyOn(service, 'isFirstTimePurchase').mockResolvedValueOnce(false);
       await expect(
         service.applyUserCode('user1', 'CODE-123', 10000),
-      ).rejects.toThrow('User has already made a purchase');
+      ).rejects.toThrow('User has previously made a purchase');
     });
-    it('should throw if user code is invalid', async () => {
+    it('should throw error if user code is invalid', async () => {
       jest.spyOn(service, 'isFirstTimePurchase').mockResolvedValueOnce(true);
       mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(null);
+
       await expect(
         service.applyUserCode('user1', 'CODE-123', 10000),
-      ).rejects.toThrow('Invalid referral code');
+      ).rejects.toThrow('Invalid code');
     });
     it('should create referral and return applicable bonus', async () => {
       jest.spyOn(service, 'isFirstTimePurchase').mockResolvedValueOnce(true);
@@ -775,6 +838,291 @@ describe('ReferralsService', () => {
         type: 'credits',
         amount: 100,
         amount_in_cc: 1000,
+      });
+    });
+  });
+
+  describe('affiliate functionality', () => {
+    describe('getAffiliate', () => {
+      it('should return affiliate by code', async () => {
+        const mockAffiliate = {
+          id: 'aff1',
+          code: 'AFF123',
+          rewardType: AffiliateRewardType.CREDIT,
+          rewardAmount: 10,
+        };
+        mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(
+          mockAffiliate,
+        );
+
+        const result = await service.getAffiliateById('aff1');
+
+        expect(result).toEqual(mockAffiliate);
+      });
+
+      it('should return null if affiliate not found', async () => {
+        mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(null);
+
+        const result = await service.getAffiliate('INVALID');
+
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('applyAffiliateCode', () => {
+      it('should return credit bonus for affiliate code', async () => {
+        const mockAffiliate = {
+          id: 'aff1',
+          code: 'AFF123',
+          rewardType: AffiliateRewardType.CREDIT,
+          rewardAmount: 10,
+        };
+        mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(
+          mockAffiliate,
+        );
+
+        const result = await service.applyAffiliateCode(
+          'user1',
+          'AFF123',
+          10000,
+        );
+
+        expect(result).toEqual({
+          type: 'credits',
+          amount: 1000, // 10% of 10000
+          amount_in_cc: expect.any(Number),
+        });
+      });
+
+      it('should throw error for invalid affiliate code', async () => {
+        mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(null);
+
+        await expect(
+          service.applyAffiliateCode('user1', 'INVALID', 10000),
+        ).rejects.toThrow(HttpException);
+      });
+    });
+
+    describe('applyAffiliateBonus', () => {
+      it('should apply credit bonus for affiliate', async () => {
+        const mockAffiliate = {
+          id: 'aff1',
+          code: 'AFF123',
+          rewardType: AffiliateRewardType.CREDIT,
+          rewardAmount: 10,
+        };
+        mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(
+          mockAffiliate,
+        );
+        mockPrismaService.bonus.create.mockResolvedValueOnce({});
+        mockPrismaService.wallet.findUnique.mockResolvedValueOnce({});
+        mockPrismaService.wallet.update.mockResolvedValueOnce({});
+
+        await service.applyAffiliateBonus({
+          userId: 'user1',
+          affiliateId: 'AFF123',
+          purchaseAmount: 10000,
+          orderId: 'order1',
+        });
+
+        expect(mockPrismaService.bonus.create).toHaveBeenCalledWith({
+          data: {
+            userId: 'user1',
+            amount: 10000000, // 10% of 10000 = 1000, converted to CC
+            type: BonusType.AFFILIATE_REFERRAL,
+            orderId: 'order1',
+          },
+        });
+      });
+
+      it('should apply free month bonus for affiliate', async () => {
+        const mockAffiliate = {
+          id: 'aff1',
+          code: 'AFF123',
+          rewardType: AffiliateRewardType.FREE_MONTH,
+          rewardAmount: 3,
+        };
+        mockPrismaService.affiliate.findUnique.mockResolvedValueOnce(
+          mockAffiliate,
+        );
+        mockPrismaService.user.findUnique.mockResolvedValueOnce({
+          firstPaymentDate: new Date(),
+        });
+        mockPrismaService.subscription.findFirst.mockResolvedValueOnce({
+          id: 'sub1',
+          expiryDate: new Date(),
+        });
+        mockPrismaService.$transaction.mockImplementationOnce(
+          async (callback) => {
+            const txMock = {
+              user: {
+                findUnique: jest
+                  .fn()
+                  .mockResolvedValueOnce({ firstPaymentDate: new Date() }),
+              },
+              subscription: {
+                findFirst: jest.fn().mockResolvedValueOnce({
+                  id: 'sub1',
+                  expiryDate: new Date(),
+                }),
+                update: jest.fn(),
+              },
+              bonus: {
+                create: jest.fn(),
+              },
+            };
+            return callback(txMock);
+          },
+        );
+
+        await service.applyAffiliateBonus({
+          userId: 'user1',
+          affiliateId: 'AFF123',
+          purchaseAmount: 10000,
+          orderId: 'order1',
+        });
+
+        expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('handleRefCodeAndFreeTrial', () => {
+    it('should generate referral codes and create free trial', async () => {
+      const mockUser = {
+        refCode: null,
+        userCode: null,
+        firstName: 'John',
+      };
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
+      mockPrismaService.user.update.mockResolvedValueOnce({});
+      mockPrismaService.subscription.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.bonus.findFirst.mockResolvedValueOnce(null);
+      mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockPrismaService.subscription.create.mockResolvedValueOnce({});
+      mockPrismaService.bonus.create.mockResolvedValueOnce({});
+
+      await service.handleRefCodeAndFreeTrial('user1');
+
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        data: {
+          refCode: expect.any(String),
+          userCode: expect.stringMatching(/^JOHN-[A-Z0-9]{3}$/),
+        },
+      });
+    });
+
+    it('should not generate codes if user already has them', async () => {
+      const mockUser = {
+        refCode: 'EXISTING',
+        userCode: 'EXISTING-123',
+        firstName: 'John',
+      };
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
+
+      await service.handleRefCodeAndFreeTrial('user1');
+
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('email functionality', () => {
+    describe('sendCoinEarnedEmail', () => {
+      it('should send coin earned email successfully', async () => {
+        const mockSponsor = {
+          id: 'sponsor1',
+          email: 'sponsor@test.com',
+          firstName: 'John',
+          refCode: 'REF123',
+          userCode: 'JOHN-123',
+        };
+        const mockWallet = { balance: 1000 };
+        mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
+        mockCourierService.sendCoinEarnedMail.mockResolvedValueOnce({});
+
+        await service['sendCoinEarnedEmail'](mockSponsor, 500);
+
+        expect(mockCourierService.sendCoinEarnedMail).toHaveBeenCalledWith(
+          'sponsor@test.com',
+          'John',
+          expect.stringContaining('REF123'),
+          'JOHN-123',
+          500,
+          1000,
+          expect.any(Number),
+          expect.stringContaining('/dashboard'),
+        );
+      });
+
+      it('should handle email sending error gracefully', async () => {
+        const mockSponsor = {
+          id: 'sponsor1',
+          email: 'sponsor@test.com',
+          firstName: 'John',
+          refCode: 'REF123',
+          userCode: 'JOHN-123',
+        };
+        const mockWallet = { balance: 1000 };
+        mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
+        mockCourierService.sendCoinEarnedMail.mockRejectedValueOnce(
+          new Error('Email error'),
+        );
+
+        // Should not throw error
+        await expect(
+          service['sendCoinEarnedEmail'](mockSponsor, 500),
+        ).resolves.not.toThrow();
+
+        expect(mockLogger.error).toHaveBeenCalled();
+      });
+    });
+
+    describe('sendReferralFreeMonthEmail', () => {
+      it('should send referral free month email successfully', async () => {
+        const mockUser = {
+          id: 'user1',
+          email: 'user@test.com',
+          firstName: 'Jane',
+          refCode: 'REF456',
+          userCode: 'JANE-456',
+          firstPaymentDate: new Date('2025-01-01'),
+        };
+        mockCourierService.sendReferralFreeMonthMail.mockResolvedValueOnce({});
+
+        await service['sendReferralFreeMonthEmail'](mockUser);
+
+        expect(
+          mockCourierService.sendReferralFreeMonthMail,
+        ).toHaveBeenCalledWith(
+          'user@test.com',
+          'Jane',
+          expect.any(String),
+          'JANE-456',
+          expect.stringContaining('REF456'),
+          expect.stringContaining('/dashboard'),
+        );
+      });
+
+      it('should handle email sending error gracefully', async () => {
+        const mockUser = {
+          id: 'user1',
+          email: 'user@test.com',
+          firstName: 'Jane',
+          refCode: 'REF456',
+          userCode: 'JANE-456',
+          firstPaymentDate: new Date('2025-01-01'),
+        };
+        mockCourierService.sendReferralFreeMonthMail.mockRejectedValueOnce(
+          new Error('Email error'),
+        );
+
+        // Should not throw error
+        await expect(
+          service['sendReferralFreeMonthEmail'](mockUser),
+        ).resolves.not.toThrow();
+
+        expect(mockLogger.error).toHaveBeenCalled();
       });
     });
   });

@@ -14,6 +14,7 @@ import {
   IPricePlan,
   ITeamWithOtherInfo,
   ProductApprovalStatus,
+  ProductWithSupplementPayload,
 } from '../../src/lib/types';
 import { PaymentService } from '../../src/payment/payment.service';
 import { UpdateProductStatusDto } from './dto/update-product-status';
@@ -38,7 +39,7 @@ export class ProductsService {
     id: string,
     teamId = '',
     userId = '',
-  ): Promise<Product | null> {
+  ): Promise<ProductWithSupplementPayload | null> {
     let orderId = '';
     let orderDeadline: Date;
     let deliveryDate: Date;
@@ -215,18 +216,20 @@ export class ProductsService {
         );
         result['nextEditableDate'] = addQuarters(orderDeadline, 1);
       }
+      if (priceInfo && priceInfo.length > 0) {
+        // Calculate next discount level
+        const nextDiscountLevel = priceInfo
+          .sort((a, b) => (a.teamMemberCount > b.teamMemberCount ? 1 : -1))
+          .find((plan) => plan.teamMemberCount > teamMemberCount);
 
-      // Calculate next discount level
-      const nextDiscountLevel = priceInfo
-        .sort((a, b) => (a.teamMemberCount > b.teamMemberCount ? 1 : -1))
-        .find((plan) => plan.teamMemberCount > teamMemberCount);
-
-      result['nextPriceDiscountLevel'] = nextDiscountLevel
-        ? {
-            membersNeeded: nextDiscountLevel.teamMemberCount - teamMemberCount,
-            expectedDiscount: nextDiscountLevel.percentageDiscount,
-          }
-        : null;
+        result['nextPriceDiscountLevel'] = nextDiscountLevel
+          ? {
+              membersNeeded:
+                nextDiscountLevel.teamMemberCount - teamMemberCount,
+              expectedDiscount: nextDiscountLevel.percentageDiscount,
+            }
+          : null;
+      }
     }
     return result;
   }
