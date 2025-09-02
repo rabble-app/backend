@@ -813,7 +813,7 @@ export class PaymentService {
         productInfo.alignmentStock < joinSupplementTeamDto.topupQuantity
       ) {
         return 7;
-      } else {
+      } else if (joinSupplementTeamDto.topupQuantity > 0) {
         // update the alignment stock
         await this.productsService.updateProductInfo({
           where: { id: joinSupplementTeamDto.productId },
