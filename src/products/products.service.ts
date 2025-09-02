@@ -1,6 +1,7 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import {
+  Prisma,
   Product,
   ProductCategory,
   RecentlyViewed,
@@ -654,5 +655,15 @@ export class ProductsService {
       }
     }
     return discount;
+  }
+  // update any product info
+  async updateProductInfo(params: {
+    where: Prisma.ProductWhereUniqueInput;
+    data: Prisma.ProductUpdateInput;
+  }) {
+    return await this.prisma.product.update({
+      where: params.where,
+      data: params.data,
+    });
   }
 }

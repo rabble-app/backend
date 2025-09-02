@@ -2,6 +2,7 @@ import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import {
   BuyingTeam,
   Order,
+  PaymentStatus,
   Prisma,
   TeamMember,
   TeamRequest,
@@ -154,7 +155,7 @@ export class TeamsServiceExtension {
         },
       },
     });
-    
+
     // Delete user's basket records for this team
     await this.prisma.basketC.deleteMany({
       where: {
@@ -173,15 +174,22 @@ export class TeamsServiceExtension {
       },
     });
 
+    // delete the users pending payments records
+    await this.prisma.payment.deleteMany({
+      where: {
+        userId: record.userId,
+        status: PaymentStatus.PENDING,
+      },
+    });
+
     const result = await this.prisma.teamMember.delete({
       where,
     });
-    
+
     if (record.team.hostId == record.userId) {
       // delete the buying team
       await this.teamsService.deleteTeam({ id: record.teamId });
     }
-   
 
     return result;
   }

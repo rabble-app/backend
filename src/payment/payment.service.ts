@@ -807,6 +807,23 @@ export class PaymentService {
 
     let orderId = '';
     if (joinSupplementTeamDto.teamStatus === SupplementTeamStatus.ACTIVE) {
+      // confirm that there is still enough stock for aligment if the user requested for it
+      if (
+        joinSupplementTeamDto.topupQuantity > 0 &&
+        productInfo.alignmentStock < joinSupplementTeamDto.topupQuantity
+      ) {
+        return 7;
+      } else {
+        // update the alignment stock
+        await this.productsService.updateProductInfo({
+          where: { id: joinSupplementTeamDto.productId },
+          data: {
+            alignmentStock:
+              productInfo.alignmentStock - joinSupplementTeamDto.topupQuantity,
+          },
+        });
+      }
+
       if (!userInfo.stripeCustomerId) return 1;
       // create payment intent
       const paymentIntent = await this.createIntent(
