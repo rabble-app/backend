@@ -423,6 +423,16 @@ export class PaymentControllerExtension {
         'Joining team failed',
       );
     }
+
+    if (result == 7) {
+      return formatResponse(
+        'We no longer have stock for alignment',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Joining team failed',
+      );
+    }
     return formatResponse(
       result,
       res,

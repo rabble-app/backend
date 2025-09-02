@@ -240,6 +240,7 @@ model Product {
   quantityOfSubUnitPerOrder Int                         @default(1) @map("quantity_of_subunit_per_order")
   unitsOfMeasurePerSubUnit  String                      @default("Carton") @map("units_of_measure_per_subunit")
   stock                     Int?                        @default(0)
+  alignmentStock            Int?                        @default(0)  @map("alignment_stock")
   approvalStatus            ProductApprovalStatus       @default(PENDING) @map("approval_status")
   wholesalePrice            Decimal?                    @default(0) @map("wholesale_price") @db.Decimal(9, 2)
   price                     Decimal                     @default(0) @db.Decimal(9, 2)

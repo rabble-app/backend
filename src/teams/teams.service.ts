@@ -183,13 +183,13 @@ export class TeamsService {
     const teamMembers = await this.teamsServiceExtension.getAllTeamUsers(
       teamData.teamId,
     );
-    
+
     // Use the new function to determine membership role
     const memberStatus = await this.determineTeamMembershipRole(
       team,
       teamData.role as MembershipStatus,
     );
-    
+
     const result = await this.prisma.teamMember.upsert({
       where: {
         team_unique_user: {
@@ -566,23 +566,25 @@ export class TeamsService {
     // Check if the team has supplement products
     if (team.supplementTeamProducts) {
       const supplementStatus = team.supplementTeamProducts.status;
-      
+
       // If supplement product status is PREORDER, return FOUNDING_MEMBER
       if (supplementStatus === SupplementTeamStatus.PREORDER) {
         return MembershipStatus.FOUNDING_MEMBER;
       }
-      
+
       // If supplement product status is ACTIVE, check the latest order
       if (supplementStatus === SupplementTeamStatus.ACTIVE) {
-        const latestOrder = await this.paymentService.getTeamLatestOrder(team.id);
-         
+        const latestOrder = await this.paymentService.getTeamLatestOrder(
+          team.id,
+        );
+
         // If firstDelivery is true, return EARLY_MEMBER, otherwise return MEMBER
         if (latestOrder?.firstDelivery) {
           return MembershipStatus.EARLY_MEMBER;
-        } 
+        }
       }
     }
-    
+
     // Default case: return MEMBER
     return MembershipStatus.MEMBER;
   }
