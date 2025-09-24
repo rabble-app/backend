@@ -289,6 +289,16 @@ export class PaymentControllerExtension {
         'Payment intent capture failed',
       );
     }
+
+    if (result == 3) {
+      return formatResponse(
+        'We no longer have stock for top up, try again later',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'No Top up stock available',
+      );
+    }
     return formatResponse(
       result,
       res,
@@ -417,6 +427,16 @@ export class PaymentControllerExtension {
     if (result == 6) {
       return formatResponse(
         'User does not have an active subscription',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'Joining team failed',
+      );
+    }
+
+    if (result == 7) {
+      return formatResponse(
+        'We no longer have stock for alignment',
         res,
         HttpStatus.BAD_REQUEST,
         true,

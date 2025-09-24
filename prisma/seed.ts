@@ -2984,7 +2984,7 @@ async function main() {
       quantityOfSubUnitPerOrder: 90,
       poucheSize: 90,
       alignmentPoucheSize: 30,
-      unitsOfMeasurePerSubUnit: 'capsule',
+      unitsOfMeasurePerSubUnit: 'capsules',
       measuresPerSubUnit: 93,
       price: 41.67,
       wholesalePrice: 18.12,

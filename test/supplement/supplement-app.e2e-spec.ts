@@ -90,6 +90,7 @@ describe('PaymentController (e2e)', () => {
         name: faker.internet.userName(),
         leadTime: 2,
         price: 200,
+        alignmentStock: 10, // Add sufficient alignment stock for topup
       },
     });
     productId = product.id;
@@ -100,6 +101,7 @@ describe('PaymentController (e2e)', () => {
         name: `${faker.internet.userName()}2`,
         leadTime: 2,
         price: 200,
+        alignmentStock: 10, // Add sufficient alignment stock for topup
       },
     });
     product2Id = product2.id;

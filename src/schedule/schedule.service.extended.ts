@@ -7,13 +7,25 @@ import {
   IScheduleTeam,
   notificationType,
 } from '../lib/types';
-import { OrderStatus, OrderType, PaymentStatus, SupplementTeamStatus } from '@prisma/client';
+import {
+  OrderStatus,
+  OrderType,
+  PaymentStatus,
+  SupplementTeamStatus,
+} from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { InsightsService } from '../insights/insights.service';
-import { add, addWeeks, differenceInDays, getWeek, subWeeks } from 'date-fns';
+import {
+  add,
+  addWeeks,
+  differenceInDays,
+  formatDate,
+  getWeek,
+  subWeeks,
+} from 'date-fns';
 import { QRCodeService } from '../qrcode/qrcode.service';
 import { TeamsService } from '../teams/teams.service';
 import { setTimeout } from 'timers';
@@ -320,11 +332,14 @@ export class ScheduleServiceExtended {
               },
             },
           },
-          // authorize the payment of the supplement first order after activation
+          // authorize the payment of the supplement first order after activation 24 hours after creation
           {
             order: {
               type: 'SUPPLEMENT',
-              firstDelivery: true,
+              firstDelivery: true, // and order date is more than 24hours
+              createdAt: {
+                lte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
+              },
             },
           },
           // authorize the payment of the supplement order if the deadline has reached
@@ -597,10 +612,11 @@ export class ScheduleServiceExtended {
         );
         // case 1: if the interval is less than 0, then they can't meet the next quarter delivery. we will need to give them alignment to the upper coming quarter
         if (interval < 0) {
-          alignmentDays = differenceInDays(
-            upperQuarterDate,
-            add(currentDate, { weeks: supplement.product.leadTime }),
-          ) + numberOfDaysInAQuarter;
+          alignmentDays =
+            differenceInDays(
+              upperQuarterDate,
+              add(currentDate, { weeks: supplement.product.leadTime }),
+            ) + numberOfDaysInAQuarter;
           // case 2: if the interval is less than 7, we charge them for the next quarter only, no aligment
         } else if (interval < 7) {
           alignmentDays = numberOfDaysInAQuarter;
@@ -609,15 +625,19 @@ export class ScheduleServiceExtended {
           alignmentDays = numberOfDaysInAQuarter + interval;
         }
 
+        const deliveryDate = addWeeks(currentDate, supplement.product.leadTime);
         // create the order for the team
         const orderData: IOrder = {
           teamId: supplement.teamId,
           status: OrderStatus.PENDING,
           type: OrderType.SUPPLEMENT,
           // we add 1 week extra to the leadtime for that to the duration for processing their payment
-          deadline: subWeeks(interval < 0 ? upperQuarterDate : targetQuarterDate, supplement.product.leadTime + 1),
+          deadline: subWeeks(
+            interval < 0 ? upperQuarterDate : targetQuarterDate,
+            supplement.product.leadTime + 1,
+          ),
           firstDelivery: true,
-          deliveryDate: addWeeks(currentDate, supplement.product.leadTime),
+          deliveryDate: deliveryDate,
         };
         const { id } = await this.paymentService.createOrder(orderData);
 
@@ -626,6 +646,8 @@ export class ScheduleServiceExtended {
           supplement.teamId,
           id,
           alignmentDays,
+          true,
+          deliveryDate,
         );
       }
     }
@@ -637,6 +659,8 @@ export class ScheduleServiceExtended {
     teamId: string,
     orderId: string,
     duration: number,
+    firstDelivery = false,
+    deliveryDate = null,
   ): Promise<any> {
     // get the team members
     try {
@@ -651,6 +675,14 @@ export class ScheduleServiceExtended {
           id: true,
           role: true,
           userId: true,
+          user: {
+            select: {
+              email: true,
+              firstName: true,
+              refCode: true,
+              userCode: true,
+            },
+          },
         },
       });
 
@@ -675,7 +707,7 @@ export class ScheduleServiceExtended {
           }
         }
         // find the basket for the member
-        const basket = await this.prisma.basketC.findMany({
+        const basket = await this.prisma.basketC.findFirst({
           where: {
             teamId,
             userId: member.userId,
@@ -685,6 +717,7 @@ export class ScheduleServiceExtended {
             productId: true,
             product: {
               select: {
+                name: true,
                 id: true,
                 priceInfo: true,
                 price: true,
@@ -700,32 +733,37 @@ export class ScheduleServiceExtended {
                     status: true,
                   },
                 },
+                poucheSize: true,
+                alignmentPoucheSize: true,
               },
             },
           },
         });
 
-        let totalAmount = 0; // amount to be paid by the user
-        for (const item of basket) {
-          if (item.product.status == 'OUT_OF_STOCK') {
+        if (basket) {
+          if (basket.product.status == 'OUT_OF_STOCK') {
             continue;
           }
           // get the dyanamic price for the product
           const priceDiscount = this.productsService.getPriceDiscount(
-            item.product.priceInfo as unknown as IPricePlan[],
+            basket.product.priceInfo as unknown as IPricePlan[],
             teamMembers.length,
-            item.product.supplementTeamProducts?.status ?? SupplementTeamStatus.ACTIVE,
+            basket.product.supplementTeamProducts?.status ??
+              SupplementTeamStatus.ACTIVE,
           );
-          const originalPrice = item.product.rrp;
+          const originalPrice = basket.product.rrp;
           const priceWithDiscount = !priceDiscount
             ? originalPrice
             : +originalPrice - (+priceDiscount / 100) * +originalPrice;
-          // a quarter is 90 days,  a single package we have is for 30 days, 
-          // so we get the number of 30 days in a quarter, 1 pouches for a quarter 
+          // a quarter is 90 days,  a single package we have is for 30 days,
+          // so we get the number of 30 days in a quarter, 1 pouches for a quarter
           // for a user that takes 1 capsule per day
-          // what if the product is measured in grams? 
+          // what if the product is measured in grams?
           // i need to get the number of grams for 1month
-          const productQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/+item.product.gramsPerCount) : +item.capsulePerDay;
+          const productQuantity =
+            basket.product.subUnit == 'grams'
+              ? +basket.capsulePerDay / +basket.product.gramsPerCount
+              : +basket.capsulePerDay;
 
           // create the subscription for this user
           let productPrice = +priceWithDiscount * productQuantity;
@@ -734,7 +772,11 @@ export class ScheduleServiceExtended {
           // check if there is alignment package
           if (duration > 91) {
             const topupDuration = duration - 91;
-            topupQuantity = item.product.subUnit == 'grams' ? (+item.capsulePerDay/+item.product.gramsPerCount) * Math.ceil(topupDuration / 30) : +item.capsulePerDay * Math.ceil(topupDuration / 30);
+            topupQuantity =
+              basket.product.subUnit == 'grams'
+                ? (+basket.capsulePerDay / +basket.product.gramsPerCount) *
+                  Math.ceil(topupDuration / 30)
+                : +basket.capsulePerDay * Math.ceil(topupDuration / 30);
             topUpPrice = +priceWithDiscount * topupQuantity;
             productPrice += topUpPrice;
           }
@@ -744,7 +786,7 @@ export class ScheduleServiceExtended {
             productPrice =
               productPrice -
               (productPrice *
-                +item.product?.supplementTeamProducts
+                +basket.product?.supplementTeamProducts
                   ?.foundingMembersDiscount) /
                 100;
           }
@@ -753,34 +795,43 @@ export class ScheduleServiceExtended {
             productPrice =
               productPrice -
               (productPrice *
-                +item.product?.supplementTeamProducts?.earlyMembersDiscount) /
+                +basket.product?.supplementTeamProducts?.earlyMembersDiscount) /
                 100;
           }
 
           // Calculate total discount percentage
           let totalDiscount = priceDiscount || 0;
           if (member.role === 'FOUNDING_MEMBER') {
-            totalDiscount += +item.product?.supplementTeamProducts?.foundingMembersDiscount || 0;
+            totalDiscount +=
+              +basket.product?.supplementTeamProducts
+                ?.foundingMembersDiscount || 0;
           } else if (member.role === 'EARLY_MEMBER') {
-            totalDiscount += +item.product?.supplementTeamProducts?.earlyMembersDiscount || 0;
+            totalDiscount +=
+              +basket.product?.supplementTeamProducts?.earlyMembersDiscount ||
+              0;
           }
           // calculate the price per count
 
           let pricePerCount = Number((+priceWithDiscount / 90).toFixed(4));
           // Adjust pricePerCount and rrpPerCount for grams if applicable
-          if (item.product.unitsOfMeasurePerSubUnit === 'grams' && item.product.gramsPerCount) {
-            pricePerCount = Number((pricePerCount / Number(item.product.gramsPerCount)).toFixed(4));
+          if (
+            basket.product.unitsOfMeasurePerSubUnit === 'grams' &&
+            basket.product.gramsPerCount
+          ) {
+            pricePerCount = Number(
+              (pricePerCount / Number(basket.product.gramsPerCount)).toFixed(4),
+            );
           }
 
           const newProduct = {
             pricePerCount,
             orderId,
             userId: member.userId,
-            productId: item.productId,
+            productId: basket.productId,
             quantity: productQuantity,
             price: productPrice - topUpPrice,
-            capsulePerDay: item.capsulePerDay,
-            discount: totalDiscount,  
+            capsulePerDay: basket.capsulePerDay,
+            discount: totalDiscount,
           };
 
           // add to basket
@@ -798,18 +849,34 @@ export class ScheduleServiceExtended {
               },
             });
           }
+          // record the payment to be made by the user
+          await this.paymentService.recordPayment({
+            orderId,
+            userId: member.userId,
+            amount: productPrice,
+            status: PaymentStatus.PENDING,
+          });
 
-          // increment totalAmount
-          totalAmount += +productPrice;
+          // send email to the user if it is the first delivery
+          if (firstDelivery && basket) {
+            await this.courierService.send24HoursBeforeSubscriptionCharge({
+              email: member.user.email,
+              firstName: member.user.firstName,
+              productName: basket.product.name,
+              capsulePerQuarter: productQuantity * +basket.product.poucheSize,
+              price: productPrice,
+              arrivalDate: formatDate(deliveryDate, 'dd MMM yyyy'),
+              capsuleTotal:
+                productQuantity * +basket.product.poucheSize +
+                topupQuantity * +basket.product.alignmentPoucheSize,
+              nextDrop: formatDate(upperQuarterDate, 'dd MMM yyyy'),
+              dashboardLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
+              referralLink: `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${member.user.refCode}`,
+              discountCode: member.user.userCode,
+              unitOfMeasure: basket.product.subUnit,
+            });
+          }
         }
-
-        // record the payment to be made by the user
-        await this.paymentService.recordPayment({
-          orderId,
-          userId: member.userId,
-          amount: totalAmount,
-          status: PaymentStatus.PENDING,
-        });
       }
       return true;
     } catch (error) {
@@ -828,7 +895,7 @@ export class ScheduleServiceExtended {
       },
       deadline: {
         lte: new Date(),
-      }
+      },
     };
     const expiredOrders = await this.prisma.order.findMany({
       where: {
@@ -885,15 +952,25 @@ export class ScheduleServiceExtended {
   async handleLastDayFreeMembershipBonus(): Promise<boolean> {
     try {
       const today = new Date();
-      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(
+        today.getTime() - 30 * 24 * 60 * 60 * 1000,
+      );
 
       // Get users whose firstPaymentDate is exactly 30 days ago
       const users = await this.prisma.user.findMany({
         where: {
           firstPaymentDate: {
             not: null,
-            gte: new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate()),
-            lt: new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate() + 1),
+            gte: new Date(
+              thirtyDaysAgo.getFullYear(),
+              thirtyDaysAgo.getMonth(),
+              thirtyDaysAgo.getDate(),
+            ),
+            lt: new Date(
+              thirtyDaysAgo.getFullYear(),
+              thirtyDaysAgo.getMonth(),
+              thirtyDaysAgo.getDate() + 1,
+            ),
           },
         },
         select: {
@@ -910,7 +987,7 @@ export class ScheduleServiceExtended {
       for (const user of users) {
         try {
           const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
-          
+
           await this.courierService.sendLastDayOfFreeMembershipBonus(
             user.email,
             user.firstName,
@@ -932,15 +1009,25 @@ export class ScheduleServiceExtended {
   async handle15thDayFreeMembershipBonus(): Promise<boolean> {
     try {
       const today = new Date();
-      const fifteenDaysAgo = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
+      const fifteenDaysAgo = new Date(
+        today.getTime() - 15 * 24 * 60 * 60 * 1000,
+      );
 
       // Get users whose firstPaymentDate is exactly 15 days ago
       const users = await this.prisma.user.findMany({
         where: {
           firstPaymentDate: {
             not: null,
-            gte: new Date(fifteenDaysAgo.getFullYear(), fifteenDaysAgo.getMonth(), fifteenDaysAgo.getDate()),
-            lt: new Date(fifteenDaysAgo.getFullYear(), fifteenDaysAgo.getMonth(), fifteenDaysAgo.getDate() + 1),
+            gte: new Date(
+              fifteenDaysAgo.getFullYear(),
+              fifteenDaysAgo.getMonth(),
+              fifteenDaysAgo.getDate(),
+            ),
+            lt: new Date(
+              fifteenDaysAgo.getFullYear(),
+              fifteenDaysAgo.getMonth(),
+              fifteenDaysAgo.getDate() + 1,
+            ),
           },
         },
         select: {
@@ -957,7 +1044,7 @@ export class ScheduleServiceExtended {
       for (const user of users) {
         try {
           const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
-          
+
           await this.courierService.send30DaysMidWayReminder(
             user.email,
             user.firstName,
@@ -965,7 +1052,10 @@ export class ScheduleServiceExtended {
             user.userCode,
           );
         } catch (error) {
-          console.error(`Failed to send 15th day email to user ${user.id}:`, error);
+          console.error(
+            `Failed to send 15th day email to user ${user.id}:`,
+            error,
+          );
         }
       }
 
@@ -979,15 +1069,25 @@ export class ScheduleServiceExtended {
   async handleLast3DaysFreeMembershipBonus(): Promise<boolean> {
     try {
       const today = new Date();
-      const twentySevenDaysAgo = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
+      const twentySevenDaysAgo = new Date(
+        today.getTime() - 27 * 24 * 60 * 60 * 1000,
+      );
 
       // Get users whose firstPaymentDate is exactly 27 days ago
       const users = await this.prisma.user.findMany({
         where: {
           firstPaymentDate: {
             not: null,
-            gte: new Date(twentySevenDaysAgo.getFullYear(), twentySevenDaysAgo.getMonth(), twentySevenDaysAgo.getDate()),
-            lt: new Date(twentySevenDaysAgo.getFullYear(), twentySevenDaysAgo.getMonth(), twentySevenDaysAgo.getDate() + 1),
+            gte: new Date(
+              twentySevenDaysAgo.getFullYear(),
+              twentySevenDaysAgo.getMonth(),
+              twentySevenDaysAgo.getDate(),
+            ),
+            lt: new Date(
+              twentySevenDaysAgo.getFullYear(),
+              twentySevenDaysAgo.getMonth(),
+              twentySevenDaysAgo.getDate() + 1,
+            ),
           },
         },
         select: {
@@ -1004,7 +1104,7 @@ export class ScheduleServiceExtended {
       for (const user of users) {
         try {
           const referralLink = `${this.parameters.SUPPLEMENT_EMAIL_URL}?ref=${user.refCode}`;
-          
+
           await this.courierService.sendLast3DaysOf30DaysReminder(
             user.email,
             user.firstName,
@@ -1012,7 +1112,10 @@ export class ScheduleServiceExtended {
             user.userCode,
           );
         } catch (error) {
-          console.error(`Failed to send last 3 days email to user ${user.id}:`, error);
+          console.error(
+            `Failed to send last 3 days email to user ${user.id}:`,
+            error,
+          );
         }
       }
 

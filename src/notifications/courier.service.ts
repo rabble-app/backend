@@ -764,20 +764,34 @@ export class CourierService {
     });
   }
 
-  async send24HoursBeforeSubscriptionCharge(
-    email: string,
-    firstName: string,
-    productName: string,
-    capsulePerQuarter: number,
-    price: number,
-    arrivalDate: string,
-    capsuleTotal: number,
-    nextDrop: string,
-    dashboardLink: string,
-    referralLink: string,
-    discountCode: string,
-    unitOfMeasure: string,
-  ) {
+  async send24HoursBeforeSubscriptionCharge(data: {
+    email: string;
+    firstName: string;
+    productName: string;
+    capsulePerQuarter: number;
+    price: number;
+    arrivalDate: string;
+    capsuleTotal: number;
+    nextDrop: string;
+    dashboardLink: string;
+    referralLink: string;
+    discountCode: string;
+    unitOfMeasure: string;
+  }) {
+    const {
+      email,
+      firstName,
+      productName,
+      capsulePerQuarter,
+      price,
+      arrivalDate,
+      capsuleTotal,
+      nextDrop,
+      dashboardLink,
+      referralLink,
+      discountCode,
+      unitOfMeasure,
+    } = data;
     this.logger.info(
       'Sending 24 hours before subscription charge email to user %o',
       {
