@@ -139,7 +139,10 @@ export class TeamsServiceExtension2 {
     });
 
     // Send email notification for subscription cancellation
-    if (subscriptionStatus === SubscriptionStatus.CANCELED && result.user?.email) {
+    if (
+      subscriptionStatus === SubscriptionStatus.CANCELED &&
+      result.user?.email
+    ) {
       try {
         const effectiveCancellationDate = format(new Date(), 'dd/MM/yyyy');
         const productsUrl = `${this.parameters.SUPPLEMENT_EMAIL_URL}/products`;

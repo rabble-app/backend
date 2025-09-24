@@ -29,6 +29,7 @@ import {
 } from '../utils/constants';
 import { CourierService } from '../notifications/courier.service';
 import { targetQuarterDate } from '../utils/date';
+import { ProductsService } from '../products/products.service';
 @Injectable()
 export class PaymentServiceExtension {
   constructor(
@@ -41,6 +42,7 @@ export class PaymentServiceExtension {
     private readonly stripeService: StripeService,
     @Inject('ROLLBAR') private readonly rollbar: Rollbar,
     private readonly courierService: CourierService,
+    private readonly productsService: ProductsService,
   ) {}
 
   async getUserPaymentOptions(
@@ -104,7 +106,7 @@ export class PaymentServiceExtension {
           result.product.name,
           result.quantity * +result.product.poucheSize,
           result.product.subUnit,
-          `£${+result.price * result.quantity}`,
+          `${+result.price * result.quantity}`,
           `${format(targetQuarterDate, 'dd/MM/yyyy')}`,
           `${this.parameters.SUPPLEMENT_EMAIL_URL}/dashboard`,
         );
@@ -376,6 +378,28 @@ export class PaymentServiceExtension {
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       topUpDto.teamId,
     );
+
+    // get the product info
+    const productInfo = await this.productsService.getProduct(
+      topUpDto.productId,
+      topUpDto.teamId,
+    );
+
+    // confirm that there is still enough stock for aligment if the user requested for it
+    if (
+      topUpDto.quantity > 0 &&
+      productInfo.alignmentStock < topUpDto.quantity
+    ) {
+      return 3;
+    } else if (topUpDto.quantity > 0) {
+      // update the alignment stock
+      await this.productsService.updateProductInfo({
+        where: { id: topUpDto.productId },
+        data: {
+          alignmentStock: productInfo.alignmentStock - topUpDto.quantity,
+        },
+      });
+    }
 
     // capture payment
     const captureResult = await this.captureFund(
