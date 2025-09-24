@@ -15,7 +15,6 @@ import { CourierService } from '../notifications/courier.service';
 describe('ScheduleServiceExtended', () => {
   let service: ScheduleServiceExtended;
 
-
   const mockPrismaService = {
     supplementTeamProducts: {
       findMany: jest.fn(),
@@ -122,28 +121,34 @@ describe('ScheduleServiceExtended', () => {
 
   describe('activatePreOrderTeams', () => {
     it('should activate pre-order teams when threshold is met', async () => {
-      const mockSupplements = [{
-        id: '1',
-        teamId: 'team1',
-        orderTreashold: 10,
-        product: {
-          leadTime: 2,
-        },
-        team: {
-          _count: {
-            members: 3, // 30% of threshold (10)
+      const mockSupplements = [
+        {
+          id: '1',
+          teamId: 'team1',
+          orderTreashold: 10,
+          product: {
+            leadTime: 2,
+          },
+          team: {
+            _count: {
+              members: 3, // 30% of threshold (10)
+            },
           },
         },
-      }];
+      ];
 
-      mockPrismaService.supplementTeamProducts.findMany.mockResolvedValue(mockSupplements);
+      mockPrismaService.supplementTeamProducts.findMany.mockResolvedValue(
+        mockSupplements,
+      );
       mockTeamsService.updateSupplementProductTeam.mockResolvedValue({});
       mockPaymentService.createOrder.mockResolvedValue({ id: 'order1' });
 
       const result = await service.activatePreOrderTeams();
 
       expect(result).toBe(true);
-      expect(mockPrismaService.supplementTeamProducts.findMany).toHaveBeenCalledWith({
+      expect(
+        mockPrismaService.supplementTeamProducts.findMany,
+      ).toHaveBeenCalledWith({
         where: {
           status: 'PREORDER',
         },
@@ -167,39 +172,49 @@ describe('ScheduleServiceExtended', () => {
           },
         },
       });
-      expect(mockTeamsService.updateSupplementProductTeam).toHaveBeenCalledWith({
-        where: { id: '1' },
-        data: { status: 'ACTIVE' },
-      });
-      expect(mockPaymentService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
-        teamId: 'team1',
-        status: OrderStatus.PENDING,
-        type: OrderType.SUPPLEMENT,
-        firstDelivery: true,
-      }));
+      expect(mockTeamsService.updateSupplementProductTeam).toHaveBeenCalledWith(
+        {
+          where: { id: '1' },
+          data: { status: 'ACTIVE' },
+        },
+      );
+      expect(mockPaymentService.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          teamId: 'team1',
+          status: OrderStatus.PENDING,
+          type: OrderType.SUPPLEMENT,
+          firstDelivery: true,
+        }),
+      );
     });
 
     it('should not activate pre-order teams when threshold is not met', async () => {
-      const mockSupplements = [{
-        id: '1',
-        teamId: 'team1',
-        orderTreashold: 10,
-        product: {
-          leadTime: 2,
-        },
-        team: {
-          _count: {
-            members: 1, // 10% of threshold (10)
+      const mockSupplements = [
+        {
+          id: '1',
+          teamId: 'team1',
+          orderTreashold: 10,
+          product: {
+            leadTime: 2,
+          },
+          team: {
+            _count: {
+              members: 1, // 10% of threshold (10)
+            },
           },
         },
-      }];
+      ];
 
-      mockPrismaService.supplementTeamProducts.findMany.mockResolvedValue(mockSupplements);
+      mockPrismaService.supplementTeamProducts.findMany.mockResolvedValue(
+        mockSupplements,
+      );
 
       const result = await service.activatePreOrderTeams();
 
       expect(result).toBe(true);
-      expect(mockTeamsService.updateSupplementProductTeam).not.toHaveBeenCalled();
+      expect(
+        mockTeamsService.updateSupplementProductTeam,
+      ).not.toHaveBeenCalled();
       expect(mockPaymentService.createOrder).not.toHaveBeenCalled();
     });
   });
@@ -210,41 +225,51 @@ describe('ScheduleServiceExtended', () => {
       const orderId = 'order1';
       const duration = 91;
 
-      const mockTeamMembers = [{
-        id: 'member1',
-        role: 'FOUNDING_MEMBER',
-        userId: 'user1',
-      }];
+      const mockTeamMembers = [
+        {
+          id: 'member1',
+          role: 'FOUNDING_MEMBER',
+          userId: 'user1',
+        },
+      ];
 
-      const mockBasket = [{
-        capsulePerDay: 2,
-        productId: 'product1',
-        product: {
-          id: 'product1',
-          priceInfo: [],
-          price: 100,
-          rrp: 100,
-          status: 'ACTIVE',
-          subUnit: 'capsules',
-          gramsPerCount: 1,
-          unitsOfMeasurePerSubUnit: 'capsules',
-          poucheSize: 30,
-          supplementTeamProducts: {
-            foundingMembersDiscount: 10,
-            earlyMembersDiscount: 5,
+      const mockBasket = [
+        {
+          capsulePerDay: 2,
+          productId: 'product1',
+          product: {
+            id: 'product1',
+            priceInfo: [],
+            price: 100,
+            rrp: 100,
             status: 'ACTIVE',
+            subUnit: 'capsules',
+            gramsPerCount: 1,
+            unitsOfMeasurePerSubUnit: 'capsules',
+            poucheSize: 30,
+            supplementTeamProducts: {
+              foundingMembersDiscount: 10,
+              earlyMembersDiscount: 5,
+              status: 'ACTIVE',
+            },
           },
         },
-      }];
+      ];
 
       mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
       mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
-      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(true);
+      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
+        true,
+      );
       mockProductsService.getPriceDiscount.mockReturnValue(0);
       mockPrismaService.basket.create.mockResolvedValue({});
       mockPaymentService.recordPayment.mockResolvedValue({});
 
-      const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
+      const result = await service.createSupplementUsersBasket(
+        teamId,
+        orderId,
+        duration,
+      );
 
       expect(result).toBe(true);
       expect(mockPrismaService.teamMember.findMany).toHaveBeenCalledWith({
@@ -265,7 +290,7 @@ describe('ScheduleServiceExtended', () => {
       expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
         [],
         1, // teamMembers.length
-        'ACTIVE' // status from mock data
+        'ACTIVE', // status from mock data
       );
 
       // Calculate expected values based on the actual implementation
@@ -273,13 +298,13 @@ describe('ScheduleServiceExtended', () => {
       const expectedQuantity = 2; // capsulePerDay (for quarter calculation)
       const priceWithDiscount = basePrice; // No dynamic price discount in this case
       let productPrice = priceWithDiscount * expectedQuantity; // 100 * 2 = 200
-      
+
       // Apply founding member discount
-      productPrice = productPrice - (productPrice * 10 / 100); // 10% founding member discount = 180
-      
+      productPrice = productPrice - (productPrice * 10) / 100; // 10% founding member discount = 180
+
       // Calculate pricePerCount
       const pricePerCount = Number((priceWithDiscount / 90).toFixed(4)); // 100 / 90 = 1.1111
-      
+
       // Verify basket creation with correct quantity calculation
       expect(mockPrismaService.basket.create).toHaveBeenCalledWith({
         data: {
@@ -308,17 +333,27 @@ describe('ScheduleServiceExtended', () => {
       const orderId = 'order1';
       const duration = 91;
 
-      const mockTeamMembers = [{
-        id: 'member1',
-        role: 'MEMBER',
-        userId: 'user1',
-      }];
+      const mockTeamMembers = [
+        {
+          id: 'member1',
+          role: 'MEMBER',
+          userId: 'user1',
+        },
+      ];
 
       mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
-      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(false);
-      mockPaymentServiceExtension.handleYearlySubscription.mockResolvedValue(false);
+      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
+        false,
+      );
+      mockPaymentServiceExtension.handleYearlySubscription.mockResolvedValue(
+        false,
+      );
 
-      const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
+      const result = await service.createSupplementUsersBasket(
+        teamId,
+        orderId,
+        duration,
+      );
 
       expect(result).toBe(true);
       expect(mockPrismaService.basketC.findMany).not.toHaveBeenCalled();
@@ -331,51 +366,61 @@ describe('ScheduleServiceExtended', () => {
       const orderId = 'order1';
       const duration = 91;
 
-      const mockTeamMembers = [{
-        id: 'member1',
-        role: 'MEMBER',
-        userId: 'user1',
-      }];
+      const mockTeamMembers = [
+        {
+          id: 'member1',
+          role: 'MEMBER',
+          userId: 'user1',
+        },
+      ];
 
-      const mockBasket = [{
-        capsulePerDay: 5,
-        productId: 'product1',
-        product: {
-          id: 'product1',
-          priceInfo: [],
-          price: 100,
-          rrp: 100,
-          status: 'ACTIVE',
-          subUnit: 'grams',
-          gramsPerCount: 5,
-          unitsOfMeasurePerSubUnit: 'grams',
-          poucheSize: 30,
-          supplementTeamProducts: {
-            foundingMembersDiscount: 0,
-            earlyMembersDiscount: 0,
+      const mockBasket = [
+        {
+          capsulePerDay: 5,
+          productId: 'product1',
+          product: {
+            id: 'product1',
+            priceInfo: [],
+            price: 100,
+            rrp: 100,
             status: 'ACTIVE',
+            subUnit: 'grams',
+            gramsPerCount: 5,
+            unitsOfMeasurePerSubUnit: 'grams',
+            poucheSize: 30,
+            supplementTeamProducts: {
+              foundingMembersDiscount: 0,
+              earlyMembersDiscount: 0,
+              status: 'ACTIVE',
+            },
           },
         },
-      }];
+      ];
 
       mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
       mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
-      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(true);
+      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
+        true,
+      );
       mockProductsService.getPriceDiscount.mockReturnValue(0);
       mockPrismaService.basket.create.mockResolvedValue({});
       mockPaymentService.recordPayment.mockResolvedValue({});
 
-      const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
+      const result = await service.createSupplementUsersBasket(
+        teamId,
+        orderId,
+        duration,
+      );
 
       expect(result).toBe(true);
-      
+
       // Calculate expected values for grams
       const basePrice = 100; // rrp
       const productQuantity = 1; // capsulePerDay / gramsPerCount = 1
       const priceWithDiscount = basePrice; // No discount
       const productPrice = priceWithDiscount * productQuantity; // 100 * 1 = 100
       const pricePerCount = Number((priceWithDiscount / 90 / 5).toFixed(4)); // (100 / 90) / 5 = 0.2222
-      
+
       expect(mockPrismaService.basket.create).toHaveBeenCalledWith({
         data: {
           pricePerCount,
@@ -395,57 +440,67 @@ describe('ScheduleServiceExtended', () => {
       const orderId = 'order1';
       const duration = 91;
 
-      const mockTeamMembers = [{
-        id: 'member1',
-        role: 'MEMBER',
-        userId: 'user1',
-      }];
+      const mockTeamMembers = [
+        {
+          id: 'member1',
+          role: 'MEMBER',
+          userId: 'user1',
+        },
+      ];
 
-      const mockBasket = [{
-        capsulePerDay: 2,
-        productId: 'product1',
-        product: {
-          id: 'product1',
-          priceInfo: [
-            { teamMemberCount: 5, percentageDiscount: 10 },
-            { teamMemberCount: 10, percentageDiscount: 15 },
-            { teamMemberCount: 20, percentageDiscount: 20 }
-          ],
-          price: 100,
-          rrp: 100,
-          status: 'ACTIVE',
-          subUnit: 'capsules',
-          gramsPerCount: 1,
-          unitsOfMeasurePerSubUnit: 'capsules',
-          poucheSize: 30,
-          supplementTeamProducts: {
-            foundingMembersDiscount: 0,
-            earlyMembersDiscount: 0,
-            status: 'PREORDER',
+      const mockBasket = [
+        {
+          capsulePerDay: 2,
+          productId: 'product1',
+          product: {
+            id: 'product1',
+            priceInfo: [
+              { teamMemberCount: 5, percentageDiscount: 10 },
+              { teamMemberCount: 10, percentageDiscount: 15 },
+              { teamMemberCount: 20, percentageDiscount: 20 },
+            ],
+            price: 100,
+            rrp: 100,
+            status: 'ACTIVE',
+            subUnit: 'capsules',
+            gramsPerCount: 1,
+            unitsOfMeasurePerSubUnit: 'capsules',
+            poucheSize: 30,
+            supplementTeamProducts: {
+              foundingMembersDiscount: 0,
+              earlyMembersDiscount: 0,
+              status: 'PREORDER',
+            },
           },
         },
-      }];
+      ];
 
       mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
       mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
-      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(true);
+      mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
+        true,
+      );
       mockProductsService.getPriceDiscount.mockReturnValue(10); // Lowest discount
       mockPrismaService.basket.create.mockResolvedValue({});
       mockPaymentService.recordPayment.mockResolvedValue({});
 
-      const result = await service.createSupplementUsersBasket(teamId, orderId, duration);
+      const result = await service.createSupplementUsersBasket(
+        teamId,
+        orderId,
+        duration,
+      );
 
       expect(result).toBe(true);
-      
+
       // Verify getPriceDiscount was called with PREORDER status
       expect(mockProductsService.getPriceDiscount).toHaveBeenCalledWith(
         [
           { teamMemberCount: 5, percentageDiscount: 10 },
           { teamMemberCount: 10, percentageDiscount: 15 },
-          { teamMemberCount: 20, percentageDiscount: 20 }
+          { teamMemberCount: 20, percentageDiscount: 20 },
         ],
         1, // teamMembers.length
-        'PREORDER' // status from mock data
+        'PREORDER', // status from mock data
       );
     });
   });
@@ -453,7 +508,9 @@ describe('ScheduleServiceExtended', () => {
   describe('createSupplementOrders', () => {
     beforeEach(() => {
       // Spy on the createSupplementUsersBasket method
-      jest.spyOn(service, 'createSupplementUsersBasket').mockResolvedValue(true);
+      jest
+        .spyOn(service, 'createSupplementUsersBasket')
+        .mockResolvedValue(true);
     });
 
     afterEach(() => {
@@ -461,23 +518,27 @@ describe('ScheduleServiceExtended', () => {
     });
 
     it('should create new orders for expired supplement orders', async () => {
-      const mockExpiredOrders = [{
-        id: 'order1',
-        teamId: 'team1',
-        team: {
-          supplementTeamProducts: {
-            product: {
-              leadTime: 2,
+      const mockExpiredOrders = [
+        {
+          id: 'order1',
+          teamId: 'team1',
+          team: {
+            supplementTeamProducts: {
+              product: {
+                leadTime: 2,
+              },
             },
           },
         },
-      }];
+      ];
 
       const mockNewOrder = { id: 'newOrder1' };
 
       // Mock the findMany call for expired orders
-      mockPrismaService.order.findMany = jest.fn().mockResolvedValue(mockExpiredOrders);
-      
+      mockPrismaService.order.findMany = jest
+        .fn()
+        .mockResolvedValue(mockExpiredOrders);
+
       // Mock the updateMany call
       mockPrismaService.order.updateMany = jest.fn().mockResolvedValue({});
 
@@ -531,7 +592,7 @@ describe('ScheduleServiceExtended', () => {
       expect(service.createSupplementUsersBasket).toHaveBeenCalledWith(
         'team1',
         'newOrder1',
-        91
+        91,
       );
 
       // Verify status update of expired orders
@@ -564,4 +625,4 @@ describe('ScheduleServiceExtended', () => {
       expect(mockPrismaService.order.updateMany).toHaveBeenCalled();
     });
   });
-}); 
+});

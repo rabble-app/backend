@@ -289,6 +289,16 @@ export class PaymentControllerExtension {
         'Payment intent capture failed',
       );
     }
+
+    if (result == 3) {
+      return formatResponse(
+        'We no longer have stock for top up, try again later',
+        res,
+        HttpStatus.BAD_REQUEST,
+        true,
+        'No Top up stock available',
+      );
+    }
     return formatResponse(
       result,
       res,

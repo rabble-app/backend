@@ -76,8 +76,8 @@ export class JoinSupplementTeamDto {
   quantity: number;
 
   @ApiProperty({
-    type: 'string',
-    description: 'This holds the product id',
+    type: 'number',
+    description: 'This holds the price',
     required: true,
   })
   @IsNotEmpty()
@@ -94,7 +94,7 @@ export class JoinSupplementTeamDto {
   productId: string;
 
   @ApiProperty({
-    type: 'string',
+    type: 'number',
     description: 'This holds the capsule per day',
     required: true,
   })
