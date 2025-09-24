@@ -29,7 +29,7 @@ import {
 } from '../utils/constants';
 import { CourierService } from '../notifications/courier.service';
 import { targetQuarterDate } from '../utils/date';
-import { ProductsService } from 'products/products.service';
+import { ProductsService } from '../products/products.service';
 @Injectable()
 export class PaymentServiceExtension {
   constructor(

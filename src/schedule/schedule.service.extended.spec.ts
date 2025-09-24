@@ -24,6 +24,7 @@ describe('ScheduleServiceExtended', () => {
     },
     basketC: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
     basket: {
       create: jest.fn(),
@@ -58,6 +59,7 @@ describe('ScheduleServiceExtended', () => {
   const mockCourierService = {
     sendCoinEarnedMail: jest.fn(),
     sendReferralFreeMonthMail: jest.fn(),
+    send24HoursBeforeSubscriptionCharge: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -230,34 +232,40 @@ describe('ScheduleServiceExtended', () => {
           id: 'member1',
           role: 'FOUNDING_MEMBER',
           userId: 'user1',
-        },
-      ];
-
-      const mockBasket = [
-        {
-          capsulePerDay: 2,
-          productId: 'product1',
-          product: {
-            id: 'product1',
-            priceInfo: [],
-            price: 100,
-            rrp: 100,
-            status: 'ACTIVE',
-            subUnit: 'capsules',
-            gramsPerCount: 1,
-            unitsOfMeasurePerSubUnit: 'capsules',
-            poucheSize: 30,
-            supplementTeamProducts: {
-              foundingMembersDiscount: 10,
-              earlyMembersDiscount: 5,
-              status: 'ACTIVE',
-            },
+          user: {
+            email: 'test@example.com',
+            firstName: 'Test',
+            refCode: 'REF123',
+            userCode: 'USER123',
           },
         },
       ];
 
+      const mockBasket = {
+        capsulePerDay: 2,
+        productId: 'product1',
+        product: {
+          id: 'product1',
+          name: 'Test Product',
+          priceInfo: [],
+          price: 100,
+          rrp: 100,
+          status: 'ACTIVE',
+          subUnit: 'capsules',
+          gramsPerCount: 1,
+          unitsOfMeasurePerSubUnit: 'capsules',
+          poucheSize: 30,
+          alignmentPoucheSize: 30,
+          supplementTeamProducts: {
+            foundingMembersDiscount: 10,
+            earlyMembersDiscount: 5,
+            status: 'ACTIVE',
+          },
+        },
+      };
+
       mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
-      mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
+      mockPrismaService.basketC.findFirst.mockResolvedValue(mockBasket);
       mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
         true,
       );
@@ -283,6 +291,14 @@ describe('ScheduleServiceExtended', () => {
           id: true,
           role: true,
           userId: true,
+          user: {
+            select: {
+              email: true,
+              firstName: true,
+              refCode: true,
+              userCode: true,
+            },
+          },
         },
       });
 
@@ -338,6 +354,12 @@ describe('ScheduleServiceExtended', () => {
           id: 'member1',
           role: 'MEMBER',
           userId: 'user1',
+          user: {
+            email: 'test@example.com',
+            firstName: 'Test',
+            refCode: 'REF123',
+            userCode: 'USER123',
+          },
         },
       ];
 
@@ -356,7 +378,7 @@ describe('ScheduleServiceExtended', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockPrismaService.basketC.findMany).not.toHaveBeenCalled();
+      expect(mockPrismaService.basketC.findFirst).not.toHaveBeenCalled();
       expect(mockPrismaService.basket.create).not.toHaveBeenCalled();
       expect(mockPaymentService.recordPayment).not.toHaveBeenCalled();
     });
@@ -371,40 +393,46 @@ describe('ScheduleServiceExtended', () => {
           id: 'member1',
           role: 'MEMBER',
           userId: 'user1',
-        },
-      ];
-
-      const mockBasket = [
-        {
-          capsulePerDay: 5,
-          productId: 'product1',
-          product: {
-            id: 'product1',
-            priceInfo: [],
-            price: 100,
-            rrp: 100,
-            status: 'ACTIVE',
-            subUnit: 'grams',
-            gramsPerCount: 5,
-            unitsOfMeasurePerSubUnit: 'grams',
-            poucheSize: 30,
-            supplementTeamProducts: {
-              foundingMembersDiscount: 0,
-              earlyMembersDiscount: 0,
-              status: 'ACTIVE',
-            },
+          user: {
+            email: 'test@example.com',
+            firstName: 'Test',
+            refCode: 'REF123',
+            userCode: 'USER123',
           },
         },
       ];
 
-      mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
-      mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
+      const mockBasket = {
+        capsulePerDay: 5,
+        productId: 'product1',
+        product: {
+          id: 'product1',
+          name: 'Test Product',
+          priceInfo: [],
+          price: 100,
+          rrp: 100,
+          status: 'ACTIVE',
+          subUnit: 'grams',
+          gramsPerCount: 5,
+          unitsOfMeasurePerSubUnit: 'grams',
+          poucheSize: 30,
+          alignmentPoucheSize: 30,
+          supplementTeamProducts: {
+            foundingMembersDiscount: 0,
+            earlyMembersDiscount: 0,
+            status: 'ACTIVE',
+          },
+        },
+      };
+
       mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
         true,
       );
+      mockPaymentService.recordPayment.mockResolvedValue({});
+      mockPrismaService.basketC.findFirst.mockResolvedValue(mockBasket);
+      mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
       mockProductsService.getPriceDiscount.mockReturnValue(0);
       mockPrismaService.basket.create.mockResolvedValue({});
-      mockPaymentService.recordPayment.mockResolvedValue({});
 
       const result = await service.createSupplementUsersBasket(
         teamId,
@@ -445,38 +473,44 @@ describe('ScheduleServiceExtended', () => {
           id: 'member1',
           role: 'MEMBER',
           userId: 'user1',
-        },
-      ];
-
-      const mockBasket = [
-        {
-          capsulePerDay: 2,
-          productId: 'product1',
-          product: {
-            id: 'product1',
-            priceInfo: [
-              { teamMemberCount: 5, percentageDiscount: 10 },
-              { teamMemberCount: 10, percentageDiscount: 15 },
-              { teamMemberCount: 20, percentageDiscount: 20 },
-            ],
-            price: 100,
-            rrp: 100,
-            status: 'ACTIVE',
-            subUnit: 'capsules',
-            gramsPerCount: 1,
-            unitsOfMeasurePerSubUnit: 'capsules',
-            poucheSize: 30,
-            supplementTeamProducts: {
-              foundingMembersDiscount: 0,
-              earlyMembersDiscount: 0,
-              status: 'PREORDER',
-            },
+          user: {
+            email: 'test@example.com',
+            firstName: 'Test',
+            refCode: 'REF123',
+            userCode: 'USER123',
           },
         },
       ];
 
+      const mockBasket = {
+        capsulePerDay: 2,
+        productId: 'product1',
+        product: {
+          id: 'product1',
+          name: 'Test Product',
+          priceInfo: [
+            { teamMemberCount: 5, percentageDiscount: 10 },
+            { teamMemberCount: 10, percentageDiscount: 15 },
+            { teamMemberCount: 20, percentageDiscount: 20 },
+          ],
+          price: 100,
+          rrp: 100,
+          status: 'ACTIVE',
+          subUnit: 'capsules',
+          gramsPerCount: 1,
+          unitsOfMeasurePerSubUnit: 'capsules',
+          poucheSize: 30,
+          alignmentPoucheSize: 30,
+          supplementTeamProducts: {
+            foundingMembersDiscount: 0,
+            earlyMembersDiscount: 0,
+            status: 'PREORDER',
+          },
+        },
+      };
+
       mockPrismaService.teamMember.findMany.mockResolvedValue(mockTeamMembers);
-      mockPrismaService.basketC.findMany.mockResolvedValue(mockBasket);
+      mockPrismaService.basketC.findFirst.mockResolvedValue(mockBasket);
       mockPaymentServiceExtension.checkUserSubscriptionStatus.mockResolvedValue(
         true,
       );
