@@ -701,7 +701,9 @@ export class ScheduleServiceExtended {
             );
 
           if (!subscriptionPayment) {
-            console.log('we were not able to charge the annual subscription');
+            console.log(
+              `we were not able to charge the annual subscription for user ${member.userId}`,
+            );
             // Skip this user if subscription payment fails
             continue;
           }
@@ -885,14 +887,9 @@ export class ScheduleServiceExtended {
   }
 
   async createSupplementOrders() {
-    // get all supplement active teams whose last order has expired
     const query = {
       type: OrderType.SUPPLEMENT,
       status: OrderStatus.PENDING,
-      deliveryDate: {
-        not: null,
-        lte: new Date(),
-      },
       deadline: {
         lte: new Date(),
       },
