@@ -610,7 +610,10 @@ describe('ReferralsService', () => {
         id: 'sub1',
       };
 
-      mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
+      mockUsersService.isEarlyUser.mockResolvedValueOnce({
+        isEarly: true,
+        availableSlots: 50,
+      });
       mockPrismaService.subscription.findUnique.mockResolvedValueOnce(
         mockSubscription,
       );
