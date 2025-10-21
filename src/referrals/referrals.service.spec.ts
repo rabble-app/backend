@@ -225,7 +225,10 @@ describe('ReferralsService', () => {
       mockUsersService.findUser.mockResolvedValueOnce(mockSponsor);
       mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
       mockPrismaService.wallet.update.mockResolvedValueOnce(mockWallet);
-      mockUsersService.isEarlyUser.mockResolvedValueOnce(false);
+      mockUsersService.isEarlyUser.mockImplementationOnce(() => ({
+        isEarly: true,
+        count: 0,
+      }));
       mockUsersService.isUserFirst30Days.mockResolvedValueOnce(false);
 
       await service.handleReferral(mockMetadata, mockPayment.amount);
@@ -286,7 +289,10 @@ describe('ReferralsService', () => {
       mockPrismaService.payment.findMany.mockResolvedValueOnce([
         { amount: 10000, status: 'CAPTURED' },
       ]);
-      mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockUsersService.isEarlyUser.mockImplementationOnce(() => ({
+        isEarly: true,
+        count: 0,
+      }));
       mockUsersService.isUserFirst30Days.mockResolvedValueOnce(true);
       jest.spyOn(service, 'countReferrals').mockResolvedValueOnce(3);
       jest
@@ -571,7 +577,10 @@ describe('ReferralsService', () => {
       mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
       mockPrismaService.subscription.findFirst.mockResolvedValueOnce(null);
       mockPrismaService.bonus.findFirst.mockResolvedValueOnce(null);
-      mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockUsersService.isEarlyUser.mockImplementationOnce(() => ({
+        isEarly: true,
+        count: 0,
+      }));
       mockPrismaService.$transaction.mockImplementationOnce(
         async (callback) => {
           const result = await callback(mockPrismaService);
@@ -777,7 +786,10 @@ describe('ReferralsService', () => {
       jest
         .spyOn(service, 'checkFreeSubscriptionDuration')
         .mockResolvedValueOnce(1);
-      mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockUsersService.isEarlyUser.mockImplementationOnce(() => ({
+        isEarly: true,
+        count: 0,
+      }));
       mockUsersService.isUserFirst30Days.mockResolvedValueOnce(true);
       const result = await service.getApplicableBonus('user1', 10000);
       expect(result).toEqual({
@@ -794,7 +806,10 @@ describe('ReferralsService', () => {
       jest
         .spyOn(service, 'checkFreeSubscriptionDuration')
         .mockResolvedValueOnce(3);
-      mockUsersService.isEarlyUser.mockResolvedValueOnce(false);
+      mockUsersService.isEarlyUser.mockImplementationOnce(() => ({
+        isEarly: true,
+        count: 0,
+      }));
       mockUsersService.isUserFirst30Days.mockResolvedValueOnce(false);
       const result = await service.getApplicableBonus('user1', 10000);
       expect(result).toHaveProperty('type', 'credits');
@@ -998,7 +1013,10 @@ describe('ReferralsService', () => {
       mockPrismaService.user.update.mockResolvedValueOnce({});
       mockPrismaService.subscription.findUnique.mockResolvedValueOnce(null);
       mockPrismaService.bonus.findFirst.mockResolvedValueOnce(null);
-      mockUsersService.isEarlyUser.mockResolvedValueOnce(true);
+      mockUsersService.isEarlyUser.mockImplementationOnce(() => ({
+        isEarly: true,
+        count: 0,
+      }));
       mockPrismaService.subscription.create.mockResolvedValueOnce({});
       mockPrismaService.bonus.create.mockResolvedValueOnce({});
 

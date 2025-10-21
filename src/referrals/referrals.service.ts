@@ -125,7 +125,7 @@ export class ReferralsService {
       sponsor.id,
       sponsor.firstPaymentDate,
     );
-    const isEarlyUser = await this.usersService.isEarlyUser();
+    const { isEarly: isEarlyUser } = await this.usersService.isEarlyUser();
     const isFirst30Days = await this.usersService.isUserFirst30Days(
       referral.referrerId,
     );
@@ -760,7 +760,7 @@ export class ReferralsService {
 
   async createFreeTrialSubscription(userId: string) {
     try {
-      const earlyUser = await this.usersService.isEarlyUser();
+      const { isEarly: earlyUser } = await this.usersService.isEarlyUser();
 
       const existingSubscription = await this.prisma.subscription.findUnique({
         where: { userId },
@@ -982,7 +982,7 @@ export class ReferralsService {
       referral.referrerId,
       referrer.firstPaymentDate,
     );
-    const isEarlyUser = await this.usersService.isEarlyUser();
+    const { isEarly: isEarlyUser } = await this.usersService.isEarlyUser();
     const isFirst30Days = await this.usersService.isUserFirst30Days(
       referral.referrerId,
     );
