@@ -586,10 +586,6 @@ describe('ScheduleServiceExtended', () => {
         where: {
           type: OrderType.SUPPLEMENT,
           status: OrderStatus.PENDING,
-          deliveryDate: {
-            not: null,
-            lte: expect.any(Date),
-          },
           deadline: {
             lte: expect.any(Date),
           },
@@ -634,10 +630,6 @@ describe('ScheduleServiceExtended', () => {
         where: {
           type: OrderType.SUPPLEMENT,
           status: OrderStatus.PENDING,
-          deliveryDate: {
-            not: null,
-            lte: expect.any(Date),
-          },
           deadline: {
             lte: expect.any(Date),
           },

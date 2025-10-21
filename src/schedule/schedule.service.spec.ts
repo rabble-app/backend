@@ -38,15 +38,21 @@ describe('ScheduleService', () => {
         ScheduleService,
         {
           provide: UsersService,
-          useValue: { /* mock UsersService */ },
+          useValue: {
+            /* mock UsersService */
+          },
         },
         {
           provide: PaymentService,
-          useValue: { /* mock PaymentService */ },
+          useValue: {
+            /* mock PaymentService */
+          },
         },
         {
           provide: NotificationsService,
-          useValue: { /* mock NotificationsService */ },
+          useValue: {
+            /* mock NotificationsService */
+          },
         },
         {
           provide: PrismaService,
@@ -67,42 +73,58 @@ describe('ScheduleService', () => {
         },
         {
           provide: ProductsService,
-          useValue: { /* mock ProductsService */ },
+          useValue: {
+            /* mock ProductsService */
+          },
         },
         {
           provide: PaymentServiceExtension,
-          useValue: { /* mock PaymentServiceExtension */ },
+          useValue: {
+            /* mock PaymentServiceExtension */
+          },
         },
         {
           provide: ScheduleServiceExtended,
           useValue: {
             handleLastDayFreeMembershipBonus: jest.fn().mockResolvedValue(true),
             handle15thDayFreeMembershipBonus: jest.fn().mockResolvedValue(true),
-            handleLast3DaysFreeMembershipBonus: jest.fn().mockResolvedValue(true),
+            handleLast3DaysFreeMembershipBonus: jest
+              .fn()
+              .mockResolvedValue(true),
           },
         },
         {
           provide: TeamsServiceExtension,
-          useValue: { /* mock TeamsServiceExtension */ },
+          useValue: {
+            /* mock TeamsServiceExtension */
+          },
         },
         {
           provide: TeamsService,
-          useValue: { /* mock TeamsService */ },
+          useValue: {
+            /* mock TeamsService */
+          },
         },
         {
           provide: AuthService,
-          useValue: { /* mock AuthService */ },
+          useValue: {
+            /* mock AuthService */
+          },
         },
         {
           provide: JwtService,
-          useValue: { /* mock JwtService */ },
+          useValue: {
+            /* mock JwtService */
+          },
         },
         InsightsService,
         QRCodeService,
         UploadsService,
         {
           provide: ReferralsService,
-          useValue: { /* mock ReferralsService */ },
+          useValue: {
+            /* mock ReferralsService */
+          },
         },
         {
           provide: StripeService,
@@ -130,7 +152,9 @@ describe('ScheduleService', () => {
     }).compile();
 
     service = module.get<ScheduleService>(ScheduleService);
-    scheduleServiceExtended = module.get<ScheduleServiceExtended>(ScheduleServiceExtended);
+    scheduleServiceExtended = module.get<ScheduleServiceExtended>(
+      ScheduleServiceExtended,
+    );
   });
 
   it('should be defined', () => {
@@ -139,21 +163,24 @@ describe('ScheduleService', () => {
 
   describe('handleLastDayFreeMembershipBonus', () => {
     it('should handle last day free membership bonus emails', async () => {
-      const result = await scheduleServiceExtended.handleLastDayFreeMembershipBonus();
+      const result =
+        await scheduleServiceExtended.handleLastDayFreeMembershipBonus();
       expect(result).toBe(true);
     });
   });
 
   describe('handle15thDayFreeMembershipBonus', () => {
     it('should handle 15th day free membership bonus emails', async () => {
-      const result = await scheduleServiceExtended.handle15thDayFreeMembershipBonus();
+      const result =
+        await scheduleServiceExtended.handle15thDayFreeMembershipBonus();
       expect(result).toBe(true);
     });
   });
 
   describe('handleLast3DaysFreeMembershipBonus', () => {
     it('should handle last 3 days free membership bonus emails', async () => {
-      const result = await scheduleServiceExtended.handleLast3DaysFreeMembershipBonus();
+      const result =
+        await scheduleServiceExtended.handleLast3DaysFreeMembershipBonus();
       expect(result).toBe(true);
     });
   });
