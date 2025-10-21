@@ -442,7 +442,10 @@ export class UsersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<IAPIResponse> {
     const userId = req.user.id ? req.user.id : req.user.userId;
-    const result = await this.usersService.storeBillingAddress(userId, billingAddressDto);
+    const result = await this.usersService.storeBillingAddress(
+      userId,
+      billingAddressDto,
+    );
     return formatResponse(
       result,
       res,
@@ -478,6 +481,28 @@ export class UsersController {
       HttpStatus.OK,
       false,
       'Billing address returned successfully',
+    );
+  }
+
+  /**
+   * return early user status.
+   * @param {Response} res - The payload.
+   * @memberof UsersController
+   * @returns {JSON} - A JSON success response.
+   */
+  @Get('is-early-user')
+  @ApiOkResponse({ description: 'Early user status returned successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async isEarlyUser(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<IAPIResponse> {
+    const result = await this.usersService.isEarlyUser();
+    return formatResponse(
+      result,
+      res,
+      HttpStatus.OK,
+      false,
+      'Early user status returned successfully',
     );
   }
 }

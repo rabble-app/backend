@@ -707,7 +707,7 @@ describe('UserController (e2e)', () => {
           .get(`/users/${userId}/has-active-supplement`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
-        
+
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(response.body.data).toHaveProperty('hasActiveSupplement');
@@ -729,7 +729,7 @@ describe('UserController (e2e)', () => {
           .get(`/users/${userId}/has-active-supplement`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
-        
+
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(response.body.data).toHaveProperty('hasActiveSupplement');
@@ -746,7 +746,7 @@ describe('UserController (e2e)', () => {
           .get(`/users/${nonExistentUserId}/has-active-supplement`)
           .set('Authorization', `Bearer ${jwtToken}`)
           .expect(200);
-        
+
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(response.body.data).toHaveProperty('hasActiveSupplement');
@@ -761,7 +761,7 @@ describe('UserController (e2e)', () => {
         const response = await request(app.getHttpServer())
           .get(`/users/${userId}/has-active-supplement`)
           .expect(401);
-        
+
         expect(response.body).toHaveProperty('message');
         expect(typeof response.body.message).toBe('string');
       },
@@ -789,7 +789,9 @@ describe('UserController (e2e)', () => {
 
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
-        expect(response.body.data.billingAddress).toMatchObject(billingAddressData);
+        expect(response.body.data.billingAddress).toMatchObject(
+          billingAddressData,
+        );
       },
       testTime,
     );
@@ -847,6 +849,24 @@ describe('UserController (e2e)', () => {
         expect(response.body).toHaveProperty('data');
         expect(response.body.error).toBeUndefined();
         expect(response.body.data).toBeNull();
+      },
+      testTime,
+    );
+  });
+
+  describe('Early User Status', () => {
+    it(
+      '/users/is-early-user (GET) should return early user status when authenticated',
+      async () => {
+        const response = await request(app.getHttpServer())
+          .get('/users/is-early-user')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.error).toBeUndefined();
+        expect(response.body.data).toHaveProperty('isEarly');
+        expect(typeof response.body.data.isEarly).toBe('boolean');
       },
       testTime,
     );

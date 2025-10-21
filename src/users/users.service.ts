@@ -762,7 +762,10 @@ export class UsersService {
         },
       },
     });
-    return count < threshold;
+    return {
+      isEarly: count < threshold,
+      availableSlots: threshold - count,
+    };
   }
 
   async isUserFirst30Days(userId: string) {
@@ -793,7 +796,10 @@ export class UsersService {
     }
   }
 
-  async storeBillingAddress(userId: string, billingAddressDto: BillingAddressDto) {
+  async storeBillingAddress(
+    userId: string,
+    billingAddressDto: BillingAddressDto,
+  ) {
     return await this.prisma.user.update({
       where: { id: userId },
       data: {
