@@ -549,6 +549,7 @@ export class ProductsService {
               select: {
                 businessName: true,
                 imageUrl: true,
+                businessAddress: true,
               },
             },
             formulationSummary: true,
