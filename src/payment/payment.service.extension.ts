@@ -256,7 +256,6 @@ export class PaymentServiceExtension {
     const latestOrder = await this.paymentService.getTeamLatestOrder(
       captureIntentDto.teamId,
     );
-    console.log({ latestOrder });
     const orderId = latestOrder?.id;
 
     // update payment intent
