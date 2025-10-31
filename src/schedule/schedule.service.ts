@@ -13,6 +13,7 @@ import {
   IScheduleTeam,
   PaymentWithUserInfo,
   notificationType,
+  stripeMetaDataInfo,
 } from '../lib/types';
 
 @Injectable()
@@ -508,18 +509,13 @@ export class ScheduleService {
       const payments = await this.scheduleServiceExtended.getLatestPayments();
       if (payments && payments.length > 0) {
         payments.forEach(async (payment) => {
-          let formattedProducts: {
-            name: string;
-            quantity: number;
-            retail_price: Decimal;
-            wholesale_price: Decimal;
-            vat_rate: Decimal;
-            retail_price_vat: Decimal;
-            wholesale_price_vat: Decimal;
-          }[];
+          let formattedDropProducts: stripeMetaDataInfo = [];
+
+          let formattedAlignmentProducts: stripeMetaDataInfo = [];
           // get user products details and save it with other information to the metadata
           let totalTax: Decimal = new Decimal(0.0);
-          const userProducts = await this.prisma.basket.findMany({
+          // get drop products details and save it with other information to the metadata
+          const dropProducts = await this.prisma.basket.findMany({
             where: {
               userId: payment.userId,
               orderId: payment.orderId,
@@ -530,14 +526,15 @@ export class ScheduleService {
                   name: true,
                   wholesalePrice: true,
                   vat: true,
+                  skuDrop: true,
                 },
               },
               price: true,
               quantity: true,
             },
           });
-          if (userProducts && userProducts.length > 0) {
-            formattedProducts = userProducts.map((item) => {
+          if (dropProducts && dropProducts.length > 0) {
+            formattedDropProducts = dropProducts.map((item) => {
               const retailTax = new Decimal(
                 (+item.price * item.quantity * +item.product.vat) / 100,
               );
@@ -556,9 +553,55 @@ export class ScheduleService {
                 vat_rate: item.product.vat,
                 retail_price_vat: retailTax,
                 wholesale_price_vat: wholesaleTax,
+                sku: item.product.skuDrop,
               };
             });
           }
+
+          // get alignment products details and save it with other information to the metadata
+          const alignmentProducts = await this.prisma.topUpBasket.findMany({
+            where: {
+              userId: payment.userId,
+              orderId: payment.orderId,
+            },
+            select: {
+              product: {
+                select: {
+                  name: true,
+                  wholesalePrice: true,
+                  vat: true,
+                  skuAlignment: true,
+                },
+              },
+              price: true,
+              quantity: true,
+            },
+          });
+          if (alignmentProducts && alignmentProducts.length > 0) {
+            formattedAlignmentProducts = alignmentProducts.map((item) => {
+              const retailTax = new Decimal(
+                (+item.price * item.quantity * +item.product.vat) / 100,
+              );
+              const wholesaleTax = new Decimal(
+                ((+item.product.wholesalePrice / 3) *
+                  item.quantity *
+                  +item.product.vat) /
+                  100,
+              );
+              totalTax = new Decimal(+totalTax + +retailTax);
+              return {
+                name: item.product.name,
+                quantity: item.quantity,
+                retail_price: new Decimal(+item.price),
+                wholesale_price: new Decimal(+item.product.wholesalePrice / 3),
+                vat_rate: item.product.vat,
+                retail_price_vat: retailTax,
+                wholesale_price_vat: wholesaleTax,
+                sku: item.product.skuAlignment,
+              };
+            });
+          }
+
           await this.paymentServiceExtension.updatePaymentIntent(
             payment.paymentIntentId,
             {
@@ -567,7 +610,8 @@ export class ScheduleService {
               teamId: payment.order.teamId,
               // userId: payment.userId,
               supplierId: payment.order.team.producerId,
-              product: JSON.stringify(formattedProducts),
+              drop: JSON.stringify(formattedDropProducts),
+              alignment: JSON.stringify(formattedAlignmentProducts),
               totalRetailPriceVat: +totalTax,
             },
             true,
