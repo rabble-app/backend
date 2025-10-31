@@ -461,3 +461,14 @@ export type ProductWithSupplementPayload = Prisma.ProductGetPayload<{
     };
   };
 }>;
+
+export type stripeMetaDataInfo = {
+  name: string;
+  quantity: number;
+  retail_price: Decimal;
+  wholesale_price: Decimal;
+  vat_rate: Decimal;
+  retail_price_vat: Decimal;
+  wholesale_price_vat: Decimal;
+  sku: string;
+}[];

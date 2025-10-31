@@ -3397,6 +3397,8 @@ async function main() {
           ],
         },
       ],
+      skuDrop: 'SC-CRE-DRP-450',
+      skuAlignment: 'SC-CRE-ALN-150',
     },
   });
 
