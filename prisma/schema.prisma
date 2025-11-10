@@ -255,6 +255,7 @@ model Product {
   leadTime                  Int?                        @default(0) @map("lead_time")
   healthCategories          Json?                       @map("health_categories")
   productBenefits           Json?                       @map("product_benefits")
+  certifications            Json?                       @map("certifications")
   gramsPerCount             Decimal?                    @default(5) @map("grams_per_count")
   poucheSize                Decimal?                    @default(90) @map("pouche_size")
   alignmentPoucheSize       Decimal?                    @default(30) @map("alignment_pouche_size")

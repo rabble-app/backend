@@ -553,6 +553,7 @@ export class ProductsService {
               },
             },
             formulationSummary: true,
+            certifications: true,
           },
         },
         team: {
