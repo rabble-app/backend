@@ -506,6 +506,30 @@ export class ReferralsService {
         amount: true,
       },
     });
+
+    // Get bonuses with free subscription categories
+    const freeSubscriptionBonuses = await this.prisma.bonus.findMany({
+      where: {
+        userId,
+        category: {
+          in: ['1 year free subscription', '6 months free subscription'],
+        },
+      },
+      select: {
+        category: true,
+      },
+    });
+
+    // Calculate total free months received
+    const totalFreeMonths = freeSubscriptionBonuses.reduce((total, bonus) => {
+      if (bonus.category === '1 year free subscription') {
+        return total + 12;
+      } else if (bonus.category === '6 months free subscription') {
+        return total + 6;
+      }
+      return total;
+    }, 0);
+
     const referrer = await this.getReferrer(userId);
     return {
       referralCode: user.refCode,
@@ -514,6 +538,7 @@ export class ReferralsService {
       wallet,
       totalSaved: totalSaved._sum.amount,
       claims,
+      freeMonthsReceived: totalFreeMonths,
       ...(referrer && {
         referrer,
       }),
