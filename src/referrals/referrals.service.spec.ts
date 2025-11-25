@@ -457,11 +457,16 @@ describe('ReferralsService', () => {
 
       const mockClaims = [{ id: 'claim1' }];
       const mockTotalSaved = { _sum: { amount: 200 } };
+      const mockBonuses = [
+        { category: '1 year free subscription' },
+        { category: '6 months free subscription' },
+      ];
 
       mockPrismaService.user.findUnique.mockResolvedValueOnce(mockUser);
       mockPrismaService.wallet.findUnique.mockResolvedValueOnce(mockWallet);
       mockPrismaService.claim.findMany.mockResolvedValueOnce(mockClaims);
       mockPrismaService.coupon.aggregate.mockResolvedValueOnce(mockTotalSaved);
+      mockPrismaService.bonus.findMany.mockResolvedValueOnce(mockBonuses);
       jest.spyOn(service, 'getReferrer').mockResolvedValueOnce(mockReferrer);
 
       const result = await service.getReferralInfo('user1');
@@ -473,6 +478,7 @@ describe('ReferralsService', () => {
         wallet: mockWallet,
         totalSaved: 200,
         claims: mockClaims,
+        freeMonthsReceived: 18,
         referrer: mockReferrer,
       });
     });
@@ -492,6 +498,7 @@ describe('ReferralsService', () => {
 
       expect(result).toBeUndefined();
       expect(mockLogger.info).toHaveBeenCalled();
+      expect(mockPrismaService.bonus.findMany).not.toHaveBeenCalled();
     });
 
     it('should return undefined when user is not found', async () => {
@@ -501,6 +508,7 @@ describe('ReferralsService', () => {
 
       expect(result).toBeUndefined();
       expect(mockLogger.info).toHaveBeenCalled();
+      expect(mockPrismaService.bonus.findMany).not.toHaveBeenCalled();
     });
   });
 
